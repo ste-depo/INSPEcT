@@ -1,0 +1,92 @@
+import(
+    methods,
+    BiocParallel,
+    pROC
+)
+importFrom("IRanges", IRanges)
+importFrom("compiler", cmpfun)
+importFrom("deSolve", ode)
+importFrom("rootSolve", multiroot)
+importFrom("preprocessCore", normalize.quantiles)
+importClassesFrom("Biobase",
+    AnnotatedDataFrame,
+    ExpressionSet
+    )
+importFrom("Biobase",
+    combine,
+    exprs,
+    fData,
+    pData,
+    featureNames,
+    "featureNames<-",
+    ExpressionSet
+    )
+importFrom("GenomicFeatures",
+    exonsBy,
+    transcriptsBy,
+    intronsByTranscript
+    )
+importFrom("GenomicRanges",
+    reduce,
+    setdiff,
+    seqnames,
+    start,
+    end,
+    strand,
+    unlist,
+    width
+    )
+export(
+    "newINSPEcT",
+    "makeRPKMs"
+)
+exportMethods(
+    "[",
+    "AIC",
+    "chisqmodel",
+    "chisqtest",
+    "combine",
+    "dim",
+    "featureNames",
+    "featureNames<-",
+    "geneClass",
+    "getModel",
+    "getModel<-",
+    "inHeatmap",
+    "labeledSF",
+    "llrtests",
+    "llrtests<-",
+    "logLik",
+    "makeExonsGtfFromDb",
+    "makeIntronsGtfFromDb",
+    "makeModelRates",
+    "makeSimDataset",
+    "makeSimModel",
+    "modelingParams",
+    "modelingParams<-",
+    "modelRates",
+    "modelSelection",
+    "modelSelection<-",
+    "nCores",
+    "nCores<-",
+    "nGenes",
+    "nTpts",
+    "plotGene",
+    "ratePvals",
+    "ratesFirstGuess",
+    "ratesFirstGuessVar",
+    "removeModel",
+    "rocCurve",
+    "rocThresholds",
+    "sfPlot",
+    "show",
+    "thresholds",
+    "thresholds<-",
+    "totalSF",
+    "tpts",
+    "viewModelRates"
+)
+exportClasses(
+    "INSPEcT",
+     "INSPEcT_model" 
+)

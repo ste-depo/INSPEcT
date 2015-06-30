@@ -1,0 +1,3 @@
+- selection of best model is now done applying brown test on the pairs of model where at least one of the two has a chi-squared test lower than the threshold. This is done because in case only one rate leads the dynamics, all the model which don't involve that rate won't have low chi-squared and no comparison will be made. This leads to brown p-values of 1 on that specific rates (change in method "ratePvals")
+
+- in newINSPEcT, the guess of new rates can be done without assuming that degradation does  not occur during the pulse

@@ -1,0 +1,10 @@
+INSPEcT has few external requirements specifically regarding the use of 'makeRPKMs' function. The function makePRKMs calculates RPKMs for the intronic and the exonic part of each gene or transcript. In case RPKMs have already been calculated, the installation of the external dependencies is not required.
+
+The software that is needed to be installed on the local machine that runs INSPEcT is:
+
+- HTSeq
+- python (>= 2.5)
+
+Python is required by the software HTSeq and must be found in the path.
+
+You can find documentation and install instructions for HTSeq software at the software website (http://www-huber.embl.de/HTSeq/doc/overview.html).

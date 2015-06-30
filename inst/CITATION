@@ -1,0 +1,19 @@
+citEntry(entry = "article",
+   title = "INSPEcT: a Computational Tool to Infer mRNA Synthesis, Processing and Degradation Dynamics from RNA- and 4sU-seq Time Course Experiments.",
+   author = personList(
+      person("Stefano", "de Pretis"),
+      as.person("Theresia Kress"),
+      as.person("Marco J Morelli"),
+      as.person("Giorgio EM Melloni"),
+      as.person("Laura Riva"),
+      as.person("Bruno Amati"),
+      as.person("Mattia Pelizzola")
+      ),
+      year = 2015,
+      journal = "Bioinformatics",
+      doi = "10.1093/bioinformatics/btv288",
+      textVersion = 
+      paste("Stefano de Pretis et al. (2015):", 
+            "INSPEcT: a Computational Tool to Infer mRNA Synthesis, Processing and Degradation Dynamics from RNA- and 4sU-seq Time Course Experiments.",
+             "Bioinformatics" ) 
+   )

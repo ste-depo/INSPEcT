@@ -1,0 +1,263 @@
+%\VignetteIndexEntry{INSPEcT}
+%\VignettePackage{INSPEcT}
+%\VignetteDepends{INSPEcT}
+%\VignetteEngine{knitr::knitr}
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{mathtools}
+
+<<style-knitr, eval=TRUE, echo=FALSE, results="asis">>=
+BiocStyle::latex()
+@
+
+\newcommand{\Rmethod}[1]{{\Rfunction{#1}}}
+
+\title{INSPEcT - INference of Synthesis, Processing and dEgradation rates in Time-course analysis}
+\author{Stefano de Pretis}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+%
+\section{Introduction}
+
+\Rpackage{INSPEcT} provides an R/Bioconductor compliant solution for the study of dynamic transcriptional regulatory processes. Based on RNA- and 4sU-seq data, which can be jointly analyzed thanks to a computational normalization routine, \Rpackage{INSPEcT} determines mRNA synthesis, degradation and pre-mRNA processing rates over time for each gene, genome-wide. Finally, the \Rpackage{INSPEcT} modeling framework allows the identification of gene-level transcriptional regulatory mechanisms, determining which combination of synthesis, degradation and processing rates is most likely responsible for the observed mRNA level over time.
+
+\Rpackage{INSPEcT} is based on the estimation of total mRNA levels, pre-mRNA levels (from RNA-seq), synthesis rates and processing rates (from 4sU-seq), and degradation rates from the combined analysis of these two data types. 4sU-seq is a recent experimental technique developed to measure the concentration of nascent mRNA and for the genome-wide inference of gene-level synthesis rates. During a short pulse (typically few minutes), cells medium is complemented with 4sU, a naturally occurring modified uridine that is incorporated within growing mRNA chains with minimal impact on cell viability. The chains which have incorporated the uridine variant (the newly synthesized ones) can be isolated from the total RNA population by biotinylation and purification with streptavidin-coated magnetic beads, followed by sequencing. The the main set of steps in the \Rpackage{INSPEcT} workflow is as follows:
+\begin{itemize}
+	\item Exonic and intronic RPKM for both RNA- and 4sU-seq are determined for each gene. Exonic and intronic RNA-seq RPKM allow to quantify the total mRNA and pre-mRNA, respectively (\Rmethod{makeExonsGtfFromDb}, \Rmethod{makeIntronsGtfFromDb}, \Rfunction{makeRPKMs}). 
+	\item Normalized synthesis, processing and degradation rates are obtained by integrating RNA- and 4sU-seq data (\Rmethod{newINSPEcT}). 
+	\item Rates, total mRNA and pre-mRNA concentrations are modeled for each gene to assess which of the rates, if any, determined changes in mRNA levels (\Rmethod{modelRates}). 
+	\item Simulated data that recapitulate rate distributions, their variation over time and their pair-wise correlations are created and used to evaluate the performance of the method (\Rmethod{makeSimModel}, \Rmethod{makeSimDataset}, \Rmethod{rocCurve}).
+\end{itemize}
+
+Within this vignette, a complete \Rpackage{INSPEcT} analysis is presented (Figure \ref{fig:inspect_workflow}). For details regarding \Rpackage{INSPEcT} extended methods description, refer to de Pretis S. et al., Bioinformatics (2015).
+
+\begin{figure}
+	\centering
+    	\includegraphics[scale=0.75]{pipeline.png}
+    	\caption{Representation of the INSPEcT workflow}
+	\label{fig:inspect_workflow}
+\end{figure}
+
+%
+\section{Quantification of Exon and Intron features}
+
+<<load_library, message=FALSE, eval=TRUE, echo=FALSE>>=
+library(INSPEcT)
+@
+
+The INSPEcT framework includes functions to generate GTF annotation files that can be used to quantify Exon and Intron features, both in 4sU- and RNA-seq experiments. To facilitate this, two methods of the \Rclass{TranscriptDB} class have been implemented within INSPEcT: \Rmethod{makeExonsGtfFromDb} and \Rmethod{makeIntronsGtfFromDb}. In order to save computation time, the following code is not evaluated.
+
+<<annotation, message=FALSE, eval=FALSE>>=
+library(INSPEcT)
+require(TxDb.Mmusculus.UCSC.mm9.knownGene)
+txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
+makeExonsGtfFromDb(txdb, type='gene', 'exons_mm9.gtf')
+makeIntronsGtfFromDb(txdb, type='gene', 'introns_mm9.gtf')
+@
+
+After the annotation files are created, INSPEcT takes as input 4sU- and RNA-seq alignment files in SAM format, quantifies the number of reads that overlap with both exonic and intronic features per each gene and transforms them in RPKMs expression values. The following sample code is not evaluated in the vignette. 
+<<features_quantification, message=FALSE, eval=FALSE>>=
+sampaths_4su <- system.file('extdata', '4sURNA_0h.sam', package="INSPEcT")
+sampaths_total <- system.file('extdata', 'totalRNA_0h.sam', package="INSPEcT")
+rpkms <- makeRPKMs(tpts=0, sampaths_4su, sampaths_total, out_folder = ".",
+	exons_gtf_file = 'exons_mm9.gtf',
+	introns_gtf_file = 'introns_mm9.gtf')
+@
+
+%
+\section{RNA- and 4sU-seq RPKMs}
+
+As anticipated in the previous section, the code that generates RPKMs has not been evaluated. For this reason pre-computed expression values for 500 genes are provided with the package. In case intronic and exonic RPKMs have been computed by the user using alternative methods, they can be provided at this level. A named list of RPKMs can be loaded by typing:
+
+<<loading, message=FALSE>>=
+data('rpkms', package='INSPEcT')
+str(rpkms)
+@
+
+%
+\section{Estimation of rates}
+
+\Rpackage{INSPEcT} is based on a simple model of differential equations that describes the process of synthesis and processing of pre-mRNA and the degradation of mature mRNA. Equations model the synthesis of new pre-mRNAs which then decay into mature mRNAs, which in turn exponentially degrade and are removed from the system. The model is based on two main assumptions that are widely used in the description of mRNA life cycle: pre-mRNAs are not degraded, and  translocation of mRNAs from nucleus to cytoplasm occurs immediately after maturation, or at a rate considerably faster than the rate of degradation (Rabani M. et al., Nature Biotechnology, 2011; Sun M. et. al, Genome Research, 2012). The model lacks any spatial assumption, like segregation of mRNAs into cellular compartments that could impact the degradation rate, but this is a consequence of the non-spatial nature of the data:\\
+
+\begin{equation}
+  \nonumber
+  \left\{
+    \begin{array}{l l}
+	\dot{P} = a(t) - c(t) \, P \\
+	\dot{T} = a(t) - b(t) \, (T - P)
+    \end{array}
+  \right.
+\end{equation}
+
+where $T$ is total RNA, $P$ is pre-mature RNA, $a(t)$ is the synthesis rate, $b(t)$ is the degradation rate and $c(t)$ is the processing rate. After having quantified data from RNA-seq ($R$) and 4sU-seq (labeled, $L$) libraries into intronic and exonic RPKMs (\Rfunction{makeRPKMs} function), the \Rmethod{newINSPEcT} method is used to estimate synthesis, processing and degradation rates by solving the above system of differential equations applied at every time point ($t$) to both the total and labeled fractions. When applied to the labeled RNA fraction, the system can be solved and integrated between $t-t_L$ and $t$, assuming that no labeled molecules existed before the labeling pulse ($t_L$). At each time point, \Rpackage{INSPEcT} solves a system of four equations:
+
+\begin{equation}
+  \nonumber
+  \left\{
+    \begin{array}{l l}
+	\dot{P}_{R_t} = a_t - c_t \, P_{R_t} \\
+	\dot{T}_{R_t} = a_t - b_t \, (T_{R_t} - P_{R_t})\\
+	P_{L_t} = \frac{a_t}{c_t} - ( 1 - e^{c_t \, t_L} ) \\
+	T_{L_t} = a_t \, t_L
+    \end{array}
+  \right.
+\end{equation}
+
+with three unknowns $a_t$, $b_t$ and $c_t$ which are respectively the synthesis, degradation and processing rates at time $t$. $P_{R_t}$ is equal to the pre-mRNA level (intronic RNA-seq RPKM), $T_{R_t}$ is equal to the total mRNA level (exonic RNA-seq RPKM), and $P_{L_t}$ is equal to the pre-mRNA level as quantified in the labeled fraction (intronic 4sU-seq RPKM). Finally, $T_{L_t}$ is equal to the total mRNA level as quantified in the labeled fraction (exonic 4sU-seq RPKM). $\dot{P}_{R_t}$, $\dot{T}_{R_t}$ are estimated from the interpolation of $P_R(t)$ and $T_R(t)$. The overdetermination of the system is used to calculate a time-point specific scaling factor between RNA- and 4sU-seq RPKMs that can be visualized using the \Rmethod{sfPlot} method.\\
+
+In order to create an object of class \Rclass{INSPEcT} and to calculate the first estimates of rates and concentrations for each gene,  the specific time points of the time-course, the 4sU labeling time and the RPKMs corresponding to labeled and total fraction of the intronic and exonic regions of each gene have to be provided (here time is in $hours$). All results are stored in an object of class \Rclass{INSPEcT} and rates can be accessed with the \Rmethod{ratesFirstGuess} method. This sample code calculates rates and concentrations on a sample set of 500 genes: 
+
+<<rate_estimation, message=TRUE>>=
+tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
+tL <- 1/6
+mycerIds <- newINSPEcT(tpts, tL, rpkms$rpkms_4su_exons, rpkms$rpkms_total_exons, 
+	rpkms$rpkms_4su_introns, rpkms$rpkms_total_introns)
+head(ratesFirstGuess(mycerIds, 'synthesis'))
+@
+
+In case of a long 4sU labeling time (longer than 10-15 minutes), it could be useful to activate the \Rcode{degDuringPulse} option, as shown below. This option estimates all the rates of the RNA life-cycle without assuming that no degradation of the newly synthesized transcripts occurs during the pulse. The longer the labeling time is, the weaker this assumption gets. This option, however, involves solving a more complicated system of differential equations and for this reason it is not recommended for short labeling times. 
+
+<<rate_estimation_ddp, message=FALSE>>=
+mycerIdsDdp <- newINSPEcT(tpts, tL, rpkms$rpkms_4su_exons, rpkms$rpkms_total_exons, 
+	rpkms$rpkms_4su_introns, rpkms$rpkms_total_introns, degDuringPulse=TRUE)
+head(ratesFirstGuess(mycerIdsDdp, 'synthesis'))
+@
+
+%
+\section{Subsetting of an INSPEcT object and visualization of pre-modeling rates and concentrations}
+
+It is possible to subset the \Rpackage{INSPEcT} object and focus on a specific set of genes. For the sake of speeding up the downstream analysis, we are going to focus on the first 10 genes of the obtained \Rpackage{INSPEcT} object. We can now display the total and pre-mRNA concentrations together with the synthesis, degradation and processing pre-modeling rates they originated from using the \Rmethod{inHeatmap} method (Figure \ref{fig:pre_model_heatmap}).
+
+\begin{center}
+<<pre_model_heatmap, message=FALSE, fig.width=6, fig.height=4, fig.cap="Heatmap of the pre-model rates representing the concentrations of total mRNA and pre-mRNA and the rates of the mRNA life cycle", fig.align="center">>=
+mycerIds10 <- mycerIds[1:10]
+inHeatmap(mycerIds10, clustering=FALSE)
+@
+\end{center}
+
+%
+\section{Modeling of rates to determine transcriptional regulatory mechanism}
+
+Once a prior estimate is obtained for synthesis, processing and degradation rates over time for each gene, \Rpackage{INSPEcT} tests different models of transcriptional regulation to identify the most likely combination of rates explaining the observed changes in gene expression (\Rmethod{modelRates} method). To this purpose, a parametric function is fit to each rate over time, through minimization of residual sum of squares. Once the parametric functionalization for synthesis, degradation and processing rates are obtained, it is possible to test how those parametric functions recapitulate the experimental data they originated from after an additional minimization step. To identify the most likely mechanism of transcriptional regulation, \Rpackage{INSPEcT} tests the possibility that each rate is constant during the time course by building models that alternatively set as constant one, two or all the three rates. Due to the fact the the initial parameters for each rate function are initialized randomly, the \Rcode{seed} argument in \Rmethod{modelRates} can be set to obtain reproducible results. Following this modeling procedure, new rates are computed and they can be accessed through the \Rmethod{viewModelRates} method and visualized with the \Rmethod{inHeatmap} method (Figure \ref{fig:post_model_heatmap}).
+
+\begin{center}
+<<post_model_heatmap, message=TRUE, fig.width=6, fig.height=4, fig.cap="Heatmap of the modeled rates representing the concentrations of total mRNA and pre-mRNA and the rates of the mRNA life cycle", fig.align="center">>=
+nCores(mycerIds10) <- parallel::detectCores()
+mycerIds10 <- modelRates(mycerIds10, seed=1)
+head(viewModelRates(mycerIds10, 'synthesis'))
+inHeatmap(mycerIds10, type='model', clustering=FALSE)
+@
+\end{center}
+
+The \Rmethod{geneClass} method can be used to recapitulate the transcriptional regulatory mechanism assigned to each modeled gene. In particular, each gene is assigned to a class named after the set of varying rates, if any ("0" denotes a gene whose rates are constant over time, "a" denotes a gene whose synthesis changes over time, "b" denotes a gene whose degradation changes over time, "c" denotes a gene whose processing changes over time).
+
+<<gene_class, message=TRUE>>=
+geneClass(mycerIds10)
+@
+
+The \Rmethod{plotGene} method can be used to investigate profiles of mRNA concentrations and rates for a given gene. Estimated synthesis, degradation and processing rates, pre-mRNA and total mRNA concentrations are displayed with solid thin lines, while their variances are in dashed lines and the modeled rates and concentrations are in thick solid lines. This example shows a gene of class "ab", indicating that its levels are controlled by both synthesis and degradation. In this case, the variation of multiple rates determines opposite trends for total and pre-mRNA concentrations over time: despite a decrease in the synthesis rate over time, the levels of total mRNA increase mostly due to a decrease in the degradation rate (Figure \ref{fig:gene_plot}).
+
+\begin{center}
+<<gene_plot, message=TRUE, fig.width=10, fig.height=3, fig.cap="Pre-model and modeled concentrations and rates for a selected gene with standard deviation, where available", fig.align="center">>=
+plotGene(mycerIds10, 2, fix.yaxis=TRUE)
+@
+\end{center}
+
+For each model, the chi-squared statistic that measures the goodness of the fit is calculated. In order to evaluate how good the models are able to recapitulate the experimental data, the chi-squared test p-values of the model that better represents the transcriptional scenario for each gene can be visualized as a histogram (Figure \ref{fig:goodness_of_fit}). Eventually, models with a p-value of the chi-squared test higher than a selected threshold can be discarded.
+
+\begin{center}
+<<goodness_of_fit, message=TRUE, fig.width=3.5, fig.height=3.5, hold=TRUE, fig.cap="Histogram of the p-values from the goodness of fit test for selected models", fig.align="center">>=
+chisq <- chisqmodel(mycerIds10)
+hist(log10(chisq), main='', xlab='log10 chi-squared p-value')
+discard <- which(chisq>.05)
+featureNames(mycerIds10)[discard]
+mycerIds10new <- mycerIds10[-discard]
+@
+\end{center}
+
+%
+\section{Evaluation of performance via simulated data}
+
+\Rpackage{INSPEcT} provides functionality to build a synthetic dataset for which the transcriptional scenario is known for each gene. Simulated data can be used to evaluate the performance of \Rpackage{INSPEcT} in classifying each rate as constant or variable over time, and to estimate the number of time points and replicates necessary to achieve a given performance. The method \Rmethod{makeSimModel} takes as arguments an \Rpackage{INSPEcT} object and the number of genes that have to be sampled. The \Rpackage{INSPEcT} object is used to sample absolute values of the rates, fold changes, correlations between absolute values and fold changes and variance of the noise to be added to each feature. Optionally, the user can provide a new set of time points where the synthetic dataset will be sampled, and the ratio between the constant rates, the rates modeled with an impulse model and the rates modeled with a sigmoid function. By default the ratio is .5 constant, .3 impulse, .2 sigmoid.
+
+<<simulated_data_notrun, message=FALSE, eval=FALSE>>=
+simRates <- makeSimModel(mycerIds, 1000, newTpts=NULL, seed=1)
+@
+
+The \Rmethod{makeSimModel} method generates an object of class \Rclass{INSPEcT\_model} which can be used to generate an object of class \Rclass{INSPEcT} using the \Rmethod{makeSimDataset} method. The \Rmethod{makeSimDataset} method takes as arguments the timepoints at which the dataset has to be simulated and the number of replicates that need to be simulated. The object created by this method can be modeled via \Rmethod{modelRates} as any other object of class \Rclass{INSPEcT}.
+
+<<simulated_data_notrun2, message=FALSE, eval=FALSE>>=
+simData1rep <- makeSimDataset(simRates, tpts, 1, seed=1)
+nCores(simData1rep) <- parallel::detectCores()
+simData1rep <- modelRates(simData1rep, seed=1)
+newTpts <- c(0, 1/6, 1/3, 1/2, 1, 1.5, 2, 4, 8, 12, 16, 24)
+simData3rep <- makeSimDataset(simRates, newTpts, 3, seed=1)
+nCores(simData3rep) <- parallel::detectCores()
+simData3rep <- modelRates(simData3rep, seed=1)
+@
+
+It is possible to compare now the performance of the modeling, by comparing the \Robject{simRates} object, which contains the ground truth of rates, to the \Robject{simData1rep} or \Robject{simData3rep} objects, which contain the predictions made by \Rpackage{INSPEcT} on datasets that have been simulated with one replicate of 9 time points or three replicates of 12 time points. Modeled data have been previously computed and stored within the package for computational time reasons and are not evaluated directly within this vignette. The evaluation of the performance is done using a ROC curve analysis and measured with the area under the curve (AUC) (Figure \ref{fig:simulated_data_run}).
+
+\begin{center}
+<<simulated_data_run, message=FALSE, eval=TRUE, fig.width=10, fig.height=5, fig.cap="For each rate, INSPEcT classification performance is measured in terms of sensitivity and specificity using a ROC curve analysis (rocCurve method). False negatives (FN) represent cases where the rate is identified as constant while it was simulated as varying. False positives (FP) represent cases where INSPEcT identified a rate as varying while it was simulated as constant. On the contrary, true positives (TP) and negatives (TN) are cases of correct classification of varying and constant rates, respectively. Consequently, sensitivity and specificity are computed using increasing thresholds for the Brown's method used to combine multiple p-values derived from the log-likelihood ratio tests", fig.align="center">>=
+data('simRates', package='INSPEcT')
+data('simData1rep', package='INSPEcT')
+data('simData3rep', package='INSPEcT')
+par(mfrow=c(1,2))
+rocCurve(simRates, simData1rep); title("1 replicate - 9 time points", line=3)
+rocCurve(simRates, simData3rep); title("3 replicates - 12 time points", line=3)
+@
+\end{center}
+
+The method \Rmethod{rocThresholds} can be used to assess the sensitivity and specificity that is achieved thanks to the given thresholds for the chi-squared test and for the Brown's test. If thresholds are not provided, default values are used (Figure \ref{fig:simulated_data_run2}).
+
+\begin{center}
+<<simulated_data_run2, message=FALSE, eval=TRUE, fig.width=8, fig.height=4, fig.cap="Plot of the sensitivity (black curve) and specificity (red curve) that is achieved after performing the log-likelihood ratio and Brown's method for combining p-values with selected thresholds. Thresholds that can be set for chi-squared test to accept models that will undergo the log-likelihood ratio test and for Brown's p-value to assess variability of rates.">>=
+rocThresholds(simRates, simData3rep, bTsh=c(.01,.01,.05), cTsh=.1)
+@
+\end{center}
+
+%
+\section{Parameter settings}
+
+If desired, different parameters can be set for both the modeling and the testing part. Regarding the modeling part, we might want to exclude testing sigmoid functions (all evaluated smooth function will be impulse model functions, \Rcode{useSigmoidFun=FALSE} option), increase the number of different initializations that are performed for each gene (\Rcode{nInit} option), or increase the maximum number of steps in the rates optimization process (\Rcode{nIter} option). All these choices could increase the performance of the method, but also the needed computational time. Nevertheless, the use of sigmoid functions can reduce over-fitting problems and is highly recommended when the number of data points within the time-course is lower than 7. The impact of these options can be evaluated using a synthetic dataset. 
+<<params1, message=FALSE, eval=FALSE>>=
+modelingParams(mycerIds10)$useSigmoidFun <- FALSE
+modelingParams(mycerIds10)$nInit <- 20
+modelingParams(mycerIds10)$nIter <- 1000
+@
+
+Alternatively we might want to change the thresholds for chi-squared and log-likelihood ratio tests, or define the specific set of models to be compared with log-likelihood ratio test while assessing if a given rate is variable or not. In this example, we are changing the thresholds of both the chi-squared test and the Brown's method for combining p-values. Regarding the processing rates, only the models in which all rates are constant ("0") will be compared to the one in which only processing varies ("c") to assess the variability of the rates using log-likelihood ratio test.
+
+<<params2, message=FALSE, eval=FALSE>>=
+thresholds(mycerIds10)$chisquare <- .1
+thresholds(mycerIds10)$brown <- c(alpha=.01, beta=.01, gamma=.05)
+llrtests(mycerIds10)$processing <- list(c('0','c'))
+@
+
+To have a sense of all parameters that can be set, type:
+
+<<params3, message=FALSE, eval=FALSE>>=
+## modeling
+modelingParams(mycerIds10)
+## model selection and testing framework
+modelSelection(mycerIds10)
+thresholds(mycerIds10)
+llrtests(mycerIds10)
+@
+
+Enjoy!
+
+%
+\section{About this document}
+
+<<r>>=
+sessionInfo()
+@
+
+\end{document}
