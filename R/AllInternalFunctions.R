@@ -1089,12 +1089,6 @@
 	, testOnSmooth=TRUE, seed=NULL)
 {
 
-	chisq <- function(experiment, model, variance=NULL)
-	{
-		if( is.null(variance)) variance <- stats::var(experiment)
-		sum((experiment - model)^2/variance)
-	}
-
 	chisq.test.inspect <- function(D, df)
 		pchisq(D, df, lower.tail=TRUE)
 
@@ -1489,7 +1483,7 @@
 								, .impulseModelP=.impulseModelP
 								, .polynomialModelP=.polynomialModelP
 								)
-							, error=function(e) return(.emptyGene(e)))
+							, error=function(e) return(.emptyGene(e)$beta))
 						, gamma=if( intExMode ) { tryCatch(
 							.chooseModel(tpts=tpts
 								, log_shift=log_shift
@@ -1504,7 +1498,7 @@
 								, .sigmoidModelP=.sigmoidModelP
 								, .impulseModelP=.impulseModelP
 								, .polynomialModelP=.polynomialModelP
-								), error=function(e) return(.emptyGene(e)))
+								), error=function(e) return(.emptyGene(e)$gamma))
 							} else { NULL }
 						)
 				ratesToTest <- list('0'=constantRates
@@ -1828,6 +1822,12 @@
 
 .polynomialModelP <- .newPointer(.polynomialModel)
 
+chisq <- function(experiment, model, variance=NULL)
+{
+	if( is.null(variance) )  variance <- stats::var(experiment )
+	else if( variance==0 ) variance <- stats::var(experiment )
+	sum((experiment - model )^2/variance )
+}
 
 .chooseModel <- function(tpts, log_shift, experiment, variance=NULL, na.rm=TRUE
 	, sigmoid=TRUE, impulse=TRUE, polynomial=TRUE, nInit=10, nIter=500
@@ -1837,11 +1837,7 @@
 #### to the one that has the gratest pvalue in the chi squared test
 {
 
-	chisq <- function(experiment, model, variance=NULL)
-	{
-		if( is.null(variance) ) variance <- stats::var(experiment )
-		sum((experiment - model )^2/variance )
-	}
+
 
 	chisq.test.default <- function(experiment, model, variance=NULL, df)
 	{
@@ -1868,6 +1864,7 @@
 		initial_values <- runif( 1, min=min(values[1:3])
 			, max=max(values[1:3]))
 		intermediate_values <- values[peak]
+		if( intermediate_values==0 ) intermediate_values <- mean(values[seq(peak-1,peak+1)])
 		end_values <- runif( 1, min=min(values[(ntp-2):ntp])
 			, max=max(values[(ntp-2):ntp]))
 		time_of_first_response  <- tpts[peak-1]
@@ -1963,8 +1960,8 @@
 			, params=mean(experiment, na.rm=TRUE), pval=NA, df=1))
 	}
 	## 
-	if( length(experiment)==2 ) {
-		warning('.chooseModel: only one time point has a finite value. 
+	if( length(experiment)<=2 ) {
+		warning('.chooseModel: less than three time points have a finite value. 
 			Impossible evaluate a variable model.
 			Returning a constant model.')
 		return(list(type='constant', fun=.constantModelP
