@@ -113,8 +113,10 @@ setGeneric('plotGene', function(object, ix, fix.yaxis=FALSE)
 	standardGeneric('plotGene'))
 #' Heatmap that represent the fold changes of all the five features
 setGeneric('inHeatmap', function(object, type='pre-model'
-	, breaks=seq(-1,1,length.out=51), plot_matureRNA=FALSE
-	, absoluteExpression=TRUE, rowLabels=NULL, clustering=TRUE, clustIdx=3:5)
+	, breaks=seq(-1,1,length.out=51)
+	, palette=colorRampPalette(c("green", "black", "firebrick3"))
+	, plot_matureRNA=FALSE, absoluteExpression=TRUE
+	, rowLabels=NULL, clustering=TRUE, clustIdx=3:5)
 	standardGeneric('inHeatmap'))
 
 #############################

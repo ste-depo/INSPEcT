@@ -39,7 +39,71 @@ newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
 
 	speedyVar <- function(x) sum((x - mean.default(x))^2)/length(x[-1])
 
+	if( class(rpkms_total_exons)=='data.frame' ) 
+		rpkms_total_exons <- as.matrix(rpkms_total_exons)
+	if( class(rpkms_4su_exons)=='data.frame' ) 
+		rpkms_4su_exons <- as.matrix(rpkms_4su_exons)
+	if( class(rpkms_4su_exons)=='data.frame' ) 
+		rpkms_4su_exons <- as.matrix(rpkms_4su_exons)
+
+
 	## check the input arguments
+	if( !is.numeric(tpts) )
+		stop('newINSPEcT: tpts must be a numeric')
+	if( !is.numeric(labeling_time) )
+		stop('newINSPEcT: labeling_time must be a numeric')
+
+	if( class(rpkms_4su_exons)=='data.frame' ) 
+		rpkms_4su_exons <- as.matrix(rpkms_4su_exons)
+	if( !is.numeric(rpkms_4su_exons) )
+		stop('newINSPEcT: rpkms_4su_exons must be a numeric or a data.frame coercible to numeric')
+
+	if( class(rpkms_total_exons)=='data.frame' ) 
+		rpkms_total_exons <- as.matrix(rpkms_total_exons)
+	if( !is.numeric(rpkms_total_exons) )
+		stop('newINSPEcT: rpkms_total_exons must be a numeric or a data.frame coercible to numeric')
+
+	if( !is.null(rpkms_4su_introns) ) {
+		if( class(rpkms_4su_introns)=='data.frame' ) 
+			rpkms_4su_introns <- as.matrix(rpkms_4su_introns)
+		if( !is.numeric(rpkms_4su_introns) )
+			stop('newINSPEcT: rpkms_4su_introns must be a numeric or a data.frame coercible to numeric')		
+	}
+
+	if( !is.null(rpkms_total_introns) ) {
+		if( class(rpkms_total_introns)=='data.frame' ) 
+			rpkms_total_introns <- as.matrix(rpkms_total_introns)
+		if( !is.numeric(rpkms_total_introns) )
+			stop('newINSPEcT: rpkms_total_introns must be a numeric or a data.frame coercible to numeric')		
+	}
+
+	if( !(is.numeric(totalSF) || is.null(totalSF)) )
+		stop('newINSPEcT: totalSF must be either numeric or NULL')
+	if( !(is.numeric(labeledSF) || is.null(labeledSF)) )
+		stop('newINSPEcT: labeledSF must be either numeric or NULL')
+
+	if( !is.null(totalSF) )
+		if( length(totalSF) != length(unique(tpts)) )
+			stop('newINSPEcT: length of totalSF must equal to length(unique(tpts))')
+	if( !is.null(labeledSF) )
+		if( length(labeledSF) != length(unique(tpts)) )
+			stop('newINSPEcT: length of labeledSF must equal to length(unique(tpts))')
+
+	if( !is.logical(parallelize) )
+		stop('newINSPEcT: parallelize must be a logical.')
+	if( !is.logical(totalMedianNorm) )
+		stop('newINSPEcT: totalMedianNorm must be a logical.')
+	if( !is.logical(labeledMedianNorm) )
+		stop('newINSPEcT: labeledMedianNorm must be a logical.')
+	if( !is.logical(totalQuantileNorm) )
+		stop('newINSPEcT: totalQuantileNorm must be a logical.')
+	if( !is.logical(labeledQuantileNorm) )
+		stop('newINSPEcT: labeledQuantileNorm must be a logical.')
+	if( !is.logical(simulatedData) )
+		stop('newINSPEcT: simulatedData must be a logical.')
+	if( !is.logical(degDuringPulse) )
+		stop('newINSPEcT: degDuringPulse must be a logical.')
+
 	if( length(tpts) != ncol(rpkms_4su_exons) )
 		stop('newINSPEcT: length of tpts is not equal to rpkms matrices coulumns number')
 
@@ -326,6 +390,7 @@ newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
 				, beta=rbind(outIntEx$rates$beta, outOnlyEx$rates$beta)
 				, gamma=rbind(outIntEx$rates$gamma, outOnlyEx$rates$gamma)
 				)
+			, ratesEstimPrec=rbind(outIntEx$ratesEstimPrec, outOnlyEx$ratesEstimPrec)
 			, geneNames=c(outIntEx$geneNames, outOnlyEx$geneNames)
 			## from here both lists have the same information, pick it up from the first one
 			, tpts=outIntEx$tpts
@@ -431,6 +496,7 @@ newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
 	object@labeledSF <- out$labeledSF
 	object@tL <- out$tL	
 	object@ratesFirstGuess <- ratesFirstGuess
+	object@precision <- out$ratesEstimPrec
 
 	if( is.null(rpkms_4su_introns) | is.null(rpkms_total_introns) )
 		object@model@simple <- TRUE

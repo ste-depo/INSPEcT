@@ -147,7 +147,7 @@ Once a prior estimate is obtained for synthesis, processing and degradation rate
 
 \begin{center}
 <<post_model_heatmap, message=TRUE, fig.width=6, fig.height=4, fig.cap="Heatmap of the modeled rates representing the concentrations of total mRNA and pre-mRNA and the rates of the mRNA life cycle", fig.align="center">>=
-nCores(mycerIds10) <- switch(Sys.info()['sysname'], 'Windows'=1, parallel::detectCores())
+nCores(mycerIds10) <- parallel::detectCores()
 mycerIds10 <- modelRates(mycerIds10, seed=1)
 head(viewModelRates(mycerIds10, 'synthesis'))
 inHeatmap(mycerIds10, type='model', clustering=FALSE)

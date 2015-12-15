@@ -7,6 +7,7 @@
 #' @param object An object of class INSPEcT
 #' @param type Eiher "pre-model" or "model" to switch between pre-modeled or modeled features
 #' @param breaks A vector of breaks for the heatmap
+#' @param palette A color generating function, output of colorRampPalette
 #' @param plot_matureRNA A logical. If set to TRUE, matrue-mRNA is displayed instead of 
 #'   total-mRNA (default: FALSE)
 #' @param absoluteExpression A logical. If set to FALSE, the plot representing the 
@@ -28,8 +29,10 @@
 #' inHeatmap(mycerIds10, 'pre-model')
 #' inHeatmap(mycerIds10, 'model')
 setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
-	, breaks=seq(-1,1,length.out=51), plot_matureRNA=FALSE
-	, absoluteExpression=TRUE, rowLabels=NULL, clustering=TRUE, clustIdx=3:5) 
+	, breaks=seq(-1,1,length.out=51)
+	, palette=colorRampPalette(c("green", "black", "firebrick3"))
+	, plot_matureRNA=FALSE, absoluteExpression=TRUE
+	, rowLabels=NULL, clustering=TRUE, clustIdx=3:5) 
 {
 	if( !is.character(type) )
 		stop('inHeatmap: type must be character')
@@ -47,6 +50,8 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 		stop('inHeatmap: absoluteExpression must be logical')
 	if( !is.numeric(breaks) )
 		stop('inHeatmap: breaks must be a numeric')
+	if( class(palette) != 'function' )
+		stop('inHeatmap: palette must be a (color generating) function')
 	if( !is.logical(clustering) )
 		stop('inHeatmap: clustering must be logical')
 	if( !is.numeric(clustIdx) )
@@ -95,20 +100,6 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 	eLevel[eLevel > max(eRange)] <- max(eRange)
 	eLevel[eLevel < min(eRange)] <- min(eRange)
 
-	## set the break boundaries into the data
-	# min
-	total_l2fc[total_l2fc<min(breaks)] <- min(breaks)
-	preMRNA_l2fc[preMRNA_l2fc<min(breaks)] <- min(breaks)
-	alpha_l2fc[alpha_l2fc<min(breaks)] <- min(breaks)
-	beta_l2fc[beta_l2fc<min(breaks)] <- min(breaks)
-	gamma_l2fc[gamma_l2fc<min(breaks)] <- min(breaks)
-	# max
-	total_l2fc[total_l2fc>max(breaks)] <- max(breaks)
-	preMRNA_l2fc[preMRNA_l2fc>max(breaks)] <- max(breaks)
-	alpha_l2fc[alpha_l2fc>max(breaks)] <- max(breaks)
-	beta_l2fc[beta_l2fc>max(breaks)] <- max(breaks)
-	gamma_l2fc[gamma_l2fc>max(breaks)] <- max(breaks)
-
 	clustMat <- do.call('cbind', list(
 		sapply(1:ncol(total_l2fc), function(x) eLevel)
 		, total_l2fc
@@ -138,6 +129,20 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 		geneOrder <- seq(1, nrow(clustMat))
 	}
 
+	## set the break boundaries into the data
+	# min
+	total_l2fc[total_l2fc<min(breaks)] <- min(breaks)
+	preMRNA_l2fc[preMRNA_l2fc<min(breaks)] <- min(breaks)
+	alpha_l2fc[alpha_l2fc<min(breaks)] <- min(breaks)
+	beta_l2fc[beta_l2fc<min(breaks)] <- min(breaks)
+	gamma_l2fc[gamma_l2fc<min(breaks)] <- min(breaks)
+	# max
+	total_l2fc[total_l2fc>max(breaks)] <- max(breaks)
+	preMRNA_l2fc[preMRNA_l2fc>max(breaks)] <- max(breaks)
+	alpha_l2fc[alpha_l2fc>max(breaks)] <- max(breaks)
+	beta_l2fc[beta_l2fc>max(breaks)] <- max(breaks)
+	gamma_l2fc[gamma_l2fc>max(breaks)] <- max(breaks)
+
 	## the plotting function image will display it in reverse order
 	## (bottom-up)
 	geneOrder <- rev(geneOrder)
@@ -157,9 +162,9 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 	## legend
 	par(mar=c(2,1,.5,1))
 	##
-	cols <- colorRampPalette(c("green", "black", "firebrick3"))(nBreaks-1)
+	cols <- palette(nBreaks-1)
 	image(as.matrix(breaks), col=cols, xaxt='n', yaxt='n')
-	axis(1, at=c(0,.5,1), labels=c(min(breaks),min(breaks)/2+max(breaks)/2,max(breaks)))
+	axis(1, at=c(0,.5,1), labels=signif(c(min(breaks),min(breaks)/2+max(breaks)/2,max(breaks)),2))
 
 	## data
 	par(mar=c(4,1,2,1))
@@ -182,24 +187,19 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 	atX <- seq(0, 1, length.out=length(colLabels))
 	atY <- seq(0, 1, length.out=length(rowLabels))
 
-	cols <- colorRampPalette(c("green", "black", "firebrick3"))(nBreaks-1)
 	image(t(total_l2fc[geneOrder,,drop=FALSE]), col=cols, breaks=breaks
 		, xaxt='n', yaxt='n', main=totalMain, xlab='time')
 	axis(1, at=atX, labels=colLabels, las=3)
-	# cols <- colorRampPalette(c("green", "black", "firebrick3"))(nBreaks-1)
 	image(t(preMRNA_l2fc[geneOrder,,drop=FALSE]), col=cols, breaks=breaks
 		, xaxt='n', yaxt='n', main='pre-mRNA', xlab='time')
 	axis(1, at=atX, labels=colLabels, las=3)
-	# cols <- colorRampPalette(c("green", "black", "firebrick3"))(nBreaks-1)
 	image(t(alpha_l2fc[geneOrder,,drop=FALSE]), col=cols, breaks=breaks
 		, xaxt='n', yaxt='n', main='synthesis', xlab='time')
 	axis(1, at=atX, labels=colLabels, las=3)
 	axis(2, at=atY, labels=rowLabels, las=1, tick=FALSE, line=1)
-	# cols <- colorRampPalette(c("green", "black", "firebrick3"))(nBreaks-1)
 	image(t(beta_l2fc[geneOrder,,drop=FALSE]), col=cols, breaks=breaks
 		, xaxt='n', yaxt='n', main='degradation', xlab='time')
 	axis(1, at=atX, labels=colLabels, las=3)
-	# cols <- colorRampPalette(c("green", "black", "firebrick3"))(nBreaks-1)
 	image(t(gamma_l2fc[geneOrder,,drop=FALSE]), col=cols, breaks=breaks
 		, xaxt='n', yaxt='n', main='processing', xlab='time')
 	axis(1, at=atX, labels=colLabels, las=3)
