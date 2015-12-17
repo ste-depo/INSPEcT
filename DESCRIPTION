@@ -12,7 +12,7 @@ Description: INSPEcT (INference of Synthesis, Processing and
         rates that determines changes in mature mRNA levels.
 License: GPL-2
 Depends: R (>= 3.2), methods, Biobase, GenomicFeatures, GenomicRanges,
-        IRanges
+        IRanges, BiocGenerics
 Imports: pROC, deSolve, rootSolve, compiler, BiocParallel,
         preprocessCore
 Suggests: BiocStyle, knitr, TxDb.Mmusculus.UCSC.mm9.knownGene

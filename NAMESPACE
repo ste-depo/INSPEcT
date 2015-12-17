@@ -33,8 +33,10 @@ importFrom("GenomicRanges",
     start,
     end,
     strand,
-    unlist,
     width
+    )
+importFrom("BiocGenerics", 
+    unlist
     )
 export(
     "newINSPEcT",
@@ -42,7 +44,6 @@ export(
 )
 exportMethods(
     "[",
-    "AIC",
     "chisqmodel",
     "chisqtest",
     "combine",

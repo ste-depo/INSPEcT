@@ -58,7 +58,7 @@ setMethod('[', 'INSPEcT', function(x, i, j) {
 				x@tpts <- x@tpts[j]
 				x@labeledSF <- x@labeledSF[j]
 				x@totalSF <- x@totalSF[j]
-				ix <- pData(x@ratesFirstGuess)$time %in% x@tpts[j]
+				ix <- pData(x@ratesFirstGuess)$time %in% x@tpts
 				x@ratesFirstGuess <- x@ratesFirstGuess[,ix]
 			}
 		}
