@@ -217,59 +217,62 @@
 				warning('When introns of labelled and total fraction are provided normalization of 
 					labelled fraction is computed internally. "labeledMedianNorm" argument is ignored.')
 
-			if( !is.null(labeledSF) )
+			if( !is.null(labeledSF) ){
 				warning('When introns of labelled and total fraction are provided normalization of 
-					labelled fraction is computed internally. "labeledSF" argument is ignored.')
+					labelled fraction could be computed internally.')
+				labeledSF_prior <- labeledSF
+			} else{				
 
-			message('Calculating scaling factor between total and 4su libraries...')
+				message('Calculating scaling factor between total and 4su libraries...')
 
-			#########################
-			##### local functions ######
-			########################
-			fLint <- function(Lexo,gamma,tL) Lexo/(tL*gamma)*(1-exp(-gamma*tL))
-				# given the number of labeled molecules, gamma and tL gives back the 
-				# number of processed molecules
-			fGamma <- function(Lint, Lexo, tL, maxGamma=1e3) {
-				# given the number of labeled molecules and the number of processed
-				# molecules gives back the processing rate. It's an inverse function,
-				# therefore, the precision (step of the interval evaluated) and the
-				# max value where gamma is possibly evaluated should be provided
-				if( is.na(Lint) | is.na(Lexo) ) return(NA)
-				if( Lint >= Lexo ) return(0)
-				if( Lint == 0 ) return(Inf)
-				errorfun <- function(gamma, Lexo, Lint, tL ) 
-					(Lint-fLint(Lexo, gamma, tL))^2
-				optimize(errorfun, c(0,maxGamma), Lexo=Lexo, Lint=Lint
-					, tL=tL)$minimum
+				#########################
+				##### local functions ######
+				########################
+				fLint <- function(Lexo,gamma,tL) Lexo/(tL*gamma)*(1-exp(-gamma*tL))
+					# given the number of labeled molecules, gamma and tL gives back the 
+					# number of processed molecules
+				fGamma <- function(Lint, Lexo, tL, maxGamma=1e3) {
+					# given the number of labeled molecules and the number of processed
+					# molecules gives back the processing rate. It's an inverse function,
+					# therefore, the precision (step of the interval evaluated) and the
+					# max value where gamma is possibly evaluated should be provided
+					if( is.na(Lint) | is.na(Lexo) ) return(NA)
+					if( Lint >= Lexo ) return(0)
+					if( Lint == 0 ) return(Inf)
+					errorfun <- function(gamma, Lexo, Lint, tL ) 
+						(Lint-fLint(Lexo, gamma, tL))^2
+					optimize(errorfun, c(0,maxGamma), Lexo=Lexo, Lint=Lint
+						, tL=tL)$minimum
+				}
+				# calculate the factor which bring the median of the residuals between
+				# the modeled preMRNA levels and the measured to zero
+				sq.median.resids <- function(sf, P, dP, alpha, gamma) 
+					sapply(sf, function(i) {
+						t1 <- dP + gamma*P
+						t2 <- i*alpha
+						idx <- is.finite(t1) & is.finite(t2) & t1 > 0 & t2 > 0
+						resids <- t1[idx] - t2[idx]
+						stats::median(resids , na.rm=TRUE)^2
+					})
+
+				##################
+				#### scale data ###
+				##################
+				# preMRNA derivative as splines 
+				# (force the first time point to have derivative zero )
+				# estimate of alpha and gamma from 4sU data
+
+				gammaTC <- sapply(
+					1:length(tpts), function(j) 
+						unlist(applyfun(1:nrow(Lint), 
+							function(i, Lint, Lexo, tL) fGamma(Lint[i,j] , Lexo[i,j] , tL)
+							, Lint=Lint, Lexo=Lexo, tL=tL ))
+						) 
+				# scale factor 
+				labeledSF_prior <- sapply(1:ncol(Tint), function(j)
+					optimize(sq.median.resids, c(0.01,100), P=Tint[,j], dP=TintDer[,j], 
+						alpha=Lexo[,j]/tL, gamma=gammaTC[,j] )$minimum)
 			}
-			# calculate the factor which bring the median of the residuals between
-			# the modeled preMRNA levels and the measured to zero
-			sq.median.resids <- function(sf, P, dP, alpha, gamma) 
-				sapply(sf, function(i) {
-					t1 <- dP + gamma*P
-					t2 <- i*alpha
-					idx <- is.finite(t1) & is.finite(t2) & t1 > 0 & t2 > 0
-					resids <- t1[idx] - t2[idx]
-					stats::median(resids , na.rm=TRUE)^2
-				})
-
-			##################
-			#### scale data ###
-			##################
-			# preMRNA derivative as splines 
-			# (force the first time point to have derivative zero )
-			# estimate of alpha and gamma from 4sU data
-
-			gammaTC <- sapply(
-				1:length(tpts), function(j) 
-					unlist(applyfun(1:nrow(Lint), 
-						function(i, Lint, Lexo, tL) fGamma(Lint[i,j] , Lexo[i,j] , tL)
-						, Lint=Lint, Lexo=Lexo, tL=tL ))
-					) 
-			# scale factor 
-			labeledSF_prior <- sapply(1:ncol(Tint), function(j)
-				optimize(sq.median.resids, c(0.01,100), P=Tint[,j], dP=TintDer[,j], 
-					alpha=Lexo[,j]/tL, gamma=gammaTC[,j] )$minimum)
 
 			if( degDuringPulse ) {
 
@@ -851,10 +854,21 @@
 		# assume that no degradation occur during pulse
 		} else {
 
-			inferKBetaFromIntegral <- function(tpts, alpha, totalRNA, maxBeta=150) 
+			inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=75) 
+			####### accurate function for estimating the degradation rates
+			####### using the solution of the differential equation system under 
+			####### the condtion that degradation rate is constant between two 
+			####### consecutive time points - more stable that using derivatives
+			####### estimates
 			{
-				solveFun <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1 ) 
+				solveBeta <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1, 
+					P_t0, P_t1 ) 
 				{
+					lineFromTwoPoints <- function(x , y ) {
+						m <- (y[1] - y[2] ) / (x[1] - x[2] )
+						q <- y[1] - m*x[1]
+						list(coefficients = c(q = q , m = m ) )
+					}	
 					intsol <- function(t , m , q , beta )
 						(m*t*beta + q*beta - m ) * exp(beta*t ) / (beta^2 )
 					defintsol <- function(t0, t1, m, q, beta ) 
@@ -863,37 +877,39 @@
 					mAlpha <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
 					qAlpha <- alpha_t0 - mAlpha * t0
 					#
-					X_t1*exp(beta*t1 ) - X_t0*exp(beta*t0 ) - 
-						defintsol(t0, t1, mAlpha, qAlpha, beta )
+					mPreMRNA <- (P_t0 - P_t1 ) / (t0 - t1 )
+					qPreMRNA <- P_t0 - mPreMRNA * t0
+					#
+					X_t1 * exp(beta*t1 ) - X_t0 * exp(beta*t0 ) - 
+						defintsol(t0, t1, mAlpha, qAlpha, beta ) - 
+						beta * defintsol(t0, t1, mPreMRNA, qPreMRNA, beta )
 				}
 				maxBetas <- seq(5, maxBeta, by=5)
 				# applyfun <- if( parallel ) bplapply else lapply
-				lapply(2:length(tpts), function(j) {
-					unlist(applyfun(1:nrow(alpha),
-						function(i) {
-							k <- 1
-							solutionFound <- FALSE
-							while((!solutionFound) & k <= length(maxBetas)) {
-								try({
-									solution <- uniroot(solveFun
-										, c(1e-5, maxBetas[k])
-										, t0 = tpts[j-1]
-										, t1 = tpts[j]
-										, alpha_t0 = alpha[i,j-1]
-										, alpha_t1 = alpha[i,j]
-										, X_t0 = totalRNA[i,j-1]
-										, X_t1 = totalRNA[i,j]
-										)#$root
-									solutionFound = TRUE
-									}, silent=TRUE)
-								k <- k + 1
-							}
-							if( solutionFound ) 
-								return(solution) 
-							else 
-								return(list(root=NA, estim.prec=NA))
-						}))
-					})
+				sapply(2:length(tpts), function(j) {
+					unlist(applyfun(1:nrow(total), function(i) {
+						k <- 1
+						solutionFound <- FALSE
+						while((!solutionFound) & k <= length(maxBetas)) {
+							try({
+								solution <- uniroot(solveBeta
+									, c(1e-5, maxBetas[k])
+									, t0 = tpts[j-1]
+									, t1 = tpts[j]
+									, alpha_t0 = alpha[i,j-1]
+									, alpha_t1 = alpha[i,j]
+									, X_t0 = total[i,j-1]
+									, X_t1 = total[i,j]
+									, P_t0 = preMRNA[i,j-1]
+									, P_t1 = preMRNA[i,j]
+									)
+								solutionFound = TRUE
+								}, silent=TRUE)
+							k <- k + 1
+						}
+						if( solutionFound ) return(solution) else return(list(root=NA, estim.prec=NA))
+					}))
+				})
 			}
 
 			# calculate alpha and recalculate the variance
@@ -914,7 +930,7 @@
 			betaT0 <- ( alphaTC[,1] - TexoDer[,1] ) / (Texo[,1] - Tint[,1] )
 			betaT0[betaT0 < 0 | !is.finite(betaT0)] <- NA
 			if( length(tpts)>1 ) {
-				betaOut <- inferKBetaFromIntegral(tpts, alphaTC, Texo)
+				betaOut <- inferKBetaFromIntegralWithPre(tpts, alphaTC, Texo, Tint)
 				betaTC <- cbind(betaT0, 
 					sapply(betaOut, function(x) x[names(x)=='root'])
 					)
