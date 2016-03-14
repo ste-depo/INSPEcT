@@ -6,7 +6,7 @@
 \usage{
 newINSPEcT(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
   rpkms_4su_introns = NULL, rpkms_total_introns = NULL,
-  parallelize = TRUE, totalMedianNorm = TRUE, labeledMedianNorm = FALSE,
+  BPPARAM = bpparam(), totalMedianNorm = TRUE, labeledMedianNorm = FALSE,
   totalSF = NULL, labeledSF = NULL, totalQuantileNorm = FALSE,
   labeledQuantileNorm = FALSE, simulatedData = FALSE,
   degDuringPulse = FALSE)
@@ -24,7 +24,7 @@ newINSPEcT(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
 
 \item{rpkms_total_introns}{A matrix containing expression levels of total introns}
 
-\item{parallelize}{A logical, if set to TRUE parallelizes the calculation of rates}
+\item{BPPARAM}{Configuration for BiocParallel parallelization. By default is set to bpparam()}
 
 \item{totalMedianNorm}{A logical to perform median normalization over total RNA exons rpkms, it will apply also on introns}
 

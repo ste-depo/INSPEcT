@@ -9,9 +9,10 @@
 #' user by modyging the parameters via \code{\link{modelingParams}}
 #' @param object An object of class INSPEcT
 #' @param seed A numeric, indicatindg the seed to be set for reproducible results
-#' @param nCores Either NULL or numeric. If numeric indicates the number of cores to be
-#' used for parallelization (if nCores=1 doesn't parallelize). If NULL takes the information
-#' from the object (see \code{\link{modelingParams}})
+## #' @param nCores Either NULL or numeric. If numeric indicates the number of cores to be
+## #' used for parallelization (if nCores=1 doesn't parallelize). If NULL takes the information
+## #' from the object (see \code{\link{modelingParams}})
+#' @param BPPARAM Parallelization parameters for bplapply. By default bpparam()
 #' @param verbose Either NULL or logical. If logical indicates whether to output some text
 #' during computation or not, if NULL  it takes the information from the object
 #' (see \code{\link{modelingParams}}) (Default: NULL)
@@ -52,15 +53,17 @@
 #' chunks <- lapply(split(mycerIds, splitIdx), modelRates)
 #' mycerIdsModeled <- do.call('combine', chunks)
 #' }
-setMethod('modelRates', 'INSPEcT', function(object, seed=NULL, 
-		nCores=NULL, verbose=NULL) {
+setMethod('modelRates', 'INSPEcT', function(object, seed=NULL
+		# , nCores=NULL
+		, BPPARAM=bpparam()
+		, verbose=NULL) {
 
 	if( length(object@model@ratesSpecs) > 0 )
 		stop('Remove the model before running the model again. (See "?removeModel")')
 	if( !is.null(seed) && !is.numeric(seed) )
 		stop('Seed argument must be either NULL or numeric.')
-	if( !is.null(nCores) && !is.numeric(nCores) )
-		stop('nCores argument must be either NULL or numeric.')
+	# if( !is.null(nCores) && !is.numeric(nCores) )
+	# 	stop('nCores argument must be either NULL or numeric.')
 	if( !is.null(verbose) && !is.logical(verbose) )
 		stop('verbose argument must be either NULL or logical.')
 	tpts <- object@tpts
@@ -81,7 +84,8 @@ setMethod('modelRates', 'INSPEcT', function(object, seed=NULL,
 		, nInit=object@params$nInit
 		, nIter=object@params$nIter
 		, na.rm=object@params$na.rm
-		, nCores=if(is.null(nCores)) object@params$nCores else nCores
+		, BPPARAM=BPPARAM
+		# , nCores=if(is.null(nCores)) object@params$nCores else nCores
 		, verbose=if(is.null(verbose)) object@params$verbose else verbose
 		, estimateRatesWith=object@params$estimateRatesWith
 		, sigmoidDegradation=object@params$useSigmoidFun

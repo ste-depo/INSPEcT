@@ -6,9 +6,9 @@
 \alias{modelRates,INSPEcT-method}
 \title{Launch the modeling process}
 \usage{
-modelRates(object, seed = NULL, nCores = NULL, verbose = NULL)
+modelRates(object, seed = NULL, BPPARAM = bpparam(), verbose = NULL)
 
-\S4method{modelRates}{INSPEcT}(object, seed = NULL, nCores = NULL,
+\S4method{modelRates}{INSPEcT}(object, seed = NULL, BPPARAM = bpparam(),
   verbose = NULL)
 }
 \arguments{
@@ -16,9 +16,7 @@ modelRates(object, seed = NULL, nCores = NULL, verbose = NULL)
 
 \item{seed}{A numeric, indicatindg the seed to be set for reproducible results}
 
-\item{nCores}{Either NULL or numeric. If numeric indicates the number of cores to be
-used for parallelization (if nCores=1 doesn't parallelize). If NULL takes the information
-from the object (see \code{\link{modelingParams}})}
+\item{BPPARAM}{Parallelization parameters for bplapply. By default bpparam()}
 
 \item{verbose}{Either NULL or logical. If logical indicates whether to output some text
 during computation or not, if NULL  it takes the information from the object

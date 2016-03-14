@@ -1,23 +1,38 @@
 Package: INSPEcT
 Type: Package
 Title: Analysis of 4sU-seq and RNA-seq time-course data
-Version: 1.1.1
+Version: 1.1.2
 Date: 2015-12-15
 Author: Stefano de Pretis
 Maintainer: Stefano de Pretis <ste.depo@gmail.com>
 Description: INSPEcT (INference of Synthesis, Processing and
-        dEgradation rates in Time-Course experiments) analyses 4sU-seq
-        and RNA-seq time-course data in order to evaluate synthesis,
-        processing and degradation rates and asses via modeling the
-        rates that determines changes in mature mRNA levels.
+    dEgradation rates in Time-Course experiments) analyses 4sU-seq
+    and RNA-seq time-course data in order to evaluate synthesis,
+    processing and degradation rates and asses via modeling the
+    rates that determines changes in mature mRNA levels.
 License: GPL-2
-Depends: R (>= 3.2), methods, Biobase, GenomicFeatures, GenomicRanges,
-        IRanges, BiocGenerics
-Imports: pROC, deSolve, rootSolve, compiler, BiocParallel,
-        preprocessCore
-Suggests: BiocStyle, knitr, TxDb.Mmusculus.UCSC.mm9.knownGene
+Depends:
+    R (>= 3.2),
+    methods,
+    Biobase,
+    GenomicFeatures,
+    GenomicRanges,
+    IRanges,
+    BiocGenerics,
+    BiocParallel
+Imports:
+    pROC,
+    deSolve,
+    rootSolve,
+    compiler,
+    preprocessCore
+Suggests:
+    BiocStyle,
+    knitr,
+    TxDb.Mmusculus.UCSC.mm9.knownGene
 SystemRequirements: python (>= 2.5), HTSeq
 VignetteBuilder: knitr
 biocViews: Sequencing, RNASeq, GeneRegulation, TimeCourse,
-        SystemsBiology
+    SystemsBiology
 NeedsCompilation: no
+RoxygenNote: 5.0.1

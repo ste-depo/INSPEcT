@@ -125,8 +125,8 @@ setClass('INSPEcT_model',
 #'	\code{\link{modelingParams}} \cr
 #'	\code{\link{modelRates}} \cr
 #'	\code{\link{modelSelection}} \cr
-#'	\code{\link{nCores<-}} \cr
-#'	\code{\link{nCores}} \cr
+## #'	\code{\link{nCores<-}} \cr
+## #'	\code{\link{nCores}} \cr
 #'	\code{\link{nGenes}} \cr
 #'	\code{\link{nTpts}} \cr
 #'	\code{\link{plotGene}} \cr
@@ -156,7 +156,7 @@ setClass('INSPEcT',
 			nInit=10
 			, nIter=300
 			, na.rm=TRUE
-			, nCores=2L
+			# , nCores=2L
 			, verbose=TRUE
 			, estimateRatesWith=c('int', 'der')[1]
 			, useSigmoidFun=TRUE

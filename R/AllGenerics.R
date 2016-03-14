@@ -82,12 +82,12 @@ setGeneric('getModel', function(object)
 #' @rdname getModel
 setGeneric('getModel<-', function(object, value) 
 	standardGeneric('getModel<-'))
-#' Get and set number of cores to be used for the modeling
-setGeneric('nCores', function(object, ...) 
-	standardGeneric('nCores'))
-#' @rdname nCores
-setGeneric('nCores<-', function(object, value) 
-	standardGeneric('nCores<-'))
+# #' Get and set number of cores to be used for the modeling
+# setGeneric('nCores', function(object, ...) 
+# 	standardGeneric('nCores'))
+# #' @rdname nCores
+# setGeneric('nCores<-', function(object, value) 
+# 	standardGeneric('nCores<-'))
 #' A nice plot to see scaling factors used for RNA-seq and 4sU-seq libraries
 setGeneric('sfPlot', function(object) 
 	standardGeneric('sfPlot'))
@@ -99,7 +99,7 @@ setGeneric('ratesFirstGuessVar', function(object, feature)
 	standardGeneric('ratesFirstGuessVar'))
 #' @title Launch the modeling process
 #' @description Launch the modeling process with parameters set with \code{\link{modelingParams}}
-setGeneric('modelRates', function(object, seed=NULL, nCores=NULL, verbose=NULL) 
+setGeneric('modelRates', function(object, seed=NULL, BPPARAM=bpparam(), verbose=NULL) 
 	standardGeneric('modelRates'))
 #' Build the synthetic rates shaped on a dataset
 setGeneric('makeSimModel', function(object, nGenes, newTpts=NULL

@@ -15,7 +15,8 @@
 #' @param rpkms_total_exons A matrix containing expression levels of total exons
 #' @param rpkms_4su_introns A matrix containing expression levels of 4su introns
 #' @param rpkms_total_introns A matrix containing expression levels of total introns
-#' @param parallelize A logical, if set to TRUE parallelizes the calculation of rates
+## #' @param parallelize A logical, if set to TRUE parallelizes the calculation of rates
+#' @param BPPARAM Configuration for BiocParallel parallelization. By default is set to bpparam()
 #' @param totalMedianNorm A logical to perform median normalization over total RNA exons rpkms, it will apply also on introns
 #' @param labeledMedianNorm A logical to perform median normalization over 4sU RNA exons rpkms, it will apply also on introns
 #' @param totalSF A vector storing user defined normalization scale over Total RNA exons and introns rpkms
@@ -32,7 +33,7 @@
 #' mycerIds <- newINSPEcT(tpts, tL, rpkms$rpkms_4su_exons, rpkms$rpkms_total_exons, 
 #'	rpkms$rpkms_4su_introns, rpkms$rpkms_total_introns)
 newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons, 
-	rpkms_4su_introns=NULL, rpkms_total_introns=NULL, parallelize=TRUE,
+	rpkms_4su_introns=NULL, rpkms_total_introns=NULL, BPPARAM=bpparam(), # parallelize=TRUE,
 	totalMedianNorm=TRUE, labeledMedianNorm=FALSE, totalSF=NULL, labeledSF=NULL,
 	totalQuantileNorm=FALSE, labeledQuantileNorm=FALSE, simulatedData=FALSE, degDuringPulse=FALSE)
 {
@@ -89,8 +90,10 @@ newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
 		if( length(labeledSF) != length(unique(tpts)) )
 			stop('newINSPEcT: length of labeledSF must equal to length(unique(tpts))')
 
-	if( !is.logical(parallelize) )
-		stop('newINSPEcT: parallelize must be a logical.')
+	# if( !is.logical(parallelize) )
+	# 	stop('newINSPEcT: parallelize must be a logical.')
+	if( !class(BPPARAM) %in% sapply(registered(),class) )
+		stop('newINSPEcT: BPPARAM argument not registered.')
 	if( !is.logical(totalMedianNorm) )
 		stop('newINSPEcT: totalMedianNorm must be a logical.')
 	if( !is.logical(labeledMedianNorm) )
@@ -340,7 +343,7 @@ newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
 			)
 		## estimate the rates
 		outIntEx <- .getRatesAndConcentrationsFromRpkms(totRpkmsIntEx, labeledRpkmsIntEx, tpts
-			, tL=labeling_time, simulatedData=simulatedData, parallelize=parallelize
+			, tL=labeling_time, simulatedData=simulatedData, BPPARAM=BPPARAM
 			, totalMedianNorm=totalMedianNorm, labeledMedianNorm=labeledMedianNorm
 			, totalSF=totalSF, labeledSF=labeledSF, degDuringPulse=degDuringPulse)
 		## set the labeledSF and totalSF, they can be used by "only exons genes" (if present)
@@ -363,7 +366,7 @@ newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
 			)
 		## estimate the rates, eventually using "labeledSF" and "totalSF" calculated from "introns and exons genes"
 		outOnlyEx <- .getRatesAndConcentrationsFromRpkms(totRpkmsOnlyEx, labeledRpkmsOnlyEx, tpts
-			, tL=labeling_time, simulatedData=simulatedData, parallelize=parallelize
+			, tL=labeling_time, simulatedData=simulatedData, BPPARAM=BPPARAM
 			, totalMedianNorm=totalMedianNorm, labeledMedianNorm=labeledMedianNorm
 			, totalSF=totalSF, labeledSF=labeledSF, degDuringPulse=degDuringPulse)
 	}

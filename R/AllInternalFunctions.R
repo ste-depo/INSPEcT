@@ -13,7 +13,7 @@
 } 
 
 .getRatesAndConcentrationsFromRpkms <- function(totRpkms, labeledRpkms, tpts
-	, tL=NULL, degDuringPulse=FALSE, simulatedData=FALSE, parallelize=TRUE
+	, tL=NULL, degDuringPulse=FALSE, simulatedData=FALSE, BPPARAM=bpparam() #parallelize=TRUE
 	, totalMedianNorm=TRUE, labeledMedianNorm=FALSE, totalSF=NULL, labeledSF=NULL
 	, steadyStateMode=0) 
 {
@@ -26,20 +26,6 @@
 	## the control during the workflow will be based on the 
 	## negation of simulatedData (that is realData)
 	realData <- !simulatedData
-
-	## set parameters for the parallel mode
-	if( parallelize ) {
-		maxcores <- parallel::detectCores()
-		if( Sys.info()[['sysname']] == 'Windows' ) {
-			applyfun <- bplapply
-			options(MulticoreParam=SnowParam(workers=maxcores))
-			# print(bpparam())
-		} else {
-			applyfun <- parallel::mclapply
-			options(mc.cores=maxcores)
-			# print(bpparam())
-		}
-	} else applyfun <- lapply
 
 	## eventually set the 'simple' mode
 	if( is.null(totRpkms$introns) | is.null(labeledRpkms$introns) ) 
@@ -141,19 +127,6 @@
 				Tint_var <- apply( Tint , 1 , speedyVar )
 
 		}
-
-		## in case varince is still null (meaning that the user
-		## didn't provided one) calculate it now
-
-		# ## scale the 4sU according to the labelling time
-		# Lexo <- Lexo/tL
-		# if( !onlyExonsMode )
-		# 	Tint <- Tint/tL
-		# if( labeledVarince ) {
-		# 	Lexo_var <- Lexo_var/tL^2
-		# 	if( !onlyExonsMode )
-		# 		Lint_var <- Lint_var/tL^2
-		# }
 
 		#########################
 		#### scale 4sU rpkms ###
@@ -262,12 +235,12 @@
 				# (force the first time point to have derivative zero )
 				# estimate of alpha and gamma from 4sU data
 
-				gammaTC <- sapply(
+				gammaTC <- do.call('cbind',bplapply(
 					1:length(tpts), function(j) 
-						unlist(applyfun(1:nrow(Lint), 
+						sapply(1:nrow(Lint), 
 							function(i, Lint, Lexo, tL) fGamma(Lint[i,j] , Lexo[i,j] , tL)
-							, Lint=Lint, Lexo=Lexo, tL=tL ))
-						) 
+							, Lint=Lint, Lexo=Lexo, tL=tL)
+						,BPPARAM=BPPARAM))
 				# scale factor 
 				labeledSF_prior <- sapply(1:ncol(Tint), function(j)
 					optimize(sq.median.resids, c(0.01,100), P=Tint[,j], dP=TintDer[,j], 
@@ -354,80 +327,9 @@
 				labeledSf[ix] <- NA
 				labeledSF <- apply(labeledSf, 2, stats::median, na.rm=TRUE)
 
-				# Lexo <- t(t(Lexo)*labeledSF)
-				# if( labeledVarince )
-				# 	Lexo_var <- apply(t(t(Lexo_var)*labeledSF^2), 1, mean, na.rm=TRUE)
-				# else
-				# 	Lexo_var <- apply(Lexo, 1, speedyVar)
-
 			} else {
 
 				labeledSF <- labeledSF_prior
-
-				# if( labeledMedianNorm )
-				# 	warning('When introns of labelled and total fraction are provided normalization of 
-				# 		labelled fraction is computed internally. "labeledMedianNorm" argument is ignored.')
-
-				# if( !is.null(labeledSF) )
-				# 	warning('When introns of labelled and total fraction are provided normalization of 
-				# 		labelled fraction is computed internally. "labeledSF" argument is ignored.')
-
-				# message('Calculating scaling factor between total and 4su libraries...')
-
-				# #########################
-				# ##### local functions ######
-				# ########################
-				# fLint <- function(Lexo,gamma,tL) Lexo/(tL*gamma)*(1-exp(-gamma*tL))
-				# 	# given the number of labeled molecules, gamma and tL gives back the 
-				# 	# number of processed molecules
-				# fGamma <- function(Lint, Lexo, tL, maxGamma=1e3) {
-				# 	# given the number of labeled molecules and the number of processed
-				# 	# molecules gives back the processing rate. It's an inverse function,
-				# 	# therefore, the precision (step of the interval evaluated) and the
-				# 	# max value where gamma is possibly evaluated should be provided
-				# 	if( is.na(Lint) | is.na(Lexo) ) return(NA)
-				# 	if( Lint >= Lexo ) return(0)
-				# 	if( Lint == 0 ) return(Inf)
-				# 	errorfun <- function(gamma, Lexo, Lint, tL ) 
-				# 		(Lint-fLint(Lexo, gamma, tL))^2
-				# 	optimize(errorfun, c(0,maxGamma), Lexo=Lexo, Lint=Lint
-				# 		, tL=tL)$minimum
-				# }
-				# # calculate the factor which bring the median of the residuals between
-				# # the modeled preMRNA levels and the measured to zero
-				# sq.median.resids <- function(sf, P, dP, alpha, gamma) 
-				# 	sapply(sf, function(i) {
-				# 		t1 <- dP + gamma*P
-				# 		t2 <- i*alpha
-				# 		idx <- is.finite(t1) & is.finite(t2) & t1 > 0 & t2 > 0
-				# 		resids <- t1[idx] - t2[idx]
-				# 		stats::median(resids , na.rm=TRUE)^2
-				# 	})
-
-				# ##################
-				# #### scale data ###
-				# ##################
-				# # preMRNA derivative as splines 
-				# # (force the first time point to have derivative zero )
-				# # estimate of alpha and gamma from 4sU data
-
-				# gammaTC <- sapply(
-				# 	1:length(tpts), function(j) 
-				# 		unlist(applyfun(1:nrow(Lint), 
-				# 			function(i, Lint, Lexo, tL) fGamma(Lint[i,j] , Lexo[i,j] , tL)
-				# 			, Lint=Lint, Lexo=Lexo, tL=tL ))
-				# 		) 
-				# # scale factor 
-				# labeledSF <- sapply(1:ncol(Tint), function(j)
-				# 	optimize(sq.median.resids, c(0.01,100), P=Tint[,j], dP=TintDer[,j], 
-				# 		alpha=Lexo[,j]/tL, gamma=gammaTC[,j] )$minimum)
-				# scaling (only on Lexo, gammaTC is independent to scaling factor )
-
-				# Lexo <- t(t(Lexo)*labeledSF)
-				# if( labeledVarince )
-				# 	Lexo_var <- apply(t(t(Lexo_var)*labeledSF^2), 1, mean, na.rm=TRUE)
-				# else
-				# 	Lexo_var <- apply(Lexo, 1, speedyVar)
 
 			}
 
@@ -585,45 +487,6 @@
 			}
 			betaTC[ix] <- NA
 
-			# ## some rates are unbelivably large, respect to the assumption
-			# ## that no degradation occurs during the pulse
-			# ## based on an aprroximated assumtion of what is the expected
-			# ## ratio between the two we discard the ones that have a ratio 
-			# ## superior than the threshold
-			# approxExpectedRatio <- function(beta, tL) {
-			# 	beta*tL/(1-exp(-beta*tL))
-			# }
-			# ## ratio between median accounts for the conversion between the scaling factors
-			# ## of the noDegr mode and the Degr mode
-			# noDegrAlphaTC <- Lexo/tL
-			# noDegrAlphaTC <- noDegrAlphaTC*
-			# 	stats::median(alphaTC, na.rm=TRUE)/stats::median(noDegrAlphaTC, na.rm=TRUE)
-			# measuredRatio <- alphaTC/noDegrAlphaTC
-			# qt <- seq(.9,1,by=.001)
-			# res <- numeric(length(qt))
-			# for(i in 1:length(qt)) {
-			# 	q <- qt[i]
-			# 	tOut <- table(
-			# 		measuredRatio>
-			# 			approxExpectedRatio(
-			# 				quantile(betaTC, na.rm=TRUE, probs=q)
-			# 				, tL)
-			# 			)
-			# 	res[i] <- tOut['FALSE']/sum(tOut)
-			# }
-			# if( all(res>qt) ) {
-			# 	# plot(qt, res, type='l')
-			# 	# abline(0,1,col='red')
-			# 	warning('Too many rates are over the expected using degDuringPulse mode.')
-			# }
-			# tsh <- qt[min(which(res>qt))]
-			# tshRatio <- approxExpectedRatio(
-			# 	quantile(betaTC, na.rm=TRUE, probs=tsh)
-			# 	, tL)
-
-			# alphaTC[measuredRatio>tshRatio] <- NA
-			# betaTC[measuredRatio>tshRatio] <- NA
-
 			## recalculate the variance
 			if( labeledVarince )
 				alphaTC_var <- Lexo_var/tL^2
@@ -655,9 +518,8 @@
 						defintsol(t0, t1, mAlpha, qAlpha, beta )
 				}
 				maxBetas <- seq(5, maxBeta, by=5)
-				# applyfun <- if( parallel ) bplapply else lapply
-				lapply(2:length(tpts), function(j) {
-					unlist(applyfun(1:nrow(alpha),
+				bplapply(2:length(tpts), function(j) {
+					unlist(lapply(1:nrow(alpha),
 						function(i) {
 							k <- 1
 							solutionFound <- FALSE
@@ -681,7 +543,7 @@
 							else 
 								return(list(root=NA, estim.prec=NA))
 						}))
-					})
+					}, BPPARAM=BPPARAM)
 			}
 			## calculate alpha and recalculate the variance
 			alphaTC <- Lexo/tL
@@ -783,15 +645,6 @@
 				}
 			}))
 
-			# ## keep only the best resolved rates (put to NA the worst 10%
-			# ## of rates in time points later than zero)
-			# epTsh <- apply(labeledSfep,2,quantile,probs=.9,na.rm=TRUE)
-			# ix <- t(apply(labeledSfep,1, function(x) x>epTsh))
-			# ix[,1] <- FALSE
-			# alphaTC[ix] <- NA
-			# betaTC[ix] <- NA
-			# gammaTC[ix] <- NA
-
 			## put negative values to NA and rise a 
 			## warning if they are more than 20% of a specific rate
 			ix <- alphaTC<0 | betaTC<0 | gammaTC<0
@@ -804,46 +657,6 @@
 			betaTC[ix] <- NA
 			gammaTC[ix] <- NA
 			ratesEstimPrec[ix] <- NA
-
-			# ## some rates are unbelivably large, respect to the assumption
-			# ## that no degradation occurs during the pulse
-			# ## based on an aprroximated assumtion of what is the expected
-			# ## ratio between the two we discard the ones that have a ratio 
-			# ## superior than the threshold
-			# approxExpectedRatio <- function(beta, tL) {
-			# 	beta*tL/(1-exp(-beta*tL))
-			# }
-			# ## ratio between median accounts for the conversion between the scaling factors
-			# ## of the noDegr mode and the Degr mode
-			# noDegrAlphaTC <- Lexo/tL
-			# noDegrAlphaTC <- noDegrAlphaTC*
-			# 	stats::median(alphaTC, na.rm=TRUE)/stats::median(noDegrAlphaTC, na.rm=TRUE)
-			# measuredRatio <- alphaTC/noDegrAlphaTC
-			# qt <- seq(.9,1,by=.001)
-			# res <- numeric(length(qt))
-			# for(i in 1:length(qt)) {
-			# 	q <- qt[i]
-			# 	tOut <- table(
-			# 		measuredRatio>
-			# 			approxExpectedRatio(
-			# 				quantile(betaTC, na.rm=TRUE, probs=q)
-			# 				, tL)
-			# 			)
-			# 	res[i] <- tOut['FALSE']/sum(tOut)
-			# }
-			# if( all(res>qt) ) {
-			# 	# plot(qt, res, type='l')
-			# 	# abline(0,1,col='red')
-			# 	warning('Too many rates are over the expected using degDuringPulse mode.')
-			# }
-			# tsh <- qt[min(which(res>qt))]
-			# tshRatio <- approxExpectedRatio(
-			# 	quantile(betaTC, na.rm=TRUE, probs=tsh)
-			# 	, tL)
-
-			# alphaTC[measuredRatio>tshRatio] <- NA
-			# betaTC[measuredRatio>tshRatio] <- NA
-			# gammaTC[measuredRatio>tshRatio] <- NA
 
 			## recalculate the variance
 			if( labeledVarince )
@@ -885,9 +698,8 @@
 						beta * defintsol(t0, t1, mPreMRNA, qPreMRNA, beta )
 				}
 				maxBetas <- seq(5, maxBeta, by=5)
-				# applyfun <- if( parallel ) bplapply else lapply
-				sapply(2:length(tpts), function(j) {
-					unlist(applyfun(1:nrow(total), function(i) {
+				bplapply(2:length(tpts), function(j) {
+					unlist(lapply(1:nrow(total), function(i) {
 						k <- 1
 						solutionFound <- FALSE
 						while((!solutionFound) & k <= length(maxBetas)) {
@@ -909,7 +721,7 @@
 						}
 						if( solutionFound ) return(solution) else return(list(root=NA, estim.prec=NA))
 					}))
-				})
+				}, BPPARAM=BPPARAM)
 			}
 
 			# calculate alpha and recalculate the variance
@@ -967,10 +779,9 @@
 						defintsol(t0, t1, mAlpha, qAlpha, beta )
 				}
 				maxGammas <- seq(5, maxGamma, by=5)
-				# applyfun <- if( parallel ) bplapply else lapply
-				lapply(2:length(tpts), function(j)
+				bplapply(2:length(tpts), function(j)
 					{
-						unlist(applyfun(1:nrow(alpha), function(i) {
+						unlist(lapply(1:nrow(alpha), function(i) {
 							k <- 1
 							solutionFound <- FALSE
 							while((!solutionFound) & k <= length(maxGammas)) {
@@ -993,7 +804,7 @@
 							else
 								return(list(root=NA, estim.prec=NA))
 						}))
-					})
+					}, BPPARAM=BPPARAM)
 			}
 			# calculate gamma (from  total RNA introns and alphas )
 			message('Estimating processing rates...')
@@ -1162,7 +973,7 @@
 }
 
 .inspect.engine <- function(tpts, log_shift, concentrations, rates
-	, nInit=10, nIter=300, na.rm=TRUE, nCores=2L
+	, nInit=10, nIter=300, na.rm=TRUE, BPPARAM=bpparam() #nCores=2L
 	, verbose=TRUE, estimateRatesWith=c('der', 'int'), nAttempts=1
 	, sigmoidDegradation=FALSE, sigmoidSynthesis=FALSE, sigmoidTotal=FALSE
 	, sigmoidProcessing=FALSE, sigmoidPre=FALSE
@@ -1689,21 +1500,9 @@
 	## MAIN FUNCTION ###
 	##################
 
-	if( nCores > 1 ) {
-		nCores <- min(nCores, parallel::detectCores())
-		if( Sys.info()[['sysname']] == 'Windows' ) {
-			applyfun <- bplapply
-			options(MulticoreParam=SnowParam(workers=nCores))
-			# print(bpparam())
-		} else {
-			applyfun <- parallel::mclapply
-			options(mc.cores=nCores)
-			# print(bpparam())
-		}
-	} else applyfun <- lapply
 	nGenes <- nrow(rates$alpha)
 	tpts <- tpts
-	paramSpecs <- applyfun(1:nGenes, modelOneGene, seed=seed, 
+	paramSpecs <- bplapply(1:nGenes, modelOneGene, seed=seed, 
 		.chooseModel=.chooseModel,
 		.time_transf=.time_transf,
 		.DimpulseModel=.DimpulseModel,
@@ -1734,7 +1533,8 @@
 		.rxnrateSimple=.rxnrateSimple,
 		.makeModel=.makeModel,
 		.makeSimpleModel=.makeSimpleModel,
-		.logLikelihood=.logLikelihood
+		.logLikelihood=.logLikelihood,
+		BPPARAM=BPPARAM
 		)
 	return(paramSpecs)
 }

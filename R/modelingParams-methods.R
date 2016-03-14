@@ -11,7 +11,7 @@
 #'  \item nIter number of max iteration during optimization (default is 300)
 #'  \item na.rm A logical wheter missing values should be removed from estimated rates 
 #'    (default is TRUE)
-#'  \item nCores The number of cores to be used during parallelization (default is 2)
+# #'  \item nCores The number of cores to be used during parallelization (default is 2)
 #'  \item verbose A logical wheter to be verbose or not (default is TRUE)
 #'  \item estimateRatesWith Either "int" or "der". With "int" the degradation and processing
 #'    rates are estimated integrating the system between one time point and the following. 
@@ -40,17 +40,17 @@ setMethod('modelingParams', 'INSPEcT', function(object) {
 setReplaceMethod('modelingParams', 'INSPEcT', function(object, value) {
 	if( !is.list(value) )
 		stop('modelingParams: value argument must be a list')
-	if( !identical(names(value), c('nInit', 'nIter', 'na.rm', 'nCores',
+	if( !identical(names(value), c('nInit', 'nIter', 'na.rm', #'nCores',
 		 'verbose', 'estimateRatesWith', 'useSigmoidFun', 'testOnSmooth')) )
-		stop('modelingParams: value argument must be named list. Names must be "nInit", "nIter", "na.rm", "nCores","verbose", "estimateRatesWith", "useSigmoidFun", "testOnSmooth"')
+		stop('modelingParams: value argument must be named list. Names must be "nInit", "nIter", "na.rm", "verbose", "estimateRatesWith", "useSigmoidFun", "testOnSmooth"')
 	if( !is.numeric(value$nInit) )
 		stop('modelingParams: nInit element of value argument must be a numeric')
 	if( !is.numeric(value$nIter) )
 		stop('modelingParams: nIter element of value argument must be a numeric')		
 	if( !is.logical(value$'na.rm') )
 		stop('modelingParams: na.rm element of value argument must be a logical')		
-	if( !is.numeric(value$nCores) )
-		stop('modelingParams: nCores element of value argument must be a numeric')
+	# if( !is.numeric(value$nCores) )
+	# 	stop('modelingParams: nCores element of value argument must be a numeric')
 	if( !is.logical(value$verbose) )
 		stop('modelingParams: verbose element of value argument must be a logical')		
 	if( !is.character(value$estimateRatesWith) )
@@ -67,7 +67,7 @@ setReplaceMethod('modelingParams', 'INSPEcT', function(object, value) {
 		stop('Remove the model before changing modeling parameters. (See "?removeModel")')
 	value$nInit <- as.integer(value$nInit)
 	value$nIter <- as.integer(value$nIter)
-	value$nCores <- as.integer(value$nCores)
+	# value$nCores <- as.integer(value$nCores)
 	object@params <- value
 	object
 	})

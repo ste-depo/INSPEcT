@@ -47,8 +47,6 @@ Methods that apply to INSPEcT class are
 \code{\link{modelingParams}} \cr
 \code{\link{modelRates}} \cr
 \code{\link{modelSelection}} \cr
-\code{\link{nCores<-}} \cr
-\code{\link{nCores}} \cr
 \code{\link{nGenes}} \cr
 \code{\link{nTpts}} \cr
 \code{\link{plotGene}} \cr
