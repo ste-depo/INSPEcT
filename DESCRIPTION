@@ -15,17 +15,17 @@ Depends:
     R (>= 3.2),
     methods,
     Biobase,
-    GenomicFeatures,
-    GenomicRanges,
-    IRanges,
-    BiocGenerics,
     BiocParallel
 Imports:
     pROC,
     deSolve,
     rootSolve,
     compiler,
-    preprocessCore
+    preprocessCore,
+    GenomicFeatures,
+    GenomicRanges,
+    IRanges,
+    BiocGenerics
 Suggests:
     BiocStyle,
     knitr,

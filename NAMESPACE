@@ -1,5 +1,6 @@
 import(
     methods,
+    Biobase,
     BiocParallel,
     pROC
 )
@@ -8,19 +9,6 @@ importFrom("compiler", cmpfun)
 importFrom("deSolve", ode)
 importFrom("rootSolve", multiroot)
 importFrom("preprocessCore", normalize.quantiles)
-importClassesFrom("Biobase",
-    AnnotatedDataFrame,
-    ExpressionSet
-    )
-importFrom("Biobase",
-    combine,
-    exprs,
-    fData,
-    pData,
-    featureNames,
-    "featureNames<-",
-    ExpressionSet
-    )
 importFrom("GenomicFeatures",
     exonsBy,
     transcriptsBy,
