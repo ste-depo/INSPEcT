@@ -4,7 +4,7 @@ import(
     BiocParallel,
     pROC
 )
-importFrom("IRanges", IRanges)
+importFrom("IRanges", IRanges, psetdiff)
 importFrom("compiler", cmpfun)
 importFrom("deSolve", ode)
 importFrom("rootSolve", multiroot)
@@ -16,7 +16,6 @@ importFrom("GenomicFeatures",
     )
 importFrom("GenomicRanges",
     reduce,
-    psetdiff,
     seqnames,
     start,
     end,
