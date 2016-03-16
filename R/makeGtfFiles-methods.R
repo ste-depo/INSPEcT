@@ -101,8 +101,10 @@ setMethod( 'makeIntronsGtfFromDb' , 'TxDb', function( object , type, filename ) 
 		exonsDB <- exonsBy( object , 'gene' )
 		# reduce each gene ( merge overlapping exons ) and transform to GRanges
 		exonsDB <- reduce( exonsDB )
+		validRanges <- elementLengths(range(exonsDB))==1
+		exonsDB <- exonsDB[validRanges]
 		# find 'holes'
-		intronsDB <- psetdiff(range(exonsDB),exonsDB)
+		intronsDB <- psetdiff(unlist(range(exonsDB)),exonsDB)
 		intronsDB <- unlist(intronsDB)
 		# 1253426 is the longest intron given by intronsByTranscripts 
 		# function in TxDb, filtering those longer

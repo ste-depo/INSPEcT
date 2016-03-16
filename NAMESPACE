@@ -1,3 +1,10 @@
+importFrom("grDevices", "colorRampPalette")
+importFrom("graphics", "abline", "axis", "image", "layout", "legend",
+    "matplot", "par")
+importFrom("stats", "approx", "dist", "ecdf", "hclust", "lm",
+    "na.omit", "optim", "optimize", "pchisq", "pnorm",
+    "quantile", "rnorm", "runif", "splinefun", "uniroot")
+importFrom("utils", "capture.output", "read.table", "write.table")
 import(
     methods,
     Biobase,
