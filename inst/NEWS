@@ -1,16 +1,20 @@
+VERSION 1.1.3
+- INSPEcT is now independent from pyhton and HTSeq for counting reads in intronic and exonic regions and now uses the GenomicAlignments and Rsamtools Bioconductor packages functionalities. Thanks to this modification INSPEcT is now fully contained into the R/Bioconductor framework, being therefore more complant with Bioconductor guidelines. Additionally BAM files can be directly used, without the time consuming and memory consuming step of BAM->SAM conversion. Methods related to the creation of the annotation of intronic and exonic features in GTF format to provide to pyhton are now dismissed consequently and will be probably introduced as methods in the Bioconductor package 'compEpiTools'
+
+VERSION 1.1.2
+- Parallel computation is now managed completely within the BiocParallel framework. "newINSPEcT" function and "modelRates" method take as input the argument BPPARAM which is used to handle the parallelization. By default, BPPARAM is assigned with bpparam() function of BiocParallel package, which guarantee the maximum number of available cores used and the usage of forking in Linux and MacOS-X and the usage of the package Snow for Windows machines.
+- nCores methods and arguments are now deprecated.
+
+VERSION 1.1.1
+- Re-introduced inferKBetaFromIntegralWithPre, which disappeared in the devel version following 1.0.1 (excluded)
+
 - selection of best model is now done applying brown test on the pairs of model where at least one of the two has a chi-squared test lower than the threshold. This is done because in case only one rate leads the dynamics, all the model which don't involve that rate won't have low chi-squared and no comparison will be made. This leads to brown p-values of 1 on that specific rates (change in method "ratePvals")
 
-- in newINSPEcT, the guess of new rates can be done without assuming that degradation does  not occur during the pulsesvn commit -m "Solved two problems. One that occurred during modeling for genes with estimated variance within replicates equal to zero: in these cases the variance is estimated within the time course. A second problem was encountered in the parameter initialization of impulse model: h1 cannot be zero in order to evaluate a finite value."
+- in newINSPEcT, the guess of new rates can be done without assuming that degradation does  not occur during the pulse
+- Solved two problems. One that occurred during modeling for genes with estimated variance within replicates equal to zero: in these cases the variance is estimated within the time course. A second problem was encountered in the parameter initialization of impulse model: h1 cannot be zero in order to evaluate a finite value."
 
 - Evaluate 'modelRates' within the vignette in parallel only in Linux and Dawin environments. This is done to avoid timeout in the build process on Bioc servers.
 
 - Better estimation of rates in case degDuringPulse=TRUE (newINSPEcT function). Added controls on input arguments in newINSPEcT function. Fixed a bug in the saturation of values out of breaks in inHeatmap method (this change could cause a different clustering order of genes in the heatmap). Added the palette argument to inHeatmap method.
 
 - Fixed a bug in '[' method and unpdated the NAMESAPACE and DESCRIPTION files according to the update of the 'unlist' method that is exported from BiocGenerics and not from GenomicRanges anymore.
-
-VERSION 1.1.1
-- Re-introduced inferKBetaFromIntegralWithPre, which disappeared in the devel version following 1.0.1 (excluded)
-
-VERSION 1.1.2
-- Parallel computation is now managed completely within the BiocParallel framework. "newINSPEcT" function and "modelRates" method take as input the argument BPPARAM which is used to handle the parallelization. By default, BPPARAM is assigned with bpparam() function of BiocParallel package, which guarantee the maximum number of available cores used and the usage of forking in Linux and MacOS-X and the usage of the package Snow for Windows machines.
-- nCores methods and arguments are now deprecated.

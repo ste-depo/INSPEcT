@@ -5,81 +5,24 @@ importFrom("stats", "approx", "dist", "ecdf", "hclust", "lm",
     "na.omit", "optim", "optimize", "pchisq", "pnorm",
     "quantile", "rnorm", "runif", "splinefun", "uniroot")
 importFrom("utils", "capture.output", "read.table", "write.table")
-import(
-    methods,
-    Biobase,
-    BiocParallel,
-    pROC
-)
-importFrom("IRanges", IRanges, psetdiff)
-importFrom("compiler", cmpfun)
-importFrom("deSolve", ode)
-importFrom("rootSolve", multiroot)
-importFrom("preprocessCore", normalize.quantiles)
-importFrom("GenomicFeatures",
-    exonsBy,
-    transcriptsBy,
-    intronsByTranscript
-    )
-importFrom("GenomicRanges",
-    reduce,
-    seqnames,
-    start,
-    end,
-    strand,
-    width
-    )
-importFrom("BiocGenerics", 
-    unlist
-    )
-export(
-    "newINSPEcT",
-    "makeRPKMs"
-)
-exportMethods(
-    "[",
-    "chisqmodel",
-    "chisqtest",
-    "combine",
-    "dim",
-    "featureNames",
-    "featureNames<-",
-    "geneClass",
-    "getModel",
-    "getModel<-",
-    "inHeatmap",
-    "labeledSF",
-    "llrtests",
-    "llrtests<-",
-    "logLik",
-    "makeExonsGtfFromDb",
-    "makeIntronsGtfFromDb",
-    "makeModelRates",
-    "makeSimDataset",
-    "makeSimModel",
-    "modelingParams",
-    "modelingParams<-",
-    "modelRates",
-    "modelSelection",
-    "modelSelection<-",
-    "nGenes",
-    "nTpts",
-    "plotGene",
-    "ratePvals",
-    "ratesFirstGuess",
-    "ratesFirstGuessVar",
-    "removeModel",
-    "rocCurve",
-    "rocThresholds",
-    "sfPlot",
-    "show",
-    "thresholds",
-    "thresholds<-",
-    "totalSF",
-    "tpts",
-    "viewModelRates"
-)
-exportClasses(
-    "INSPEcT",
-     "INSPEcT_model" 
-)
+import("methods","Biobase","BiocParallel","pROC")
+importFrom("IRanges", "IRanges", "psetdiff")
+importFrom("compiler", "cmpfun")
+importFrom("deSolve", "ode")
+importFrom("rootSolve", "multiroot")
+importFrom("preprocessCore", "normalize.quantiles")
+importFrom("GenomicFeatures","exonsBy","transcriptsBy","intronsByTranscript")
+importFrom("GenomicRanges","reduce","seqnames","start","end","strand","width")
+importFrom("BiocGenerics", "unlist")
+importFrom("GenomicAlignments", "readGAlignmentPairs", "readGAlignments")
+importFrom("Rsamtools", "ScanBamParam")
+export("newINSPEcT", "makeRPKMs")
+exportMethods( "[", "chisqmodel", "chisqtest", "combine", "dim", "featureNames", 
+    "featureNames<-", "geneClass", "getModel", "getModel<-", "inHeatmap", "labeledSF", 
+    "llrtests", "llrtests<-", "logLik", "makeModelRates", "makeSimDataset", 
+    "makeSimModel", "modelingParams", "modelingParams<-", "modelRates", 
+    "modelSelection", "modelSelection<-", "nGenes", "nTpts", "plotGene", 
+    "ratePvals", "ratesFirstGuess", "ratesFirstGuessVar", "removeModel", 
+    "rocCurve", "rocThresholds", "sfPlot", "show", "thresholds", "thresholds<-", 
+    "totalSF", "tpts", "viewModelRates")
+exportClasses("INSPEcT", "INSPEcT_model" )

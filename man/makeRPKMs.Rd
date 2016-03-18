@@ -2,39 +2,46 @@
 % Please edit documentation in R/makeRPKMs-functions.R
 \name{makeRPKMs}
 \alias{makeRPKMs}
-\title{Calculate RPKM values on introns and exons from sam files}
+\title{Calculate RPKM and count values on introns and exons from bam/sam files}
 \usage{
-makeRPKMs(tpts, sampaths_4su, sampaths_total, exons_gtf_file, introns_gtf_file,
-  out_folder = ".")
+makeRPKMs(txdb, sampaths_foursu, sampaths_total, by = c("gene", "tx"),
+  countMultiMappingReads = FALSE, allowMultiOverlap = FALSE,
+  strandSpecific = FALSE, isPairedEnd = FALSE)
 }
 \arguments{
-\item{tpts}{A vector of time points corresponding in which experiments have been collected (it admits non-unique values in case of replicates)}
+\item{txdb}{A TranscriptDB object}
 
-\item{sampaths_4su}{A vector of paths of 4sU-seq sam files of the same length of tpts}
+\item{sampaths_total}{A vector of paths of RNA-seq sam files}
 
-\item{sampaths_total}{A vector of paths of RNA-seq sam files of the same length of tpts}
+\item{by}{A character, either "gene" or "tx", indicating if rpkms and counts should be summarized at the levels of genes or transcripts. "gene" by default}
 
-\item{exons_gtf_file}{A path to the GTF file that defines exon features}
+\item{countMultiMappingReads}{A logical, if multimapping reads should be counted, FALSE by default}
 
-\item{introns_gtf_file}{A path to the GTF file that defines intron features (if NULL only exons reads are quantified)}
+\item{allowMultiOverlap}{A logical, indicating if a read is allowed to be assigned to more than one feature, FALSE by default}
 
-\item{out_folder}{A path to the output folder (by default the current directory)}
+\item{strandSpecific}{A logical, if strand-specific read counting should be performed, FALSE by default}
+
+\item{isPairedEnd}{A logical, if paired-end reads are used, FALSE by default}
+
+\item{sampaths_4su}{A vector of paths of 4sU-seq sam files}
 }
 \value{
-A list of intron and exon rpkms for both RNA-seq and 4sU-seq
+A list containing rpkms, counts and the annotation extracted from TxDB for exons and introns
 }
 \description{
-Given a vector of time points, paths to sam files of the 4sU-seq and RNA-seq experiments and paths of GTF files, "makeRPKMs" function calculates read counts and RPKM on exonic and intronic features per each gene. Reads that fall where intronic and exonic features overlaps are assigned to exons.
-This function is based on HTSeq software (http://www-huber.embl.de/users/anders/HTSeq/doc/overview.html) which is expected to pre installed and on the path.
+Given a TranscriptDb object and a list of bam/sam files for 4su and total RNA 
+experiments, "makeRPKMs" function calculates read counts and RPKM on exonic and intronic 
+features per each gene. Reads that fall where intronic and exonic features overlaps are 
+univoquely assigned to exons.
 }
 \examples{
-exons_gtf_file <- system.file('extdata', 'UCSC_mm9_genes_exons.txt', package="INSPEcT")
-introns_gtf_file <- system.file('extdata', 'UCSC_mm9_genes_introns.txt', package="INSPEcT")
+require(TxDb.Mmusculus.UCSC.mm9.knownGene)
+txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
 samfiles4su <- system.file('extdata', '4sURNA_0h.sam', package="INSPEcT")
 samfilesTotal <- system.file('extdata', 'totalRNA_0h.sam', package="INSPEcT")
-\dontrun{
-rpkms <- makeRPKMs(1, samfiles4su, samfilesTotal, exons_gtf_file, introns_gtf_file)
-save(rpkms, file='rpkms.rd')
-}
+makeRPKMsOut <- makeRPKMs(txdb, samfiles4su, samfilesTotal)
+rpkms <- makeRPKMsOut$rpkms
+counts <- makeRPKMsOut$counts
+annotation <- makeRPKMsOut$annotation
 }
 

@@ -50,23 +50,14 @@ Within this vignette, a complete \Rpackage{INSPEcT} analysis is presented (Figur
 library(INSPEcT)
 @
 
-The INSPEcT framework includes functions to generate GTF annotation files that can be used to quantify Exon and Intron features, both in 4sU- and RNA-seq experiments. To facilitate this, two methods of the \Rclass{TranscriptDB} class have been implemented within INSPEcT: \Rmethod{makeExonsGtfFromDb} and \Rmethod{makeIntronsGtfFromDb}. In order to save computation time, the following code is not evaluated.
-
-<<annotation, message=FALSE, eval=TRUE>>=
-library(INSPEcT)
+The INSPEcT framework includes function to quantify Exon and Intron features, both in 4sU- and RNA-seq experiments. \Rmethod{makeRPKMs} function builds an annotation for exons and introns, either at the level of transcripts or genes, and count reads falling on the two different annotations in each provided file in BAM or SAM format. This function prioritize the exon annotation, meaning that reads which fall on exon are not counted for introns, in case of overlap. Canonical RPKMs are then evaluated in order to provide expression values. RPKMs, read counts, and the annotation is returned as output. 
+<<features_quantification, message=FALSE, eval=TRUE>>=
 require(TxDb.Mmusculus.UCSC.mm9.knownGene)
 txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
-makeExonsGtfFromDb(txdb, type='gene', 'exons_mm9.gtf')
-makeIntronsGtfFromDb(txdb, type='gene', 'introns_mm9.gtf')
-@
-
-After the annotation files are created, INSPEcT takes as input 4sU- and RNA-seq alignment files in SAM format, quantifies the number of reads that overlap with both exonic and intronic features per each gene and transforms them in RPKMs expression values. The following sample code is not evaluated in the vignette. 
-<<features_quantification, message=FALSE, eval=TRUE>>=
-sampaths_4su <- system.file('extdata', '4sURNA_0h.sam', package="INSPEcT")
-sampaths_total <- system.file('extdata', 'totalRNA_0h.sam', package="INSPEcT")
-rpkms <- makeRPKMs(tpts=0, sampaths_4su, sampaths_total, out_folder = ".",
-	exons_gtf_file = 'exons_mm9.gtf',
-	introns_gtf_file = 'introns_mm9.gtf')
+paths_4su <- system.file('extdata', '4sURNA_0h.bam', package="INSPEcT")
+paths_total <- system.file('extdata', 'totalRNA_0h.bam', package="INSPEcT")
+makeRPKMsOut <- makeRPKMs(txdb, paths_4su, paths_total)
+rpkms <- makeRPKMsOut$rpkms
 @
 
 %
