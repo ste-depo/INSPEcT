@@ -4,26 +4,27 @@
 \alias{makeRPKMs}
 \title{Calculate RPKM and count values on introns and exons from bam/sam files}
 \usage{
-makeRPKMs(txdb, sampaths_foursu, sampaths_total, by = c("gene", "tx"),
+makeRPKMs(txdb, paths_foursu, paths_total, by = c("gene", "tx"),
   countMultiMappingReads = FALSE, allowMultiOverlap = FALSE,
   strandSpecific = FALSE, isPairedEnd = FALSE)
 }
 \arguments{
 \item{txdb}{A TranscriptDB object}
 
-\item{sampaths_total}{A vector of paths of RNA-seq sam files}
+\item{paths_foursu}{A vector of paths of 4sU-seq sam files}
+
+\item{paths_total}{A vector of paths of RNA-seq sam files}
 
 \item{by}{A character, either "gene" or "tx", indicating if rpkms and counts should be summarized at the levels of genes or transcripts. "gene" by default}
 
-\item{countMultiMappingReads}{A logical, if multimapping reads should be counted, FALSE by default}
+\item{countMultiMappingReads}{A logical, if multimapping reads should be counted, FALSE by default. Multimap reads are 
+identified using the tag "NH" in the bam/sam file.}
 
 \item{allowMultiOverlap}{A logical, indicating if a read is allowed to be assigned to more than one feature, FALSE by default}
 
 \item{strandSpecific}{A logical, if strand-specific read counting should be performed, FALSE by default}
 
 \item{isPairedEnd}{A logical, if paired-end reads are used, FALSE by default}
-
-\item{sampaths_4su}{A vector of paths of 4sU-seq sam files}
 }
 \value{
 A list containing rpkms, counts and the annotation extracted from TxDB for exons and introns
@@ -37,9 +38,9 @@ univoquely assigned to exons.
 \examples{
 require(TxDb.Mmusculus.UCSC.mm9.knownGene)
 txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
-samfiles4su <- system.file('extdata', '4sURNA_0h.sam', package="INSPEcT")
-samfilesTotal <- system.file('extdata', 'totalRNA_0h.sam', package="INSPEcT")
-makeRPKMsOut <- makeRPKMs(txdb, samfiles4su, samfilesTotal)
+files4su <- system.file('extdata', '4sURNA_0h.bam', package="INSPEcT")
+filesTotal <- system.file('extdata', 'totalRNA_0h.bam', package="INSPEcT")
+makeRPKMsOut <- makeRPKMs(txdb, files4su, filesTotal)
 rpkms <- makeRPKMsOut$rpkms
 counts <- makeRPKMsOut$counts
 annotation <- makeRPKMsOut$annotation

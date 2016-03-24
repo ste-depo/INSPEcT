@@ -10,7 +10,8 @@
 #' description of how the two classes are structured and which methods apply on, type:
 #'
 #' \code{?'INSPEcT-class'} \cr
-#' \code{?'INSPEcT_model-class'}
+#' \code{?'INSPEcT_model-class'} \cr
+#' \code{?'INSPEcT_diffsteady-class'}
 #'
 #' To see how the typical workflow of INSPEcT works, type: \cr
 #' \code{vignette('INSPEcT')}
@@ -162,5 +163,34 @@ setClass('INSPEcT',
 			, useSigmoidFun=TRUE
 			, testOnSmooth=TRUE
 			)
+		)
+	)
+
+
+#' An S4 class to represent comparisons between two steady-state conditions
+#'
+#' @description 
+#' INSPEcT_diffsteady is a class able to store the results of the comparisons between two steady states.
+#' An object of class INSPEcT_diffsteady is created with the method "compareSteady" applied on 
+#' two "INSPEcT" objects (see \code{\link{compareSteady}}).
+#' @slot synthesis A data.frame which contains both input data and comparisons results regarding
+#' synthesis rates
+#' @slot degradation A data.frame which contains both input data and comparisons results regarding
+#' degradation rates
+#' @slot processing A data.frame which contains both input data and comparisons results regarding
+#' processing rates
+#' @details
+#' Methods associated to the class INSPEcT_diffsteady are:
+#' \itemize{
+#'   \item synthesis: Accessor to the synthesis rates and their comparisons.
+#'   \item degradation: Accessor to the degradation rates and their comparisons.
+#'   \item processing: Accessor to the processing rates and their comparisons.
+#'	 \item plotMA: visualization fuction for rates comparisons, see \code{\link{plotMA}}
+#' }
+setClass('INSPEcT_diffsteady', 
+	slots=c(
+		synthesis='data.frame'
+		, degradation='data.frame'
+		, processing='data.frame'
 		)
 	)

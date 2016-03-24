@@ -5,8 +5,8 @@
 #' features per each gene. Reads that fall where intronic and exonic features overlaps are 
 #' univoquely assigned to exons.
 #' @param txdb A TranscriptDB object
-#' @param sampaths_4su A vector of paths of 4sU-seq sam files
-#' @param sampaths_total A vector of paths of RNA-seq sam files
+#' @param paths_foursu A vector of paths of 4sU-seq sam files
+#' @param paths_total A vector of paths of RNA-seq sam files
 #' @param by A character, either "gene" or "tx", indicating if rpkms and counts should be summarized at the levels of genes or transcripts. "gene" by default
 #' @param countMultiMappingReads A logical, if multimapping reads should be counted, FALSE by default. Multimap reads are 
 #' identified using the tag "NH" in the bam/sam file.
@@ -43,6 +43,7 @@ makeRPKMs <- function(txdb, paths_foursu, paths_total, by=c('gene','tx'),
 
 	message('Generating annotation from txdb...')
 
+	by <- by[1]
 	if( by=="gene" ) {
 
 		exonsDB <- reduce(exonsBy(txdb ,'gene'))

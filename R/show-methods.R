@@ -22,6 +22,28 @@ setMethod('show', 'INSPEcT', function(object) {
 
 	})
 
+#' @rdname INSPEcT_diffsteady-class
+#' @param object An object of class INSPEcT_model
+#' @return Method show for objects of class INSPEcT_model returns the number of
+#' the genes that have been modeled
+setMethod('show', 'INSPEcT_diffsteady', function(object) {
+	message('Object of class INSPEcT_diffsteady')
+
+	for(sn in slotNames(object) ) {
+		data <- slot(object, sn)
+		if(nrow(data)>6) {
+			message('Head of slot ',sn,':')
+			print(head(data))
+			message('... and other ', nrow(data)-6, ' hidden genes.')
+		} else {
+			message('Slot "',sn,'":')
+			print(data)
+		}
+		message('')
+	}
+
+	})
+
 #' @title Gene Names Associated with an Object of Class INSPEcT
 #' @description
 #' A method to visualize gene names associated with the object of class INSPEcT

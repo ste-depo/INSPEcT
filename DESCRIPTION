@@ -1,7 +1,7 @@
 Package: INSPEcT
 Type: Package
 Title: Analysis of 4sU-seq and RNA-seq time-course data
-Version: 1.1.3
+Version: 1.1.4
 Date: 2015-12-15
 Author: Stefano de Pretis
 Maintainer: Stefano de Pretis <ste.depo@gmail.com>
@@ -11,29 +11,14 @@ Description: INSPEcT (INference of Synthesis, Processing and
     processing and degradation rates and asses via modeling the
     rates that determines changes in mature mRNA levels.
 License: GPL-2
-Depends:
-    R (>= 3.2),
-    methods,
-    Biobase,
-    BiocParallel
-Imports:
-    pROC,
-    deSolve,
-    rootSolve,
-    compiler,
-    preprocessCore,
-    GenomicFeatures,
-    GenomicRanges,
-    IRanges,
-    BiocGenerics,
-    GenomicAlignments,
-    Rsamtools
-Suggests:
-    BiocStyle,
-    knitr,
-    TxDb.Mmusculus.UCSC.mm9.knownGene
+Depends: R (>= 3.2), methods, Biobase, BiocParallel
+Imports: pROC, deSolve, rootSolve, compiler, preprocessCore,
+        GenomicFeatures, GenomicRanges, IRanges, BiocGenerics,
+        GenomicAlignments, Rsamtools, S4Vectors
+Suggests: BiocStyle, knitr, TxDb.Mmusculus.UCSC.mm9.knownGene
 VignetteBuilder: knitr
 biocViews: Sequencing, RNASeq, GeneRegulation, TimeCourse,
-    SystemsBiology
+        SystemsBiology
 NeedsCompilation: no
 RoxygenNote: 5.0.1
+Packaged: 2016-03-21 14:24:31 UTC; sdepreti

@@ -10,7 +10,8 @@
 #' data('rpkms', package='INSPEcT')
 #' tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
 #' tL <- 1/6
-#' mycerIds <- newINSPEcT(tpts, tL, rpkms$rpkms_4su_exons, rpkms$rpkms_total_exons, rpkms$rpkms_4su_introns, rpkms$rpkms_total_introns)
+#' mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
+#' 	rpkms$foursu_introns, rpkms$total_introns)
 #' sfPlot(mycerIds)
 setMethod('sfPlot', 'INSPEcT', function(object) {
 	mat <- cbind(object@totalSF, object@labeledSF)

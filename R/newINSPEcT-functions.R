@@ -15,7 +15,6 @@
 #' @param rpkms_total_exons A matrix containing expression levels of total exons
 #' @param rpkms_4su_introns A matrix containing expression levels of 4su introns
 #' @param rpkms_total_introns A matrix containing expression levels of total introns
-## #' @param parallelize A logical, if set to TRUE parallelizes the calculation of rates
 #' @param BPPARAM Configuration for BiocParallel parallelization. By default is set to bpparam()
 #' @param totalMedianNorm A logical to perform median normalization over total RNA exons rpkms, it will apply also on introns
 #' @param labeledMedianNorm A logical to perform median normalization over 4sU RNA exons rpkms, it will apply also on introns
@@ -30,8 +29,8 @@
 #' data('rpkms', package='INSPEcT')
 #' tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
 #' tL <- 1/6
-#' mycerIds <- newINSPEcT(tpts, tL, rpkms$rpkms_4su_exons, rpkms$rpkms_total_exons, 
-#'	rpkms$rpkms_4su_introns, rpkms$rpkms_total_introns)
+#' mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
+#' 	rpkms$foursu_introns, rpkms$total_introns)
 newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons, 
 	rpkms_4su_introns=NULL, rpkms_total_introns=NULL, BPPARAM=bpparam(), # parallelize=TRUE,
 	totalMedianNorm=TRUE, labeledMedianNorm=FALSE, totalSF=NULL, labeledSF=NULL,
@@ -410,7 +409,7 @@ newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
 	## if replicates are available at time zero, compute rate variances
 	t0ix <- originalTpts==originalTpts[1]
 	nRepT0 <- length(which(t0ix))
-	evaluateRateVarAtT0 <- nRepT0>1 & !simulatedData
+	evaluateRateVarAtT0 <- nRepT0>1 # & !simulatedData
 	if( evaluateRateVarAtT0 ) {
 
 		message('Estimating rate variances at time zero...')
@@ -447,6 +446,9 @@ newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
 		var_a_over_t <- matCov(a^2, 1/t^2) + ( var_a + mean_a^2 )*( var_1_over_t + mean_1_over_t^2 ) -
 			( matCov(a, 1/t) + mean_a*mean_1_over_t )^2
 		var_b <- ifelse(is.na(mean_p), var_a_over_t, var_a_over_t_minus_p)
+		# mask (non-sensed) negative variances
+		var_b[var_b<0] <- NaN
+		var_c[var_c<0] <- NaN
 
 	}
 

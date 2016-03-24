@@ -119,12 +119,27 @@ setGeneric('inHeatmap', function(object, type='pre-model'
 	, rowLabels=NULL, clustering=TRUE, clustIdx=3:5)
 	standardGeneric('inHeatmap'))
 
-#############################
-# generics for class TxDb ####
-###############################
+#' Generate an object of class INSPEcT_diffsteady from two objects of class INSPEcT
+setGeneric('compareSteady', function(inspectIds1, inspectIds2) 
+	standardGeneric('compareSteady'))
 
-#' @rdname makeGtfFromDb
-setGeneric( 'makeExonsGtfFromDb' , function( object , type, filename ) standardGeneric( 'makeExonsGtfFromDb' ) )
-#' @rdname makeGtfFromDb
-setGeneric( 'makeIntronsGtfFromDb' , function( object , type, filename ) standardGeneric( 'makeIntronsGtfFromDb' ) )
+##########################################
+# generics for class INSPEcT_diffsteady ####
+##########################################
+
+#' @rdname INSPEcT_diffsteady-class
+setGeneric('synthesis', function(object) standardGeneric('synthesis'))
+#' @rdname INSPEcT_diffsteady-class
+setGeneric('processing', function(object) standardGeneric('processing'))
+#' @rdname INSPEcT_diffsteady-class
+setGeneric('degradation', function(object) standardGeneric('degradation'))
+
+# #############################
+# # generics for class TxDb ####
+# ###############################
+
+# #' @rdname makeGtfFromDb
+# setGeneric( 'makeExonsGtfFromDb' , function( object , type, filename ) standardGeneric( 'makeExonsGtfFromDb' ) )
+# #' @rdname makeGtfFromDb
+# setGeneric( 'makeIntronsGtfFromDb' , function( object , type, filename ) standardGeneric( 'makeIntronsGtfFromDb' ) )
 

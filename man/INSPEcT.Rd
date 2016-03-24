@@ -15,7 +15,8 @@ It implements two classes (\code{\linkS4class{INSPEcT_model}} and
 description of how the two classes are structured and which methods apply on, type:
 
 \code{?'INSPEcT-class'} \cr
-\code{?'INSPEcT_model-class'}
+\code{?'INSPEcT_model-class'} \cr
+\code{?'INSPEcT_diffsteady-class'}
 
 To see how the typical workflow of INSPEcT works, type: \cr
 \code{vignette('INSPEcT')}

@@ -1,3 +1,6 @@
+VERSION 1.1.4
+- Added capabilities for the comparison of two steady-state conditions
+
 VERSION 1.1.3
 - INSPEcT is now independent from pyhton and HTSeq for counting reads in intronic and exonic regions and now uses the GenomicAlignments and Rsamtools Bioconductor packages functionalities. Thanks to this modification INSPEcT is now fully contained into the R/Bioconductor framework, being therefore more complant with Bioconductor guidelines. Additionally BAM files can be directly used, without the time consuming and memory consuming step of BAM->SAM conversion. Methods related to the creation of the annotation of intronic and exonic features in GTF format to provide to pyhton are now dismissed consequently and will be probably introduced as methods in the Bioconductor package 'compEpiTools'
 

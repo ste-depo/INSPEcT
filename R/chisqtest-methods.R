@@ -1,5 +1,3 @@
-c("0"=NA,"a"=NA,"b"=NA,"c"=NA,"ab"=NA,"bc"=NA,"ac"=NA,"abc"=NA)
-
 #' @rdname chisqtest
 #'
 #' @description

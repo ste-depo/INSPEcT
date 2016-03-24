@@ -12,17 +12,24 @@ importFrom("deSolve", "ode")
 importFrom("rootSolve", "multiroot")
 importFrom("preprocessCore", "normalize.quantiles")
 importFrom("GenomicFeatures","exonsBy","transcriptsBy","intronsByTranscript")
-importFrom("GenomicRanges","reduce","seqnames","start","end","strand","width")
+importFrom("GenomicRanges","reduce","seqnames","start","end","strand","width","findOverlaps")
+importFrom("S4Vectors","subjectHits","queryHits","queryLength","elementLengths")
 importFrom("BiocGenerics", "unlist")
 importFrom("GenomicAlignments", "readGAlignmentPairs", "readGAlignments")
 importFrom("Rsamtools", "ScanBamParam")
 export("newINSPEcT", "makeRPKMs")
-exportMethods( "[", "chisqmodel", "chisqtest", "combine", "dim", "featureNames", 
-    "featureNames<-", "geneClass", "getModel", "getModel<-", "inHeatmap", "labeledSF", 
+exportMethods( "[", "chisqmodel", "chisqtest", "combine", "compareSteady", "degradation", "dim", 
+    "featureNames", "featureNames<-", "geneClass", "getModel", "getModel<-", "inHeatmap", "labeledSF", 
     "llrtests", "llrtests<-", "logLik", "makeModelRates", "makeSimDataset", 
     "makeSimModel", "modelingParams", "modelingParams<-", "modelRates", 
-    "modelSelection", "modelSelection<-", "nGenes", "nTpts", "plotGene", 
+    "modelSelection", "modelSelection<-", "nGenes", "nTpts", "processing", "plotGene", "plotMA",
     "ratePvals", "ratesFirstGuess", "ratesFirstGuessVar", "removeModel", 
-    "rocCurve", "rocThresholds", "sfPlot", "show", "thresholds", "thresholds<-", 
+    "rocCurve", "rocThresholds", "sfPlot", "show", "synthesis", "thresholds", "thresholds<-", 
     "totalSF", "tpts", "viewModelRates")
-exportClasses("INSPEcT", "INSPEcT_model" )
+exportClasses("INSPEcT", "INSPEcT_model", "INSPEcT_diffsteady" )
+
+
+
+
+
+
