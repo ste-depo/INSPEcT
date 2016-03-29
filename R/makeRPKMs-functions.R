@@ -47,15 +47,15 @@ makeRPKMs <- function(txdb, paths_foursu, paths_total, by=c('gene','tx'),
 	if( by=="gene" ) {
 
 		exonsDB <- reduce(exonsBy(txdb ,'gene'))
-		exonsDB <- exonsDB[elementLengths(range(exonsDB))==1]
+		exonsDB <- exonsDB[elementNROWS(range(exonsDB))==1]
 		intronsDB <- psetdiff(unlist(range(exonsDB)),exonsDB)
-		intronsDB <- intronsDB[elementLengths(intronsDB)>0]
+		intronsDB <- intronsDB[elementNROWS(intronsDB)>0]
 
 	} else if( by=="tx" ){
 
 		exonsDB <- exonsBy(txdb ,'tx', use.names=TRUE)
 		intronsDB <- intronsByTranscript(txdb, use.names=TRUE)
-		intronsDB <- intronsDB[elementLengths(intronsDB)>0]
+		intronsDB <- intronsDB[elementNROWS(intronsDB)>0]
 
 	} else {
 
