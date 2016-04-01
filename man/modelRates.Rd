@@ -52,12 +52,12 @@ data('rpkms', package='INSPEcT')
 tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
 tL <- 1/6
 mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-	rpkms$foursu_introns, rpkms$total_introns)
+	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
 mycerIdsOneGene <- mycerIds[5]
 ## View modeling parameters
 modelingParams(mycerIdsOneGene)
 ## Run the modeling in a reproducible way (setting seed)
-mycerIdsOneGene <- modelRates(mycerIdsOneGene, seed=1)
+mycerIdsOneGene <- modelRates(mycerIdsOneGene, seed=1, BPPARAM=SerialParam())
 ## view modeled synthesis rates
 viewModelRates(mycerIdsOneGene, 'synthesis')
 ## view gene classes

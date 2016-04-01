@@ -12,7 +12,7 @@
 #' tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
 #' tL <- 1/6
 #' mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-#' 	rpkms$foursu_introns, rpkms$total_introns)
+#' 	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
 #' # get estimated synthesis rates
 #' ratesFirstGuess(mycerIds, 'synthesis')
 setMethod('ratesFirstGuess', 'INSPEcT', function(object, feature) {
@@ -34,7 +34,7 @@ setMethod('ratesFirstGuess', 'INSPEcT', function(object, feature) {
 #' tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
 #' tL <- 1/6
 #' mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-#' 	rpkms$foursu_introns, rpkms$total_introns)
+#' 	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
 #' ratesFirstGuessVar(mycerIds, 'synthesis')
 setMethod('ratesFirstGuessVar', 'INSPEcT', function(object, feature) {
 	fData(object@ratesFirstGuess)[[feature]]

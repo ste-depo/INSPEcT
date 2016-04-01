@@ -45,7 +45,7 @@ data('rpkms', package='INSPEcT')
 tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
 tL <- 1/6
 mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-	rpkms$foursu_introns, rpkms$total_introns)
+	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
 ## generate a synthtic data-set of 10 genes based on the real data-set
 simRates <- makeSimModel(mycerIds, 10)
 simData <- makeSimDataset(simRates, tpts, 1)

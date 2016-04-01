@@ -30,7 +30,7 @@
 #' tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
 #' tL <- 1/6
 #' mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-#' 	rpkms$foursu_introns, rpkms$total_introns)
+#' 	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
 newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons, 
 	rpkms_4su_introns=NULL, rpkms_total_introns=NULL, BPPARAM=bpparam(), # parallelize=TRUE,
 	totalMedianNorm=TRUE, labeledMedianNorm=FALSE, totalSF=NULL, labeledSF=NULL,

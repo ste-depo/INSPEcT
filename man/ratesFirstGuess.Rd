@@ -29,7 +29,7 @@ data('rpkms', package='INSPEcT')
 tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
 tL <- 1/6
 mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-	rpkms$foursu_introns, rpkms$total_introns)
+	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
 # get estimated synthesis rates
 ratesFirstGuess(mycerIds, 'synthesis')
 }
