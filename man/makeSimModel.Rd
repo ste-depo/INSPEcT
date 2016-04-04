@@ -59,9 +59,11 @@ rocCurve(simRates, simData3rep)
 rocCurve(simRates, simData3rep, cTsh=.2)
 ## generate a synthtic data-set of 10 genes based on the real data-set
 ## with more replicates and more time points
+\dontrun{
 newTpts <- c(0, 1/6, 1/3, 1/2, 1, 1.5, 2, 4, 8, 12, 16, 24)
 simRates <- makeSimModel(mycerIds, 10, newTpts=newTpts)
 simData <- makeSimDataset(simRates, newTpts, 3)
+}
 }
 \seealso{
 \code{\link{makeSimDataset}}
