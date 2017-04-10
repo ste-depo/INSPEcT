@@ -11,7 +11,7 @@
 #' @param countMultiMappingReads A logical, if multimapping reads should be counted, FALSE by default. Multimap reads are 
 #' identified using the tag "NH" in the bam/sam file.
 #' @param allowMultiOverlap A logical, indicating if a read is allowed to be assigned to more than one feature, FALSE by default
-#' @param strandSpecific A logical, if strand-specific read counting should be performed, FALSE by default
+#' @param strandSpecific Numeric, 0 if no strand-specific read counting should be performed, 1 stranded, 2 reversely-stranded. 0 by default
 #' @param isPairedEnd A logical, if paired-end reads are used, FALSE by default
 #' @return A list containing rpkms, counts and the annotation extracted from TxDB for exons and introns
 #' @examples
@@ -24,7 +24,7 @@
 #' counts <- makeRPKMsOut$counts
 #' annotation <- makeRPKMsOut$annotation
 makeRPKMs <- function(txdb, paths_foursu, paths_total, by=c('gene','tx'),
-	countMultiMappingReads=FALSE,allowMultiOverlap=FALSE,strandSpecific=FALSE,isPairedEnd=FALSE) 
+	countMultiMappingReads=FALSE,allowMultiOverlap=FALSE,strandSpecific=0,isPairedEnd=FALSE) 
 {
 
 	## checks on paths_foursu
@@ -83,8 +83,10 @@ makeRPKMs <- function(txdb, paths_foursu, paths_total, by=c('gene','tx'),
 				if( length(samTab)==0 ) stop('No alignments imported.')
 			}
 
+			if( strandSpecific == 2 ) samTab <- invertStrand(samTab)
+
 			message('Counting reads on exon features...')
-			foOut <- findOverlaps(exonsDB,samTab,ignore.strand=!strandSpecific)
+			foOut <- findOverlaps(exonsDB,samTab,ignore.strand=strandSpecific==0)
 			onfeature <- unique(subjectHits(foOut))
 
 			if( allowMultiOverlap ) {
@@ -101,7 +103,7 @@ makeRPKMs <- function(txdb, paths_foursu, paths_total, by=c('gene','tx'),
 
 			message('Counting reads on intron features...')
 			if( length(onfeature)>0 ) samTab <- samTab[-onfeature] # remove reads falling on exons
-			foOut <- findOverlaps(intronsDB,samTab,ignore.strand=!strandSpecific)
+			foOut <- findOverlaps(intronsDB,samTab,ignore.strand=strandSpecific==0)
 			onfeature <- unique(subjectHits(foOut))
 
 			if( allowMultiOverlap ) {

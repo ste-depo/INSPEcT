@@ -1,3 +1,10 @@
+VERSION 1.5.4
+- modified the argument strandSpecific in makeRPKMs function, so that now the user can perform strand-specific read counting with this possible modes:
+    0 => unstranded
+    1 => stranded
+    2 => reversely stranded
+
+
 VERSION 1.5.3
 - modified internal functions inferKBetaFromIntegral, inferKBetaFromIntegralWithPre, 
 inferKGammaFromIntegral in order to reduce the number of the missing values (NA) in the output

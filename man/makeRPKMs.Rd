@@ -6,7 +6,7 @@
 \usage{
 makeRPKMs(txdb, paths_foursu, paths_total, by = c("gene", "tx"),
   countMultiMappingReads = FALSE, allowMultiOverlap = FALSE,
-  strandSpecific = FALSE, isPairedEnd = FALSE)
+  strandSpecific = 0, isPairedEnd = FALSE)
 }
 \arguments{
 \item{txdb}{A TranscriptDB object}
@@ -22,7 +22,7 @@ identified using the tag "NH" in the bam/sam file.}
 
 \item{allowMultiOverlap}{A logical, indicating if a read is allowed to be assigned to more than one feature, FALSE by default}
 
-\item{strandSpecific}{A logical, if strand-specific read counting should be performed, FALSE by default}
+\item{strandSpecific}{Numeric, 0 if no strand-specific read counting should be performed, 1 stranded, 2 reversely-stranded. 0 by default}
 
 \item{isPairedEnd}{A logical, if paired-end reads are used, FALSE by default}
 }

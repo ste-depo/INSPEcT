@@ -1,6 +1,6 @@
 import("methods","Biobase","BiocParallel","pROC")
 
-importFrom("BiocGenerics", "unlist", "plotMA")
+importFrom("BiocGenerics", "unlist", "plotMA", "invertStrand")
 importFrom("compiler", "cmpfun")
 importFrom("deSolve", "ode")
 importFrom("GenomicAlignments", "readGAlignmentPairs", "readGAlignments")
