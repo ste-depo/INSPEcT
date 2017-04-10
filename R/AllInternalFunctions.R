@@ -506,67 +506,54 @@
 		# assume that no degradation occur during pulse
 		} else {
 
-			inferKBetaFromIntegral <- function(tpts, alpha, totalRNA, maxBeta=150) 
-			{
-				solveFun <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1 ) 
-				{
-					intsol <- function(t , m , q , beta )
-						(m*t*beta + q*beta - m ) * exp(beta*t ) / (beta^2 )
-					defintsol <- function(t0, t1, m, q, beta ) 
-						intsol(t1, m, q, beta ) - intsol(t0, m, q, beta )
-					#
-					mAlpha <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
-					qAlpha <- alpha_t0 - mAlpha * t0
-					#
-					X_t1*exp(beta*t1 ) - X_t0*exp(beta*t0 ) - 
-						defintsol(t0, t1, mAlpha, qAlpha, beta )
-				}
-				maxBetas <- seq(5, maxBeta, by=5)
-				bplapply(2:length(tpts), function(j) {
-					unlist(lapply(1:nrow(alpha),
-						function(i) {
-							k <- 1
-							solutionFound <- FALSE
-							while((!solutionFound) & k <= length(maxBetas)) {
-								try({
-									solution <- uniroot(solveFun
-										, c(1e-5, maxBetas[k])
-										, t0 = tpts[j-1]
-										, t1 = tpts[j]
-										, alpha_t0 = alpha[i,j-1]
-										, alpha_t1 = alpha[i,j]
-										, X_t0 = totalRNA[i,j-1]
-										, X_t1 = totalRNA[i,j]
-										)#$root
-									solutionFound = TRUE
-									}, silent=TRUE)
-								k <- k + 1
-							}
-							if( solutionFound ) 
-								return(solution) 
-							else 
-								return(list(root=NA, estim.prec=NA))
-						}))
-					}, BPPARAM=BPPARAM)
-			}
 			## calculate alpha and recalculate the variance
 			alphaTC <- Lexo/tL
 			if( labeledVarince )
 				alphaTC_var <- Lexo_var/tL^2
 			else
 				alphaTC_var <- apply(alphaTC, 1, speedyVar)
+
 			## calculate beta
 			message('Estimating degradation rates...')
+			inferKBetaFromIntegral <- function(tpts, alpha, totalRNA, maxBeta=75) 
+			{
+				solveFun <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1 ) 
+				{
+					m <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
+					q <- alpha_t0 - m * t0
+					X_t1 - X_t0*exp(-beta*(t1 - t0)) - (
+						(m*t1*beta + q*beta - m ) / (beta^2) - 
+						(m*t0*beta + q*beta - m ) * exp(-beta*(t1 - t0)) / (beta^2)
+						)
+				}
+				bplapply(2:length(tpts), function(j)
+					lapply(1:nrow(alpha), function(i) {
+						tryCatch(
+							uniroot(solveFun
+								, c(1e-5, maxBeta)
+								, t0 = tpts[j-1]
+								, t1 = tpts[j]
+								, alpha_t0 = alpha[i,j-1]
+								, alpha_t1 = alpha[i,j]
+								, X_t0 = totalRNA[i,j-1]
+								, X_t1 = totalRNA[i,j]
+								)
+						, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
+						)})
+					, BPPARAM=BPPARAM)
+			}
 			if( steadyStateMode == 1 ) TexoDer[,1] <- 0
 			betaT0 <- ( alphaTC[,1] - TexoDer[,1] ) / Texo[,1]
 			betaT0[betaT0 < 0 | !is.finite(betaT0)] <- NA
 			if( length(tpts)>1 ) {
-				betaOut <- inferKBetaFromIntegral(tpts, alphaTC, Texo)
+				betaOut <- inferKBetaFromIntegral(tpts, alphaTC, Texo, 
+					maxBeta=quantile(betaT0, na.rm=TRUE, probs=.99)*10
+					)
 				betaTC <- cbind(betaT0, 
-					sapply(betaOut, function(x) x[names(x)=='root'])
+					sapply(betaOut, function(x) sapply(x, '[[', 'root'))
 					)
 				ratesEstimPrec <- cbind(0,
-					sapply(betaOut, function(x) x[names(x)=='estim.prec'])
+					sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))
 					)
 			} else {
 				betaTC <- as.matrix(betaT0)
@@ -576,6 +563,7 @@
 			Tint <- matrix(NA, nrow(Texo), ncol(Texo))
 			Tint_var <- rep(NA, length(Texo_var))
 			gammaTC <- matrix(NA, nrow(betaTC), ncol(betaTC))
+
 		}
 
 	# introns and exons mode
@@ -671,63 +659,6 @@
 		# assume that no degradation occur during pulse
 		} else {
 
-			inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=75) 
-			####### accurate function for estimating the degradation rates
-			####### using the solution of the differential equation system under 
-			####### the condtion that degradation rate is constant between two 
-			####### consecutive time points - more stable that using derivatives
-			####### estimates
-			{
-				solveBeta <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1, 
-					P_t0, P_t1 ) 
-				{
-					lineFromTwoPoints <- function(x , y ) {
-						m <- (y[1] - y[2] ) / (x[1] - x[2] )
-						q <- y[1] - m*x[1]
-						list(coefficients = c(q = q , m = m ) )
-					}	
-					intsol <- function(t , m , q , beta )
-						(m*t*beta + q*beta - m ) * exp(beta*t ) / (beta^2 )
-					defintsol <- function(t0, t1, m, q, beta ) 
-						intsol(t1, m, q, beta ) - intsol(t0, m, q, beta )
-					#
-					mAlpha <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
-					qAlpha <- alpha_t0 - mAlpha * t0
-					#
-					mPreMRNA <- (P_t0 - P_t1 ) / (t0 - t1 )
-					qPreMRNA <- P_t0 - mPreMRNA * t0
-					#
-					X_t1 * exp(beta*t1 ) - X_t0 * exp(beta*t0 ) - 
-						defintsol(t0, t1, mAlpha, qAlpha, beta ) - 
-						beta * defintsol(t0, t1, mPreMRNA, qPreMRNA, beta )
-				}
-				maxBetas <- seq(5, maxBeta, by=5)
-				bplapply(2:length(tpts), function(j) {
-					unlist(lapply(1:nrow(total), function(i) {
-						k <- 1
-						solutionFound <- FALSE
-						while((!solutionFound) & k <= length(maxBetas)) {
-							try({
-								solution <- uniroot(solveBeta
-									, c(1e-5, maxBetas[k])
-									, t0 = tpts[j-1]
-									, t1 = tpts[j]
-									, alpha_t0 = alpha[i,j-1]
-									, alpha_t1 = alpha[i,j]
-									, X_t0 = total[i,j-1]
-									, X_t1 = total[i,j]
-									, P_t0 = preMRNA[i,j-1]
-									, P_t1 = preMRNA[i,j]
-									)
-								solutionFound = TRUE
-								}, silent=TRUE)
-							k <- k + 1
-						}
-						if( solutionFound ) return(solution) else return(list(root=NA, estim.prec=NA))
-					}))
-				}, BPPARAM=BPPARAM)
-			}
-
 			# calculate alpha and recalculate the variance
 			alphaTC <- Lexo/tL
 			if( labeledVarince )
@@ -741,17 +672,59 @@
 				alphaTC_var <- apply(alphaTC, 1, speedyVar)
 
 			# calculate beta
+
+			inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=75) 
+			####### accurate function for estimating the degradation rates
+			####### using the solution of the differential equation system under 
+			####### the condtion that degradation rate is constant between two 
+			####### consecutive time points - more stable that using derivatives
+			####### estimates
+			{
+				solveBeta <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1, 
+					P_t0, P_t1 ) 
+				{
+					mAlpha <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
+					qAlpha <- alpha_t0 - mAlpha * t0
+					#
+					mPreMRNA <- (P_t0 - P_t1 ) / (t0 - t1 )
+					qPreMRNA <- P_t0 - mPreMRNA * t0
+					#
+					X_t1 - X_t0 * exp(-beta*(t1-t0)) - 
+						((mAlpha*t1*beta + qAlpha*beta - mAlpha ) / (beta^2 ) - (mAlpha*t0*beta + qAlpha*beta - mAlpha ) * exp(-beta*(t1-t0)) / (beta^2 )) -
+						beta*((mPreMRNA*t1*beta + qPreMRNA*beta - mPreMRNA ) / (beta^2 ) - (mPreMRNA*t0*beta + qPreMRNA*beta - mPreMRNA ) * exp(-beta*(t1-t0)) / (beta^2 ))
+				}
+				bplapply(2:length(tpts), function(j)
+					lapply(1:nrow(total), function(i) {
+						tryCatch(
+							uniroot(solveBeta
+								, c(1e-5, maxBeta)
+								, t0 = tpts[j-1]
+								, t1 = tpts[j]
+								, alpha_t0 = alpha[i,j-1]
+								, alpha_t1 = alpha[i,j]
+								, X_t0 = total[i,j-1]
+								, X_t1 = total[i,j]
+								, P_t0 = preMRNA[i,j-1]
+								, P_t1 = preMRNA[i,j]
+								)
+						, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
+						)})
+					, BPPARAM=BPPARAM)
+			}
+
 			message('Estimating degradation rates...')
 			if( steadyStateMode == 1 ) TexoDer[,1] <- 0
 			betaT0 <- ( alphaTC[,1] - TexoDer[,1] ) / (Texo[,1] - Tint[,1] )
 			betaT0[betaT0 < 0 | !is.finite(betaT0)] <- NA
 			if( length(tpts)>1 ) {
-				betaOut <- inferKBetaFromIntegralWithPre(tpts, alphaTC, Texo, Tint)
+				betaOut <- inferKBetaFromIntegralWithPre(tpts, alphaTC, Texo, Tint, 
+					maxBeta=quantile(betaT0,na.rm=TRUE,probs=.99)*10
+					)
 				betaTC <- cbind(betaT0, 
-					sapply(betaOut, function(x) x[names(x)=='root'])
+					sapply(betaOut, function(x) sapply(x, '[[', 'root'))
 					)
 				betaEstimPrec <- cbind(0,
-					sapply(betaOut, function(x) x[names(x)=='estim.prec'])
+					sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))
 					)
 			} else {
 				betaTC <- as.matrix(betaT0)
@@ -771,44 +744,28 @@
 			{
 				solveFun <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1 ) 
 				{
-					intsol <- function(t , m , q , beta )
-						(m*t*beta + q*beta - m ) * exp(beta*t ) / (beta^2 )
-					defintsol <- function(t0, t1, m, q, beta ) 
-						intsol(t1, m, q, beta ) - intsol(t0, m, q, beta )
-					#
-					mAlpha <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
-					qAlpha <- alpha_t0 - mAlpha * t0
-					#
-					X_t1*exp(beta*t1 ) - X_t0*exp(beta*t0 ) - 
-						defintsol(t0, t1, mAlpha, qAlpha, beta )
+					m <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
+					q <- alpha_t0 - m * t0
+					X_t1 - X_t0*exp(-beta*(t1 - t0)) - (
+						(m*t1*beta + q*beta - m ) / (beta^2) - 
+						(m*t0*beta + q*beta - m ) * exp(-beta*(t1 - t0)) / (beta^2)
+						)
 				}
-				maxGammas <- seq(5, maxGamma, by=5)
 				bplapply(2:length(tpts), function(j)
-					{
-						unlist(lapply(1:nrow(alpha), function(i) {
-							k <- 1
-							solutionFound <- FALSE
-							while((!solutionFound) & k <= length(maxGammas)) {
-								try({
-									solution <- uniroot(solveFun
-										, c(1e-5, maxGammas[k])
-										, t0 = tpts[j-1]
-										, t1 = tpts[j]
-										, alpha_t0 = alpha[i,j-1]
-										, alpha_t1 = alpha[i,j]
-										, X_t0 = preMRNA[i,j-1]
-										, X_t1 = preMRNA[i,j]
-										)
-									solutionFound = TRUE
-									}, silent=TRUE)
-								k <- k + 1
-							}
-							if( solutionFound )
-								return(solution)
-							else
-								return(list(root=NA, estim.prec=NA))
-						}))
-					}, BPPARAM=BPPARAM)
+					lapply(1:nrow(alpha), function(i) {
+						tryCatch(
+							uniroot(solveFun
+								, c(1e-5, maxGamma)
+								, t0 = tpts[j-1]
+								, t1 = tpts[j]
+								, alpha_t0 = alpha[i,j-1]
+								, alpha_t1 = alpha[i,j]
+								, X_t0 = preMRNA[i,j-1]
+								, X_t1 = preMRNA[i,j]
+								)
+						, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
+						)})
+					, BPPARAM=BPPARAM)
 			}
 			# calculate gamma (from  total RNA introns and alphas )
 			message('Estimating processing rates...')
@@ -816,12 +773,14 @@
 			gammaT0 <- ( alphaTC[,1] - TintDer[,1] ) / Tint[,1]
 			gammaT0[gammaT0 < 0 | !is.finite(gammaT0)] <- NA
 			if( length(tpts)>1 ) {
-				gammaOut <- inferKGammaFromIntegral(tpts, alphaTC, Tint)
-				gammaTC <- cbind(gammaT0, 
-					sapply(gammaOut, function(x) x[names(x)=='root'])
+				gammaOut <- inferKGammaFromIntegral(tpts, alphaTC, Tint, 
+					maxGamma=quantile(gammaT0,na.rm=TRUE,probs=.99)*10
 					)
-				gammaEstimPrec <- cbind(0,
-					sapply(gammaOut, function(x) x[names(x)=='estim.prec'])
+				gammaTC <- cbind(gammaT0, 
+					sapply(gammaOut, function(x) sapply(x, '[[', 'root'))
+					)
+				gammaEstimPrec <- cbind(0, 
+					sapply(gammaOut, function(x) sapply(x, '[[', 'estim.prec'))
 					)
 			} else {
 				gammaTC <- as.matrix(gammaT0)
