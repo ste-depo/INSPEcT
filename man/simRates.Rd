@@ -8,4 +8,3 @@
 The INSPEcT_model object contains 1000 simulated rates that were obtained
 using the dataset rpkms as reference
 }
-

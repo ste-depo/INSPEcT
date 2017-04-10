@@ -54,4 +54,3 @@ rocCurve(simRates, simData3rep, cTsh=.2)
 \seealso{
 \code{\link{makeSimModel}}
 }
-

@@ -28,4 +28,3 @@ data('mycerIds10')
 splitIdx <- c(1,1,1,2,2,2,3,3,3,4)
 mycerIds10Split <- split(mycerIds10, splitIdx)
 }
-

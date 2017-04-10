@@ -45,4 +45,3 @@ rpkms <- makeRPKMsOut$rpkms
 counts <- makeRPKMsOut$counts
 annotation <- makeRPKMsOut$annotation
 }
-

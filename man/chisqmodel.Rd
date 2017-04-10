@@ -3,8 +3,8 @@
 \docType{methods}
 \name{chisqmodel}
 \alias{chisqmodel}
-\alias{chisqmodel,INSPEcT-method}
 \alias{chisqmodel,INSPEcT_model-method}
+\alias{chisqmodel,INSPEcT-method}
 \title{Retrieve results of chi-squared test for the selected models}
 \usage{
 chisqmodel(object, ...)
@@ -31,4 +31,3 @@ that have been selected to better represent the behavior of each gene.
 data('mycerIds10', package='INSPEcT')
 chisqmodel(mycerIds10)
 }
-

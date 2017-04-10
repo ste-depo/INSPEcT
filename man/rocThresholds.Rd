@@ -3,8 +3,8 @@
 \docType{methods}
 \name{rocThresholds}
 \alias{rocThresholds}
-\alias{rocThresholds,INSPEcT_model,INSPEcT-method}
 \alias{rocThresholds,INSPEcT_model,INSPEcT_model-method}
+\alias{rocThresholds,INSPEcT_model,INSPEcT-method}
 \title{Display rate classification performance with thresholds visible at x-axis}
 \usage{
 rocThresholds(object, object2, cTsh = NULL, bTsh = NULL, xlim = c(1e-05,
@@ -53,4 +53,3 @@ rocThresholds(simRates, simData3rep)
 \seealso{
 \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}, \code{\link{rocCurve}}
 }
-

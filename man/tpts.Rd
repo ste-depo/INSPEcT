@@ -25,4 +25,3 @@ Accessor to obtain the tpts associated with the object of class INSPEcT
 data('mycerIds10')
 tpts(mycerIds10)
 }
-

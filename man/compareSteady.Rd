@@ -40,4 +40,3 @@ diffrates <- compareSteady(simData3rep, simData3rep_2)
 ## visualize results
 diffrates
 }
-

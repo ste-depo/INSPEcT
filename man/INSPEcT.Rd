@@ -24,4 +24,3 @@ To see how the typical workflow of INSPEcT works, type: \cr
 Last but not least, to obtain a citation, type: \cr
 \code{citation('INSPEcT')}
 }
-

@@ -27,4 +27,3 @@ A method to access the modeld rates via the method \code{\link{modelRates}}
 data('mycerIds10', package='INSPEcT')
 viewModelRates(mycerIds10, 'synthesis')
 }
-

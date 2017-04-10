@@ -3,8 +3,8 @@
 \docType{methods}
 \name{ratePvals}
 \alias{ratePvals}
-\alias{ratePvals,INSPEcT-method}
 \alias{ratePvals,INSPEcT_model-method}
+\alias{ratePvals,INSPEcT-method}
 \title{Retrieve a single p-value for each rate}
 \usage{
 ratePvals(object, cTsh = NULL)
@@ -51,4 +51,3 @@ thresholds(mycerIds10)$chisquare <- .2
 \seealso{
 \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}
 }
-

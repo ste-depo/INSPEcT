@@ -25,4 +25,3 @@ A method to obtain the number of the tpts associated with the object of class IN
 data('mycerIds10')
 nTpts(mycerIds10)
 }
-

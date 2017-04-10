@@ -38,4 +38,3 @@ plotMA(diffrates, alpha=.5)
 \seealso{
 \url{http://en.wikipedia.org/wiki/MA_plot}
 }
-

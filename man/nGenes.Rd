@@ -25,4 +25,3 @@ A method to obtain the number of the genes associated with the object of class I
 data('mycerIds10')
 nGenes(mycerIds10)
 }
-

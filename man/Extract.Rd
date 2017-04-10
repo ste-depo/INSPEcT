@@ -3,13 +3,13 @@
 \docType{methods}
 \name{Extract}
 \alias{Extract}
-\alias{[,INSPEcT,ANY,ANY-method}
-\alias{[,INSPEcT_model,ANY,ANY-method}
+\alias{[,INSPEcT_model,ANY,ANY,ANY-method}
+\alias{[,INSPEcT,ANY,ANY,ANY-method}
 \title{Extract Parts of an INSPEcT or an INSPEcT_model Object}
 \usage{
-\S4method{[}{INSPEcT_model,ANY,ANY}(x, i)
+\S4method{[}{INSPEcT_model,ANY,ANY,ANY}(x, i)
 
-\S4method{[}{INSPEcT,ANY,ANY}(x, i, j)
+\S4method{[}{INSPEcT,ANY,ANY,ANY}(x, i, j)
 }
 \arguments{
 \item{x}{An object of class INSPEcT or INSPEcT_model}
@@ -42,4 +42,3 @@ mycerIds_5genes_5tpts <- removeModel(mycerIds10)[1:5, 1:5]
 \seealso{
 removeModel
 }
-

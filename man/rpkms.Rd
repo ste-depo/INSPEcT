@@ -16,4 +16,3 @@ both in 4sU-seq and RNA-seq experiments. The variables are as follows:
   \item rpkms_total_introns
 }
 }
-

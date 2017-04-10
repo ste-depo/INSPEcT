@@ -2,25 +2,25 @@
 % Please edit documentation in R/AllGenerics.R, R/testingParams-methods.R
 \docType{methods}
 \name{modelSelection}
-\alias{llrtests}
-\alias{llrtests,INSPEcT-method}
-\alias{llrtests,INSPEcT_model-method}
-\alias{llrtests<-}
-\alias{llrtests<-,INSPEcT-method}
-\alias{llrtests<-,INSPEcT_model-method}
 \alias{modelSelection}
-\alias{modelSelection,INSPEcT-method}
-\alias{modelSelection,INSPEcT_model-method}
 \alias{modelSelection<-}
-\alias{modelSelection<-,INSPEcT-method}
-\alias{modelSelection<-,INSPEcT_model-method}
-\alias{testingParams}
 \alias{thresholds}
-\alias{thresholds,INSPEcT-method}
-\alias{thresholds,INSPEcT_model-method}
 \alias{thresholds<-}
+\alias{llrtests}
+\alias{llrtests<-}
+\alias{testingParams}
+\alias{modelSelection,INSPEcT-method}
+\alias{modelSelection<-,INSPEcT-method}
+\alias{modelSelection,INSPEcT_model-method}
+\alias{modelSelection<-,INSPEcT_model-method}
+\alias{thresholds,INSPEcT-method}
 \alias{thresholds<-,INSPEcT-method}
+\alias{thresholds,INSPEcT_model-method}
 \alias{thresholds<-,INSPEcT_model-method}
+\alias{llrtests,INSPEcT-method}
+\alias{llrtests<-,INSPEcT-method}
+\alias{llrtests,INSPEcT_model-method}
+\alias{llrtests<-,INSPEcT_model-method}
 \title{Get or set parameters for model test and selection}
 \usage{
 modelSelection(object)
@@ -123,4 +123,3 @@ llrtests(mycerIds10)$synthesis <- list(c('0','a'), c('b','ab'))
 \seealso{
 \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}
 }
-

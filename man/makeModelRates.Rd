@@ -3,8 +3,8 @@
 \docType{methods}
 \name{makeModelRates}
 \alias{makeModelRates}
-\alias{makeModelRates,INSPEcT-method}
 \alias{makeModelRates,INSPEcT_model-method}
+\alias{makeModelRates,INSPEcT-method}
 \title{Calculate modeled rates and concentrations}
 \usage{
 makeModelRates(object, ...)
@@ -44,4 +44,3 @@ thresholds(getModel(mycerIds10))$brown <- c(synthesis=.01, degradation=1, proces
 mycerIds10 <- makeModelRates(mycerIds10)
 viewModelRates(mycerIds10, 'degradation')
 }
-

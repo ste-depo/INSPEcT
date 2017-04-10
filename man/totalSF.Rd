@@ -27,4 +27,3 @@ Accessor to obtain the totalSF slot associated with the object of class INSPEcT
 data('mycerIds10')
 totalSF(mycerIds10)
 }
-

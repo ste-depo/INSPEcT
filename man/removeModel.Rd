@@ -44,4 +44,3 @@ mycerIds10_new <- removeModel(mycerIds10)
 modelingParams(mycerIds10_new)$useSigmoidFun <- FALSE
 \dontrun{mycerIds10_new <- modelRates(mycerIds10_new)}
 }
-

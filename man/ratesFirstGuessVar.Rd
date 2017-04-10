@@ -35,4 +35,3 @@ ratesFirstGuessVar(mycerIds, 'synthesis')
 \seealso{
 \code{\link{newINSPEcT}}, \code{\link{ratesFirstGuess}}
 }
-

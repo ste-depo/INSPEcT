@@ -62,4 +62,3 @@ tL <- 1/6
 mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
 	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
 }
-

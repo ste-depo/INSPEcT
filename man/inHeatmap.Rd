@@ -60,4 +60,3 @@ data('mycerIds10', package='INSPEcT')
 inHeatmap(mycerIds10, 'pre-model')
 inHeatmap(mycerIds10, 'model')
 }
-

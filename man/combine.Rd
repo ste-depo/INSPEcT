@@ -39,4 +39,3 @@ mycerIds_5genes <- mycerIds10[6:10]
 mycerIds_7genes <- combine(mycerIds_2genes, mycerIds_5genes)
 
 }
-

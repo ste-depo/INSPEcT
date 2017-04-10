@@ -10,4 +10,3 @@ simRates with 1 replicates and time points corresponding to: 0, 1/6, 1/3, 1/2,
 1, 2, 4, 8, 16 hours. On this dataset rates and concentrations
 have been modeled with the method modelRates
 }
-

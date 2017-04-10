@@ -21,4 +21,3 @@ containing of the genes and the number of time points
 \seealso{
 \code{\link{nGenes}}, \code{\link{nTpts}}
 }
-

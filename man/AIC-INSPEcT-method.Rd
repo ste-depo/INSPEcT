@@ -2,9 +2,9 @@
 % Please edit documentation in R/chisqtest-methods.R
 \docType{methods}
 \name{AIC-INSPEcT-method}
-\alias{AIC,INSPEcT-method}
-\alias{AIC,INSPEcT_model-method}
 \alias{AIC-INSPEcT-method}
+\alias{AIC,INSPEcT_model-method}
+\alias{AIC,INSPEcT-method}
 \title{Akaike information criterion calculated for the models evaluated by INSPEcT}
 \usage{
 \S4method{AIC}{INSPEcT_model}(object, ..., k = 2)
@@ -28,4 +28,3 @@ This method is used to retrieve AIC values for all models tested for all genes.
 data('mycerIds10', package='INSPEcT')
 AIC(mycerIds10)
 }
-

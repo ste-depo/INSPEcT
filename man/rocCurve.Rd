@@ -3,8 +3,8 @@
 \docType{methods}
 \name{rocCurve}
 \alias{rocCurve}
-\alias{rocCurve,INSPEcT_model,INSPEcT-method}
 \alias{rocCurve,INSPEcT_model,INSPEcT_model-method}
+\alias{rocCurve,INSPEcT_model,INSPEcT-method}
 \title{Display rate classification performance}
 \usage{
 rocCurve(object, object2, cTsh = NULL, plot = TRUE)
@@ -49,4 +49,3 @@ rocCurve(simRates, simData3rep)
 \seealso{
 \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}, \code{\link{rocThresholds}}
 }
-

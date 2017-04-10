@@ -3,8 +3,8 @@
 \docType{methods}
 \name{modelingParams}
 \alias{modelingParams}
-\alias{modelingParams,INSPEcT-method}
 \alias{modelingParams<-}
+\alias{modelingParams,INSPEcT-method}
 \alias{modelingParams<-,INSPEcT-method}
 \title{Get and set number parameters for the modeling}
 \usage{
@@ -57,4 +57,3 @@ modelingParams(mycerIds10)$useSigmoidFun <- FALSE
 \seealso{
 \code{\link{modelRates}}
 }
-

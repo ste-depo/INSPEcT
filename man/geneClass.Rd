@@ -3,8 +3,8 @@
 \docType{methods}
 \name{geneClass}
 \alias{geneClass}
-\alias{geneClass,INSPEcT-method}
 \alias{geneClass,INSPEcT_model-method}
+\alias{geneClass,INSPEcT-method}
 \title{Retrieve the regulatory class for each gene}
 \usage{
 geneClass(object, bTsh = NULL, cTsh = NULL)
@@ -42,4 +42,3 @@ thresholds(mycerIds10)$chisquare <- .2
 \seealso{
 \code{\link{ratePvals}}
 }
-

@@ -3,8 +3,8 @@
 \docType{methods}
 \name{getModel}
 \alias{getModel}
-\alias{getModel,INSPEcT-method}
 \alias{getModel<-}
+\alias{getModel,INSPEcT-method}
 \alias{getModel<-,INSPEcT-method}
 \title{Get or replace INSPEcT_model object within INSPEcT object}
 \usage{
@@ -38,4 +38,3 @@ getModel(mycerIds10)
 \seealso{
 \code{\link{testingParams}}
 }
-

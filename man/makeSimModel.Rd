@@ -68,4 +68,3 @@ simData <- makeSimDataset(simRates, newTpts, 3)
 \seealso{
 \code{\link{makeSimDataset}}
 }
-

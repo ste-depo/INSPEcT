@@ -3,8 +3,8 @@
 \docType{methods}
 \name{logLik}
 \alias{logLik}
-\alias{logLik,INSPEcT-method}
 \alias{logLik,INSPEcT_model-method}
+\alias{logLik,INSPEcT-method}
 \title{Retrieve results of log likelihood test}
 \usage{
 logLik(object, ...)
@@ -30,4 +30,3 @@ This method is used to retrieve all the log likelihood ratio test results for al
 data('mycerIds10', package='INSPEcT')
 logLik(mycerIds10)
 }
-

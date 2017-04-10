@@ -75,4 +75,3 @@ mycerIdsModeled <- do.call('combine', chunks)
 \seealso{
 \code{\link{viewModelRates}}, \code{\link{geneClass}}, \code{\link{modelingParams}}
 }
-

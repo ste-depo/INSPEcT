@@ -34,4 +34,3 @@ concentrations (solid thin lines) their variances (dashed lines) and the modeled
 data('mycerIds10', package='INSPEcT')
 plotGene(mycerIds10, 1)
 }
-

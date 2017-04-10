@@ -27,4 +27,3 @@ Accessor to obtain the labeledSF slot associated with the object of class INSPEc
 data('mycerIds10')
 labeledSF(mycerIds10)
 }
-

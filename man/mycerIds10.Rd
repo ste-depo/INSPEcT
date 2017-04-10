@@ -8,4 +8,3 @@
 This INSPEcT object contains the evaluated and modeled rates and concentrations
 of the very first 10 genes of the dataset rpkms
 }
-

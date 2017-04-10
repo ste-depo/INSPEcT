@@ -3,8 +3,8 @@
 \docType{methods}
 \name{chisqtest}
 \alias{chisqtest}
-\alias{chisqtest,INSPEcT-method}
 \alias{chisqtest,INSPEcT_model-method}
+\alias{chisqtest,INSPEcT-method}
 \title{Retrieve all results of chi-squared test}
 \usage{
 chisqtest(object, ...)
@@ -30,4 +30,3 @@ This method is used to retrieve all the chi-squared test results for all models 
 data('mycerIds10', package='INSPEcT')
 chisqtest(mycerIds10)
 }
-

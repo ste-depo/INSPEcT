@@ -21,4 +21,3 @@ A character that contains gene names associated with the object of class INSPEcT
 \description{
 A method to visualize gene names associated with the object of class INSPEcT
 }
-
