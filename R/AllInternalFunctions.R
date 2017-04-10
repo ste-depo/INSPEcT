@@ -1898,15 +1898,15 @@ chisq <- function(experiment, model, variance=NULL)
 		)
 	funcs <- c(.sigmoidModelP, .impulseModelP, .polynomialModelP)
 	dfs <- c(dfSM, dfIM, dfPN)
-	type <- names(pvals)[which.max(pvals)]
-	df   <- dfs[which.max(pvals)]
+	type <- names(pvals)[which.min(pvals)]
+	df   <- dfs[which.min(pvals)]
 
 	if( type=='sigmoid'    ) params <- outSM[,bestSM]$par
 	if( type=='impulse'    ) params <- outIM[,bestIM]$par
 	if( type=='polynomial' ) params <- outPN[,bestPN]$par
 
-	pval <- pvals[which.max(pvals)]
-	fun  <- funcs[[which.max(pvals)]]
+	pval <- pvals[which.min(pvals)]
+	fun  <- funcs[[which.min(pvals)]]
 
 	return(list(type=type, fun=fun , params=params, pval=pval, df=df))
 

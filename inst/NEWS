@@ -1,4 +1,7 @@
 VERSION 1.1.4
+- Fixed a bug that caused a mis-choiche of sigmoid or impulse function during modeling
+
+VERSION 1.1.4
 - Added capabilities for the comparison of two steady-state conditions
 
 VERSION 1.1.3
