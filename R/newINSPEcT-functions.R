@@ -172,8 +172,8 @@ newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
 					, paste(filteroutGenes, collapse='; ')
 					, sep= ''
 					)
-				rpkms_4su_exons <- rpkms_4su_exons[!rownames(rpkms_4su_exons) %in% filteroutGenes, ]
-				rpkms_total_exons <- rpkms_total_exons[!rownames(rpkms_total_exons) %in% filteroutGenes, ]
+				rpkms_4su_exons <- rpkms_4su_exons[!rownames(rpkms_4su_exons) %in% filteroutGenes, ,drop=FALSE]
+				rpkms_total_exons <- rpkms_total_exons[!rownames(rpkms_total_exons) %in% filteroutGenes, ,drop=FALSE]
 			}
 
 			## assign all the genes to the "only exons" mode.
@@ -237,10 +237,10 @@ newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
 					)
 				if( length(filteroutGenes)>10 )
 					message('... and other ', length(filteroutGenes)-10)
-				rpkms_4su_exons <- rpkms_4su_exons[!rownames(rpkms_4su_exons) %in% filteroutGenes, ]
-				rpkms_total_exons <- rpkms_total_exons[!rownames(rpkms_total_exons) %in% filteroutGenes, ]
-				rpkms_4su_introns <- rpkms_4su_introns[!rownames(rpkms_4su_introns) %in% filteroutGenes, ]
-				rpkms_total_introns <- rpkms_total_introns[!rownames(rpkms_total_introns) %in% filteroutGenes, ]
+				rpkms_4su_exons <- rpkms_4su_exons[!rownames(rpkms_4su_exons) %in% filteroutGenes, ,drop=FALSE]
+				rpkms_total_exons <- rpkms_total_exons[!rownames(rpkms_total_exons) %in% filteroutGenes, ,drop=FALSE]
+				rpkms_4su_introns <- rpkms_4su_introns[!rownames(rpkms_4su_introns) %in% filteroutGenes, ,drop=FALSE]
+				rpkms_total_introns <- rpkms_total_introns[!rownames(rpkms_total_introns) %in% filteroutGenes, ,drop=FALSE]
 			}
 
 
@@ -255,8 +255,8 @@ newINSPEcT <- function(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
 					)
 				if( length(filteroutGenes)>10 )
 					message('... and other ', length(filteroutGenes)-10)
-				rpkms_4su_introns <- rpkms_4su_introns[!rownames(rpkms_4su_introns) %in% filteroutGenes, ]
-				rpkms_total_introns <- rpkms_total_introns[!rownames(rpkms_total_introns) %in% filteroutGenes, ]
+				rpkms_4su_introns <- rpkms_4su_introns[!rownames(rpkms_4su_introns) %in% filteroutGenes, ,drop=FALSE]
+				rpkms_total_introns <- rpkms_total_introns[!rownames(rpkms_total_introns) %in% filteroutGenes, ,drop=FALSE]
 			}
 
 			## assign genes to "only exons" or "introns and exons" wheter they have introns or not
