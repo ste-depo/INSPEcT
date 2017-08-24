@@ -4,7 +4,6 @@
 %\VignetteEngine{knitr::knitr}
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
-\usepackage{mathtools}
 
 <<style-knitr, eval=TRUE, echo=FALSE, results="asis">>=
 BiocStyle::latex()
