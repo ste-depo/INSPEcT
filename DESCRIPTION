@@ -1,7 +1,7 @@
 Package: INSPEcT
 Type: Package
 Title: Analysis of 4sU-seq and RNA-seq time-course data
-Version: 1.9.0
+Version: 1.10.0
 Date: 2015-12-15
 Author: Stefano de Pretis
 Maintainer: Stefano de Pretis <ste.depo@gmail.com>
