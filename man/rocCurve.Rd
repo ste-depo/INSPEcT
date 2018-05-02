@@ -43,8 +43,8 @@ and the ability of correctly classifying a rate is measured through the area und
 }
 \examples{
 data('simRates', package='INSPEcT')
-data('simData3rep', package='INSPEcT')
-rocCurve(simRates, simData3rep)
+data('simData3rep_4su', package='INSPEcT')
+rocCurve(simRates[1:10], simData3rep_4su)
 }
 \seealso{
 \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}, \code{\link{rocThresholds}}

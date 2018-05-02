@@ -31,12 +31,12 @@ a statistical significance to the differences between their rates.
 \examples{
 ## load data
 data('simRates', package='INSPEcT')
-data('simData3rep', package='INSPEcT')
+data('simData3rep_4su', package='INSPEcT')
 ## generate a new data set with 3 replicate to make the comparison
-newTpts <- c(0, 1/6)
-simData3rep_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
+newTpts <- c(0, 16)
+simData3rep_4su_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
 ## compare
-diffrates <- compareSteady(simData3rep, simData3rep_2)
+diffrates <- compareSteady(simData3rep_4su, simData3rep_4su_2)
 ## visualize results
 diffrates
 }

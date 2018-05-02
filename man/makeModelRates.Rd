@@ -34,7 +34,7 @@ some testing parameters has changed.
 }
 \examples{
 data('mycerIds10', package='INSPEcT')
-tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
+tpts <- mycerIds10@tpts
 eSet <- makeModelRates(getModel(mycerIds10), tpts=tpts)
 exprs(eSet)
 data('mycerIds10', package='INSPEcT')

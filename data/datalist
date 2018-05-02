@@ -1,5 +1,6 @@
-mycerIds10
-rpkms
-simData1rep
-simData3rep
-simRates
+allcounts4su
+simData2rep_4su.rds
+simData2rep_No4su.rds
+simData3rep_4su.rds
+simData3rep_No4su.rds
+simRates.rds

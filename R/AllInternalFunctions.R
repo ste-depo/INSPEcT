@@ -1,51 +1,52 @@
-.find_tt_par <- function(tpts)
-{
-	cvLogTpts <- function(a , tpts) {
-		newtime <- log2(tpts + a )
-		stats::sd(diff(newtime)) / mean(diff(newtime))
-	}
-	if( length(tpts)>2 )
-		return(optimize(f=cvLogTpts, interval=c(0,5), tpts=tpts )$minimum)
-	else
-		return(1)
-}
-
-.time_transf <- function(t, log_shift) 
+.time_transf <- function(t, log_shift, c = NaN) 
 {
 	newtime <- log2(t+log_shift)
 	return(newtime)
 } 
 
+.time_transf_No4sU <- function(t, log_shift, c) 
+{
+	newtime <- log2(t+log_shift) + c
+	return(newtime)
+} 
+
+.D2impulseModel <- function(t, par) {
+  h0= par[1]; h1=par[2]; h2=par[3]; t1=par[4]; t2=par[5]; b=par[6]
+  -(2*b^2*(h1-h0)*(h1-h2)*exp(b*(t-t2)-b*(t-t1)))/(h1*(exp(-b*(t-t1))+1)^2*(exp(b*(t-t2))+1)^2)+((h1-h2)*((2*b^2*exp(2*b*(t-t2)))/(exp(b*(t-t2))+1)^3-(b^2*exp(b*(t-t2)))/(exp(b*(t-t2))+1)^2)*((h1-h0)/(exp(-b*(t-t1))+1)+h0))/h1+((h1-h0)*((2*b^2*exp(-2*b*(t-t1)))/(exp(-b*(t-t1))+1)^3-(b^2*exp(-b*(t-t1)))/(exp(-b*(t-t1))+1)^2)*((h1-h2)/(exp(b*(t-t2))+1)+h2))/h1
+}
+
+chisq <- function(experiment, model, variance=NULL)
+{
+	sum((experiment - model )^2/variance )
+}
+
 .getRatesAndConcentrationsFromRpkms <- function(totRpkms, labeledRpkms, tpts
-	, tL=NULL, degDuringPulse=FALSE, simulatedData=FALSE, BPPARAM=bpparam() #parallelize=TRUE
-	, totalMedianNorm=TRUE, labeledMedianNorm=FALSE, totalSF=NULL, labeledSF=NULL
-	, steadyStateMode=0) 
+, tL=NULL, degDuringPulse=FALSE, simulatedData=FALSE, BPPARAM=bpparam() #parallelize=TRUE
+, totalMedianNorm=TRUE, labeledMedianNorm=FALSE, totalSF=NULL, labeledSF=NULL
+, steadyStateMode=0) 
 {
 
 	## steadyStateMode
 	## 0 -> derivative at time zero is zero
 	## 1 -> derivative at time zero is non zero only for labeledSF
 	## 2 -> derivative at time zero is non zero only for labeledSF and rates
-
+	
 	## the control during the workflow will be based on the 
 	## negation of simulatedData (that is realData)
 	realData <- !simulatedData
-
+	
 	## eventually set the 'simple' mode
-	if( is.null(totRpkms$introns) | is.null(labeledRpkms$introns) ) 
-		onlyExonsMode <- TRUE
-	else
-		onlyExonsMode <- FALSE
-
+	if( is.null(totRpkms$introns) | is.null(labeledRpkms$introns) ){onlyExonsMode <- TRUE}else{onlyExonsMode <- FALSE}
+	
 	## retrieve gene names from rownames of exon total rpkms
 	## (all the matrices have the same dimensions and rownames)
 	geneNames <- rownames(totRpkms$exons)
-
+	
 	###########
 	# internal functions
 	########
 	speedyVar <- function(x) sum((x - mean.default(x))^2)/length(x[-1])
-
+	
 	##### total fraction
 	## rename total exons
 	Texo  <- totRpkms$exons
@@ -55,9 +56,10 @@
 		if( !identical(dim(Texo_var), dim(Texo)) )
 			stop('Variance must be a matrix with same dimensions of rpkms.')
 		else
-			totalVariance <- TRUE
+		totalVariance <- TRUE
 	} else 
 		totalVariance <- FALSE
+	
 	if( !onlyExonsMode ) {
 		## rename total introns
 		Tint  <- totRpkms$introns
@@ -77,6 +79,7 @@
 			labeledVarince <- TRUE
 	} else 
 		labeledVarince <- FALSE
+	
 	if( !onlyExonsMode ) {
 		## rename total introns
 		Lint <- labeledRpkms$introns
@@ -84,14 +87,13 @@
 		if( labeledVarince )
 			Lint_var <- labeledRpkms$introns_var
 	}
-
-	if( realData )
+	
 	##############
 	# NORMALIZE THE DATA  - only needed with real data, synthetic data are 
-	# 				generated already scaled
+	# generated already scaled
 	#########################
-	{
-
+	if( realData ){
+	
 		#########################
 		#### scale total rpkms ###
 		#########################
@@ -99,76 +101,77 @@
 		# and adjust variance accordingly
 		if( !is.null(totalSF) & totalMedianNorm )
 			stop('If totalSF is provided totalMedianNorm must be set to FALSE')
-
+	
 		if( is.null(totalSF) & !totalMedianNorm ) {
 			totalSF <- rep(1, length(tpts))
 		}
-
+		
 		if( totalMedianNorm ) {
 			ssq.residuals <- function(a, x, y) 
 				stats::median(x - a*y, na.rm=TRUE)^2
-			totalSF <- sapply(1:ncol(Texo), 
+				totalSF <- sapply(1:ncol(Texo), 
 				function(i) 
-					optimize(ssq.residuals, c(-10,10), x=Texo[,1]
-						, y=Texo[,i] )$minimum)				
+				optimize(ssq.residuals, c(-10,10), x=Texo[,1]
+				, y=Texo[,i] )$minimum)
 		}
-
+		
 		if( !is.null(totalSF) ) {
-			Texo <- t(t(Texo)*totalSF)
-			if( totalVariance )
-				Texo_var <- apply(t(t(Texo_var)*totalSF^2), 1, mean, na.rm=TRUE)
-			if( !onlyExonsMode ) {
-				Tint <- t(t(Tint)*totalSF)
+				Texo <- t(t(Texo)*totalSF)
 				if( totalVariance )
-					Tint_var <- apply(t(t(Tint_var)*totalSF^2), 1, mean, na.rm=TRUE)
-			}
+					Texo_var <- t(t(Texo_var)*totalSF^2)
+				if( !onlyExonsMode ) {
+					Tint <- t(t(Tint)*totalSF)
+					if( totalVariance )
+						Tini_var <- t(t(Tint_var)*totalSF^2)
+				}
 		}
-
+		
 		if( !totalVariance ) {
-			## evaluate the variance now
-			Texo_var <- apply( Texo , 1 , speedyVar )
-			if( !onlyExonsMode )
-				Tint_var <- apply( Tint , 1 , speedyVar )
-
+				## evaluate the variance now
+				Texo_var <- apply( Texo , 1 , speedyVar )
+				if( !onlyExonsMode )
+					Tint_var <- apply( Tint , 1 , speedyVar )
 		}
-
+		
 		#########################
 		#### scale 4sU rpkms ###
 		#########################
-
+		
 		## only exons mode
 		if( onlyExonsMode ) 
 		{
-
+			
 			if( !is.null(labeledSF) & labeledMedianNorm )
-				stop('If labeledSF is provided labeledMedianNorm must be set to FALSE')
-
+			stop('If labeledSF is provided labeledMedianNorm must be set to FALSE')
+			
 			# normalize 4su according to median
 			if( labeledMedianNorm ) {
-				ssq.residuals <- function(a, x, y) stats::median(x - a*y, na.rm=TRUE)^2
-				# calculate a scaling factor for each time point
-				labeledSF <- sapply(1:ncol(Lexo), function(i)
-						optimize(ssq.residuals, c(-10,10), x=Lexo[,1], y=Lexo[,i])$minimum)
+			ssq.residuals <- function(a, x, y) stats::median(x - a*y, na.rm=TRUE)^2
+			# calculate a scaling factor for each time point
+			labeledSF <- sapply(1:ncol(Lexo), function(i)
+			optimize(ssq.residuals, c(-10,10), x=Lexo[,1], y=Lexo[,i])$minimum)
 			}
-
+			
 			# normalize and estimate variance
 			if( !is.null(labeledSF) ) {
-				Lexo <- t(t(Lexo)*labeledSF)
-				if( labeledVarince )
-					Lexo_var <- apply(t(t(Lexo_var)*labeledSF^2), 1, mean, na.rm=TRUE)
-				else
-					Lexo_var <- apply(Lexo, 1, speedyVar)					
+			Lexo <- t(t(Lexo)*labeledSF)
+			if( labeledVarince )
+			t(t(Lexo_var)*labeledSF^2)
+			#Lexo_var <- apply(t(t(Lexo_var)*labeledSF^2), 1, mean, na.rm=TRUE)
+			else
+			Lexo_var <- apply(Lexo, 1, speedyVar)
 			} else {
 			# only estimate variance
-				if( labeledVarince )
-					Lexo_var <- apply(Lexo_var, 1, mean, na.rm=TRUE)
-				else
-					Lexo_var <- apply(Lexo, 1, speedyVar)
+			if( labeledVarince )
+			Lexo_var <- Lexo_var
+			#Lexo_var <- apply(Lexo_var, 1, mean, na.rm=TRUE)
+			else
+			Lexo_var <- apply(Lexo, 1, speedyVar)
 			}
-
+			
 		## introns and exons mode
 		} else {
-
+		
 			# derivatives from time course
 			TintDer <- as.matrix(sapply(1:nrow(Tint), 
 				function(i) {
@@ -176,93 +179,95 @@
 						spfun <- splinefun(tpts, Tint[i,])
 						return(spfun(tpts, deriv=1) )
 					} else return(rep(NA, length(tpts)) )
-				}) )
+				}
+			))
+	
 			if( ncol(TintDer)>1 ) TintDer <- t(TintDer)
 			if( steadyStateMode == 0 ) TintDer[, 1] <- 0 
-
+		
 			TexoDer <- as.matrix(sapply(1:nrow(Texo), 
 				function(i) {
 					if( all(is.finite(Texo[i,] ) ) ) {
 						spfun <- splinefun(tpts, Texo[i,])
 						return(spfun(tpts, deriv=1) )
 					} else return(rep(NA, length(tpts)) )
-				}) )
+				}
+			))
+	
 			if( ncol(TexoDer)>1 ) TexoDer <- t(TexoDer)
 			if( steadyStateMode == 0 ) TexoDer[, 1] <- 0
-
+		
 			if( labeledMedianNorm )
 				warning('When introns of labelled and total fraction are provided normalization of 
-					labelled fraction is computed internally. "labeledMedianNorm" argument is ignored.')
-
+				labelled fraction is computed internally. "labeledMedianNorm" argument is ignored.')
+		
 			if( !is.null(labeledSF) ){
 				warning('When introns of labelled and total fraction are provided normalization of 
-					labelled fraction could be computed internally.')
+				labelled fraction could be computed internally.')
 				labeledSF_prior <- labeledSF
-			} else{				
-
+			}else{
+		
 				message('Calculating scaling factor between total and 4su libraries...')
-
+		
 				#########################
 				##### local functions ######
 				########################
 				fLint <- function(Lexo,gamma,tL) Lexo/(tL*gamma)*(1-exp(-gamma*tL))
-					# given the number of labeled molecules, gamma and tL gives back the 
-					# number of processed molecules
+				# given the number of labeled molecules, gamma and tL gives back the 
+				# number of processed molecules
 				fGamma <- function(Lint, Lexo, tL, maxGamma=1e3) {
-					# given the number of labeled molecules and the number of processed
-					# molecules gives back the processing rate. It's an inverse function,
-					# therefore, the precision (step of the interval evaluated) and the
-					# max value where gamma is possibly evaluated should be provided
+				# given the number of labeled molecules and the number of processed
+				# molecules gives back the processing rate. It's an inverse function,
+				# therefore, the precision (step of the interval evaluated) and the
+				# max value where gamma is possibly evaluated should be provided
 					if( is.na(Lint) | is.na(Lexo) ) return(NA)
 					if( Lint >= Lexo ) return(0)
 					if( Lint == 0 ) return(Inf)
-					errorfun <- function(gamma, Lexo, Lint, tL ) 
-						(Lint-fLint(Lexo, gamma, tL))^2
-					optimize(errorfun, c(0,maxGamma), Lexo=Lexo, Lint=Lint
-						, tL=tL)$minimum
+					errorfun <- function(gamma, Lexo, Lint, tL ) (Lint-fLint(Lexo, gamma, tL))^2
+					
+					optimize(errorfun, c(0,maxGamma), Lexo=Lexo, Lint=Lint, tL=tL)$minimum
 				}
 				# calculate the factor which bring the median of the residuals between
 				# the modeled preMRNA levels and the measured to zero
-				sq.median.resids <- function(sf, P, dP, alpha, gamma) 
-					sapply(sf, function(i) {
-						t1 <- dP + gamma*P
-						t2 <- i*alpha
-						idx <- is.finite(t1) & is.finite(t2) & t1 > 0 & t2 > 0
-						resids <- t1[idx] - t2[idx]
-						stats::median(resids , na.rm=TRUE)^2
-					})
-
+				sq.median.resids <- function(sf, P, dP, alpha, gamma) sapply(sf, function(i) {
+					t1 <- dP + gamma*P
+					t2 <- i*alpha
+					idx <- is.finite(t1) & is.finite(t2) & t1 > 0 & t2 > 0
+					resids <- t1[idx] - t2[idx]
+					stats::median(resids , na.rm=TRUE)^2
+				})
+		
 				##################
 				#### scale data ###
 				##################
 				# preMRNA derivative as splines 
 				# (force the first time point to have derivative zero )
 				# estimate of alpha and gamma from 4sU data
-
-				gammaTC <- do.call('cbind',bplapply(
-					1:length(tpts), function(j) 
-						sapply(1:nrow(Lint), 
-							function(i, Lint, Lexo, tL) fGamma(Lint[i,j] , Lexo[i,j] , tL)
-							, Lint=Lint, Lexo=Lexo, tL=tL)
-						,BPPARAM=BPPARAM))
+		
+				gammaTC <- do.call('cbind',bplapply(1:length(tpts), function(j) 
+					sapply(1:nrow(Lint), function(i, Lint, Lexo, tL) 
+						fGamma(Lint[i,j] , Lexo[i,j] , tL)
+					, Lint=Lint, Lexo=Lexo, tL=tL)
+				,BPPARAM=BPPARAM))
+		
 				# scale factor 
 				labeledSF_prior <- sapply(1:ncol(Tint), function(j)
 					optimize(sq.median.resids, c(0.01,100), P=Tint[,j], dP=TintDer[,j], 
-						alpha=Lexo[,j]/tL, gamma=gammaTC[,j] )$minimum)
+					alpha=Lexo[,j]/tL, gamma=gammaTC[,j] )$minimum)
 			}
-
+		
 			if( degDuringPulse ) {
-
+		
 				if( labeledMedianNorm )
 					warning('When introns of labelled and total fraction are provided normalization of 
-						labelled fraction is computed internally. "labeledMedianNorm" argument is ignored.')
-
+					labelled fraction is computed internally. "labeledMedianNorm" argument is ignored.')
+		
 				if( !is.null(labeledSF) )
-					warning('When introns of labelled and total fraction are provided normalization of 
-						labelled fraction is computed internally. "labeledSF" argument is ignored.')
-
+				warning('When introns of labelled and total fraction are provided normalization of 
+				labelled fraction is computed internally. "labeledSF" argument is ignored.')
+		
 				# message('Calculating scaling factor between total and 4su libraries...')
-
+		
 				## select the 500 most synthesized genes at time zero
 				## to calculate the scaling factor
 				if( nrow(Lexo) > 500 ) {
@@ -270,95 +275,92 @@
 				} else {
 					geneSubset <- 1:nrow(Lexo)
 				}
-
+		
 				## re-calculate scaling factor
-
+				
 				## degradation during pulse
 				# system with 4su scaling factor as a 4th variable to be identified
 				initOneGene <- function(i, j) {
-					c(
-						Lexo[i,j]/tL
-						,(Lexo[i,j]/tL-TexoDer[i,j])/(Texo[i,j]-Tint[i,j])
-						,(Lexo[i,j]/tL-TintDer[i,j])/Tint[i,j]
-						)	
+					c(Lexo[i,j]/tL
+					,(Lexo[i,j]/tL-TexoDer[i,j])/(Texo[i,j]-Tint[i,j])
+					,(Lexo[i,j]/tL-TintDer[i,j])/Tint[i,j]
+					)
 				}
+	
 				sys4suScale <- function(x) {
 					y <- numeric(4)
 					y[1] <- TintDer[i,j] - x[1] + x[3]*Tint[i,j]
 					y[2] <- TexoDer[i,j] - x[1] + x[2]*(Texo[i,j]-Tint[i,j])
 					y[3] <- x[4]*Lint[i,j] - x[1]/x[3]*(1-exp(-x[3]*tL))
 					y[4] <- x[4]*Lexo[i,j] - (x[1]*exp(-x[2]*tL)*(x[3]^2-x[2]^2*exp((x[2]-x[3])*tL)+
-						x[2]^2*exp(x[2]*tL)-x[3]^2*exp(x[2]*tL)))/(x[2]*(x[2]-x[3])*x[3])
+					x[2]^2*exp(x[2]*tL)-x[3]^2*exp(x[2]*tL)))/(x[2]*(x[2]-x[3])*x[3])
 					y/c(x[1],x[1],x[4]*Lint[i,j],x[4]*Lexo[i,j])
 				}
 				## get only 4sU scales
 				nGenes <- nrow(Lexo)
 				nTpts <- ncol(Lexo)
+	
 				labeledSfep <- matrix(NA, nrow=nGenes, ncol=nTpts)
 				labeledSf <- matrix(NA, nrow=nGenes, ncol=nTpts)
+		
 				capture.output(suppressWarnings({
 					for( i in geneSubset ) {
 						for( j in 1:nTpts ) {
 							init <- initOneGene(i,j)*labeledSF_prior[j]
-							# if( all(is.finite(init)) ) {
 							mrOut <- tryCatch(
-								multiroot(
-									sys4suScale
-									, c(init,labeledSF_prior[j])
-									# , control = list(maxit=1e3)
-									# , positive=TRUE
-									)
-								, error=function(e)
-									list(
-										root=rep(NA, 4)
-										, estim.precis=NA
-										)
-									)
+								multiroot(sys4suScale, c(init,labeledSF_prior[j]))
+							
+							, error=function(e)
+							list(root=rep(NA, 4), estim.precis=NA)
+							)
 							labeledSf[i,j] <- mrOut$root[4]
 							labeledSfep[i,j] <- mrOut$estim.precis
-							# } else {
-							# 	labeledSf[i,j] <- NA
-							# 	labeledSfep[i,j] <- NA
-							# }
 						}
 					}
 				}))
-				
+		
 				## chose the best resolved genes to estimate 
 				## from them the scale factor
 				epTsh <- apply(labeledSfep,2,quantile,probs=.75,na.rm=TRUE)
 				ix <- t(apply(labeledSfep,1, function(x) x>epTsh))
 				labeledSf[ix] <- NA
 				labeledSF <- apply(labeledSf, 2, stats::median, na.rm=TRUE)
-
+		
 			} else {
-
+		
 				labeledSF <- labeledSF_prior
-
+		
 			}
-
+		
 		}
-
-	## simulated data
+		
+		## simulated data
 	} else {
-
+	
 		# in case of synthetic data the time course is already scaled
 		# therefore just rename the variables and compute varince in 
 		# case is not provided
 		alphaTC <- Lexo
 		if( labeledVarince )
-			alphaTC_var <- rowMeans(Lexo_var)
-		else alphaTC_var <- apply(alphaTC, 1, speedyVar)
+			alphaTC_var <- Lexo_var ################################## M.F. varianza alpha
+		else {
+			# calculate variance from the time course and replicate it
+			# for each time point
+			alphaTC_var <- apply(alphaTC, 1, speedyVar)
+			alphaTC_var <- sapply(1:ncol(alphaTC), function(i) alphaTC_var)
+		}
 		if( totalVariance ) {
-			Texo_var <- rowMeans(Texo_var)
-			Tint_var <- rowMeans(Tint_var)
+			Texo_var <- Texo_var
+			Tint_var <- Tint_var
 		} else {
 			Texo_var <- apply( Texo , 1 , speedyVar )
+			Texo_var <- sapply(1:ncol(Texo), function(i) Texo_var)
 			Tint_var <- apply( Tint , 1 , speedyVar )
+			Tint_var <- sapply(1:ncol(Tint), function(i) Tint_var)
 		}
 		# scaling factor for synthetic dataset is meaningless
 		totalSF <- labeledSF <- rep(1, length(tpts))
-
+	
 		# derivatives from time course
 		TintDer <- as.matrix(sapply(1:nrow(Tint), 
 			function(i) {
@@ -366,434 +368,446 @@
 					spfun <- splinefun(tpts, Tint[i,])
 					return(spfun(tpts, deriv=1) )
 				} else return(rep(NA, length(tpts)) )
-			}) )
+			}
+		))
 		if( ncol(TintDer)>1 ) TintDer <- t(TintDer)
 		if( steadyStateMode == 0 ) TintDer[, 1] <- 0 
-
+	
 		TexoDer <- as.matrix(sapply(1:nrow(Texo), 
 			function(i) {
 				if( all(is.finite(Texo[i,] ) ) ) {
-					spfun <- splinefun(tpts, Texo[i,])
-					return(spfun(tpts, deriv=1) )
+				spfun <- splinefun(tpts, Texo[i,])
+				return(spfun(tpts, deriv=1) )
 				} else return(rep(NA, length(tpts)) )
-			}) )
+			}
+		))
 		if( ncol(TexoDer)>1 ) TexoDer <- t(TexoDer)
 		if( steadyStateMode == 0 ) TexoDer[, 1] <- 0
-
-
+	
 	}
-
+	
 	###################################
 	## estimate degradation rates #########
 	#####################################
-
+	
 	# only exons mode
 	if( onlyExonsMode ) {
-
+	
 		# in case introns are not provided calculate degradation rates with
 		# a reduced function that doesn't takes preMRNAs into account and
 		# return results without estimating processing rates
-
+		
 		# derivatives from time course
 		TexoDer <- as.matrix(sapply(1:nrow(Texo), 
-			function(i) {
-				if( all(is.finite(Texo[i,] ) ) ) {
-					spfun <- splinefun(tpts, Texo[i,])
-					return(spfun(tpts, deriv=1) )
-				} else return(rep(NA, length(tpts)) )
-			}) )
+		function(i) {
+		if( all(is.finite(Texo[i,] ) ) ) {
+		spfun <- splinefun(tpts, Texo[i,])
+		return(spfun(tpts, deriv=1) )
+		} else return(rep(NA, length(tpts)) )
+		}) )
 		if( ncol(TexoDer)>1 ) TexoDer <- t(TexoDer)
 		if( steadyStateMode == 0 ) TexoDer[, 1] <- 0
-
-
+	
+	
 		## degradation during pulse
 		## estimate both scaling and rates at the same time
 		if( degDuringPulse ) {
-
-			message('Estimating all rates...')
-
-			## degradation during pulse
-			initOneGene <- function(i, j) {
-				c(
-					Lexo[i,j]*labeledSF[j]/tL
-					,(Lexo[i,j]*labeledSF[j]/tL-TexoDer[i,j])/Texo[i,j]
-					)	
-			}
-			sys4suSmall <- function(x) {
-				y <- numeric(2)
-				y[1] <- TexoDer[i,j] - x[1] + x[2]*Texo[i,j]
-				y[2] <- Lexo[i,j] - x[1]/x[2]*(1-exp(-x[2]*tL))
-				y
-			}
-			## get only the rates
-			nGenes <- nrow(Lexo)
-			nTpts <- ncol(Lexo)
-			ratesEstimPrec <- matrix(NA, nrow=nGenes, ncol=nTpts)
-			alphaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
-			betaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
-			capture.output(suppressWarnings({
-				for( i in 1:nGenes ) {
-					for( j in 1:nTpts ) {
-						init <- initOneGene(i,j)
-						# if( all(is.finite(init)) ) {
-						mrOut <- tryCatch(
-							multiroot(
-								sys4suSmall
-								, initOneGene(i,j)
-								# , labeledSF=labeledSF
-								# , control = list(maxit=1e3)
-								# , positive=TRUE
-								)
-							, error=function(e)
-								list(
-									root=rep(NA, 2)
-									, estim.precis=NA
-									)
-								)
-						ratesEstimPrec[i,j] <- mrOut$estim.precis
-						alphaTC[i,j] <- mrOut$root[1]
-						betaTC[i,j] <- mrOut$root[2]
-						# } else {
-						# 	labeledSfep[i,j] <- NA
-						# 	alphaTC[i,j] <- NA
-						# 	betaTC[i,j] <- NA
-						# 	gammaTC[i,j] <- NA
-						# }
-					}
-				}
-			}))
-
-			# ## keep only the best resolved rates (put to NA the worst 10%
-			# ## of rates in time points later than zero)
-			# epTsh <- apply(labeledSfep,2,quantile,probs=.9,na.rm=TRUE)
-			# ix <- t(apply(labeledSfep,1, function(x) x>epTsh))
-			# ix[,1] <- FALSE
-			# alphaTC[ix] <- NA
-			# betaTC[ix] <- NA
-			# gammaTC[ix] <- NA
-
-			## put negative values to NA and rise a 
-			## warning if they are more than 20% of a specific rate
-			## synthesis
-			ix <- alphaTC<0
-			negativePerc <- length(which(ix))/length(ix)*100
-			if( negativePerc>20 ) {
-				warning(paste(round(negativePerc), 
-					'% of the synthesis rates are negative. Putting them to NA.'))
-			}
-			alphaTC[ix] <- NA
-			## degradation
-			ix <- betaTC<0
-			negativePerc <- length(which(ix))/length(ix)*100
-			if( negativePerc>20 ) {
-				warning(paste(round(negativePerc), 
-					'% of the degradation rates are negative. Putting them to NA.'))
-			}
-			betaTC[ix] <- NA
-
-			## recalculate the variance
-			if( labeledVarince )
-				alphaTC_var <- Lexo_var/tL^2
-			else
-				alphaTC_var <- apply(alphaTC, 1, speedyVar)
-
-			## set preMRNA and gamma to NA
-			Tint <- matrix(NA, nrow(Texo), ncol(Texo))
-			Tint_var <- rep(NA, length(Texo_var))
-			gammaTC <- matrix(NA, nrow(betaTC), ncol(betaTC))
-
-
+		
+		message('Estimating all rates...')
+		
+		## degradation during pulse
+		initOneGene <- function(i, j) {
+		c(
+		Lexo[i,j]*labeledSF[j]/tL
+		,(Lexo[i,j]*labeledSF[j]/tL-TexoDer[i,j])/Texo[i,j]
+		)
+		}
+		sys4suSmall <- function(x) {
+		y <- numeric(2)
+		y[1] <- TexoDer[i,j] - x[1] + x[2]*Texo[i,j]
+		y[2] <- Lexo[i,j] - x[1]/x[2]*(1-exp(-x[2]*tL))
+		y
+		}
+		## get only the rates
+		nGenes <- nrow(Lexo)
+		nTpts <- ncol(Lexo)
+		ratesEstimPrec <- matrix(NA, nrow=nGenes, ncol=nTpts)
+		alphaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
+		betaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
+		capture.output(suppressWarnings({
+		for( i in 1:nGenes ) {
+		for( j in 1:nTpts ) {
+		init <- initOneGene(i,j)
+		# if( all(is.finite(init)) ) {
+		mrOut <- tryCatch(
+		multiroot(
+		sys4suSmall
+		, initOneGene(i,j)
+		# , labeledSF=labeledSF
+		# , control = list(maxit=1e3)
+		# , positive=TRUE
+		)
+		, error=function(e)
+		list(
+		root=rep(NA, 2)
+		, estim.precis=NA
+		)
+		)
+		ratesEstimPrec[i,j] <- mrOut$estim.precis
+		alphaTC[i,j] <- mrOut$root[1]
+		betaTC[i,j] <- mrOut$root[2]
+		# } else {
+		# labeledSfep[i,j] <- NA
+		# alphaTC[i,j] <- NA
+		# betaTC[i,j] <- NA
+		# gammaTC[i,j] <- NA
+		# }
+		}
+		}
+		}))
+		
+		# ## keep only the best resolved rates (put to NA the worst 10%
+		# ## of rates in time points later than zero)
+		# epTsh <- apply(labeledSfep,2,quantile,probs=.9,na.rm=TRUE)
+		# ix <- t(apply(labeledSfep,1, function(x) x>epTsh))
+		# ix[,1] <- FALSE
+		# alphaTC[ix] <- NA
+		# betaTC[ix] <- NA
+		# gammaTC[ix] <- NA
+		
+		## put negative values to NA and rise a 
+		## warning if they are more than 20% of a specific rate
+		## synthesis
+		ix <- alphaTC<0
+		negativePerc <- length(which(ix))/length(ix)*100
+		if( negativePerc>20 ) {
+		warning(paste(round(negativePerc), 
+		'% of the synthesis rates are negative. Putting them to NA.'))
+		}
+		alphaTC[ix] <- NA
+		## degradation
+		ix <- betaTC<0
+		negativePerc <- length(which(ix))/length(ix)*100
+		if( negativePerc>20 ) {
+		warning(paste(round(negativePerc), 
+		'% of the degradation rates are negative. Putting them to NA.'))
+		}
+		betaTC[ix] <- NA
+		
+		## recalculate the variance
+		if( labeledVarince )
+			alphaTC_var <- Lexo_var/tL^2
+		else {
+			alphaTC_var <- apply(alphaTC, 1, speedyVar)
+			alphaTC_var <- sapply(1:ncol(alphaTC), function(i) alphaTC_var)
+		}
+		
+		## set preMRNA and gamma to NA
+		Tint <- matrix(NA, nrow(Texo), ncol(Texo))
+		Tint_var <- matrix(NA, nrow(Texo), ncol(Texo))
+		gammaTC <- matrix(NA, nrow(betaTC), ncol(betaTC))
+		
 		# assume that no degradation occur during pulse
 		} else {
-
-			## calculate alpha and recalculate the variance
-			alphaTC <- Lexo/tL
-			if( labeledVarince )
-				alphaTC_var <- Lexo_var/tL^2
-			else
-				alphaTC_var <- apply(alphaTC, 1, speedyVar)
-
-			## calculate beta
-			message('Estimating degradation rates...')
-			inferKBetaFromIntegral <- function(tpts, alpha, totalRNA, maxBeta=75) 
-			{
-				solveFun <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1 ) 
-				{
-					m <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
-					q <- alpha_t0 - m * t0
-					X_t1 - X_t0*exp(-beta*(t1 - t0)) - (
-						(m*t1*beta + q*beta - m ) / (beta^2) - 
-						(m*t0*beta + q*beta - m ) * exp(-beta*(t1 - t0)) / (beta^2)
-						)
-				}
-				bplapply(2:length(tpts), function(j)
-					lapply(1:nrow(alpha), function(i) {
-						tryCatch(
-							uniroot(solveFun
-								, c(1e-5, maxBeta)
-								, t0 = tpts[j-1]
-								, t1 = tpts[j]
-								, alpha_t0 = alpha[i,j-1]
-								, alpha_t1 = alpha[i,j]
-								, X_t0 = totalRNA[i,j-1]
-								, X_t1 = totalRNA[i,j]
-								)
-						, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
-						)})
-					, BPPARAM=BPPARAM)
-			}
-			if( steadyStateMode == 1 ) TexoDer[,1] <- 0
-			betaT0 <- ( alphaTC[,1] - TexoDer[,1] ) / Texo[,1]
-			betaT0[betaT0 < 0 | !is.finite(betaT0)] <- NA
-			if( length(tpts)>1 ) {
-				betaOut <- inferKBetaFromIntegral(tpts, alphaTC, Texo, 
-					maxBeta=quantile(betaT0, na.rm=TRUE, probs=.99)*10
-					)
-				betaTC <- cbind(betaT0, 
-					sapply(betaOut, function(x) sapply(x, '[[', 'root'))
-					)
-				ratesEstimPrec <- cbind(0,
-					sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))
-					)
-			} else {
-				betaTC <- as.matrix(betaT0)
-				ratesEstimPrec <- matrix(0, nrow=nrow(betaTC), ncol=ncol(betaTC))
-			}
-			## set preMRNA and gamma to NA
-			Tint <- matrix(NA, nrow(Texo), ncol(Texo))
-			Tint_var <- rep(NA, length(Texo_var))
-			gammaTC <- matrix(NA, nrow(betaTC), ncol(betaTC))
-
+		
+		## calculate alpha and recalculate the variance
+		alphaTC <- Lexo/tL
+		if( labeledVarince )
+			alphaTC_var <- Lexo_var/tL^2
+		else {
+			alphaTC_var <- apply(alphaTC, 1, speedyVar)
+			alphaTC_var <- sapply(1:ncol(alphaTC), function(i) alphaTC_var)
 		}
-
+		
+		## calculate beta
+		message('Estimating degradation rates...')
+		inferKBetaFromIntegral <- function(tpts, alpha, totalRNA, maxBeta=75) 
+		{
+		solveFun <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1 ) 
+		{
+		m <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
+		q <- alpha_t0 - m * t0
+		X_t1 - X_t0*exp(-beta*(t1 - t0)) - (
+		(m*t1*beta + q*beta - m ) / (beta^2) - 
+		(m*t0*beta + q*beta - m ) * exp(-beta*(t1 - t0)) / (beta^2)
+		)
+		}
+		bplapply(2:length(tpts), function(j)
+		lapply(1:nrow(alpha), function(i) {
+		tryCatch(
+		uniroot(solveFun
+		, c(1e-5, maxBeta)
+		, t0 = tpts[j-1]
+		, t1 = tpts[j]
+		, alpha_t0 = alpha[i,j-1]
+		, alpha_t1 = alpha[i,j]
+		, X_t0 = totalRNA[i,j-1]
+		, X_t1 = totalRNA[i,j]
+		)
+		, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
+		)})
+		, BPPARAM=BPPARAM)
+		}
+		if( steadyStateMode == 1 ) TexoDer[,1] <- 0
+		betaT0 <- ( alphaTC[,1] - TexoDer[,1] ) / Texo[,1]
+		betaT0[betaT0 < 0 | !is.finite(betaT0)] <- NA
+		if( length(tpts)>1 ) {
+		betaOut <- inferKBetaFromIntegral(tpts, alphaTC, Texo, 
+		maxBeta=quantile(betaT0, na.rm=TRUE, probs=.99)*10
+		)
+		betaTC <- cbind(betaT0, 
+		sapply(betaOut, function(x) sapply(x, '[[', 'root'))
+		)
+		ratesEstimPrec <- cbind(0,
+		sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))
+		)
+		} else {
+		betaTC <- as.matrix(betaT0)
+		ratesEstimPrec <- matrix(0, nrow=nrow(betaTC), ncol=ncol(betaTC))
+		}
+		## set preMRNA and gamma to NA
+		Tint <- matrix(NA, nrow(Texo), ncol(Texo))
+		Tint_var <- matrix(NA, nrow(Texo), ncol(Texo))
+		gammaTC <- matrix(NA, nrow(betaTC), ncol(betaTC))
+		
+		}
+	
 	# introns and exons mode
 	} else {
-
+	
 		# in case introns are provided calculate degradation rates with
 		# a function that takes preMRNAs into account and
 		# claculate processing rates
-
+		
 		## degradation during pulse
 		## estimate both scaling and rates at the same time
 		if( degDuringPulse ) {
-
-			# Lexo <- alphaTC
-			# Lexo_var <- alphaTC_var
-
-			message('Estimating all rates...')
-
-			## once set the scale factor calculate the rates
-			initOneGene <- function(i, j) {
-				c(
-					Lexo[i,j]*labeledSF[j]/tL
-					,(Lexo[i,j]*labeledSF[j]/tL-TexoDer[i,j])/(Texo[i,j]-Tint[i,j])
-					,(Lexo[i,j]*labeledSF[j]/tL-TintDer[i,j])/Tint[i,j]
-					)	
-			}
-			sys4su <- function(x, labeledSF) {
-				y <- numeric(3)
-				y[1] <- TintDer[i,j] - x[1] + x[3]*Tint[i,j]
-				y[2] <- TexoDer[i,j] - x[1] + x[2]*(Texo[i,j]-Tint[i,j])
-				y[3] <- labeledSF[j]*Lexo[i,j] - (x[1]*exp(-x[2]*tL)*(x[3]^2-x[2]^2*exp((x[2]-x[3])*tL)+
-					x[2]^2*exp(x[2]*tL)-x[3]^2*exp(x[2]*tL)))/(x[2]*(x[2]-x[3])*x[3])
-				y
-			}
-			## get only the rates
-			nGenes <- nrow(Lexo)
-			nTpts <- ncol(Lexo)
-			ratesEstimPrec <- matrix(NA, nrow=nGenes, ncol=nTpts)
-			alphaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
-			betaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
-			gammaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
-			capture.output(suppressWarnings({
-				for( i in 1:nGenes ) {
-					for( j in 1:nTpts ) {
-						# if( all(is.finite(init)) ) {
-						mrOut <- tryCatch(
-							multiroot(
-								sys4su
-								, initOneGene(i,j)
-								, labeledSF=labeledSF
-								# , control = list(maxit=1e3)
-								# , positive=TRUE
-								)
-							, error=function(e)
-								list(
-									root=rep(NA, 4)
-									, estim.precis=NA
-									)
-								)
-						ratesEstimPrec[i,j] <- mrOut$estim.precis
-						alphaTC[i,j] <- mrOut$root[1]
-						betaTC[i,j] <- mrOut$root[2]
-						gammaTC[i,j] <- mrOut$root[3]
-						# } else {
-						# 	labeledSfep[i,j] <- NA
-						# 	alphaTC[i,j] <- NA
-						# 	betaTC[i,j] <- NA
-						# 	gammaTC[i,j] <- NA
-						# }
-					}
-				}
-			}))
-
-			## put negative values to NA and rise a 
-			## warning if they are more than 20% of a specific rate
-			ix <- alphaTC<0 | betaTC<0 | gammaTC<0
-			negativePerc <- length(which(ix))/length(ix)*100
-			if( negativePerc>20 ) {
-				warning(paste(round(negativePerc), 
-					'% of the genes contains negative rates. Putting them to NA.'))
-			}
-			alphaTC[ix] <- NA
-			betaTC[ix] <- NA
-			gammaTC[ix] <- NA
-			ratesEstimPrec[ix] <- NA
-
-			## recalculate the variance
-			if( labeledVarince )
-				alphaTC_var <- apply(t(t(Lexo_var)*(labeledSF/tL)^2), 1, mean, na.rm=TRUE)
-			else
-				alphaTC_var <- apply(alphaTC, 1, speedyVar)
-
+		
+		# Lexo <- alphaTC
+		# Lexo_var <- alphaTC_var
+		
+		message('Estimating all rates...')
+		
+		## once set the scale factor calculate the rates
+		initOneGene <- function(i, j) {
+		c(
+		Lexo[i,j]*labeledSF[j]/tL
+		,(Lexo[i,j]*labeledSF[j]/tL-TexoDer[i,j])/(Texo[i,j]-Tint[i,j])
+		,(Lexo[i,j]*labeledSF[j]/tL-TintDer[i,j])/Tint[i,j]
+		)
+		}
+		sys4su <- function(x, labeledSF) {
+		y <- numeric(3)
+		y[1] <- TintDer[i,j] - x[1] + x[3]*Tint[i,j]
+		y[2] <- TexoDer[i,j] - x[1] + x[2]*(Texo[i,j]-Tint[i,j])
+		y[3] <- labeledSF[j]*Lexo[i,j] - (x[1]*exp(-x[2]*tL)*(x[3]^2-x[2]^2*exp((x[2]-x[3])*tL)+
+		x[2]^2*exp(x[2]*tL)-x[3]^2*exp(x[2]*tL)))/(x[2]*(x[2]-x[3])*x[3])
+		y
+		}
+		## get only the rates
+		nGenes <- nrow(Lexo)
+		nTpts <- ncol(Lexo)
+		ratesEstimPrec <- matrix(NA, nrow=nGenes, ncol=nTpts)
+		alphaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
+		betaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
+		gammaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
+		capture.output(suppressWarnings({
+		for( i in 1:nGenes ) {
+		for( j in 1:nTpts ) {
+		# if( all(is.finite(init)) ) {
+		mrOut <- tryCatch(
+		multiroot(
+		sys4su
+		, initOneGene(i,j)
+		, labeledSF=labeledSF
+		# , control = list(maxit=1e3)
+		# , positive=TRUE
+		)
+		, error=function(e)
+		list(
+		root=rep(NA, 4)
+		, estim.precis=NA
+		)
+		)
+		ratesEstimPrec[i,j] <- mrOut$estim.precis
+		alphaTC[i,j] <- mrOut$root[1]
+		betaTC[i,j] <- mrOut$root[2]
+		gammaTC[i,j] <- mrOut$root[3]
+		# } else {
+		# labeledSfep[i,j] <- NA
+		# alphaTC[i,j] <- NA
+		# betaTC[i,j] <- NA
+		# gammaTC[i,j] <- NA
+		# }
+		}
+		}
+		}))
+		
+		## put negative values to NA and rise a 
+		## warning if they are more than 20% of a specific rate
+		ix <- alphaTC<0 | betaTC<0 | gammaTC<0
+		negativePerc <- length(which(ix))/length(ix)*100
+		if( negativePerc>20 ) {
+		warning(paste(round(negativePerc), 
+		'% of the genes contains negative rates. Putting them to NA.'))
+		}
+		alphaTC[ix] <- NA
+		betaTC[ix] <- NA
+		gammaTC[ix] <- NA
+		ratesEstimPrec[ix] <- NA
+		
+		## recalculate the variance
+		if( labeledVarince )
+			alphaTC_var <- Lexo_var*(labeledSF/tL)^2
+		else {
+			alphaTC_var <- apply(alphaTC, 1, speedyVar)
+			alphaTC_var <- sapply(1:ncol(alphaTC), function(i) alphaTC_var)
+		}
+		
 		# assume that no degradation occur during pulse
 		} else {
-
-			# calculate alpha and recalculate the variance
-			alphaTC <- Lexo/tL
-			if( labeledVarince )
-				alphaTC_var <- Lexo_var/tL^2
-			else
-				alphaTC_var <- apply(alphaTC, 1, speedyVar)
-			alphaTC <- t(t(alphaTC)*labeledSF)
-			if( labeledVarince )
-				alphaTC_var <- apply(t(t(alphaTC_var)*labeledSF^2), 1, mean, na.rm=TRUE)
-			else
-				alphaTC_var <- apply(alphaTC, 1, speedyVar)
-
-			# calculate beta
-
-			inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=75) 
-			####### accurate function for estimating the degradation rates
-			####### using the solution of the differential equation system under 
-			####### the condtion that degradation rate is constant between two 
-			####### consecutive time points - more stable that using derivatives
-			####### estimates
-			{
-				solveBeta <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1, 
-					P_t0, P_t1 ) 
-				{
-					mAlpha <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
-					qAlpha <- alpha_t0 - mAlpha * t0
-					#
-					mPreMRNA <- (P_t0 - P_t1 ) / (t0 - t1 )
-					qPreMRNA <- P_t0 - mPreMRNA * t0
-					#
-					X_t1 - X_t0 * exp(-beta*(t1-t0)) - 
-						((mAlpha*t1*beta + qAlpha*beta - mAlpha ) / (beta^2 ) - (mAlpha*t0*beta + qAlpha*beta - mAlpha ) * exp(-beta*(t1-t0)) / (beta^2 )) -
-						beta*((mPreMRNA*t1*beta + qPreMRNA*beta - mPreMRNA ) / (beta^2 ) - (mPreMRNA*t0*beta + qPreMRNA*beta - mPreMRNA ) * exp(-beta*(t1-t0)) / (beta^2 ))
-				}
-				bplapply(2:length(tpts), function(j)
-					lapply(1:nrow(total), function(i) {
-						tryCatch(
-							uniroot(solveBeta
-								, c(1e-5, maxBeta)
-								, t0 = tpts[j-1]
-								, t1 = tpts[j]
-								, alpha_t0 = alpha[i,j-1]
-								, alpha_t1 = alpha[i,j]
-								, X_t0 = total[i,j-1]
-								, X_t1 = total[i,j]
-								, P_t0 = preMRNA[i,j-1]
-								, P_t1 = preMRNA[i,j]
-								)
-						, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
-						)})
-					, BPPARAM=BPPARAM)
-			}
-
-			message('Estimating degradation rates...')
-			if( steadyStateMode == 1 ) TexoDer[,1] <- 0
-			betaT0 <- ( alphaTC[,1] - TexoDer[,1] ) / (Texo[,1] - Tint[,1] )
-			betaT0[betaT0 < 0 | !is.finite(betaT0)] <- NA
-			if( length(tpts)>1 ) {
-				betaOut <- inferKBetaFromIntegralWithPre(tpts, alphaTC, Texo, Tint, 
-					maxBeta=quantile(betaT0,na.rm=TRUE,probs=.99)*10
-					)
-				betaTC <- cbind(betaT0, 
-					sapply(betaOut, function(x) sapply(x, '[[', 'root'))
-					)
-				betaEstimPrec <- cbind(0,
-					sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))
-					)
-			} else {
-				betaTC <- as.matrix(betaT0)
-				betaEstimPrec <- matrix(0, nrow=nrow(betaTC), ncol=ncol(betaTC))
-			}
-
-			###################################
-			## estimate processing rates #########
-			#####################################
-
-			inferKGammaFromIntegral <- function(tpts, alpha, preMRNA, maxGamma=150)
-			####### accurate function for estimating the degradation rates
-			####### using the solution of the differential equation system under 
-			####### the condtion that processing rate is constant between two 
-			####### consecutive time points - more stable that using derivatives
-			####### estimates
-			{
-				solveFun <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1 ) 
-				{
-					m <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
-					q <- alpha_t0 - m * t0
-					X_t1 - X_t0*exp(-beta*(t1 - t0)) - (
-						(m*t1*beta + q*beta - m ) / (beta^2) - 
-						(m*t0*beta + q*beta - m ) * exp(-beta*(t1 - t0)) / (beta^2)
-						)
-				}
-				bplapply(2:length(tpts), function(j)
-					lapply(1:nrow(alpha), function(i) {
-						tryCatch(
-							uniroot(solveFun
-								, c(1e-5, maxGamma)
-								, t0 = tpts[j-1]
-								, t1 = tpts[j]
-								, alpha_t0 = alpha[i,j-1]
-								, alpha_t1 = alpha[i,j]
-								, X_t0 = preMRNA[i,j-1]
-								, X_t1 = preMRNA[i,j]
-								)
-						, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
-						)})
-					, BPPARAM=BPPARAM)
-			}
-			# calculate gamma (from  total RNA introns and alphas )
-			message('Estimating processing rates...')
-			if( steadyStateMode == 1 ) TintDer[,1] <- 0
-			gammaT0 <- ( alphaTC[,1] - TintDer[,1] ) / Tint[,1]
-			gammaT0[gammaT0 < 0 | !is.finite(gammaT0)] <- NA
-			if( length(tpts)>1 ) {
-				gammaOut <- inferKGammaFromIntegral(tpts, alphaTC, Tint, 
-					maxGamma=quantile(gammaT0,na.rm=TRUE,probs=.99)*10
-					)
-				gammaTC <- cbind(gammaT0, 
-					sapply(gammaOut, function(x) sapply(x, '[[', 'root'))
-					)
-				gammaEstimPrec <- cbind(0, 
-					sapply(gammaOut, function(x) sapply(x, '[[', 'estim.prec'))
-					)
-			} else {
-				gammaTC <- as.matrix(gammaT0)
-				gammaEstimPrec <- matrix(0, nrow=nrow(gammaTC), ncol=ncol(gammaTC))
-			}
-
-			ratesEstimPrec <- betaEstimPrec + gammaEstimPrec
-
+		
+		# calculate alpha and recalculate the variance
+		alphaTC <- Lexo/tL
+		if( labeledVarince )
+			alphaTC_var <- Lexo_var/tL^2
+		else {
+			alphaTC_var <- apply(alphaTC, 1, speedyVar)
+			alphaTC_var <- sapply(1:ncol(alphaTC), function(i) alphaTC_var)
 		}
 
+		alphaTC <- t(t(alphaTC)*labeledSF)
+		
+		if( labeledVarince )
+			alphaTC_var <- t(t(alphaTC_var)*labeledSF^2)
+		else {
+			alphaTC_var <- apply(alphaTC, 1, speedyVar)
+			alphaTC_var <- sapply(1:ncol(alphaTC), function(i) alphaTC_var)
+		}
+		
+		# calculate beta
+		
+		inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=75) 
+		####### accurate function for estimating the degradation rates
+		####### using the solution of the differential equation system under 
+		####### the condtion that degradation rate is constant between two 
+		####### consecutive time points - more stable that using derivatives
+		####### estimates
+		{
+		solveBeta <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1, 
+		P_t0, P_t1 ) 
+		{
+		mAlpha <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
+		qAlpha <- alpha_t0 - mAlpha * t0
+		#
+		mPreMRNA <- (P_t0 - P_t1 ) / (t0 - t1 )
+		qPreMRNA <- P_t0 - mPreMRNA * t0
+		#
+		X_t1 - X_t0 * exp(-beta*(t1-t0)) - 
+		((mAlpha*t1*beta + qAlpha*beta - mAlpha ) / (beta^2 ) - (mAlpha*t0*beta + qAlpha*beta - mAlpha ) * exp(-beta*(t1-t0)) / (beta^2 )) -
+		beta*((mPreMRNA*t1*beta + qPreMRNA*beta - mPreMRNA ) / (beta^2 ) - (mPreMRNA*t0*beta + qPreMRNA*beta - mPreMRNA ) * exp(-beta*(t1-t0)) / (beta^2 ))
+		}
+		bplapply(2:length(tpts), function(j)
+		lapply(1:nrow(total), function(i) {
+		tryCatch(
+		uniroot(solveBeta
+		, c(1e-5, maxBeta)
+		, t0 = tpts[j-1]
+		, t1 = tpts[j]
+		, alpha_t0 = alpha[i,j-1]
+		, alpha_t1 = alpha[i,j]
+		, X_t0 = total[i,j-1]
+		, X_t1 = total[i,j]
+		, P_t0 = preMRNA[i,j-1]
+		, P_t1 = preMRNA[i,j]
+		)
+		, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
+		)})
+		, BPPARAM=BPPARAM)
+		}
+		
+		message('Estimating degradation rates...')
+		if( steadyStateMode == 1 ) TexoDer[,1] <- 0
+		betaT0 <- ( alphaTC[,1] - TexoDer[,1] ) / (Texo[,1] - Tint[,1] )
+		betaT0[betaT0 < 0 | !is.finite(betaT0)] <- NA
+		if( length(tpts)>1 ) {
+			betaOut <- inferKBetaFromIntegralWithPre(tpts, alphaTC, Texo, Tint, 
+				maxBeta=quantile(betaT0,na.rm=TRUE,probs=.99)*10
+				)
+			betaTC <- cbind(betaT0, 
+				sapply(betaOut, function(x) sapply(x, '[[', 'root'))
+				)
+			betaEstimPrec <- cbind(0,
+				sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))
+				)
+		} else {
+			betaTC <- as.matrix(betaT0)
+			betaEstimPrec <- matrix(0, nrow=nrow(betaTC), ncol=ncol(betaTC))
+		}
+
+		###################################
+		## estimate processing rates #########
+		#####################################
+		
+		inferKGammaFromIntegral <- function(tpts, alpha, preMRNA, maxGamma=150)
+		####### accurate function for estimating the degradation rates
+		####### using the solution of the differential equation system under 
+		####### the condtion that processing rate is constant between two 
+		####### consecutive time points - more stable that using derivatives
+		####### estimates
+		{
+		solveFun <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1 ) 
+		{
+		m <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
+		q <- alpha_t0 - m * t0
+		X_t1 - X_t0*exp(-beta*(t1 - t0)) - (
+		(m*t1*beta + q*beta - m ) / (beta^2) - 
+		(m*t0*beta + q*beta - m ) * exp(-beta*(t1 - t0)) / (beta^2)
+		)
+		}
+		bplapply(2:length(tpts), function(j)
+		lapply(1:nrow(alpha), function(i) {
+		tryCatch(
+		uniroot(solveFun
+		, c(1e-5, maxGamma)
+		, t0 = tpts[j-1]
+		, t1 = tpts[j]
+		, alpha_t0 = alpha[i,j-1]
+		, alpha_t1 = alpha[i,j]
+		, X_t0 = preMRNA[i,j-1]
+		, X_t1 = preMRNA[i,j]
+		)
+		, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
+		)})
+		, BPPARAM=BPPARAM)
+		}
+		# calculate gamma (from  total RNA introns and alphas )
+		message('Estimating processing rates...')
+		if( steadyStateMode == 1 ) TintDer[,1] <- 0
+		gammaT0 <- ( alphaTC[,1] - TintDer[,1] ) / Tint[,1]
+		gammaT0[gammaT0 < 0 | !is.finite(gammaT0)] <- NA
+		if( length(tpts)>1 ) {
+		gammaOut <- inferKGammaFromIntegral(tpts, alphaTC, Tint, 
+		maxGamma=quantile(gammaT0,na.rm=TRUE,probs=.99)*10
+		)
+		gammaTC <- cbind(gammaT0, 
+		sapply(gammaOut, function(x) sapply(x, '[[', 'root'))
+		)
+		gammaEstimPrec <- cbind(0, 
+		sapply(gammaOut, function(x) sapply(x, '[[', 'estim.prec'))
+		)
+		} else {
+		gammaTC <- as.matrix(gammaT0)
+		gammaEstimPrec <- matrix(0, nrow=nrow(gammaTC), ncol=ncol(gammaTC))
+		}
+		
+		ratesEstimPrec <- betaEstimPrec + gammaEstimPrec
+		
+		}
+	
 	# end of intron-exons mode
 	}
-
+	
 	## remove dimnames from matrices and names from vectors 
 	## that will be output
 	attr(alphaTC, 'dimnames') <- NULL
@@ -805,27 +819,31 @@
 	attr(Texo_var, 'names') <- NULL
 	attr(Tint_var, 'names') <- NULL
 	attr(ratesEstimPrec, 'dimnames') <- NULL
-
+	
 	## return scaled results and rates (adding NA values 
 	## for preMRNA and gamma)
-	return(list(
-		concentrations=list(
-			total=Texo
-			, total_var=Texo_var
-			, preMRNA=Tint
-			, preMRNA_var=Tint_var)
-		, rates=list(
-			alpha=alphaTC
-			, alpha_var=alphaTC_var
-			, beta=betaTC
-			, gamma=gammaTC)
-		, ratesEstimPrec=ratesEstimPrec
-		, geneNames=geneNames
-		, tpts=tpts
-		, labeledSF=labeledSF
-		, totalSF=totalSF
-		, tL=tL))
 
+	if(!is.matrix(Texo_var)){Texo_var <- matrix(rep(Texo_var,length(tpts)),nrow=length(Texo_var),ncol=length(tpts))}
+	if(!is.matrix(Tint_var)){Tint_var <- matrix(rep(Tint_var,length(tpts)),nrow=length(Tint_var),ncol=length(tpts))}
+
+	return(list(
+	concentrations=list(
+	total=Texo
+	, total_var=Texo_var
+	, preMRNA=Tint
+	, preMRNA_var=Tint_var)
+	, rates=list(
+	alpha=alphaTC
+	, alpha_var=alphaTC_var
+	, beta=betaTC
+	, gamma=gammaTC)
+	, ratesEstimPrec=ratesEstimPrec
+	, geneNames=geneNames
+	, tpts=tpts
+	, labeledSF=labeledSF
+	, totalSF=totalSF
+	, tL=tL))
+	
 }
 
 .emptyGene <- function(error='')
@@ -843,15 +861,15 @@
 	as.data.frame(model)
 }
 
-.makeModel <- function(tpts, hyp, log_shift, .time_transf, ode, .rxnrate)
+.makeModel <- function(tpts, hyp, log_shift, .time_transf, ode, .rxnrate, c= NaN)
 {
 	params <- list()
 	params$alpha <- function(x) 
-		hyp$alpha$fun$value(.time_transf(x, log_shift), hyp$alpha$par)
+		hyp$alpha$fun$value(.time_transf(x, log_shift, c), hyp$alpha$par)
 	params$beta  <- function(x) 
-		hyp$beta$fun$value(.time_transf(x, log_shift), hyp$beta$par)
+		hyp$beta$fun$value(.time_transf(x, log_shift, c), hyp$beta$par)
 	params$gamma <- function(x) 
-		hyp$gamma$fun$value(.time_transf(x, log_shift), hyp$gamma$par)
+		hyp$gamma$fun$value(.time_transf(x, log_shift, c), hyp$gamma$par)
 	cinit <- c(params$alpha(tpts[1]) / params$gamma(tpts[1]), 
 		params$alpha(tpts[1]) / params$beta(tpts[1]) + 
 			params$alpha(tpts[1]) / params$gamma(tpts[1]))
@@ -863,6 +881,16 @@
 	model$gamma <- params$gamma(tpts)
 	colnames(model)[2:3] <- c('preMRNA','total')
 	return(model)
+}
+.find_tt_par <- function(tpts)
+{
+  cvLogTpts <- function(a , tpts)
+  {
+  	newtime <- log2(tpts + a )
+    stats::sd(diff(newtime)) / mean(diff(newtime))
+  }
+  if(length(tpts)>2){return(optimize(f=cvLogTpts, interval=c(0,5), tpts=tpts )$minimum)}
+  else{return(1)}
 }
 
 .rxnrate <- function(t,c,parms){
@@ -1457,7 +1485,7 @@
 		selectedParams <- paramAttempts[cbind(1:length(ix),unlist(ix))]
 		names(selectedParams) <- rownames(paramAttempts)
 		return(selectedParams)
-	}
+	} 
 
 	######################
 	## MAIN FUNCTION ###
@@ -1511,7 +1539,7 @@
 	k <- apply(y,1,function(x) length(na.omit(x)))
 	## if it's zero for every gene return the NA vector
 	if( all(k==0) ) return(ans)
-	## otherwise calculate the brown's test for the availbale genes
+	## otherwise calculate the brown's test for the available genes
 	## dividing them in cathegories, according to the availbale tests
 	y_logical <- matrix(FALSE, nrow(y), ncol(y))
 	y_logical[!is.na(y)] <- TRUE
@@ -1624,7 +1652,7 @@
 ############### impulse
 
 # cppFunction('
-# NumericVector impulseModelC(NumericVector x, NumericVector par) {
+# NumericVector .impulseModelC(NumericVector x, NumericVector par) {
 # 	int n = x.size();
 # 	NumericVector ans(n);
 # 	for(int i = 0; i < n; i++) {
@@ -1633,7 +1661,7 @@
 # 	return ans;
 # }
 # ')
-# .impulseModel <- impulseModelC
+# .impulseModel <- .impulseModelC
 
 .impulseModel <- function(x, par) 
 {
@@ -1664,13 +1692,6 @@
 		sum(sapply(1:length(par), function(i) x_i^(i-1) * par[i])))
 
 .polynomialModelP <- .newPointer(.polynomialModel)
-
-chisq <- function(experiment, model, variance=NULL)
-{
-	if( is.null(variance) )  variance <- stats::var(experiment )
-	else if( variance==0 ) variance <- stats::var(experiment )
-	sum((experiment - model )^2/variance )
-}
 
 .chooseModel <- function(tpts, log_shift, experiment, variance=NULL, na.rm=TRUE
 	, sigmoid=TRUE, impulse=TRUE, polynomial=TRUE, nInit=10, nIter=500
@@ -1912,22 +1933,28 @@ chisq <- function(experiment, model, variance=NULL)
 
 }
 
-.makeSimData <- function(nGenes, tpts, concentrations, rates, newTpts=NULL, 
-	probs=c(constant=.5,sigmoid=.3,impulse=.2), na.rm=FALSE, seed=NULL)
+.makeSimData <- function(nGenes
+					   , tpts
+					   , concentrations
+					   , rates
+					   , probs=c(constant=.5,sigmoid=.3,impulse=.2)
+					   , na.rm=FALSE
+					   , seed=NULL)
 {
 
 	######################
 	# internal functions ###
 	##########################
 
-	sampleNormQuantile <- function(values_subject, dist_subject, dist_object, 
-		na.rm=FALSE, quantiles=100)
+	sampleNormQuantile <- function(values_subject
+								 , dist_subject
+								 , dist_object, na.rm=FALSE
+								 , quantiles=100)
 	# sample values from the distribution OBJECT given that some values of the 
 	# distribution SUBJECT are known.
 	{
 
-		quantileMeanVar <- function(dist_subject, dist_object=NULL, na.rm=FALSE, 
-			quantiles)
+		quantileMeanVar <- function(dist_subject, dist_object=NULL, na.rm=FALSE, quantiles)
 		# for each quantile of the distribution SUBJECT gives back
 		# the mean and the standard deviation of distribution OBJECT
 		{
@@ -1964,20 +1991,39 @@ chisq <- function(experiment, model, variance=NULL)
 			, na.rm       = na.rm
 			)
 		values_object <- rep(NA, length(values_subject))
+
 		for(i in 1:quantiles)
 		{
 			nobjects <- length(which(idx==i))
-			values_object[idx==i] <- rnorm(
-				nobjects
-				, mean=qmv[i,'mean'] 
-				, sd=sqrt(qmv[i,'var']) 
-				)
+			if(nobjects!=0){
+				values_object[idx==i] <- rnorm(
+					nobjects
+					, mean=qmv[as.character(i),'mean'] 
+					, sd=sqrt(qmv[as.character(i),'var']) 
+					)
+			}
 		}
+
+		# M.F. cambio perché si piantava con il gamma, utilizzo gli indici di riga per ovviare a problemi con quantili non definiti
+		# for(i in 1:quantiles)
+		# {
+		# 	nobjects <- length(which(idx==i))
+		# 	values_object[idx==i] <- rnorm(
+		# 		nobjects
+		# 		, mean=qmv[i,'mean'] 
+		# 		, sd=sqrt(qmv[i,'var']) 
+		# 		)
+		# }
 		return(values_object)
 	}
 
-	sampleNorm2DQuantile <- function(values_subject1, values_subject2, 
-		dist_subject1, dist_subject2, dist_object, na.rm=FALSE, quantiles=10)
+	sampleNorm2DQuantile <- function(values_subject1
+								   , values_subject2
+								   , dist_subject1
+								   , dist_subject2
+								   , dist_object
+								   , na.rm=FALSE
+								   , quantiles=10)
 	# sample values from the distribution OBJECT given that some values odf the 
 	# distribution SUBJECT are known.
 	{
@@ -2000,17 +2046,18 @@ chisq <- function(experiment, model, variance=NULL)
 		idx2 <- .which.quantile(values_subject2, dist_subject2, 
 			na.rm=na.rm, quantiles=quantiles)
 
-		quantile2DMeanVar <- function(dist_subject1, dist_subject2, dist_object, 
-			na.rm=FALSE, quantiles=100)
+		quantile2DMeanVar <- function(dist_subject1
+									, dist_subject2
+									, dist_object
+									, na.rm=FALSE
+									, quantiles=100)
 		# for each quantile of the distribution SUBJECT1 and SUBJECT2 gives
 		# back the mean and the standard deviation of distribution OBJECT. 
 		# Returns the two square matrices of mean and variance corresponding 
 		# to each pair of quantiles of SUBJECT1 and SUBJECT2.
 		{
-			idx1 <- .which.quantile(dist_subject1, na.rm=na.rm, 
-				quantiles=quantiles)
-			idx2 <- .which.quantile(dist_subject2, na.rm=na.rm, 
-				quantiles=quantiles)
+			idx1 <- .which.quantile(dist_subject1, na.rm=na.rm, quantiles=quantiles)
+			idx2 <- .which.quantile(dist_subject2, na.rm=na.rm, quantiles=quantiles)
 			meansTab <- matrix(NA, nrow=quantiles, ncol=quantiles)
 			varsTab  <- matrix(NA, nrow=quantiles, ncol=quantiles)
 			for(i1 in unique(idx1))
@@ -2067,8 +2114,10 @@ chisq <- function(experiment, model, variance=NULL)
 		return(sampledValues)		
 	}
 
-	generateParams <- function(tpts, sampled_val, log2foldchange, 
-		probs=c(constant=.5,sigmoid=.3,impulse=.2))
+	generateParams <- function(tpts
+							 , sampled_val
+							 , log2foldchange
+							 , probs=c(constant=.5,sigmoid=.3,impulse=.2))
 	# given a vector of absolute values and a vector of log2foldchanges
 	# create parametric functions (either constant, sigmoidal or impulse, 
 	# according to probs) and evaluate them at tpts.
@@ -2205,6 +2254,7 @@ chisq <- function(experiment, model, variance=NULL)
 			# one expected. For this reason, we calculate the factor of scale
 			# between the real and expected fold changes and we generate new 
 			# data
+
 		 	factor_of_correction <- lm(simulatedFC ~ expectedFC)$coefficients[2]
 			params[impulse_idx] <- lapply(
 				which(impulse_idx)
@@ -2246,60 +2296,6 @@ chisq <- function(experiment, model, variance=NULL)
 
 	}
 
-	noiseEval <- function(sim, real, plotout = FALSE)
-	# plotout implemented in a previous version
-	{
-		quantiles <- 10
-		sim.bkp <- sim
-		# calculate mean and variance for genes of the real data
-		rdMeans <- rowMeans(real, na.rm=TRUE)
-		rdVars  <- .rowVars(real, na.rm=TRUE)
-		## remove NA
-		ix <- !is.na(rdMeans) & !is.na(rdVars)
-		rdMeans <- rdMeans[ix]
-		rdVars <- rdVars[ix]
-		##
-		rdQt <- .which.quantile(rdMeans, quantiles = quantiles)
-		qtCenters <- quantile(rdMeans, 
-			probs=seq(1/quantiles/2, 1, by=1/quantiles))
-		# calculate mean and variance for genes of the sim data
-		sdMeans <- rowMeans(sim)
-		sdVars  <- .rowVars(sim)
-		sdQt <- .which.quantile(sdMeans, rdMeans, quantiles = quantiles)
-		# assign a positive variace to the constant sim genes
-		# that is lower than the other observed variances
-		nullVar <- sdVars < 1e-9
-		sdVars[nullVar] <- seq(0,min(sdVars[!nullVar]),
-			length.out=length(which(nullVar)))
-		# identify genes whose variance before the addition of noise
-		# is above the 9th decile of the real varince of genes within 
-		# the same quantile
-		thresholds <- tapply(rdVars, rdQt, quantile, probs=.9)
-		sdOverVar  <- sdVars > thresholds[sdQt]
-		# exclude those genes
-		sim <- sim[!sdOverVar,]
-		sdMeans <- sdMeans[!sdOverVar]
-		sdVars  <- sdVars[!sdOverVar]
-		sdQt <- sdQt[!sdOverVar] 
-		# .which.quantile(sdMeans, rdMeans, quantiles = 10)
-		#
-		newVar <- sapply(
-			1:length(sdVars) 
-			, function(i) 
-				quantile(rdVars[rdQt==sdQt[i]], 
-					probs=ecdf(sdVars[sdQt==sdQt[i]])(sdVars[i]))
-				)
-		# noiseVar <- newVar
-		# ??????? why the noise variance is not the difference between
-		# the new variance evaluated and the old variance?
-		noiseVar <- newVar-sdVars
-		noiseVar[noiseVar <= 0] <- NA
-		#
-		outNoise <- rep(NA,nrow(sim.bkp))
-		outNoise[!sdOverVar] <- noiseVar
-		return(outNoise)
-	}
-
 	#########################################
 	# body of the main function starts here ###
 	#############################################
@@ -2312,7 +2308,21 @@ chisq <- function(experiment, model, variance=NULL)
 	gamma   <- rates$gamma
 	total   <- concentrations$total
 	preMRNA <- concentrations$preMRNA
-	if( !is.null(newTpts) ) tpts <- newTpts
+
+	alpha_var <- rates$alpha_var
+
+	total_var   <- concentrations$total_var
+	preMRNA_var <- concentrations$preMRNA_var
+
+	alphaFitVariance <- lm(formula = log(c(sqrt(alpha_var))) ~ log(c(alpha)))$coefficients
+	alphaFitVarianceLaw <- function(alpha)(exp(alphaFitVariance[[1]])*alpha^(alphaFitVariance[[2]]))^2
+	
+	totalFitVariance <- lm(formula = log(c(sqrt(total_var))) ~ log(c(total)))$coefficients
+	totalFitVarianceLaw <- function(total)(exp(totalFitVariance[[1]])*total^(totalFitVariance[[2]]))^2
+
+	preFitVariance <- lm(formula = log(c(sqrt(preMRNA_var))) ~ log(c(preMRNA)))$coefficients
+	preFitVarianceLaw <- function(pre)(exp(preFitVariance[[1]])*pre^(preFitVariance[[2]]))^2
+
 	# make twice the number of genes and then select only the valid ones
 	nGenes.bkp <- nGenes
 	nGenes <- nGenes * 2
@@ -2364,35 +2374,6 @@ chisq <- function(experiment, model, variance=NULL)
 		, na.rm=na.rm, quantiles=50
 		)
 
-	# # time of max response
-	# # alpha
-	# alphaLog2FC <- alphaLog2FC[apply(alphaLog2FC, 1, function(x) any(!is.na(x))),]
-	# alphaabsfc <- abs(alphaLog2FC)
-	# alphatmaxresponse <- apply(alphaabsfc, 1, which.max)
-	# alphatmaxresponsePDF <- table(alphatmaxresponse)/length(alphatmaxresponse)
-	# # beta
-	# betaSimLog2FC <- betaSimLog2FC[apply(betaSimLog2FC, 1, function(x) any(!is.na(x))),]
-	# betaabsfc <- abs(betaSimLog2FC)
-	# betatmaxresponse <- apply(betaabsfc, 1, which.max)
-	# betatmaxresponsePDF <- table(betatmaxresponse)/length(betatmaxresponse)
-	# # gamma
-	# gammaSimLog2FC <- gammaSimLog2FC[apply(gammaSimLog2FC, 1, function(x) any(!is.na(x))),]
-	# gammaabsfc <- abs(gammaSimLog2FC)
-	# gammatmaxresponse <- apply(gammaabsfc, 1, which.max)
-	# gammatmaxresponsePDF <- table(gammatmaxresponse)/length(gammatmaxresponse)
-	# possibly reduce variance prior to the addition of noise
-
-	# if fc_scale > 1
-	fc_scale <- 0
-	if( fc_scale != 0)
-	{
-		alphaSimLog2FC <- sign(alphaSimLog2FC) * 
-			(abs(alphaSimLog2FC) - fc_scale)
-		betaSimLog2FC  <- sign(betaSimLog2FC)  * 
-			(abs(betaSimLog2FC)  - fc_scale)
-		gammaSimLog2FC <- sign(gammaSimLog2FC) * 
-			(abs(gammaSimLog2FC) - fc_scale)
-	}
 	# transform time in log scale
 	log_shift <- .find_tt_par(tpts)
 	x <- .time_transf(tpts, log_shift)
@@ -2401,16 +2382,27 @@ chisq <- function(experiment, model, variance=NULL)
 	alphaParams <- generateParams(x, alphaVals, alphaSimLog2FC, probs)
 	betaParams  <- generateParams(x, betaVals , betaSimLog2FC , probs)
 	gammaParams <- generateParams(x, gammaVals, gammaSimLog2FC, probs)
-	# evaluate noise
-	message('evaluating noise for simulated alpha, total and pre...')
 	# generate total and preMRNA from alpha,beta,gamma
 	paramSpecs <- lapply(1:nGenes, 
 		function(i) 
-			list(alpha=alphaParams[[i]], beta=betaParams[[i]], 
-				gamma=gammaParams[[i]]))
-	out <- lapply(1:nGenes, function(i) 
-		.makeModel(tpts, paramSpecs[[i]], log_shift, 
-			.time_transf, ode, .rxnrate))
+			list(alpha=alphaParams[[i]]
+			   , beta=betaParams[[i]]
+			   , gamma=gammaParams[[i]]))
+
+	out <- lapply(1:nGenes, function(i){
+			tryCatch(
+				.makeModel(tpts, paramSpecs[[i]], log_shift, 
+					.time_transf, ode, .rxnrate),error=function(e){cbind(time=rep(NaN,length(tpts))
+																		  ,preMRNA=rep(NaN,length(tpts))
+																		  ,total=rep(NaN,length(tpts))
+																		  ,alpha=rep(NaN,length(tpts))
+																		  ,beta=rep(NaN,length(tpts))
+																		  ,gamma=rep(NaN,length(tpts)))})})
+
+	okGenes <- which(sapply(out,function(i)all(is.finite(unlist(i)))))
+	out <- out[okGenes]
+	paramSpecs <- paramSpecs[okGenes]
+
 	cleanDataSet <- list(
 		tpts = tpts
 		, concentrations = list(
@@ -2426,27 +2418,23 @@ chisq <- function(experiment, model, variance=NULL)
 			, gamma=t(sapply(out, function(x) x$gamma))
 			)
 		)
-	alphaSim_noisevar <- noiseEval(cleanDataSet$rates$alpha, alpha)
-	totalSim_noisevar <- noiseEval(cleanDataSet$concentrations$total, total)
-	preSim_noisevar <- noiseEval(cleanDataSet$concentrations$preMRNA, preMRNA)
+
+	alphaSim_noisevar <- t(apply(cleanDataSet$rates$alpha,1,function(x)alphaFitVarianceLaw(x)))
+	totalSim_noisevar <- t(apply(cleanDataSet$concentrations$total,1,function(x)totalFitVarianceLaw(x)))
+	preSim_noisevar <- t(apply(cleanDataSet$concentrations$preMRNA,1,function(x)preFitVarianceLaw(x)))
+
 	# select genes whose noise evaluation succeded
 	okGenes <- which(
-		!is.na(alphaSim_noisevar) & 
-		!is.na(totalSim_noisevar) & 
-		!is.na(preSim_noisevar) 
+		apply(alphaSim_noisevar,1,function(r)all(is.finite(r))) &
+		apply(totalSim_noisevar,1,function(r)all(is.finite(r))) &
+		apply(preSim_noisevar,1,function(r)all(is.finite(r))) 
 		)
 	nGenes <- nGenes.bkp
-	# select randomly among the okGenes the genes of the sample
-	if( length(okGenes) >= nGenes ) 
-		okGenes <- sample(okGenes, nGenes)
-	else warning(paste('makeSimData: Only',length(which(okGenes)), 
-		'genes were be generated, instead of',nGenes) )
-	# keep okGenes only
+
 	paramSpecs <- paramSpecs[okGenes]
-	alphaSim_noisevar <- alphaSim_noisevar[okGenes]
-	totalSim_noisevar <- totalSim_noisevar[okGenes]
-	preSim_noisevar   <- preSim_noisevar[okGenes]
-	# cleanDataSet <- subsetSnOut(cleanDataSet, okGenes)
+	alphaSim_noisevar <- alphaSim_noisevar[okGenes,]
+	totalSim_noisevar <- totalSim_noisevar[okGenes,]
+	preSim_noisevar   <- preSim_noisevar[okGenes,]
 	# add params specification
 	simulatedFC <- list(
 		alpha=apply(cleanDataSet$rates$alpha[okGenes, ], 1, 
@@ -2466,18 +2454,63 @@ chisq <- function(experiment, model, variance=NULL)
 		simdataSpecs=paramSpecs
 		, simulatedFC=simulatedFC
 		, noiseVar=noiseVar
+		, noiseFunctions = list(alpha = alphaFitVarianceLaw, preMRNA = preFitVarianceLaw, total = totalFitVarianceLaw)
 		))
 }
 
 .bestModel <- function(object, bTsh=NULL, cTsh=NULL) {
-		## in case bTsh or bTsh are provided set them as
-		# permanent for the object
-		if( is.null(bTsh) )
-			bTsh <- object@params$thresholds$brown
-		if( is.null(cTsh) )
-			cTsh <- object@params$thresholds$chisquare
-		## calculate ratePvals
-		ratePvals <- ratePvals(object, cTsh)
+
+	preferPValue <- object@params$preferPValue
+	
+	## in case bTsh or bTsh are provided set them as
+	# permanent for the object
+	if( is.null(bTsh) )
+		bTsh <- object@params$thresholds$brown
+	if( is.null(cTsh) )
+		cTsh <- object@params$thresholds$chisquare
+	## calculate ratePvals
+	ratePvals <- ratePvals(object, cTsh)
+	ratePvals <- replace(ratePvals,is.na(ratePvals),1)
+
+	if(preferPValue)
+	{
+		pValues <- t(10^sapply(object@ratesSpecs,function(g)sapply(g,"[[","test")))
+		rownames(pValues) <- rownames(ratePvals)
+
+		geneClass <- sapply(rownames(ratePvals),function(i)
+		{
+			acceptableModelsTemp <- which(pValues[i,] <= cTsh)
+			if(length(acceptableModelsTemp)==0){return("0")}
+			if(length(acceptableModelsTemp)==1){return(colnames(pValues)[acceptableModelsTemp])}    
+
+			nameTemp <- rep("K",3)
+			if(ratePvals[i,"synthesis"] <= bTsh["synthesis"]){nameTemp[[1]] <- "V"}
+			if(ratePvals[i,"processing"] <= bTsh["processing"]){nameTemp[[2]] <- "V"}
+			if(ratePvals[i,"degradation"] <= bTsh["degradation"]){nameTemp[[3]] <- "V"}
+
+			nameTemp <- paste0(nameTemp[[1]],nameTemp[[2]],nameTemp[[3]])
+			nameTemp <- c("KKK" = "0"
+						 ,"VKK" = "a"
+						 ,"KVK" = "c"
+						 ,"KKV" = "b"
+						 ,"VVK" = "ac"
+						 ,"VKV" = "ab"
+						 ,"KVV" = "bc"
+						 ,"VVV" = "abc")[nameTemp]
+
+			if(pValues[i,nameTemp]<=cTsh){return(nameTemp)}else{
+				return(names(which.min(pValues[i,])))}
+    	})
+
+		ratesSpecs <- object@ratesSpecs
+		## select the best model (according to geneClass) per gene
+		nGenes <- length(ratesSpecs)
+		object@ratesSpecs <- lapply(1:nGenes, 
+			function(i) ratesSpecs[[i]][geneClass[i]])
+		return(object)
+
+	}else{
+
 		## give a discrete classification per each rate per each gene
 		# according to the brown's threshold for the pvalues
 		acceptedVarModels <- sapply(1:3, function(i) ratePvals[,i]<bTsh[i])
@@ -2499,15 +2532,2445 @@ chisq <- function(experiment, model, variance=NULL)
 		object@ratesSpecs <- lapply(1:nGenes, 
 			function(i) ratesSpecs[[i]][geneClass[i]])
 		return(object)
+
+	}
+}
+
+####################################################################################################k1KKK_No4sU <- function(x, par){par[1]*par[3]}
+
+mcsapply <- function( X, FUN, ... ) do.call('cbind', bplapply( X, FUN, ... ))
+
+lineCoefficients_No4sU <- function(xInitial
+								  ,xFinal
+								  ,yInitial
+								  ,yFinal)
+{
+  return(c(m = (yFinal-yInitial)/(xFinal-xInitial)
+          ,q = (yInitial*xFinal-yFinal*xInitial)/(xFinal-xInitial)))
+}
+
+firstStep_No4sU <- function(tpts
+						   ,mature
+						   ,premature
+						   ,matureVariance
+						   ,Dmin
+						   ,Dmax) 
+{
+	fits <- lapply(1:nrow(mature), function(row)
+  	{
+	    optimize(firstStepError_No4sU
+	            ,c(Dmin, Dmax)
+	            ,k2K3Ratio = mature[row,1]/premature[row,1]
+	            ,tpts = tpts
+	            ,premature = premature[row,]
+	            ,mature = mature[row,]
+	            ,matureVariance = matureVariance[row,])
+   })
+   
+	out <- t(sapply(fits,unlist))
+	out[,2] <- pchisq(out[,2], length(tpts)-1)
+	colnames(out) <- c('k3','p')
+	return(out)
+}
+
+firstStepError_No4sU <- function(tpts
+								,mature
+								,premature
+								,matureVariance
+								,k3
+								,k2K3Ratio)
+{
+	matureEstimated <- numeric(length = length(mature))
+	matureEstimated[1] <- mature[1]
+
+	for(t in 2:length(mature))
+	{
+		tInitial <- tpts[t-1]
+		tFinal <- tpts[t]
+
+		prematureInitial <- premature[t-1]
+		prematureFinal <- premature[t]
+
+		matureInitial <- matureEstimated[t-1]
+
+		coefficients <- lineCoefficients_No4sU(xInitial = tInitial
+		                                	  ,xFinal = tFinal
+		                                	  ,yInitial = prematureInitial
+		                                	  ,yFinal = prematureFinal)
+		m <- coefficients[1]
+		q <- coefficients[2]
+
+    	matureEstimated[t] <- (exp(-k3*(tFinal-tInitial))*matureInitial
+                        	+ exp(-k3*tFinal)*k2K3Ratio*(q*(exp(k3*tFinal)-exp(k3*tInitial))
+                        	+ m*(exp(k3*tFinal)*(k3*tFinal-1)/k3
+                        	- exp(k3*tInitial)*(k3*tInitial-1)/k3)))
+  	}
+
+   return(sum((mature[-1] - matureEstimated[-1])^2/matureVariance[-1]))
+}
+
+secondStepError_No4sU <- function(tpts
+								 ,mature
+								 ,premature
+								 ,matureVariance
+								 ,k2k3)
+{
+	k2 <- k2k3[1]
+	k3 <- k2k3[2]
+	
+	matureEstimated <- numeric(length = length(mature))
+	matureEstimated[1] <- mature[1]
+  
+	for(t in 2:length(mature))
+	{
+		tInitial <- tpts[t-1]
+		tFinal <- tpts[t]
+
+		prematureInitial <- premature[t-1]
+		prematureFinal <- premature[t]
+
+		matureInitial <- matureEstimated[t-1]
+
+		coefficients <- lineCoefficients_No4sU(xInitial = tInitial
+											  ,xFinal = tFinal
+											  ,yInitial = prematureInitial
+											  ,yFinal = prematureFinal)
+		m <- coefficients[1]
+		q <- coefficients[2]
+
+		matureEstimated[t] <- (exp(-k3*(tFinal-tInitial))*matureInitial
+							 + exp(-k3*tFinal)*k2/k3*(q*(exp(k3*tFinal)-exp(k3*tInitial))
+							 + m*(exp(k3*tFinal)*(k3*tFinal-1)/k3
+							 - exp(k3*tInitial)*(k3*tInitial-1)/k3)))
 	}
 
+	return(mean((mature[-1] - matureEstimated[-1])^2/matureVariance[-1]))
+}
+
+.getRatesAndConcentrationsFromRpkms_No4sU <- function(totRpkms
+													, tpts
+													, BPPARAM=bpparam()
+													, modellingParameters=list(Dmin = 1e-6
+																			 , Dmax = 10
+																			 , BPPARAM = bpparam())
+													, genesFilter
+													)
+{
+
+	Dmin <- modellingParameters$Dmin
+	Dmax <- modellingParameters$Dmax
+	BPPARAM <- modellingParameters$BPPARAM
+
+	eiGenes <- rownames(totRpkms$exons)
+
+	# Mature, premature and total rpkms
+	mature <- totRpkms$exons - totRpkms$introns
+	premature <- totRpkms$introns
+	total <- totRpkms$exons
+
+	# Mature, premature and total variance, rpkms
+	matureVariance <- totRpkms$introns_var+totRpkms$exons_var
+	prematureVariance <- totRpkms$introns_var
+	totalVariance <- totRpkms$exons_var
+
+	boolExpressionsAndVariances <- apply(mature,1,function(row)any(row < 0)) |
+	                               apply(premature,1,function(row)any(row < 0)) |
+	                               apply(matureVariance,1,function(row)any(row < 0)) |
+	                               apply(prematureVariance,1,function(row)any(row < 0))
+
+	boolExpressionsAndVariances[!is.finite(boolExpressionsAndVariances)] <- TRUE
+
+	if(any(boolExpressionsAndVariances))
+		{print("newINSPEcT: for some genes mRNA or preMRNA expressions or variances are negative. Those genes are excluded from the analysis.")}
+
+	eiGenes <- eiGenes[!boolExpressionsAndVariances]
+
+	mature <- mature[eiGenes,]
+	premature <- premature[eiGenes,]
+	matureVariance <- matureVariance[eiGenes,]
+	prematureVariance <- prematureVariance[eiGenes,]
+
+	# Constant post transcriptional rates and fixed post transcriptional ratio 
+	k3Prior <- firstStep_No4sU(tpts = tpts
+							  ,mature = mature
+							  ,premature = premature
+							  ,matureVariance = matureVariance
+							  ,Dmin = Dmin
+							  ,Dmax = Dmax)
+	rownames(k3Prior) <- eiGenes
+
+	# Constant post transcriptional rates and variable post transcriptiona ratio
+	fits <- t(mcsapply(1:nrow(mature), function(row)
+	{
+		unlist(
+			tryCatch(
+	    		optim(par = c(mature[row,1]/premature[row,1]*k3Prior[row,'k3'], k3Prior[row,'k3'])
+	    				   ,fn = secondStepError_No4sU
+	        			   ,tpts = tpts
+	        			   ,premature = premature[row,]
+	        			   ,mature = mature[row,]
+	        			   ,matureVariance = matureVariance[row,])
+			,error=function(e)list(par = c(NaN,NaN), value = NaN, counts = NaN, convergence = NaN, message = "Optimization error."))[1:4])
+	},BPPARAM = BPPARAM))
+	
+	fits[,3] <- pchisq(fits[,3], length(tpts)-3)
+	colnames(fits) <- c('k2','k3','p','counts','gradient','convergence')
+	rownames(fits) <- eiGenes
+
+	# Correction of negative priors with the median
+	if(genesFilter){
+		fits[fits[,'k2']<0,'k2'] <- NaN
+		fits[fits[,'k3']<0,'k3'] <- NaN
+
+		notFiniteRates <- !is.finite(fits[,'k2']) | !is.finite(fits[,'k3'])
+
+		fits[notFiniteRates,'k2'] <- median(fits[is.finite(fits[,'k2']),'k2'])
+		fits[notFiniteRates,'k3'] <- median(fits[is.finite(fits[,'k3']),'k3'])
+
+		fits[notFiniteRates,'p'] <- NaN
+	}
+
+	# Data formatting
+	constantModels <- list(models = fits
+						 , premature = premature
+						 , mature = mature
+						 , prematureVariance = prematureVariance
+						 , matureVariance = matureVariance)
+
+	ratesConstantPriors <- constantModels$models  
+
+	# alphaTC <- t(sapply(seq_along(ratesConstantPriors[,'k3']),function(g)
+	# {
+	# 	sapply(tpts,function(t){k1KKK_No4sU(t,par = c(mean(mature[g,],na.rm = T),ratesConstantPriors[g,'k2'],ratesConstantPriors[g,'k3']))})
+	# }))
+
+	betaTC <- matrix(rep(ratesConstantPriors[,'k3'],length(tpts)),ncol=length(tpts))
+	gammaTC <- matrix(rep(ratesConstantPriors[,'k2'],length(tpts)),ncol=length(tpts))
+
+	prematureDer <- as.matrix(t(sapply(1:nrow(premature),function(i){
+		if(all(is.finite(premature[i,]))){
+			spfun <- splinefun(tpts, premature[i,])
+			return(spfun(tpts, deriv=1))
+		} else return(rep(NA,length(tpts)))
+	})))
+
+	alphaTC <- prematureDer + gammaTC * premature
+	alphaTC[alphaTC<0] <- NaN
+
+	pModel <- fits[,"p"]
+	pModel[apply(alphaTC,1,function(row)any(!is.finite(row)))] <- NaN
+
+	alphaTC_var <- rep(1, length(eiGenes))
+	ratesEstimPrec <- matrix(, nrow=length(eiGenes), ncol=length(tpts))
+
+	total <- total[eiGenes,]
+	totalVariance <- totalVariance[eiGenes,]
+
+	attr(alphaTC, 'dimnames') <- NULL
+	attr(betaTC, 'dimnames') <- NULL
+	attr(gammaTC, 'dimnames') <- NULL
+	attr(total, 'dimnames') <- NULL
+	attr(premature, 'dimnames') <- NULL
+	attr(alphaTC_var, 'names') <- NULL
+	attr(totalVariance, 'names') <- NULL
+	attr(prematureVariance, 'names') <- NULL
+	attr(ratesEstimPrec, 'dimnames') <- NULL
+
+	return(list(concentrations=list(total=total
+						  		  , total_var=totalVariance
+						  		  , preMRNA=premature
+						  		  , preMRNA_var=prematureVariance)
+			  , rates=list(alpha=alphaTC
+						 , alpha_var=alphaTC_var
+						 , beta=betaTC
+						 , gamma=gammaTC)
+			  , ratesFirstGuessP = pModel
+	  		  , ratesEstimPrec=ratesEstimPrec
+			  , geneNames=eiGenes
+			  , tpts=tpts
+			  , labeledSF=NULL
+			  , totalSF=NULL
+			  , tL = NULL
+	))
+
+}
+
+fitSmooth <- function(tpts
+		            , tt_c
+		            , experiment
+		            , variance
+		            , nInit=20
+		            , nIter=500
+		            , mature = FALSE
+		            , seed = NULL)
+{
+	im_parguess <- function(tpts , values) {
+    	
+    	ntp   <- length(tpts)
+    	peaks <- which(diff(sign(diff(values)))!=0)+1
+    	if( length(peaks) == 1 ) peak <- peaks
+    	if( length(peaks)  > 1 ) peak <- sample(peaks, 1)
+    	if( length(peaks) == 0 ) peak <- round(length(tpts)/2)
+    	
+    	initial_values <- runif( 1, min=min(values[1:3]), max=max(values[1:3]))
+    	
+    	intermediate_values <- values[peak]
+    	if( intermediate_values==0 ) intermediate_values <- mean(values[seq(peak-1,peak+1)])
+    	end_values <- runif( 1, min=min(values[(ntp-2):ntp]), max=max(values[(ntp-2):ntp]))
+
+    	time_of_first_response  <- tpts[peak-1]
+    	time_of_second_response <- tpts[peak+1]
+    
+        slope_of_response <- 1
+
+        par <- c(h0=initial_values
+        		,h1=intermediate_values
+        		,h2=end_values
+        		,t1=time_of_first_response
+        		,t2=time_of_second_response
+        		,b=slope_of_response)
+
+	    return(unlist(unname(par)))
+	}
+
+	im_chisq_mature <- function(par, tpts, experiment, variance=NULL, tt_c)
+	{
+		model <- .impulseModel(tpts,par)
+		if( abs(par[6]) > 5 ) return(NaN)
+		if( any(model < 0) ) return(NaN)
+		chisq(experiment, model, variance)
+	}
+
+	im_chisq <- function(par, tpts, experiment, variance=NULL, tt_c) 
+	{
+		model <- .impulseModel(tpts,par)
+		if( any(model < 0) ) return(NaN)
+		chisq(experiment, model, variance)
+	}
+  
+	if(is.numeric(seed)) set.seed(seed)
+  	outIM  <- sapply(1:nInit, function(x) 
+    	tryCatch(optim(
+      		par=im_parguess(tpts, experiment)
+		  , fn=if(mature) im_chisq_mature else im_chisq
+		  , tpts=tpts
+		  , experiment=experiment
+		  , variance=variance
+		  , tt_c = tt_c
+		  , control=list(maxit=nIter)
+      	), error=function(e) list(par=NA
+      							, value=NA
+      							, counts=NA
+      							, convergence=1, message=e)))
+
+	bestIM <- which.min(unlist(outIM[2,]))
+	unlist(outIM[,bestIM])
+}
+
+prematureKKK_Int_No4sU <- function(x, parameters)
+{
+  matureParameters <- parameters[1]
+  k2Parameters <- parameters[2]
+  k3Parameters <- parameters[3]
+  
+  return((k3Parameters*matureParameters)/k2Parameters)
+}
+
+k1KKK_Int_No4sU <- function(x, par)
+{
+  par[1]*par[3]
+}
+
+systemSolution <- function(k1F,k2F,k3F,times)
+{
+
+  system <- function(t,c,parms)
+  {
+    alpha <- parms$alpha
+    beta  <- parms$beta
+    gamma <- parms$gamma
+
+    r=rep(0,length(c))
+    r[1] <- alpha(t) - beta(t) * c["p"]
+    r[2] <- beta(t) * c["p"] - gamma(t) * c["m"]
+    return(list(r))
+  }
+
+  cinit <- c(k1F(0)/k2F(0),k1F(0)/k3F(0))
+  names(cinit) <- c("p","m")
+
+  params <- list(alpha = k1F, beta = k2F, gamma = k3F)
+
+  modData <- ode(y=cinit, times=times, func=system, parms=params)
+  modData <- c(modData[,"m"],modData[,"p"])
+
+  names(modData) <- c(rep("mature",length.out = length(times)),rep("premature",length.out = length(times)))
+
+  return(modData) 
+}
+
+errorKKK_Int_No4sU <- function(parameters, tpts, premature, mature, prematureVariance, matureVariance)
+{
+
+  if(parameters[1]<0)return(NaN)
+  if(parameters[2]<0)return(NaN)
+  if(parameters[3]<0)return(NaN)
+
+  matureParameters <- parameters[1]
+
+  prematureEstimated <- prematureKKK_Int_No4sU(x = tpts, parameters = parameters)
+  matureEstimated <- matureParameters
+  prematureChiSquare <- sum((premature - prematureEstimated )^2/prematureVariance)
+  matureChiSquare <- sum((mature - matureEstimated)^2/matureVariance)
+
+  return(sum(c(prematureChiSquare,matureChiSquare)))
+}
+
+errorVKK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+
+  k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
+  k2F <- function(x) return(parameters[7])
+  k3F <- function(x) return(parameters[8])
+
+  if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+
+  modData <- systemSolution(k1F,k2F,k3F,times)
+
+  chi2 <- chisq(data,modData,datavar)
+
+  return(chi2)
+}
+
+errorVKV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+
+  k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
+  k2F <- function(x) return(parameters[7])
+  k3F <- function(x) {.impulseModel(log2(x+a)+c,parameters[8:13])}
+
+  if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+
+  modData <- systemSolution(k1F,k2F,k3F,times)
+  # modelLm <- sapply(times,function(t)k1F(t)/k3F(t)*(1 - exp(-k3F(t)*1/6))+k1F(t)/(k3F(t) - k2F(t))*(exp(-k3F(t)*1/6) - exp(-k2F(t)*1/6)))
+
+  # modData <- c(modData, modelLm)
+
+  chi2 <- chisq(data,modData,datavar)
+
+  return(chi2)
+}
+
+errorVVV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+
+  k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
+  k2F <- function(x) {.impulseModel(log2(x+a)+c,parameters[7:12])}
+  k3F <- function(x) {.impulseModel(log2(x+a)+c,parameters[13:18])}
+
+  if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+
+  modData <- systemSolution(k1F,k2F,k3F,times)
+  # modelLm <- sapply(times,function(t)k1F(t)/k3F(t)*(1 - exp(-k3F(t)*1/6))+k1F(t)/(k3F(t) - k2F(t))*(exp(-k3F(t)*1/6) - exp(-k2F(t)*1/6)))
+
+  # modData <- c(modData, modelLm)
+
+  chi2 <- chisq(data,modData,datavar)
+
+  return(chi2)
+}
+
+errorKVV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+
+  k1F <- function(x) return(parameters[1])
+  k2F <- function(x) {.impulseModel(log2(x+a)+c,parameters[2:7])}
+  k3F <- function(x) {.impulseModel(log2(x+a)+c,parameters[8:13])}
+
+  if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+
+  modData <- systemSolution(k1F,k2F,k3F,times)
+  # modelLm <- sapply(times,function(t)k1F(t)/k3F(t)*(1 - exp(-k3F(t)*1/6))+k1F(t)/(k3F(t) - k2F(t))*(exp(-k3F(t)*1/6) - exp(-k2F(t)*1/6)))
+
+  # modData <- c(modData, modelLm)
+
+  chi2 <- chisq(data,modData,datavar)
+
+  return(chi2)
+}
+
+errorVVK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+
+	k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
+	k2F <- function(x) {.impulseModel(log2(x+a)+c,parameters[7:12])}
+	k3F <- function(x) return(parameters[13])
+
+	if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+
+	modData <- systemSolution(k1F,k2F,k3F,times)
+	
+	chi2 <- chisq(data,modData,datavar)
+
+	return(chi2)
+}
+
+errorKVK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+	k1F <- function(x)return(parameters[1])
+	k2F <- function(x){.impulseModel(log2(x+a)+c,parameters[2:7])}
+	k3F <- function(x)return(parameters[8])
+	
+	if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+	
+	modData <- systemSolution(k1F,k2F,k3F,times)
+	
+	chi2 <- chisq(data,modData,datavar)
+	
+	return(chi2)
+}
+
+errorKKV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+
+  k1F <- function(x) return(parameters[1])
+  k2F <- function(x) return(parameters[2])
+  k3F <- function(x) {.impulseModel(log2(x+a)+c,parameters[3:8])}
+
+  if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+
+  modData <- systemSolution(k1F,k2F,k3F,times)
+
+  chi2 <- chisq(data,modData,datavar)
+
+  return(chi2)
+}
+
+logLikelihoodFunction <- function(experiment, model, variance=NULL)
+{
+    if( is.null(variance)) variance <- stats::var(experiment)
+    sum(log(2*pnorm(-abs(experiment-model),mean=0,sd=sqrt(variance))))
+}
+
+loglikKKK_Int_No4sU <- function(parameters
+	                    	   ,tpts
+	                    	   ,premature
+	                    	   ,mature
+	                    	   ,prematureVariance
+	                    	   ,matureVariance)
+{
+
+	matureParameters <- parameters[1]
+
+	prematureEstimated <- prematureKKK_Int_No4sU(x = tpts, parameters = parameters)
+	matureEstimated <- matureParameters
+
+	logLikelihoodFunction(premature, prematureEstimated, prematureVariance) + 
+	logLikelihoodFunction(mature, matureEstimated, matureVariance)
+
+}
+
+loglikVKK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+
+  k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
+  k2F <- function(x) return(parameters[7])
+  k3F <- function(x) return(parameters[8])
+
+  if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+
+  modData <- systemSolution(k1F,k2F,k3F,times)
+
+  logLikelihoodFunction(data, modData, datavar)
+
+}
+
+loglikKVK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+
+  k1F <- function(x) return(parameters[1])
+  k2F <- function(x) {.impulseModel(log2(x+a)+c,parameters[2:7])}
+  k3F <- function(x) return(parameters[8])
+
+  if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+
+  modData <- systemSolution(k1F,k2F,k3F,times)
+  # modelLm <- sapply(times,function(t)k1F(t)/k3F(t)*(1 - exp(-k3F(t)*1/6))+k1F(t)/(k3F(t) - k2F(t))*(exp(-k3F(t)*1/6) - exp(-k2F(t)*1/6)))
+
+  # modData <- c(modData, modelLm)
+
+  logLikelihoodFunction(data, modData, datavar)
+}
+
+loglikKKV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+
+  k1F <- function(x) return(parameters[1])
+  k2F <- function(x) return(parameters[2])
+  k3F <- function(x) {.impulseModel(log2(x+a)+c,parameters[3:8])}
+
+  if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+
+  modData <- systemSolution(k1F,k2F,k3F,times)
+
+  logLikelihoodFunction(data, modData, datavar)
+}
+
+loglikVVK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+
+  k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
+  k2F <- function(x) {.impulseModel(log2(x+a)+c,parameters[7:12])}
+  k3F <- function(x) return(parameters[13])
+
+  if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+
+  modData <- systemSolution(k1F,k2F,k3F,times)
+
+  logLikelihoodFunction(data, modData, datavar)
+}
+
+loglikVKV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+
+  k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
+  k2F <- function(x) return(parameters[7])
+  k3F <- function(x) {.impulseModel(log2(x+a)+c,parameters[8:13])}
+
+  if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+
+  modData <- systemSolution(k1F,k2F,k3F,times)
+
+  logLikelihoodFunction(data, modData, datavar)
+}
+
+loglikKVV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+
+  k1F <- function(x) return(parameters[1])
+  k2F <- function(x) {.impulseModel(log2(x+a)+c,parameters[2:7])}
+  k3F <- function(x) {.impulseModel(log2(x+a)+c,parameters[8:13])}
+
+  if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+
+  modData <- systemSolution(k1F,k2F,k3F,times)
+
+  logLikelihoodFunction(data, modData, datavar)
+}
+
+loglikVVV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+{
+
+  k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
+  k2F <- function(x) {.impulseModel(log2(x+a)+c,parameters[7:12])}
+  k3F <- function(x) {.impulseModel(log2(x+a)+c,parameters[13:18])}
+
+  if( any(c(k1F(times),k2F(times),k3F(times))<0) ) return(NaN)
+
+  modData <- systemSolution(k1F,k2F,k3F,times)
+
+  logLikelihoodFunction(data, modData, datavar)
+}
 
 
 
+###########################################################################
+
+k1VKK_Der_No4sU <- function(x, par, c)
+{
+	t_fact <- 2^(x-c)*log(2)
+	.D2impulseModel(x, par[1:6])*t_fact^2/par[7] + .DimpulseModel(x, par[1:6])*(1+par[8]/par[7])*t_fact + par[8]*.impulseModel(x, par[1:6])
+}
+
+prematureVKK_Der_No4sU <- function(x, parameters, c)
+{
+	matureParameters <- parameters[1:6]
+	k2Parameters <- parameters[7]
+	k3Parameters <- parameters[8]
+
+	t_fact <- 2^(x-c)*log(2)
+	(.DimpulseModel(x, matureParameters)*t_fact + k3Parameters * .impulseModel(x, matureParameters))/k2Parameters
+}
+
+errorVKK_Der_No4sU <- function(parameters
+							  ,tpts
+							  ,premature
+							  ,mature
+							  ,prematureVariance
+							  ,matureVariance
+							  ,c)
+{
+
+	matureParameters <- parameters[1:6]
+
+	D2 <- .D2impulseModel(tpts,matureParameters)
+	k1 <- k1VKK_Der_No4sU(tpts,parameters, c)
+
+	prematureEstimated <- prematureVKK_Der_No4sU(x = tpts, parameters = parameters, c = c)
+	matureEstimated <- .impulseModel(x = tpts, par = matureParameters)
+
+	if( any(is.na(D2)) | any(k1<0) | any(prematureEstimated<0) | any(matureEstimated<0) ) return(NaN)
+
+	prematureChiSquare <- sum((premature - prematureEstimated )^2/prematureVariance)
+	matureChiSquare <- sum((mature - matureEstimated)^2/matureVariance)
+
+	return(sum(c(prematureChiSquare,matureChiSquare)))
+}
+
+k1VVK_Der_No4sU <- function(x, par, c)
+{
+	t_fact <- 2^(x-c)*log(2)
+	.D2impulseModel(x, par[1:6])/.impulseModel(x, par[7:12])*t_fact^2 +
+	.DimpulseModel(x, par[1:6])*t_fact*(1 - log(2)*.DimpulseModel(x, par[7:12])/.impulseModel(x, par[7:12])^2 + par[13]/.impulseModel(x, par[7:12])) + 
+	log(2)*.impulseModel(x, par[1:6])*(par[13]/log(2) - (par[13]*.DimpulseModel(x, par[7:12]))/.impulseModel(x, par[7:12])^2 )
+}
+
+prematureVVK_Der_No4sU <- function(x, parameters, c)
+{
+	matureParameters <- parameters[1:6]
+	k2Parameters <- parameters[7:12]
+	k3Parameters <- parameters[13]
+	
+	t_fact <- 2^(x-c)*log(2)
+	return((.DimpulseModel(x, matureParameters)*t_fact
+	      + k3Parameters * .impulseModel(x, matureParameters))/.impulseModel(x, k2Parameters))
+}
+
+errorVVK_Der_No4sU <- function(parameters
+                    	 ,tpts
+                    	 ,premature
+                    	 ,mature
+                    	 ,prematureVariance
+                    	 ,matureVariance
+                    	 ,c)
+{
+
+	matureParameters <- parameters[1:6]
+
+#	if( abs(matureParameters[6]) > 5 ) return(NaN)
+#	if( abs(parameters[12]) > 5 ) return(NaN)
+#
+	D2 <- .D2impulseModel(tpts,matureParameters)
+	k1 <- k1VVK_Der_No4sU(tpts,parameters, c)
+
+	prematureEstimated <- prematureVVK_Der_No4sU(x = tpts, parameters = parameters, c = c)
+	matureEstimated <- .impulseModel(x = tpts, par = matureParameters)
+
+	if( any(is.na(D2)) | any(k1<0) | any(prematureEstimated<0) | any(matureEstimated<0) ) return(NaN)
+
+	prematureChiSquare <- sum((premature - prematureEstimated )^2/prematureVariance)
+	matureChiSquare <- sum((mature - matureEstimated)^2/matureVariance)
+
+	return(sum(c(prematureChiSquare,matureChiSquare)))
+}
+
+k1VKV_Der_No4sU <- function(x, par, c)
+{
+	t_fact <- 2^(x-c)*log(2)
+	.D2impulseModel(x, par[1:6])/par[7]*t_fact^2 +
+	.DimpulseModel(x, par[1:6])*t_fact*(1 + .impulseModel(x, par[8:13])/par[7]) + 
+	log(2)*.impulseModel(x, par[1:6])*( .DimpulseModel(x, par[8:13])/par[7] + .impulseModel(x, par[8:13])/log(2) )
+}
+
+prematureVKV_Der_No4sU <- function(x, parameters, c)
+{
+	matureParameters <- parameters[1:6]
+	k2Parameters <- parameters[7]
+	k3Parameters <- parameters[8:13]
+	
+	t_fact <- 2^(x-c)*log(2)
+	(.DimpulseModel(x, matureParameters)*t_fact + .impulseModel(x, k3Parameters) * .impulseModel(x, matureParameters))/k2Parameters
+}
+
+errorVKV_Der_No4sU <- function(parameters
+									 ,tpts
+									 ,premature
+									 ,mature
+									 ,prematureVariance
+									 ,matureVariance
+									 ,c)
+{
+	matureParameters <- parameters[1:6]
+
+#	if( abs(matureParameters[6]) > 5 ) return(NaN)
+#	if( abs(parameters[13]) > 5 ) return(NaN)
+#
+	D2 <- .D2impulseModel(tpts,matureParameters)
+	k1 <- k1VKV_Der_No4sU(tpts,parameters, c)
+
+	prematureEstimated <- prematureVKV_Der_No4sU(x = tpts, parameters = parameters, c = c)
+	matureEstimated <- .impulseModel(x = tpts, par = matureParameters)
+
+	if( any(is.na(D2)) | any(k1<0) | any(prematureEstimated<0) | any(matureEstimated<0) ) return(NaN)
+
+	prematureChiSquare <- sum((premature - prematureEstimated )^2/prematureVariance)
+	matureChiSquare <- sum((mature - matureEstimated)^2/matureVariance)
+
+	return(sum(c(prematureChiSquare,matureChiSquare)))
+}
+
+k1VVV_Der_No4sU <- function(x, par, c)
+{
+  t_fact <- 2^(x-c)*log(2)
+  .D2impulseModel(x, par[1:6])/.impulseModel(x, par[7:12])*t_fact^2 +
+  .DimpulseModel(x, par[1:6])*t_fact*(1 - log(2)*.DimpulseModel(x, par[7:12])/.impulseModel(x, par[7:12])^2 + .impulseModel(x, par[13:18])/.impulseModel(x, par[7:12])) + 
+  log(2)*.impulseModel(x, par[1:6])*(.DimpulseModel(x, par[13:18])/.impulseModel(x, par[7:12]) + .impulseModel(x, par[13:18])/log(2) - (.impulseModel(x, par[13:18])*.DimpulseModel(x, par[7:12]))/.impulseModel(x, par[7:12])^2 )
+}
+
+prematureVVV_Der_No4sU <- function(x, parameters, c)
+{
+	matureParameters <- parameters[1:6]
+	k2Parameters <- parameters[7:12]
+	k3Parameters <- parameters[13:18]
+
+	t_fact <- 2^(x-c)*log(2)
+	return((.DimpulseModel(x, matureParameters)*t_fact
+		+ .impulseModel(x, k3Parameters)*.impulseModel(x, matureParameters))/.impulseModel(x, k2Parameters))
+}
+
+errorVVV_Der_No4sU <- function(parameters
+									 ,tpts
+									 ,premature
+									 ,mature
+									 ,prematureVariance
+									 ,matureVariance
+									 ,c)
+{
+
+	matureParameters <- parameters[1:6]
+#	if( abs(matureParameters[6]) > 5 ) return(NaN)
+#	if( abs(parameters[12]) > 5 ) return(NaN)
+#	if( abs(parameters[18]) > 5 ) return(NaN)
+
+	D2 <- .D2impulseModel(tpts,matureParameters)
+	k1 <- k1VVV_Der_No4sU(tpts,parameters, c)
+
+	prematureEstimated <- prematureVVV_Der_No4sU(x = tpts, parameters = parameters, c = c)
+	matureEstimated <- .impulseModel(x = tpts, par = matureParameters)
+
+	if( any(is.na(D2)) | any(k1<0) | any(prematureEstimated<0) | any(matureEstimated<0) ) return(NaN)
+
+	prematureChiSquare <- sum((premature - prematureEstimated )^2/prematureVariance)
+	matureChiSquare <- sum((mature - matureEstimated)^2/matureVariance)
+
+	return(sum(c(prematureChiSquare,matureChiSquare)))
+}
+
+.inspect.engine_Derivative_No4sU <- function(tptsOriginal
+										   , tptsLinear
+										   , a
+										   , c
+										   , concentrations
+										   , rates
+										   , BPPARAM=bpparam()
+										   , na.rm=TRUE
+										   , verbose=TRUE
+										   , testOnSmooth=TRUE
+										   , seed=NULL
+										   , nInit = nInit
+										   , nIter = nIter)
+{
+
+	total <- concentrations$total
+	totalVariance <- concentrations$total_var
+
+	premature <- concentrations$preMRNA
+	prematureVariance <- concentrations$preMRNA_var
+
+	mature <- concentrations$mature
+	matureVariance <- concentrations$mature_var
+
+	eiGenes <- rownames(mature)
+
+	k2median <- median(rates$gamma,na.rm = TRUE)
+	k3median <- median(rates$beta,na.rm = TRUE)
+
+	matureFitImpulse <- bplapply(eiGenes,function(row)
+	{
+  		fitSmooth(tpts = tptsLinear
+        	    , tt_c = c
+        	    , experiment = mature[row,]
+        	    , variance = matureVariance[row,]
+        	    , mature = TRUE
+        	    , nInit = nInit
+        	    , nIter = nIter
+        	    , seed = seed)
+	},BPPARAM=BPPARAM)
+
+	prematureFitImpulse <- bplapply(eiGenes,function(row)
+	{
+		fitSmooth(tpts = tptsLinear
+				, tt_c = c
+        		, experiment = premature[row,]
+        		, variance = prematureVariance[row,]
+        		, mature = FALSE
+        		, nInit = nInit
+        		, nIter = nIter
+        		, seed = seed)     
+	},BPPARAM=BPPARAM)
+
+	names(matureFitImpulse) <- eiGenes
+	names(prematureFitImpulse) <- eiGenes
+
+	if(any(sapply(matureFitImpulse,is.null) | sapply(prematureFitImpulse,is.null)))
+		print("Some genes have an expression profile impossible to be fitted with impulsive functions therefore they will be excluded from the modelling.")
+
+	eiGenes <- eiGenes[!sapply(matureFitImpulse,is.null) & !sapply(prematureFitImpulse,is.null)]
+
+	prematureFitImpulse <- prematureFitImpulse[eiGenes]
+	matureFitImpulse <- matureFitImpulse[eiGenes]
+
+	total <- total[eiGenes,]
+	totalVariance <- totalVariance[eiGenes,]
+
+	premature <- premature[eiGenes,]
+	prematureVariance <- prematureVariance[eiGenes,]
+
+	mature <- mature[eiGenes,]
+	matureVariance <- matureVariance[eiGenes,]
+
+	# Equal to integrative approach
+
+	KKK <- bplapply(eiGenes,function(row){
+	
+	matureParameters <- mean(.impulseModel(tptsLinear, matureFitImpulse[[row]][1:6]))
+	k2Parameters <- k2median
+	k3Parameters <- k3median
+
+	unlist(
+		tryCatch(
+			optim(c(matureParameters, k2Parameters, k3Parameters)
+				,errorKKK_Int_No4sU
+				,tpts = tptsLinear
+				,premature = premature[row,]
+				,mature = mature[row,]
+				,prematureVariance = prematureVariance[row,]
+				,matureVariance = matureVariance[row,]
+				,control = list(maxit = nIter)),
+			error=function(e) c(par1 = NaN
+							  , par2 = NaN
+							  , par3 = NaN
+							  , value = NaN
+							  , counts.function = NaN
+						  	  , counts.gradient = NaN
+						  	  , convergence = NaN)
+			)
+		)
+	}, BPPARAM=BPPARAM)
+	names(KKK) <- eiGenes
+	print("Model 0 finished.")
+
+	medianAmplVKK <- sapply(eiGenes, function(row)
+	{
+
+		parameters <- unname(c(matureFitImpulse[[row]][1:6]
+							 , k2median
+							 , k3median))
+
+		k1 <- k1VKK_Der_No4sU(tptsLinear,parameters,c)
+		p <- prematureVKK_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
+
+		if(all(k1>0) & all(p>0)) return(1)
+
+		suppressWarnings(optimize( function(x)
+		{
+    		parameters <- unname(c(matureFitImpulse[[row]][1:6]
+								 , k2median*x
+								 , k3median*x))
+
+			k1 <- k1VKK_Der_No4sU(tptsLinear,parameters,c)
+    		p <- prematureVKK_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
+
+		if(!all(k1>0) | !all(p>0)) NaN else sum(c(k1
+												 ,k2median*x*length(tptsOriginal)
+      									 		 ,k3median*x*length(tptsOriginal)))
+  		},c(1, 1e5) ))$minimum
+	})
+
+	VKK <- bplapply(eiGenes,function(row){
+
+		if(medianAmplVKK[[row]] > 10^2)
+  		{
+			return(c(par1 = NaN, par2 = NaN, par3 = NaN
+				   , par4 = NaN, par5 = NaN, par6 = NaN
+				   , par7 = NaN, par8 = NaN, value = NaN
+				   , counts.function = NaN
+				   , counts.gradient = NaN, convergence = NaN))
+		}
+
+		matureParameters <- unname(matureFitImpulse[[row]][1:6])
+
+		k2Parameters <- k2median * unname(medianAmplVKK[row])
+		k3Parameters <- k3median * unname(medianAmplVKK[row])
+	  
+		unlist(
+			tryCatch(
+	      			optim(unname(c(matureParameters, k2Parameters, k3Parameters))
+	                  	 ,errorVKK_Der_No4sU
+        				 ,tpts = tptsLinear
+			             ,premature = premature[row,]
+			             ,mature = mature[row,]
+			             ,prematureVariance = prematureVariance[row,]
+			             ,matureVariance = matureVariance[row,]
+	                  	 ,c = c
+	                  	 ,control = list(maxit = nIter)),
+	    		error=function(e) c(par1 = NaN
+	    						  , par2 = NaN
+	    						  , par3 = NaN
+	    						  , par4 = NaN
+	    						  , par5 = NaN
+	    						  , par6 = NaN
+	    						  , par7 = NaN
+	    						  , par8 = NaN
+	    						  , value = NaN
+	    						  , counts.function = NaN
+	    						  , counts.gradient = NaN
+	    						  , convergence = NaN)
+	    		)
+	    )
+	}, BPPARAM=BPPARAM)
+	names(VKK) <- eiGenes
+	print("Model A finished.")
+
+	medianAmplVVK <- sapply(eiGenes, function(row)
+	{
+		parameters <- c(unname(matureFitImpulse[[row]][1:6])
+						, rep(k2median,3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1
+						, k3median)
+		k1 <- k1VVK_Der_No4sU(tptsLinear,parameters, c)
+		p <- prematureVVK_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
+		if(all(k1>0) & all(p>0)) return(1)
+		suppressWarnings(optimize( function(x) {
+			parameters <- unname(c(matureFitImpulse[[row]][1:6]
+							  , c(rep(k2median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+							  , k3median * x))
+     
+			k1 <- k1VVK_Der_No4sU(tptsLinear,parameters, c)
+			p <- prematureVVK_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)      
+     
+			if(!all(k1>0) | !all(p>0)) NaN else sum(c(k1,.impulseModel(tptsLinear,c(rep(k2median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)),k3median*x*length(tptsOriginal)))
+   		}, c(1, 1e5) ))$minimum
+	})
+
+	VVK <- bplapply(eiGenes, function(row)
+	{
+
+		if(medianAmplVVK[[row]] > 10^2)
+		{
+			return(c(par1 = NaN, par2 = NaN, par3 = NaN
+				   , par4 = NaN, par5 = NaN, par6 = NaN
+				   , par7 = NaN, par8 = NaN, par9 = NaN
+				   , par10 = NaN, par11 = NaN, par12 = NaN
+				   , par13 = NaN, value = NaN, counts.function = NaN
+				   , counts.gradient = NaN, convergence = NaN))
+		}
+  
+		matureParameters <- unname(matureFitImpulse[[row]][1:6])
+		k2Parameters <- c(rep(k2median,3) * unname(medianAmplVVK[row]), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+		k3Parameters <- k3median * unname(medianAmplVVK[row])
+		
+		unlist(
+			tryCatch(
+				optim(unname(c(matureParameters, k2Parameters, k3Parameters))
+			        	,errorVVK_Der_No4sU
+						,tpts = tptsLinear
+						,premature = premature[row,]
+						,mature = mature[row,]
+						,prematureVariance = prematureVariance[row,]
+						,matureVariance = matureVariance[row,]
+						,c = c
+						,control = list(maxit = nIter)),
+				error=function(e) c(par1 = NaN
+								   ,par2 = NaN
+								   ,par3 = NaN
+								   ,par4 = NaN
+								   ,par5 = NaN
+								   ,par6 = NaN
+								   ,par7 = NaN
+								   ,par8 = NaN
+								   ,par9 = NaN
+								   ,par10 = NaN
+								   ,par11 = NaN
+								   ,par12 = NaN
+								   ,par13 = NaN
+								   ,value = NaN
+								   ,counts.function = NaN
+								   ,counts.gradient = NaN
+								   ,convergence = NaN)
+			)
+		)
+	}, BPPARAM=BPPARAM)
+	names(VVK) <- eiGenes
+	print("Model AC finished.")
+
+	medianAmplVKV <- sapply(eiGenes, function(row)
+	{
+
+		parameters <- c(unname(matureFitImpulse[[row]][1:6])
+							 , k2median
+			  				 , rep(k3median,3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+  		k1 <- k1VKV_Der_No4sU(tptsLinear,parameters, c)
+		p <- prematureVKV_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
+
+		if(all(k1>0) & all(p>0)) return(1)
+
+		suppressWarnings(optimize( function(x) {
+
+			parameters <- c(unname(matureFitImpulse[[row]][1:6])
+								 , k2median * x
+								 , rep(k3median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+      
+			k1 <- k1VKV_Der_No4sU(tptsLinear,parameters, c)
+			p <- prematureVKV_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
+      
+			if(!all(k1>0) | !all(p>0)) NaN else sum(k1,k2median*x*length(tptsOriginal),.impulseModel(tptsLinear,c(rep(k3median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)))
+
+		}, c(1, 1e5) ))$minimum
+	})
+
+	VKV <- bplapply(eiGenes, function(row)
+	{
+
+		if(medianAmplVKV[[row]] > 10^2)
+		{
+			return(c(par1 = NaN, par2 = NaN, par3 = NaN
+				   , par4 = NaN, par5 = NaN, par6 = NaN
+				   , par7 = NaN, par8 = NaN, par9 = NaN
+				   , par10 = NaN, par11 = NaN, par12 = NaN
+				   , par13 = NaN, value = NaN, counts.function = NaN
+				   , counts.gradient = NaN, convergence = NaN))
+		}
+
+		matureParameters <- unname(matureFitImpulse[[row]][1:6])
+		k2Parameters <- k2median * unname(medianAmplVKV[row])
+		k3Parameters <- c(rep(k3median,3) * unname(medianAmplVKV[row]), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+		
+		unlist(
+			tryCatch(
+				optim(unname(c(matureParameters, k2Parameters, k3Parameters))
+          				,errorVKV_Der_No4sU
+						,tpts = tptsLinear
+						,premature = premature[row,]
+						,mature = mature[row,]
+						,prematureVariance = prematureVariance[row,]
+						,matureVariance = matureVariance[row,]
+						,c = c
+						,control = list(maxit = nIter)),
+				error=function(e) c(par1 = NaN
+								   ,par2 = NaN
+								   ,par3 = NaN
+								   ,par4 = NaN
+								   ,par5 = NaN
+								   ,par6 = NaN
+								   ,par7 = NaN
+								   ,par8 = NaN
+								   ,par9 = NaN
+								   ,par10 = NaN
+								   ,par11 = NaN
+								   ,par12 = NaN
+								   ,par13 = NaN
+								   ,value = NaN
+								   ,counts.function = NaN
+								   ,counts.gradient = NaN
+								   ,convergence = NaN)
+			)
+		)
+	}, BPPARAM=BPPARAM)
+	names(VKV) <- eiGenes
+	print("Model AB finished.")
+
+	medianAmplVVV <- sapply(eiGenes, function(row)
+	{
+
+		parameters <- c(unname(matureFitImpulse[[row]][1:6])
+					  , rep(k2median,3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1
+					  , rep(k3median,3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+		k1 <- k1VVV_Der_No4sU(tptsLinear,parameters, c)
+		p <- prematureVVV_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
+	
+		if(all(k1>0) & all(p>0)) return(1)
+	
+		suppressWarnings(optimize( function(x) {
+	
+			parameters <- c(unname(matureFitImpulse[[row]][1:6])
+						  , rep(k2median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1
+						  , rep(k3median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+	
+			k1 <- k1VVV_Der_No4sU(tptsLinear,parameters, c)
+			p <- prematureVVV_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)      
+	      
+			if(!all(k1>0) | !all(p>0)) NaN else sum(k1
+	      										, .impulseModel(tptsLinear,c(rep(k2median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1))
+	      										, .impulseModel(tptsLinear,c(rep(k3median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)))
+	
+			}, c(1, 1e5) ))$minimum
+	})
+
+	VVV <- bplapply(eiGenes, function(row){
+
+		if(medianAmplVVV[[row]] > 10^2)
+		{
+			return(c(par1 = NaN, par2 = NaN, par3 = NaN, par4 = NaN, par5 = NaN
+				   , par6 = NaN, par7 = NaN, par8 = NaN, par9 = NaN, par10 = NaN
+				   , par11 = NaN, par12 = NaN, par13 = NaN, par14 = NaN
+				   , par15 = NaN, par16 = NaN, par17 = NaN, par18 = NaN
+				   , value = NaN, counts.function = NaN
+				   , counts.gradient = NaN, convergence = NaN))
+		}
+
+		matureParameters <- unname(matureFitImpulse[[row]][1:6])
+		k2Parameters <- c(rep(k2median,3) * unname(medianAmplVVV[row]), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+		k3Parameters <- c(rep(k3median,3) * unname(medianAmplVVV[row]), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+
+			unlist(
+			tryCatch(
+				optim(unname(c(matureParameters, k2Parameters, k3Parameters))
+          				,errorVVV_Der_No4sU
+						,tpts = tptsLinear
+						,premature = premature[row,]
+						,mature = mature[row,]
+						,prematureVariance = prematureVariance[row,]
+						,matureVariance = matureVariance[row,]
+						,c = c
+						,control = list(maxit = nIter)),
+				error=function(e) c(par1 = NaN
+								   ,par2 = NaN
+								   ,par3 = NaN
+								   ,par4 = NaN
+								   ,par5 = NaN
+								   ,par6 = NaN
+								   ,par7 = NaN
+								   ,par8 = NaN
+								   ,par9 = NaN
+								   ,par10 = NaN
+								   ,par11 = NaN
+								   ,par12 = NaN
+								   ,par13 = NaN
+								   ,par14 = NaN
+								   ,par15 = NaN
+								   ,par16 = NaN
+								   ,par17 = NaN
+								   ,par18 = NaN
+								   ,value = NaN
+								   ,counts.function = NaN
+								   ,counts.gradient = NaN
+								   ,convergence = NaN)
+			)
+		)
+	}, BPPARAM=BPPARAM)
+	names(VVV) <- eiGenes
+	print("Model ABC finished.")
+
+	KKV <- bplapply(eiGenes, function(row){
+ 
+		k1Parameters <- mean(k1VKV_Der_No4sU(tptsLinear, VKV[[row]], c),na.rm=T)
+		k2Parameters <- VKV[[row]][7]
+		k3Parameters <- VKV[[row]][8:13]
+		unlist(
+			tryCatch(
+				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
+		        	,errorKKV_Int_No4sU
+		        	,times = tptsOriginal
+		        	,data = c( mature[row,], premature[row,] )
+		        	,datavar = c( matureVariance[row,] , prematureVariance[row,] )
+		        	,a = a
+		        	,c = c
+		        	,control = list(maxit = nIter)),
+			error=function(e) c(par1 = NaN
+							   ,par2 = NaN
+							   ,par3 = NaN
+							   ,par4 = NaN
+							   ,par5 = NaN
+							   ,par6 = NaN
+							   ,par7 = NaN
+							   ,par8 = NaN
+							   ,value = NaN
+							   ,counts.function = NaN
+							   ,counts.gradient = NaN
+							   ,convergence = NaN)
+			)
+		)
+	}, BPPARAM=BPPARAM)
+	names(KKV) <- eiGenes
+	print("Model B finished.")
+
+	KVK <- bplapply(eiGenes, function(row){
+ 
+		k1Parameters <- mean(k1VVK_Der_No4sU(tptsLinear, VVK[[row]], c),na.rm=T)
+		k2Parameters <- VVK[[row]][7:12]
+		k3Parameters <- VVK[[row]][13]
+		
+		unlist(
+			tryCatch(
+				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
+					 ,errorKVK_Int_No4sU
+					 ,times = tptsOriginal
+					 ,data = c( mature[row,], premature[row,] )
+					 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
+					 ,a = a
+					 ,c = c
+					 ,control = list(maxit = nIter)),
+			error=function(e) c(par1 = NaN
+							   ,par2 = NaN
+							   ,par3 = NaN
+							   ,par4 = NaN
+							   ,par5 = NaN
+							   ,par6 = NaN
+							   ,par7 = NaN
+							   ,par8 = NaN
+							   ,value = NaN
+							   ,counts.function = NaN
+							   ,counts.gradient = NaN
+							   ,convergence = NaN)
+			)
+		)
+	}, BPPARAM=BPPARAM)
+	names(KVK) <- eiGenes
+	print("Model C finished.")
+
+	KVV <- bplapply(eiGenes, function(row){
+	
+		k1Parameters <- mean(k1VVV_Der_No4sU(tptsLinear, VVV[[row]], c),na.rm=T)
+		k2Parameters <- VVV[[row]][7:12]
+		k3Parameters <- VVV[[row]][13:18]
+		unlist(
+			tryCatch(
+				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
+					 ,errorKVV_Int_No4sU
+					 ,times = tptsOriginal
+					 ,data = c( mature[row,], premature[row,] )
+					 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
+					 ,a = a
+					 ,c = c
+					 ,control = list(maxit = nIter)),
+			error=function(e) c(par1 = NaN
+							   ,par2 = NaN
+							   ,par3 = NaN
+							   ,par4 = NaN
+							   ,par5 = NaN
+							   ,par6 = NaN
+							   ,par7 = NaN
+							   ,par8 = NaN
+							   ,par9 = NaN
+							   ,par10 = NaN
+							   ,par11 = NaN
+							   ,par12 = NaN
+							   ,par13 = NaN
+							   ,value = NaN
+							   ,counts.function = NaN
+							   ,counts.gradient = NaN
+							   ,convergence = NaN)
+			)
+		)
+	}, BPPARAM=BPPARAM)
+	names(KVV) <- eiGenes
+	print("Model BC finished.")
+
+	if(testOnSmooth)
+	{
+		matureSmooth <- t(sapply(matureFitImpulse,function(i)
+		{
+ 			.impulseModel(tptsLinear,i)
+		}))
+		prematureSmooth <- t(sapply(prematureFitImpulse,function(i)
+		{
+		 	.impulseModel(tptsLinear,i)
+		}))
+		colnames(matureSmooth) <- tptsOriginal
+		colnames(prematureSmooth) <- tptsOriginal
+	}else{
+		matureSmooth <- mature
+		prematureSmooth <- premature
+	}
+
+	chi2data <- t(mcsapply(eiGenes,function(g)
+	{
+		KKKTemp <- tryCatch(errorKKK_Int_No4sU(KKK[[g]][grep("par",names(KKK[[g]]))]
+											  ,tptsLinear
+											  ,prematureSmooth[g,]
+											  ,matureSmooth[g,]
+											  ,prematureVariance[g,]
+											  ,matureVariance[g,]),error = function(e)NaN)
+	
+		VKKTemp <- tryCatch(errorVKK_Der_No4sU(VKK[[g]][grep("par",names(VKK[[g]]))]
+											  ,tptsLinear
+											  ,prematureSmooth[g,]
+											  ,matureSmooth[g,]
+											  ,prematureVariance[g,]
+											  ,matureVariance[g,]
+											  ,c),error = function(e)NaN)
+	
+		KVKTemp <- tryCatch(errorKVK_Int_No4sU(KVK[[g]][grep("par",names(KVK[[g]]))]
+											  ,tptsOriginal
+											  ,c(matureSmooth[g,],prematureSmooth[g,])
+											  ,c(matureVariance[g,],prematureVariance[g,])
+											  ,a
+											  ,c),error = function(e)NaN)
+
+		KKVTemp <- tryCatch(errorKKV_Int_No4sU(KKV[[g]][grep("par",names(KKV[[g]]))]
+											  ,tptsOriginal
+											  ,c(matureSmooth[g,],prematureSmooth[g,])
+											  ,c(matureVariance[g,],prematureVariance[g,])
+											  ,a
+											  ,c),error = function(e)NaN)
+	
+		VVKTemp <- tryCatch(errorVVK_Der_No4sU(VVK[[g]][grep("par",names(VVK[[g]]))]
+													 ,tptsLinear
+													 ,prematureSmooth[g,]
+													 ,matureSmooth[g,]
+													 ,prematureVariance[g,]
+													 ,matureVariance[g,]
+													 ,c),error = function(e)NaN)
+	
+		VKVTemp <- tryCatch(errorVKV_Der_No4sU(VKV[[g]][grep("par",names(VKV[[g]]))]
+													 ,tptsLinear
+													 ,prematureSmooth[g,]
+													 ,matureSmooth[g,]
+													 ,prematureVariance[g,]
+													 ,matureVariance[g,]
+													 ,c),error = function(e)NaN)
+
+		KVVTemp <- tryCatch(errorKVV_Int_No4sU(KVV[[g]][grep("par",names(KVV[[g]]))]
+											  ,tptsOriginal
+											  ,c(matureSmooth[g,],prematureSmooth[g,])
+											  ,c(matureVariance[g,],prematureVariance[g,])
+											  ,a
+											  ,c),error = function(e)NaN)
+	
+		VVVTemp <- tryCatch(errorVVV_Der_No4sU(VVV[[g]][grep("par",names(VVV[[g]]))]
+													 ,tptsLinear
+													 ,prematureSmooth[g,]
+													 ,matureSmooth[g,]
+													 ,prematureVariance[g,]
+													 ,matureVariance[g,]
+													 ,c),error = function(e)NaN)
+	  
+	  c(KKK = KKKTemp,VKK = VKKTemp,KVK = KVKTemp,KKV = KKVTemp,VVK = VVKTemp,VKV = VKVTemp,KVV = KVVTemp,VVV = VVVTemp)
+	
+	}, BPPARAM=BPPARAM))
+
+	dof <- c(KKK = 3
+			,VKK = 8
+			,KVK = 8
+			,KKV = 8
+			,VVK = 13
+			,VKV = 13
+			,KVV = 13
+			,VVV = 18)
+
+	# P values
+	pvaluesdata <- cbind(KKK=pchisq(chi2data[,'KKK'], 2*length(tptsOriginal)-dof['KKK'])
+						,VKK=pchisq(chi2data[,'VKK'], 2*length(tptsOriginal)-dof['VKK'])
+						,KVK=pchisq(chi2data[,'KVK'], 2*length(tptsOriginal)-dof['KVK'])
+						,KKV=pchisq(chi2data[,'KKV'], 2*length(tptsOriginal)-dof['KKV'])
+						,VVK=pchisq(chi2data[,'VVK'], 2*length(tptsOriginal)-dof['VVK'])
+						,VKV=pchisq(chi2data[,'VKV'], 2*length(tptsOriginal)-dof['VKV'])
+						,KVV=pchisq(chi2data[,'KVV'], 2*length(tptsOriginal)-dof['KVV'])
+						,VVV=pchisq(chi2data[,'VVV'], 2*length(tptsOriginal)-dof['VVV']))
+
+	logLikelihood <- t(mcsapply(eiGenes,function(g)
+	{
+		prematureKKKTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureKKK_Int_No4sU(x = tptsLinear[t]
+																						   , parameters = KKK[[g]][grep("par",names(KKK[[g]]))])))
+		prematureVKKTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureVKK_Der_No4sU(x = tptsLinear[t]
+		                                                                         , parameters = VKK[[g]][grep("par",names(VKK[[g]]))]
+		                                                                         , c = c)))
+		prematureVVKTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureVVK_Der_No4sU(x = tptsLinear[t]
+		                                                            , parameters = VVK[[g]][grep("par",names(VVK[[g]]))]
+		                                                            , c = c)))
+		prematureVKVTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureVKV_Der_No4sU(x = tptsLinear[t]
+		                                                            , parameters = VKV[[g]][grep("par",names(VKV[[g]]))]
+		                                                            , c = c)))
+		prematureVVVTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureVVV_Der_No4sU(x = tptsLinear[t]
+		                                                            , parameters = VVV[[g]][grep("par",names(VVV[[g]]))]
+		                                                            , c = c)))		
+
+		matureKKKTemp <- c(sapply(seq_along(tptsLinear),function(t)KKK[[g]][grep("par",names(KKK[[g]]))][1]))
+
+		matureVKKTemp <- c(sapply(seq_along(tptsLinear),function(t).impulseModel(x = tptsLinear[t]
+        		                                                               , par = VKK[[g]][grep("par",names(VKK[[g]]))][1:6])))
+		matureVVKTemp <- c(sapply(seq_along(tptsLinear),function(t).impulseModel(x = tptsLinear[t]
+                                                                      		   , par = VVK[[g]][grep("par",names(VVK[[g]]))][1:6])))
+		matureVKVTemp <- c(sapply(seq_along(tptsLinear),function(t).impulseModel(x = tptsLinear[t]
+                                                                      		   , par = VKV[[g]][grep("par",names(VKV[[g]]))][1:6])))
+		matureVVVTemp <- c(sapply(seq_along(tptsLinear),function(t).impulseModel(x = tptsLinear[t]
+                                                                      		   , par = VVV[[g]][grep("par",names(VVV[[g]]))][1:6])))
+
+		modelKKK <- c(matureKKKTemp,prematureKKKTemp)
+		modelVKK <- c(matureVKKTemp,prematureVKKTemp)
+		modelVVK <- c(matureVVKTemp,prematureVVKTemp)
+		modelVKV <- c(matureVKVTemp,prematureVKVTemp)
+		modelVVV <- c(matureVVVTemp,prematureVVVTemp)
+
+		KKKTemp <- logLikelihoodFunction(experiment = c(matureSmooth[g,],prematureSmooth[g,])
+		                               , model = modelKKK
+		                               , variance = c(matureVariance[g,],prematureVariance[g,]))
+		VKKTemp <- logLikelihoodFunction(experiment = c(matureSmooth[g,],prematureSmooth[g,])
+		                               , model = modelVKK
+		                               , variance = c(matureVariance[g,],prematureVariance[g,]))
+		VVKTemp <- logLikelihoodFunction(experiment = c(matureSmooth[g,],prematureSmooth[g,])
+		                               , model = modelVVK
+		                               , variance = c(matureVariance[g,],prematureVariance[g,]))
+		VKVTemp <- logLikelihoodFunction(experiment = c(matureSmooth[g,],prematureSmooth[g,])
+		                               , model = modelVKV
+		                               , variance = c(matureVariance[g,],prematureVariance[g,]))
+		VVVTemp <- logLikelihoodFunction(experiment = c(matureSmooth[g,],prematureSmooth[g,])
+		                               , model = modelVVV
+		                               , variance = c(matureVariance[g,],prematureVariance[g,]))
+
+		KKVTemp <- tryCatch(loglikKVV_Int_No4sU(KVV[[g]][grep("par",names(KVV[[g]]))]
+												   ,tptsOriginal
+												   ,c(matureSmooth[g,],prematureSmooth[g,])
+												   ,c(matureVariance[g,],prematureVariance[g,])
+												   ,a
+												   ,c),error = function(e)NaN)
+
+		KVKTemp <- tryCatch(loglikKVV_Int_No4sU(KVV[[g]][grep("par",names(KVV[[g]]))]
+												   ,tptsOriginal
+												   ,c(matureSmooth[g,],prematureSmooth[g,])
+												   ,c(matureVariance[g,],prematureVariance[g,])
+												   ,a
+												   ,c),error = function(e)NaN)
+
+		KVVTemp <- tryCatch(loglikKVV_Int_No4sU(KVV[[g]][grep("par",names(KVV[[g]]))]
+												   ,tptsOriginal
+												   ,c(matureSmooth[g,],prematureSmooth[g,])
+												   ,c(matureVariance[g,],prematureVariance[g,])
+												   ,a
+												   ,c),error = function(e)NaN)
+
+		c(KKK = KKKTemp,VKK = VKKTemp,KVK = KVKTemp,KKV = KKVTemp,VVK = VVKTemp,VKV = VKVTemp,KVV = KVVTemp,VVV = VVVTemp)
+
+	},BPPARAM=BPPARAM))
+
+	AIC <- t(apply(logLikelihood,1,function(row)
+	{
+		2*(dof - row) 
+	}))
+
+	AICc <- t(apply(logLikelihood,1,function(row)
+	{
+	 	2*(dof - row) + (2*dof*(dof+1))/(2*length(tptsOriginal)-dof-1)
+	}))
+
+	rownames(pvaluesdata) <- rownames(logLikelihood) <- rownames(AIC) <- rownames(AICc) <- eiGenes
+
+	ratesSpecs <- lapply(eiGenes,function(gene)
+ 		{
+ 			list(
+ 				"0" = list(alpha = list(fun = .constantModelP
+									 ,type = "constant"
+									 ,df = 1
+									 ,params = c(alpha = unname(KKK[[gene]]["par1"])))
+						,beta = list(fun = .constantModelP
+									,type = "constant"
+									,df = 1
+									,params = c(beta = unname(KKK[[gene]]["par3"])))
+	 				   	,gamma = list(fun = .constantModelP
+									 ,type = "constant"
+									 ,df = 1
+									 ,params = c(gamma = unname(KKK[[gene]]["par2"])))
+						,test = log(pvaluesdata[gene,"KKK"])
+						,logLik = logLikelihood[gene,"KKK"]
+						,AIC = AIC[gene,"KKK"]
+						,AICc = AICc[gene,"KKK"]
+						,couts = c("function"=unname(KKK[[gene]]["counts.function"]), gradient=unname(KKK[[gene]]["counts.gradient"]))
+						,convergence = unname(KKK[[gene]]["convergence"])
+						,message = NULL)
+
+ 				,a = list(alpha = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(alpha = unname(VKK[[gene]][1:6])))
+ 					  		,beta = list(fun = .constantModelP
+									,type = "constant"
+									,df = 1
+									,params = c(beta = unname(VKK[[gene]][8])))
+	 				  		,gamma = list(fun = .constantModelP
+										,type = "constant"
+										,df = 1
+										,params = c(gamma = unname(VKK[[gene]][7])))
+						,test = log(pvaluesdata[gene,"VKK"])
+						,logLik = logLikelihood[gene,"VKK"]
+						,AIC = AIC[gene,"VKK"]
+						,AICc = AICc[gene,"VKK"]
+						,couts = c("function"=unname(VKK[[gene]]["counts.function"]), gradient=unname(VKK[[gene]]["counts.gradient"]))
+						,convergence = unname(VKK[[gene]]["convergence"])
+						,message = NULL)
+ 				,b = list(alpha = list(fun = .constantModelP
+										,type = "constant"
+										,df = 1
+										,params = c(alpha = unname(KKV[[gene]][1])))
+ 					  		,beta = list(fun = .impulseModelP
+									,type = "impulse"
+									,df = 6
+									,params = c(beta = unname(KKV[[gene]][3:8])))
+	 				  		,gamma = list(fun = .constantModelP
+										,type = "constant"
+										,df = 1
+										,params = c(gamma = unname(KKV[[gene]][2])))
+						,test = log(pvaluesdata[gene,"KKV"])
+						,logLik = logLikelihood[gene,"KKV"]
+						,AIC = AIC[gene,"KKV"]
+						,AICc = AICc[gene,"KKV"]
+						,couts = c("function"=unname(KKV[[gene]]["counts.function"]), gradient=unname(KKV[[gene]]["counts.gradient"]))
+						,convergence = unname(KKV[[gene]]["convergence"])
+						,message = NULL)
+ 				,c = list(alpha = list(fun = .constantModelP
+										,type = "constant"
+										,df = 1
+										,params = c(alpha = unname(KVK[[gene]][1])))
+ 					  		,beta = list(fun = .constantModelP
+									,type = "constant"
+									,df = 1
+									,params = c(beta = unname(KVK[[gene]][8])))
+	 				  		,gamma = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(gamma = unname(KVK[[gene]][2:7])))
+						,test = log(pvaluesdata[gene,"KVK"])
+						,logLik = logLikelihood[gene,"KVK"]
+						,AIC = AIC[gene,"KVK"]
+						,AICc = AICc[gene,"KVK"]
+						,couts = c("function"=unname(KVK[[gene]]["counts.function"]), gradient=unname(KVK[[gene]]["counts.gradient"]))
+						,convergence = unname(KVK[[gene]]["convergence"])
+						,message = NULL)
+ 				,ab = list(alpha = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(alpha = unname(VKV[[gene]][1:6])))
+ 					  		,beta = list(fun = .impulseModelP
+									,type = "impulse"
+									,df = 6
+									,params = c(beta = unname(VKV[[gene]][8:13])))
+	 				  		,gamma = list(fun = .constantModelP
+										,type = "constant"
+										,df = 1
+										,params = c(gamma = unname(VKV[[gene]][7])))
+						,test = log(pvaluesdata[gene,"VKV"])
+						,logLik = logLikelihood[gene,"VKV"]
+						,AIC = AIC[gene,"VKV"]
+						,AICc = AICc[gene,"VKV"]
+						,couts = c("function"=unname(VKV[[gene]]["counts.function"]), gradient=unname(VKV[[gene]]["counts.gradient"]))
+						,convergence = unname(VKV[[gene]]["convergence"])
+						,message = NULL)
+ 				,ac = list(alpha = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(alpha = unname(VVK[[gene]][1:6])))
+ 					  		,beta = list(fun = .constantModelP
+									,type = "constant"
+									,df = 1
+									,params = c(beta = unname(VVK[[gene]][13])))
+	 				  		,gamma = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(gamma = unname(VVK[[gene]][7:12])))
+						,test = log(pvaluesdata[gene,"VVK"])
+						,logLik = logLikelihood[gene,"VVK"]
+						,AIC = AIC[gene,"VVK"]
+						,AICc = AICc[gene,"VVK"]
+						,couts = c("function"=unname(VVK[[gene]]["counts.function"]), gradient=unname(VVK[[gene]]["counts.gradient"]))
+						,convergence = unname(VVK[[gene]]["convergence"])
+						,message = NULL)
+ 				,bc = list(alpha = list(fun = .constantModelP
+										,type = "constant"
+										,df = 1
+										,params = c(alpha = unname(KVV[[gene]][1])))
+ 					  		,beta = list(fun = .impulseModelP
+									,type = "impulse"
+									,df = 6
+									,params = c(beta = unname(KVV[[gene]][8:13])))
+	 				  		,gamma = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(gamma = unname(KVV[[gene]][2:7])))
+						,test = log(pvaluesdata[gene,"KVV"])
+						,logLik = logLikelihood[gene,"KVV"]
+						,AIC = AIC[gene,"KVV"]
+						,AICc = AICc[gene,"KVV"]
+						,couts = c("function"=unname(KVV[[gene]]["counts.function"]), gradient=unname(KVV[[gene]]["counts.gradient"]))
+						,convergence = unname(KVV[[gene]]["convergence"])
+						,message = NULL)
+ 				,abc = list(alpha = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(alpha = unname(VVV[[gene]][1:6])))
+ 					  		,beta = list(fun = .impulseModelP
+									,type = "impulse"
+									,df = 6
+									,params = c(beta = unname(VVV[[gene]][13:18])))
+	 				  		,gamma = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(gamma = unname(VVV[[gene]][7:12])))
+						,test = log(pvaluesdata[gene,"VVV"])
+						,logLik = logLikelihood[gene,"VVV"]
+						,AIC = AIC[gene,"VVV"]
+						,AICc = AICc[gene,"VVV"]
+						,couts = c("function"=unname(VVV[[gene]]["counts.function"]), gradient=unname(VVV[[gene]]["counts.gradient"]))
+						,convergence = unname(VVV[[gene]]["convergence"])
+						,message = NULL)
+			)
+ 		})
+
+		return(ratesSpecs)
+}
+
+.makeModel_Derivative <- function(tpts, hyp, log_shift, .time_transf, ode, .rxnrate, c= NaN, geneBestModel = NULL)
+{
+
+	params <- list()
+	params$alpha <- function(x) 
+		hyp$alpha$fun$value(.time_transf(x, log_shift, c), hyp$alpha$par)
+	params$beta  <- function(x) 
+		hyp$beta$fun$value(.time_transf(x, log_shift, c), hyp$beta$par)
+	params$gamma <- function(x) 
+		hyp$gamma$fun$value(.time_transf(x, log_shift, c), hyp$gamma$par)
+
+	matureTemp <- params$alpha(tpts)
+
+	if(geneBestModel == "0")
+	{
+		prematureTemp <- sapply(tpts,function(t)prematureKKK_Int_No4sU(t,c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params)))
+		k1Temp <- sapply(tpts,function(t)k1KKK_Int_No4sU(t,c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params)))
+		
+		k2Temp <- rep(hyp$gamma$params, length.out = length(tpts))
+		k3Temp <- rep(hyp$beta$params, length.out = length(tpts))
+	
+	}else if(geneBestModel == "a")
+	{
+		prematureTemp <- prematureVKK_Der_No4sU(.time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+		k1Temp <- k1VKK_Der_No4sU(.time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+
+		k2Temp <- rep(hyp$gamma$params, length.out = length(tpts))
+		k3Temp <- rep(hyp$beta$params, length.out = length(tpts))
+
+	}else if(geneBestModel == "ac")
+	{
+		prematureTemp <- prematureVVK_Der_No4sU(.time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+		k1Temp <- k1VVK_Der_No4sU(.time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+
+		k2Temp <- .impulseModel(.time_transf(tpts,log_shift,c), hyp$gamma$params)
+		k3Temp <- rep(hyp$beta$params, length.out = length(tpts))
+
+	}else if(geneBestModel == "ab")
+	{
+		prematureTemp <- prematureVKV_Der_No4sU(.time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+		k1Temp <- k1VKV_Der_No4sU(.time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+
+		k2Temp <- rep(hyp$gamma$params, length.out = length(tpts))
+		k3Temp <- .impulseModel(.time_transf(tpts,log_shift,c), hyp$beta$params)
+
+	}else if(geneBestModel == "abc")
+	{
+		prematureTemp <- prematureVVV_Der_No4sU(.time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+		k1Temp <- k1VVV_Der_No4sU(.time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+
+		k2Temp <- .impulseModel(.time_transf(tpts,log_shift,c), hyp$gamma$params)
+		k3Temp <- .impulseModel(.time_transf(tpts,log_shift,c), hyp$beta$params)
+
+	}
+
+	totalTemp <- matureTemp + prematureTemp
+
+	data.frame(time = tpts, preMRNA = prematureTemp, total = totalTemp, alpha = k1Temp, beta = k3Temp, gamma = k2Temp)
+
+}
 
 
+.inspect.engine_Integrative_No4sU <- function(tptsOriginal
+										    , tptsLinear
+										    , a
+										    , c
+										    , concentrations
+										    , rates
+										    , BPPARAM=bpparam()
+										    , na.rm=TRUE
+										    , verbose=TRUE
+										    , testOnSmooth=TRUE
+										    , seed = NULL
+										    , nInit = nInit
+										    , nIter = nIter)
+{
 
+	total <- concentrations$total
+	totalVariance <- concentrations$total_var
 
+	premature <- concentrations$preMRNA
+	prematureVariance <- concentrations$preMRNA_var
 
+	mature <- concentrations$mature
+	matureVariance <- concentrations$mature_var
 
+	eiGenes <- rownames(mature)
 
+	k2median <- median(rates$gamma,na.rm = TRUE)
+	k3median <- median(rates$beta,na.rm = TRUE)
+
+	matureFitImpulse <- bplapply(eiGenes,function(row)
+	{
+  		fitSmooth(tpts = tptsLinear
+        	    , tt_c = c
+        	    , experiment = mature[row,]
+        	    , variance = matureVariance[row,]
+        	    , mature = TRUE
+        	    , nInit = nInit
+        	    , nIter = nIter
+        	    , seed = seed)
+	},BPPARAM=BPPARAM)
+
+	prematureFitImpulse <- bplapply(eiGenes,function(row)
+	{
+		fitSmooth(tpts = tptsLinear
+				, tt_c = c
+        		, experiment = premature[row,]
+        		, variance = prematureVariance[row,]
+        		, mature = FALSE
+        		, nInit = nInit
+        		, nIter = nIter
+        		, seed = seed)     
+	},BPPARAM=BPPARAM)
+
+	names(matureFitImpulse) <- eiGenes
+	names(prematureFitImpulse) <- eiGenes
+
+	if(any(sapply(matureFitImpulse,is.null) | sapply(prematureFitImpulse,is.null)))
+		print("Some genes have an expression profile impossible to be fitted with impulsive functions therefore they will be excluded from the modelling.")
+
+	eiGenes <- eiGenes[!sapply(matureFitImpulse,is.null) & !sapply(prematureFitImpulse,is.null)]
+
+	prematureFitImpulse <- prematureFitImpulse[eiGenes]
+	matureFitImpulse <- matureFitImpulse[eiGenes]
+
+	total <- total[eiGenes,]
+	totalVariance <- totalVariance[eiGenes,]
+
+	premature <- premature[eiGenes,]
+	prematureVariance <- prematureVariance[eiGenes,]
+
+	mature <- mature[eiGenes,]
+	matureVariance <- matureVariance[eiGenes,]
+
+	KKK <- bplapply(eiGenes,function(row){
+	
+			matureParameters <- mean(.impulseModel(tptsLinear, matureFitImpulse[[row]][1:6]))
+			k2Parameters <- k2median
+			k3Parameters <- k3median
+
+			unlist(
+				tryCatch(
+					optim(c(matureParameters, k2Parameters, k3Parameters)
+						,errorKKK_Int_No4sU
+						,tpts = tptsLinear
+						,premature = premature[row,]
+						,mature = mature[row,]
+						,prematureVariance = prematureVariance[row,]
+						,matureVariance = matureVariance[row,]
+						,control = list(maxit = nIter)),
+					error=function(e) c(par1 = NaN
+									  , par2 = NaN
+									  , par3 = NaN
+									  , value = NaN
+									  , counts.function = NaN
+								  	  , counts.gradient = NaN
+								  	  , convergence = e)
+				)
+			)
+		}, BPPARAM=BPPARAM)
+		names(KKK) <- eiGenes
+		print("Model 0 finished.")
+	
+		VKK <- bplapply(eiGenes,function(row){
+
+			k1Parameters <- c(rep(k1KKK_Int_No4sU(0,KKK[[row]]),3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			k2Parameters <- KKK[[row]][2]
+			k3Parameters <- KKK[[row]][3]
+	  
+			unlist(
+				tryCatch(
+	      			optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
+	                  	 ,errorVKK_Int_No4sU
+	                  	 ,times = tptsOriginal
+	                  	 ,data = c( mature[row,], premature[row,] )
+	                  	 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
+	                  	 ,a = a
+	                  	 ,c = c
+	                  	 ,control = list(maxit = nIter)),
+	    		error=function(e) c(par1 = NaN
+	    						  , par2 = NaN
+	    						  , par3 = NaN
+	    						  , par4 = NaN
+	    						  , par5 = NaN
+	    						  , par6 = NaN
+	    						  , par7 = NaN
+	    						  , par8 = NaN
+	    						  , value = NaN
+	    						  , counts.function = NaN
+	    						  , counts.gradient = NaN
+	    						  , convergence = e)
+	    		)
+	    	)
+		}, BPPARAM=BPPARAM)
+		names(VKK) <- eiGenes
+		print("Model A finished.")
+
+		KKV <- bplapply(eiGenes, function(row){
+  
+			k1Parameters <- KKK[[row]][1]
+			k2Parameters <- KKK[[row]][2]
+			k3Parameters <- c(rep(KKK[[row]][3],3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			
+			unlist(
+				tryCatch(
+					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
+			        	,errorKKV_Int_No4sU
+			        	,times = tptsOriginal
+			        	,data = c( mature[row,], premature[row,] )
+			        	,datavar = c( matureVariance[row,] , prematureVariance[row,] )
+			        	,a = a
+			        	,c = c
+			        	,control = list(maxit = nIter)),
+				error=function(e) c(par1 = NaN
+								   ,par2 = NaN
+								   ,par3 = NaN
+								   ,par4 = NaN
+								   ,par5 = NaN
+								   ,par6 = NaN
+								   ,par7 = NaN
+								   ,par8 = NaN
+								   ,value = NaN
+								   ,counts.function = NaN
+								   ,counts.gradient = NaN
+								   ,convergence = NaN)
+				)
+			)
+		}, BPPARAM=BPPARAM)
+		names(KKV) <- eiGenes
+		print("Model B finished.")
+
+		KVK <- bplapply(eiGenes, function(row){
+  
+			k1Parameters <- KKK[[row]][1]
+			k2Parameters <- c(rep(KKK[[row]][2],3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			k3Parameters <- KKK[[row]][3]
+			
+			unlist(
+				tryCatch(
+					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
+						 ,errorKVK_Int_No4sU
+						 ,times = tptsOriginal
+						 ,data = c( mature[row,], premature[row,] )
+						 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
+						 ,a = a
+						 ,c = c
+						 ,control = list(maxit = nIter)),
+				error=function(e) c(par1 = NaN
+								   ,par2 = NaN
+								   ,par3 = NaN
+								   ,par4 = NaN
+								   ,par5 = NaN
+								   ,par6 = NaN
+								   ,par7 = NaN
+								   ,par8 = NaN
+								   ,value = NaN
+								   ,counts.function = NaN
+								   ,counts.gradient = NaN
+								   ,convergence = NaN)
+				)
+			)
+		}, BPPARAM=BPPARAM)
+		names(KVK) <- eiGenes
+		print("Model C finished.")
+
+		VKV <- bplapply(eiGenes, function(row){
+
+			k1Parameters <- c(rep(k1KKK_Int_No4sU(0,KKK[[row]]),3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			k2Parameters <- KKK[[row]][2]
+			k3Parameters <- c(rep(KKK[[row]][3],3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			
+			unlist(
+				tryCatch(
+					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
+						 ,errorVKV_Int_No4sU
+						 ,times = tptsOriginal
+						 ,data = c( mature[row,], premature[row,] )
+						 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
+						 ,a = a
+						 ,c = c
+						 ,control = list(maxit = nIter)),
+				error=function(e) c(par1 = NaN
+								   ,par2 = NaN
+								   ,par3 = NaN
+								   ,par4 = NaN
+								   ,par5 = NaN
+								   ,par6 = NaN
+								   ,par7 = NaN
+								   ,par8 = NaN
+			                       ,par9 = NaN
+								   ,par10 = NaN
+								   ,par11 = NaN
+								   ,par12 = NaN
+								   ,par13 = NaN
+								   ,value = NaN
+								   ,counts.function = NaN
+								   ,counts.gradient = NaN
+								   ,convergence = NaN)
+				)
+			)
+		}, BPPARAM=BPPARAM)
+		names(VKV) <- eiGenes
+		print("Model AB finished.")
+
+		VVK <- bplapply(eiGenes, function(row){
+
+			k1Parameters <- c(rep(k1KKK_Int_No4sU(0,KKK[[row]]),3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			k2Parameters <- c(rep(KKK[[row]][2],3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			k3Parameters <- KKK[[row]][3]
+
+			unlist(
+				tryCatch(
+					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
+        				 ,errorVVK_Int_No4sU
+        				 ,times = tptsOriginal
+        				 ,data = c( mature[row,], premature[row,] )
+        				 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
+        				 ,a = a
+        				 ,c = c
+        				 ,control = list(maxit = nIter)),
+    			error=function(e) c(par1 = NaN
+    							  , par2 = NaN
+    							  , par3 = NaN
+    							  , par4 = NaN
+    							  , par5 = NaN
+    							  , par6 = NaN
+    							  , par7 = NaN
+    							  , par8 = NaN
+                    			  , par9 = NaN
+                    			  , par10 = NaN
+                    			  , par11 = NaN
+                    			  , par12 = NaN
+                    			  , par13 = NaN
+                    			  , value = NaN
+                    			  , counts.function = NaN
+                    			  , counts.gradient = NaN
+                    			  , convergence = NaN)
+    			)
+  			)
+		}, BPPARAM=BPPARAM)
+		names(VVK) <- eiGenes
+		print("Model AC finished.")
+
+		KVV <- bplapply(eiGenes, function(row){
+  
+			k1Parameters <- KKK[[row]][1]
+			k2Parameters <- c(rep(KKK[[row]][2],3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			k3Parameters <- c(rep(KKK[[row]][3],3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			unlist(
+				tryCatch(
+					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
+						 ,errorKVV_Int_No4sU
+						 ,times = tptsOriginal
+						 ,data = c( mature[row,], premature[row,] )
+						 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
+						 ,a = a
+						 ,c = c
+						 ,control = list(maxit = nIter)),
+				error=function(e) c(par1 = NaN
+								   ,par2 = NaN
+								   ,par3 = NaN
+								   ,par4 = NaN
+								   ,par5 = NaN
+								   ,par6 = NaN
+								   ,par7 = NaN
+								   ,par8 = NaN
+								   ,par9 = NaN
+								   ,par10 = NaN
+								   ,par11 = NaN
+								   ,par12 = NaN
+								   ,par13 = NaN
+								   ,value = NaN
+								   ,counts.function = NaN
+								   ,counts.gradient = NaN
+								   ,convergence = NaN)
+				)
+			)
+		}, BPPARAM=BPPARAM)
+		names(KVV) <- eiGenes
+		print("Model BC finished.")
+
+		VVV <- bplapply(eiGenes, function(row){
+
+			k1Parameters <- c(rep(k1KKK_Int_No4sU(0,KKK[[row]]),3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			k2Parameters <- c(rep(KKK[[row]][2],3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			k3Parameters <- c(rep(KKK[[row]][3],3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			
+			unlist(
+				tryCatch(
+					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
+						,errorVVV_Int_No4sU
+						,times = tptsOriginal
+						,data = c( mature[row,], premature[row,] )
+						,datavar = c( matureVariance[row,] , prematureVariance[row,] )
+						,a = a
+						,c = c
+						,control = list(maxit = nIter)),
+				error=function(e) c(par1 = NaN
+								   ,par2 = NaN
+								   ,par3 = NaN
+								   ,par4 = NaN
+								   ,par5 = NaN
+								   ,par6 = NaN
+								   ,par7 = NaN
+								   ,par8 = NaN
+								   ,par9 = NaN
+								   ,par10 = NaN
+								   ,par11 = NaN
+								   ,par12 = NaN
+								   ,par13 = NaN
+								   ,par14 = NaN
+								   ,par15 = NaN
+								   ,par16 = NaN
+								   ,par17 = NaN
+								   ,par18 = NaN
+								   ,value = NaN
+								   ,counts.function = NaN
+								   ,counts.gradient = NaN
+								   ,convergence = NaN)
+				)
+			)
+		}, BPPARAM=BPPARAM)
+		names(VVV) <- eiGenes
+		print("Model ABC finished.")
+
+		if(testOnSmooth)
+		{
+				matureSmooth <- t(sapply(matureFitImpulse,function(i)
+				{
+  					.impulseModel(tptsLinear,i)
+				}))
+			
+				prematureSmooth <- t(sapply(prematureFitImpulse,function(i)
+				{
+			  		.impulseModel(tptsLinear,i)
+				}))
+
+				colnames(matureSmooth) <- tptsOriginal
+				colnames(prematureSmooth) <- tptsOriginal
+
+		}else{
+			matureSmooth <- mature
+			prematureSmooth <- premature
+		}
+
+		chi2data <- t(mcsapply(eiGenes,function(g)
+		{
+			KKKTemp <- tryCatch(errorKKK_Int_No4sU(KKK[[g]][grep("par",names(KKK[[g]]))]
+												  ,tptsOriginal
+												  ,prematureSmooth[g,]
+												  ,matureSmooth[g,]
+												  ,prematureVariance[g,]
+												  ,matureVariance[g,]),error = function(e)NaN)
+
+			VKKTemp <- tryCatch(errorVKK_Int_No4sU(VKK[[g]][grep("par",names(VKK[[g]]))]
+												  ,tptsOriginal
+												  ,c(matureSmooth[g,],prematureSmooth[g,])
+												  ,c(matureVariance[g,],prematureVariance[g,])
+												  ,a
+												  ,c),error = function(e)NaN)
+
+			KVKTemp <- tryCatch(errorKVK_Int_No4sU(KVK[[g]][grep("par",names(KVK[[g]]))]
+												  ,tptsOriginal
+												  ,c(matureSmooth[g,],prematureSmooth[g,])
+												  ,c(matureVariance[g,],prematureVariance[g,])
+												  ,a
+												  ,c),error = function(e)NaN)
+
+			KKVTemp <- tryCatch(errorKKV_Int_No4sU(KKV[[g]][grep("par",names(KKV[[g]]))]
+												  ,tptsOriginal
+												  ,c(matureSmooth[g,],prematureSmooth[g,])
+												  ,c(matureVariance[g,],prematureVariance[g,])
+												  ,a
+												  ,c),error = function(e)NaN)
+
+			VVKTemp <- tryCatch(errorVVK_Int_No4sU(VVK[[g]][grep("par",names(VVK[[g]]))]
+												  ,tptsOriginal
+												  ,c(matureSmooth[g,],prematureSmooth[g,])
+												  ,c(matureVariance[g,],prematureVariance[g,])
+												  ,a
+												  ,c),error = function(e)NaN)
+
+			VKVTemp <- tryCatch(errorVKV_Int_No4sU(VKV[[g]][grep("par",names(VKV[[g]]))]
+												  ,tptsOriginal
+												  ,c(matureSmooth[g,],prematureSmooth[g,])
+												  ,c(matureVariance[g,],prematureVariance[g,])
+												  ,a
+												  ,c),error = function(e)NaN)
+
+			KVVTemp <- tryCatch(errorKVV_Int_No4sU(KVV[[g]][grep("par",names(KVV[[g]]))]
+												  ,tptsOriginal
+												  ,c(matureSmooth[g,],prematureSmooth[g,])
+												  ,c(matureVariance[g,],prematureVariance[g,])
+												  ,a
+												  ,c),error = function(e)NaN)
+
+			VVVTemp <- tryCatch(errorVVV_Int_No4sU(VVV[[g]][grep("par",names(VVV[[g]]))]
+												  ,tptsOriginal
+												  ,c(matureSmooth[g,],prematureSmooth[g,])
+												  ,c(matureVariance[g,],prematureVariance[g,])
+												  ,a
+												  ,c),error = function(e)NaN)
+		  
+			c(KKK = KKKTemp,VKK = VKKTemp,KVK = KVKTemp,KKV = KKVTemp,VVK = VVKTemp,VKV = VKVTemp,KVV = KVVTemp,VVV = VVVTemp)
+		
+		}, BPPARAM = BPPARAM))
+
+		dof <- c(KKK = 3
+				,VKK = 8
+				,KVK = 8
+				,KKV = 8
+				,VVK = 13
+				,VKV = 13
+				,KVV = 13
+				,VVV = 18)
+
+		# P values
+		pvaluesdata <- cbind(KKK=pchisq(chi2data[,'KKK'], 2*length(tptsOriginal)-dof['KKK'])
+							,VKK=pchisq(chi2data[,'VKK'], 2*length(tptsOriginal)-dof['VKK'])
+							,KVK=pchisq(chi2data[,'KVK'], 2*length(tptsOriginal)-dof['KVK'])
+							,KKV=pchisq(chi2data[,'KKV'], 2*length(tptsOriginal)-dof['KKV'])
+							,VVK=pchisq(chi2data[,'VVK'], 2*length(tptsOriginal)-dof['VVK'])
+							,VKV=pchisq(chi2data[,'VKV'], 2*length(tptsOriginal)-dof['VKV'])
+							,KVV=pchisq(chi2data[,'KVV'], 2*length(tptsOriginal)-dof['KVV'])
+							,VVV=pchisq(chi2data[,'VVV'], 2*length(tptsOriginal)-dof['VVV']))
+
+		logLikelihood <- t(mcsapply(eiGenes,function(g)
+		{
+			KKKTemp <- tryCatch(loglikKKK_Int_No4sU(KKK[[g]][grep("par",names(KKK[[g]]))]
+											  ,tptsOriginal,prematureSmooth[g,]
+											  ,matureSmooth[g,]
+											  ,prematureVariance[g,]
+											  ,matureVariance[g,]),error = function(e)NaN)
+
+			VKKTemp <- tryCatch(loglikVKK_Int_No4sU(VKK[[g]][grep("par",names(VKK[[g]]))]
+											  ,tptsOriginal
+											  ,c(matureSmooth[g,],prematureSmooth[g,])
+											  ,c(matureVariance[g,],prematureVariance[g,])
+											  ,a
+											  ,c),error = function(e)NaN)
+
+		  	KVKTemp <- tryCatch(loglikKVK_Int_No4sU(KVK[[g]][grep("par",names(KVK[[g]]))]
+            				                  ,tptsOriginal
+            				                  ,c(matureSmooth[g,],prematureSmooth[g,])
+            				                  ,c(matureVariance[g,],prematureVariance[g,])
+            				                  ,a
+            				                  ,c),error = function(e)NaN)
+
+			KKVTemp <- tryCatch(loglikKKV_Int_No4sU(KKV[[g]][grep("par",names(KKV[[g]]))]
+												   ,tptsOriginal
+												   ,c(matureSmooth[g,],prematureSmooth[g,])
+												   ,c(matureVariance[g,],prematureVariance[g,])
+												   ,a
+												   ,c),error = function(e)NaN)
+			VVKTemp <- tryCatch(loglikVVK_Int_No4sU(VVK[[g]][grep("par",names(VVK[[g]]))]
+												   ,tptsOriginal
+												   ,c(matureSmooth[g,],prematureSmooth[g,])
+												   ,c(matureVariance[g,],prematureVariance[g,])
+												   ,a
+												   ,c),error = function(e)NaN)
+			VKVTemp <- tryCatch(loglikVKV_Int_No4sU(VKV[[g]][grep("par",names(VKV[[g]]))]
+												   ,tptsOriginal
+												   ,c(matureSmooth[g,],prematureSmooth[g,])
+												   ,c(matureVariance[g,],prematureVariance[g,])
+												   ,a
+												   ,c),error = function(e)NaN)
+			KVVTemp <- tryCatch(loglikKVV_Int_No4sU(KVV[[g]][grep("par",names(KVV[[g]]))]
+												   ,tptsOriginal
+												   ,c(matureSmooth[g,],prematureSmooth[g,])
+												   ,c(matureVariance[g,],prematureVariance[g,])
+												   ,a
+												   ,c),error = function(e)NaN)
+			VVVTemp <- tryCatch(loglikVVV_Int_No4sU(VVV[[g]][grep("par",names(VVV[[g]]))]
+												   ,tptsOriginal
+												   ,c(matureSmooth[g,],prematureSmooth[g,])
+												   ,c(matureVariance[g,],prematureVariance[g,])
+												   ,a
+												   ,c),error = function(e)NaN)
+    
+			c(KKK = KKKTemp,VKK = VKKTemp,KVK = KVKTemp,KKV = KKVTemp,VVK = VVKTemp,VKV = VKVTemp,KVV = KVVTemp,VVV = VVVTemp)
+
+		}, BPPARAM=BPPARAM))
+
+ 		AIC <- t(apply(logLikelihood,1,function(row)
+ 		{
+ 			2*(dof - row) 
+ 		}))
+
+ 		AICc <- t(apply(logLikelihood,1,function(row)
+ 		{
+ 		 	2*(dof - row) + (2*dof*(dof+1))/(2*length(tptsOriginal)-dof-1)
+ 		}))
+
+		rownames(pvaluesdata) <- rownames(logLikelihood) <- rownames(AIC) <- rownames(AICc) <- eiGenes
+
+ 		ratesSpecs <- lapply(eiGenes,function(gene)
+ 		{
+ 			list(
+ 				"0" = list(alpha = list(fun = .constantModelP
+									 ,type = "constant"
+									 ,df = 1
+									 ,params = c(alpha = k1KKK_Int_No4sU(x = 0,par = KKK[[gene]])))
+ 					    ,beta = list(fun = .constantModelP
+									,type = "constant"
+									,df = 1
+									,params = c(beta = unname(KKK[[gene]]["par3"])))
+	 				   	,gamma = list(fun = .constantModelP
+									 ,type = "constant"
+									 ,df = 1
+									 ,params = c(gamma = unname(KKK[[gene]]["par2"])))
+						,test = log(pvaluesdata[gene,"KKK"])
+						,logLik = logLikelihood[gene,"KKK"]
+						,AIC = AIC[gene,"KKK"]
+						,AICc = AICc[gene,"KKK"]
+						,couts = c("function"=unname(KKK[[gene]]["counts.function"]), gradient=unname(KKK[[gene]]["counts.gradient"]))
+						,convergence = unname(KKK[[gene]]["convergence"])
+						,message = NULL)
+
+ 				,a = list(alpha = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(alpha = unname(VKK[[gene]][1:6])))
+ 					  		,beta = list(fun = .constantModelP
+									,type = "constant"
+									,df = 1
+									,params = c(beta = unname(VKK[[gene]][8])))
+	 				  		,gamma = list(fun = .constantModelP
+										,type = "constant"
+										,df = 1
+										,params = c(gamma = unname(VKK[[gene]][7])))
+						,test = log(pvaluesdata[gene,"VKK"])
+						,logLik = logLikelihood[gene,"VKK"]
+						,AIC = AIC[gene,"VKK"]
+						,AICc = AICc[gene,"VKK"]
+						,couts = c("function"=unname(VKK[[gene]]["counts.function"]), gradient=unname(VKK[[gene]]["counts.gradient"]))
+						,convergence = unname(VKK[[gene]]["convergence"])
+						,message = NULL)
+ 				,b = list(alpha = list(fun = .constantModelP
+										,type = "constant"
+										,df = 1
+										,params = c(alpha = unname(KKV[[gene]][1])))
+ 					  		,beta = list(fun = .impulseModelP
+									,type = "impulse"
+									,df = 6
+									,params = c(beta = unname(KKV[[gene]][3:8])))
+	 				  		,gamma = list(fun = .constantModelP
+										,type = "constant"
+										,df = 1
+										,params = c(gamma = unname(KKV[[gene]][2])))
+						,test = log(pvaluesdata[gene,"KKV"])
+						,logLik = logLikelihood[gene,"KKV"]
+						,AIC = AIC[gene,"KKV"]
+						,AICc = AICc[gene,"KKV"]
+						,couts = c("function"=unname(KKV[[gene]]["counts.function"]), gradient=unname(KKV[[gene]]["counts.gradient"]))
+						,convergence = unname(KKV[[gene]]["convergence"])
+						,message = NULL)
+ 				,c = list(alpha = list(fun = .constantModelP
+										,type = "constant"
+										,df = 1
+										,params = c(alpha = unname(KVK[[gene]][1])))
+ 					  		,beta = list(fun = .constantModelP
+									,type = "constant"
+									,df = 1
+									,params = c(beta = unname(KVK[[gene]][8])))
+	 				  		,gamma = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(gamma = unname(KVK[[gene]][2:7])))
+						,test = log(pvaluesdata[gene,"KVK"])
+						,logLik = logLikelihood[gene,"KVK"]
+						,AIC = AIC[gene,"KVK"]
+						,AICc = AICc[gene,"KVK"]
+						,couts = c("function"=unname(KVK[[gene]]["counts.function"]), gradient=unname(KVK[[gene]]["counts.gradient"]))
+						,convergence = unname(KVK[[gene]]["convergence"])
+						,message = NULL)
+ 				,ab = list(alpha = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(alpha = unname(VKV[[gene]][1:6])))
+ 					  		,beta = list(fun = .impulseModelP
+									,type = "impulse"
+									,df = 6
+									,params = c(beta = unname(VKV[[gene]][8:13])))
+	 				  		,gamma = list(fun = .constantModelP
+										,type = "constant"
+										,df = 1
+										,params = c(gamma = unname(VKV[[gene]][7])))
+						,test = log(pvaluesdata[gene,"VKV"])
+						,logLik = logLikelihood[gene,"VKV"]
+						,AIC = AIC[gene,"VKV"]
+						,AICc = AICc[gene,"VKV"]
+						,couts = c("function"=unname(VKV[[gene]]["counts.function"]), gradient=unname(VKV[[gene]]["counts.gradient"]))
+						,convergence = unname(VKV[[gene]]["convergence"])
+						,message = NULL)
+ 				,ac = list(alpha = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(alpha = unname(VVK[[gene]][1:6])))
+ 					  		,beta = list(fun = .constantModelP
+									,type = "constant"
+									,df = 1
+									,params = c(beta = unname(VVK[[gene]][13])))
+	 				  		,gamma = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(gamma = unname(VVK[[gene]][7:12])))
+						,test = log(pvaluesdata[gene,"VVK"])
+						,logLik = logLikelihood[gene,"VVK"]
+						,AIC = AIC[gene,"VVK"]
+						,AICc = AICc[gene,"VVK"]
+						,couts = c("function"=unname(VVK[[gene]]["counts.function"]), gradient=unname(VVK[[gene]]["counts.gradient"]))
+						,convergence = unname(VVK[[gene]]["convergence"])
+						,message = NULL)
+ 				,bc = list(alpha = list(fun = .constantModelP
+										,type = "constant"
+										,df = 1
+										,params = c(alpha = unname(KVV[[gene]][1])))
+ 					  		,beta = list(fun = .impulseModelP
+									,type = "impulse"
+									,df = 6
+									,params = c(beta = unname(KVV[[gene]][8:13])))
+	 				  		,gamma = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(gamma = unname(KVV[[gene]][2:7])))
+						,test = log(pvaluesdata[gene,"KVV"])
+						,logLik = logLikelihood[gene,"KVV"]
+						,AIC = AIC[gene,"KVV"]
+						,AICc = AICc[gene,"KVV"]
+						,couts = c("function"=unname(KVV[[gene]]["counts.function"]), gradient=unname(KVV[[gene]]["counts.gradient"]))
+						,convergence = unname(KVV[[gene]]["convergence"])
+						,message = NULL)
+ 				,abc = list(alpha = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(alpha = unname(VVV[[gene]][1:6])))
+ 					  		,beta = list(fun = .impulseModelP
+									,type = "impulse"
+									,df = 6
+									,params = c(beta = unname(VVV[[gene]][13:18])))
+	 				  		,gamma = list(fun = .impulseModelP
+										,type = "impulse"
+										,df = 6
+										,params = c(gamma = unname(VVV[[gene]][7:12])))
+						,test = log(pvaluesdata[gene,"VVV"])
+						,logLik = logLikelihood[gene,"VVV"]
+						,AIC = AIC[gene,"VVV"]
+						,AICc = AICc[gene,"VVV"]
+						,couts = c("function"=unname(VVV[[gene]]["counts.function"]), gradient=unname(VVV[[gene]]["counts.gradient"]))
+						,convergence = unname(VVV[[gene]]["convergence"])
+						,message = NULL)
+			)
+ 		})
+
+		return(ratesSpecs)
+}

@@ -24,10 +24,6 @@ RNA- and 4sU-seq libraries and the possible relations between them. The ratio be
 4sU-seq scaling can be in fact considered as a yield of the synthesis within the cells.
 }
 \examples{
-data('rpkms', package='INSPEcT')
-tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
-tL <- 1/6
-mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
-sfPlot(mycerIds)
+data('mycerIds10', package='INSPEcT')
+sfPlot(mycerIds10)
 }

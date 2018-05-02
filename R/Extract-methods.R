@@ -185,7 +185,7 @@ setMethod('combine', signature(x='INSPEcT', y='INSPEcT'), function(x, y, ...) {
 #' @param ... Additional arguments to match the generic function
 #' @return A list containing objects of class INSPEcT
 #' @examples
-#' data('mycerIds10')
+#' data('mycerIds10',package="INSPEcT")
 #' splitIdx <- c(1,1,1,2,2,2,3,3,3,4)
 #' mycerIds10Split <- split(mycerIds10, splitIdx)
 #' @docType methods

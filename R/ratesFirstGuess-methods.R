@@ -8,15 +8,16 @@
 #' @return A numeric matrix containing the values for the selected feature
 #' @seealso \code{\link{newINSPEcT}}, \code{\link{ratesFirstGuessVar}}
 #' @examples
-#' data('rpkms', package='INSPEcT')
-#' tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
-#' tL <- 1/6
-#' mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-#' 	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
-#' # get estimated synthesis rates
-#' ratesFirstGuess(mycerIds, 'synthesis')
+#' data('mycerIds10', package='INSPEcT')
+#' 
+#' ratesFirstGuess(mycerIds10, 'total')
+#' ratesFirstGuess(mycerIds10, 'preMRNA')
+#' ratesFirstGuess(mycerIds10, 'synthesis')
+#' ratesFirstGuess(mycerIds10, 'processing')
+#' ratesFirstGuess(mycerIds10, 'degradation')
+
 setMethod('ratesFirstGuess', 'INSPEcT', function(object, feature) {
-	ix <- pData(object@ratesFirstGuess)$feature == feature
+	ix <- grep(feature,pData(object@ratesFirstGuess)$feature)
 	exprs(object@ratesFirstGuess)[,ix, drop=FALSE]
 	})
 
@@ -30,12 +31,20 @@ setMethod('ratesFirstGuess', 'INSPEcT', function(object, feature) {
 #' @return A numeric vector containing the values for the selected feature
 #' @seealso \code{\link{newINSPEcT}}, \code{\link{ratesFirstGuess}}
 #' @examples
-#' data('rpkms', package='INSPEcT')
-#' tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
-#' tL <- 1/6
-#' mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-#' 	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
-#' ratesFirstGuessVar(mycerIds, 'synthesis')
+#' data('mycerIds10', package='INSPEcT')
+#' 
+#' ratesFirstGuessVar(mycerIds10, 'total')
+#' ratesFirstGuessVar(mycerIds10, 'preMRNA')
+#' ratesFirstGuessVar(mycerIds10, 'synthesis')
+#' ratesFirstGuessVar(mycerIds10, 'processing')
+#' ratesFirstGuessVar(mycerIds10, 'degradation')
 setMethod('ratesFirstGuessVar', 'INSPEcT', function(object, feature) {
-	fData(object@ratesFirstGuess)[[feature]]
+	temp <- object@ratesFirstGuess@featureData@data[,grep("_t0",grep(feature,names(object@ratesFirstGuess@featureData@data),value=T),invert=T,value=T)]
+	if(class(temp)=="numeric")
+	{
+		temp <- data.frame(temp)
+		rownames(temp) <- rownames(object@ratesFirstGuess@featureData@data)
+		colnames(temp) <- feature
+	}
+	as.matrix(temp)
 	})

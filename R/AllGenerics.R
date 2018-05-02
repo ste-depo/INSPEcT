@@ -39,7 +39,7 @@ setGeneric('geneClass', function(object, bTsh=NULL, cTsh=NULL)
 setGeneric('makeModelRates', function(object, ...) 
 	standardGeneric('makeModelRates'))
 #' Generate synthetic rates and concentrations
-setGeneric('makeSimDataset', function(object, tpts, nRep, seed=NULL) 
+setGeneric('makeSimDataset', function(object, tpts, nRep, No4sU = FALSE, seed=NULL)
 	standardGeneric('makeSimDataset'))
 #' Display rate classification performance
 setGeneric('rocCurve', function(object, object2, cTsh=NULL, plot=TRUE) 

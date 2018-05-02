@@ -4,15 +4,16 @@
 \alias{newINSPEcT}
 \title{Create a new INSPEcT object}
 \usage{
-newINSPEcT(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
-  rpkms_4su_introns = NULL, rpkms_total_introns = NULL,
+newINSPEcT(tpts, labeling_time = NULL, rpkms_4su_exons = NULL,
+  rpkms_total_exons, rpkms_4su_introns = NULL, rpkms_total_introns,
   BPPARAM = bpparam(), totalMedianNorm = TRUE, labeledMedianNorm = FALSE,
   totalSF = NULL, labeledSF = NULL, totalQuantileNorm = FALSE,
   labeledQuantileNorm = FALSE, simulatedData = FALSE,
-  degDuringPulse = FALSE)
+  degDuringPulse = FALSE, Dmin = 1e-06, Dmax = 10, genesFilter = TRUE,
+  dispersion_parameters_DESeq2 = NULL, varSamplingCondition = NULL)
 }
 \arguments{
-\item{tpts}{A vector of time points}
+\item{tpts}{A vector of time points, one for each sample}
 
 \item{labeling_time}{A number, lenght of the 4sU pulse}
 
@@ -41,24 +42,49 @@ newINSPEcT(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
 \item{simulatedData}{A logical, set to TRUE in case the analysis is on simulated data}
 
 \item{degDuringPulse}{A logical, set to TRUE in case of a long labelling time. Also degradation of newly synthesized transcripts will be taken into account}
+
+\item{Dmin}{A numerical, it is the lower bound of the degradation rate domain for the prior optimization}
+
+\item{Dmax}{A numerical, it is the upper bound of the degradation rate domain for the prior optimization}
+
+\item{genesFilter, }{A logical which, if TRUE, filters out genes which have no signal in at least 2/3 of the time points in each feature}
+
+\item{dispersion_parameters_DESeq2, }{A list of parameters for total and, eventually, 4sU data produced by the DESeq2 analysis and exploited by newINSPEcT
+for the estimation of the variance in the DESeq2 configuration}
+
+\item{varSamplingCondition, }{a character containing the name of the time points selected for the evaluation of the variance if DESeq2 is not used}
 }
 \value{
 An object of class INSPEcT with rates guessed, rates can be accessed by \code{\link{ratesFirstGuess}} method.
 }
 \description{
-The function newINSPEcT creates a new instance of the class INSPEcT, provided the intronic and exonic RPKMs
-of RNA- and 4sU-seq experiments at different time points, the time points, the labeling time and optionally
-the scaling factor to normalize the libraries. The scaling factor to normalize the 4sU-seq libraries can be 
-calculated by the function itself and this way of calulating the scaling factors gives robustness to the estimation
-of sythesis, degradation and processing rates. 
-In case only exonic RPKMs are provided, only synthesis and degradation rates can be estimated by the function newINSPEcT
-and the scaling factors to normalize 4sU-seq libraries cannot be caluculated. To provide robustness to the procedure
-the argument labeledSF is strongly suggested in this case.
+The function newINSPEcT creates a new instance of the class INSPEcT provided the experimental time points, RPKMs of total RNA
+and eventually the 4sU-seq experiments. For the 4sU analysis, it is also requires the labeling time and the scaling factor to
+normalize the 4sU-seq libraries. This latter parameter can also be calculated by the function itself if both exonic and intronic
+RPKMs are provided; otherwise it must be given as an input and it is essential to guarantee the robustness of the analysis.
+The function new INSPEcT also evaluates the variance associated with the RPKMs. It can be done through DESeq2, if the package has
+been previously used in \code{\link{makeRPKMsFromBams}} or \code{\link{makeRPKMsFromCounts}}, or from the experimental data in a
+specific experimental condition.
 }
 \examples{
-data('rpkms', package='INSPEcT')
-tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
+require(TxDb.Mmusculus.UCSC.mm9.knownGene)
+txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
+
+data('allcounts4su', package='INSPEcT')
+
+tpts <- c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16)
+temporalDesign <- rep(tpts,3)
 tL <- 1/6
-mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
+
+#4sU analysis with DESeq2
+makeRPKMsOut_4sU <- makeRPKMsFromCounts(txdb=txdb,allcounts=allcounts4su,temporalDesign=temporalDesign,DESeq2=TRUE)
+
+rpkms_4sU <- makeRPKMsOut_4sU$rpkms
+counts_4sU <- makeRPKMsOut_4sU$counts
+annotations_4sU <- makeRPKMsOut_4sU$annotation
+dispersion_parameters_DESeq2_4sU <- makeRPKMsOut_4sU$dispersion_parameters_DESeq2
+
+#Analysis with 4sU and DESeq2
+
+mycerIds_4sU <- newINSPEcT(tpts=temporalDesign,labeling_time=tL,rpkms_4su_exons=rpkms_4sU$foursu_exons,rpkms_total_exons=rpkms_4sU$total_exons,rpkms_4su_introns=rpkms_4sU$foursu_introns,rpkms_total_introns=rpkms_4sU$total_introns,dispersion_parameters_DESeq2=dispersion_parameters_DESeq2_4sU,varSamplingCondition=NULL)
 }

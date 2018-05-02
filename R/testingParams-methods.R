@@ -96,6 +96,7 @@ setReplaceMethod('modelSelection', 'INSPEcT_model', function(object, value) {
 
 #' @rdname testingParams
 #' @examples
+#' data('mycerIds10', package='INSPEcT')
 #' thresholds(mycerIds10)
 #' thresholds(mycerIds10)$chisquare <- 1e-3
 #' thresholds(mycerIds10)$brown['synthesis'] <- 1e-3
@@ -150,6 +151,7 @@ setReplaceMethod('thresholds', 'INSPEcT_model', function(object, value) {
 
 #' @rdname testingParams
 #' @examples
+#' data('mycerIds10', package='INSPEcT')
 #' llrtests(mycerIds10)
 #' llrtests(mycerIds10)$synthesis <- list(c('0','a'), c('b','ab'))
 setMethod('llrtests', 'INSPEcT', function(object) {

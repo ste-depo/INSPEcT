@@ -18,11 +18,11 @@
 #' @seealso \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}, \code{\link{rocCurve}}
 #' @examples
 #' data('simRates', package='INSPEcT')
-#' data('simData3rep', package='INSPEcT')
-#' rocThresholds(simRates, simData3rep)
+#' data('simData3rep_4su', package='INSPEcT')
+#' rocThresholds(simRates[1:10], simData3rep_4su)
 #' # Increase the Brown threshold for all rates (be more relaxed)
-#' thresholds(simData3rep)$brown <- c(alpha=.05, beta=.05, gamma=.05)
-#' rocThresholds(simRates, simData3rep)
+#' thresholds(simData3rep_4su)$brown <- c(synthesis=.05, degradation=.05, processing=.05)
+#' rocThresholds(simRates[1:10], simData3rep_4su)
 setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT_model'), 
 	function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1)) {
 	if( is.null(bTsh) ) {

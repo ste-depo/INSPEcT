@@ -71,7 +71,7 @@ setReplaceMethod('featureNames', signature(object='INSPEcT', value='ANY')
 #' @param object An object of class INSPEcT
 #' @return A numeric that indicates the number of genes within the object
 #' @examples
-#' data('mycerIds10')
+#' data('mycerIds10',package="INSPEcT")
 #' nGenes(mycerIds10)
 setMethod('nGenes', 'INSPEcT', function(object) {
 	length(featureNames(object@ratesFirstGuess))
@@ -83,7 +83,7 @@ setMethod('nGenes', 'INSPEcT', function(object) {
 #' @param object An object of class INSPEcT
 #' @return A numeric that indicates the number of time points contained the object
 #' @examples
-#' data('mycerIds10')
+#' data('mycerIds10',package="INSPEcT")
 #' nTpts(mycerIds10)
 setMethod('nTpts', 'INSPEcT', function(object) {
 	length(object@tpts)
@@ -110,7 +110,7 @@ setMethod('dim', 'INSPEcT', function(x) {
 #' @param object An object of class INSPEcT
 #' @return A numeric that indicates time points contained the object
 #' @examples
-#' data('mycerIds10')
+#' data('mycerIds10',package="INSPEcT")
 #' tpts(mycerIds10)
 setMethod('tpts', 'INSPEcT', function(object) {
 	object@tpts
@@ -124,7 +124,7 @@ setMethod('tpts', 'INSPEcT', function(object) {
 #' of the data coming from RNA-seq library (applies to total-mRNAs
 #' and pre-mRNAs concentrations)
 #' @examples
-#' data('mycerIds10')
+#' data('mycerIds10',package="INSPEcT")
 #' totalSF(mycerIds10)
 setMethod('totalSF', 'INSPEcT', function(object) {
 	object@totalSF
@@ -138,7 +138,7 @@ setMethod('totalSF', 'INSPEcT', function(object) {
 #' of the data coming from 4sU-seq library (applies directly to synthesis
 #' rates and indirectly to degradation rates)
 #' @examples
-#' data('mycerIds10')
+#' data('mycerIds10',package="INSPEcT")
 #' labeledSF(mycerIds10)
 setMethod('labeledSF', 'INSPEcT', function(object) {
 	object@labeledSF

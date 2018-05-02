@@ -13,12 +13,12 @@
 #' @examples
 #' ## load data
 #' data('simRates', package='INSPEcT')
-#' data('simData3rep', package='INSPEcT')
+#' data('simData3rep_4su', package='INSPEcT')
 #' ## generate a new data set with 3 replicate to make the comparison
-#' newTpts <- c(0, 1/6)
-#' simData3rep_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
+#' newTpts <- c(0, 16)
+#' simData3rep_4su_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
 #' ## compare
-#' diffrates <- compareSteady(simData3rep, simData3rep_2)
+#' diffrates <- compareSteady(simData3rep_4su, simData3rep_4su_2)
 #' ## visualize results
 #' diffrates
 setMethod('compareSteady', signature('INSPEcT','INSPEcT'), 
@@ -146,9 +146,13 @@ setMethod('compareSteady', signature('INSPEcT','INSPEcT'),
 
 #' @rdname INSPEcT_diffsteady-class
 #' @examples
-#' data('simData3rep', package='INSPEcT')
-#' data('simData3rep_2', package='INSPEcT')
-#' diffrates <- compareSteady(simData3rep, simData3rep_2)
+#' data('simRates', package='INSPEcT')
+#' data('simData3rep_4su', package='INSPEcT')
+#' ## generate a new data set with 3 replicate to make the comparison
+#' newTpts <- c(0, 16)
+#' simData3rep_4su_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
+#' ## compare
+#' diffrates <- compareSteady(simData3rep_4su, simData3rep_4su_2)
 #' head(synthesis(diffrates))
 setMethod('synthesis', 'INSPEcT_diffsteady', function(object) slot(object, 'synthesis'))
 #' @rdname INSPEcT_diffsteady-class
@@ -181,10 +185,14 @@ NULL
 #' \item "main" - A character, the title of the plot, by default the name of the visualized rate.
 #' }
 #' @seealso \url{http://en.wikipedia.org/wiki/MA_plot}
+#' @rdname INSPEcT_diffsteady-class
 #' @examples
-#' data('simData3rep', package='INSPEcT')
-#' data('simData3rep_2', package='INSPEcT')
-#' diffrates <- compareSteady(simData3rep, simData3rep_2)
+#' data('simRates', package='INSPEcT')
+#' data('simData3rep_4su', package='INSPEcT')
+#' ## generate a new data set with 3 replicate to make the comparison
+#' newTpts <- c(0, 16)
+#' simData3rep_4su_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
+#' diffrates <- compareSteady(simData3rep_4su, simData3rep_4su_2)
 #' plotMA(diffrates, alpha=.5)
 setMethod('plotMA', 'INSPEcT_diffsteady', function(object, ...) {
 	addargs <- list(...)

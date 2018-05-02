@@ -24,6 +24,6 @@ Accessor to the slot totalSF of an INSPEcT object
 Accessor to obtain the totalSF slot associated with the object of class INSPEcT
 }
 \examples{
-data('mycerIds10')
+data('mycerIds10',package="INSPEcT")
 totalSF(mycerIds10)
 }

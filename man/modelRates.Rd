@@ -48,27 +48,22 @@ with the same processor (or core). To avoid this, the computation could be split
 and the whole data set can be obtaied by combining the chunks (see Examples).
 }
 \examples{
-data('rpkms', package='INSPEcT')
-tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
-tL <- 1/6
-mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
-mycerIdsOneGene <- mycerIds[5]
-## View modeling parameters
-modelingParams(mycerIdsOneGene)
-## Run the modeling in a reproducible way (setting seed)
-mycerIdsOneGene <- modelRates(mycerIdsOneGene, seed=1, BPPARAM=SerialParam())
+
+data('mycerIds10', package='INSPEcT')
+## models removal
+mycerIdsThreeGenes <- removeModel(mycerIds10[1:3])
+mycerIdsThreeGenes <- modelRates(mycerIdsThreeGenes, seed=1, BPPARAM=SerialParam())
 ## view modeled synthesis rates
-viewModelRates(mycerIdsOneGene, 'synthesis')
+viewModelRates(mycerIdsThreeGenes, 'synthesis')
 ## view gene classes
-geneClass(mycerIdsOneGene)
+geneClass(mycerIdsThreeGenes)
 
 ## Divide a parallel computation into chunks
 \dontrun{
-nCores(mycerIds) <- parallel::detectCores()
+nCores(mycerIds10) <- parallel::detectCores()
 chunkSize <- 100
-splitIdx <- ceiling(c(1:nGenes(mycerIds))/chunkSize)
-chunks <- lapply(split(mycerIds, splitIdx), modelRates)
+splitIdx <- ceiling(c(1:nGenes(mycerIds10))/chunkSize)
+chunks <- lapply(split(mycerIds10, splitIdx), modelRates)
 mycerIdsModeled <- do.call('combine', chunks)
 }
 }

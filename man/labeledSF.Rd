@@ -24,6 +24,6 @@ Accessor to the slot labeledSF of an INSPEcT object
 Accessor to obtain the labeledSF slot associated with the object of class INSPEcT
 }
 \examples{
-data('mycerIds10')
+data('mycerIds10',package="INSPEcT")
 labeledSF(mycerIds10)
 }

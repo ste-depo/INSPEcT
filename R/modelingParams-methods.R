@@ -38,19 +38,20 @@ setMethod('modelingParams', 'INSPEcT', function(object) {
 #' mycerIds10 <- removeModel(mycerIds10)
 #' modelingParams(mycerIds10)$useSigmoidFun <- FALSE
 setReplaceMethod('modelingParams', 'INSPEcT', function(object, value) {
-	if( !is.list(value) )
+
+	if(!is.list(value))
 		stop('modelingParams: value argument must be a list')
-	if( !identical(names(value), c('nInit', 'nIter', 'na.rm', #'nCores',
-		 'verbose', 'estimateRatesWith', 'useSigmoidFun', 'testOnSmooth')) )
-		stop('modelingParams: value argument must be named list. Names must be "nInit", "nIter", "na.rm", "verbose", "estimateRatesWith", "useSigmoidFun", "testOnSmooth"')
+#	if( !identical(names(value), c('nInit', 'nIter', 'na.rm', 'cores', 'Dmax', 'Dmin',
+#		 'verbose', 'estimateRatesWith', 'useSigmoidFun', 'testOnSmooth', 'No4sU')) )
+#		stop('modelingParams: value argument must be named list. Names must be "nInit", "nIter", "na.rm", "verbose", "estimateRatesWith", "useSigmoidFun", "testOnSmooth"')
+	if( !is.logical(value$No4sU) )
+		stop('modelingParams: No4sU element of value argument must be a logical')
 	if( !is.numeric(value$nInit) )
 		stop('modelingParams: nInit element of value argument must be a numeric')
 	if( !is.numeric(value$nIter) )
 		stop('modelingParams: nIter element of value argument must be a numeric')		
 	if( !is.logical(value$'na.rm') )
 		stop('modelingParams: na.rm element of value argument must be a logical')		
-	# if( !is.numeric(value$nCores) )
-	# 	stop('modelingParams: nCores element of value argument must be a numeric')
 	if( !is.logical(value$verbose) )
 		stop('modelingParams: verbose element of value argument must be a logical')		
 	if( !is.character(value$estimateRatesWith) )

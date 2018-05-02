@@ -114,9 +114,11 @@ parameters for the test (\code{\link{makeSimModel}}, \code{\link{makeSimDataset}
 data('mycerIds10', package='INSPEcT')
 modelSelection(mycerIds10)
 modelSelection(mycerIds10) <- 'aic'
+data('mycerIds10', package='INSPEcT')
 thresholds(mycerIds10)
 thresholds(mycerIds10)$chisquare <- 1e-3
 thresholds(mycerIds10)$brown['synthesis'] <- 1e-3
+data('mycerIds10', package='INSPEcT')
 llrtests(mycerIds10)
 llrtests(mycerIds10)$synthesis <- list(c('0','a'), c('b','ab'))
 }

@@ -10,7 +10,7 @@
 #' @return An object of class ExpressionSet containing the modeled rates and concentrations
 #' @examples
 #' data('mycerIds10', package='INSPEcT')
-#' tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
+#' tpts <- mycerIds10@tpts
 #' eSet <- makeModelRates(getModel(mycerIds10), tpts=tpts)
 #' exprs(eSet)
 setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
@@ -83,30 +83,90 @@ setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
 #' thresholds(getModel(mycerIds10))$brown <- c(synthesis=.01, degradation=1, processing=.01)
 #' mycerIds10 <- makeModelRates(mycerIds10)
 #' viewModelRates(mycerIds10, 'degradation')
-setMethod('makeModelRates', 'INSPEcT', function(object, ...) {
+
+setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 	## get ratesSpec field
 	ratesSpecs <- object@model@ratesSpecs
 	tpts <- object@tpts
 	log_shift <- .find_tt_par(tpts)
+	
 	## in case some elements of ratesSpecs are longer than one,
 	# meaning that a unique choiche for a model has not been done yet,
 	# choose one using "bestModel" method
 	if( any(sapply(ratesSpecs, length)!=1) )
 		ratesSpecs <- .bestModel(object@model)@ratesSpecs
-	## solve the differential equation model for each gene
+		
+	bestModels <- sapply(ratesSpecs,names)
+
 	nGenes <- length(ratesSpecs)
-	modelRates <- lapply(1:nGenes, function(i) {
-		tryCatch(
-			.makeModel(tpts, ratesSpecs[[i]][[1]], log_shift, 
-				.time_transf, deSolve::ode, .rxnrate)
-			, error=function(e)
-				tryCatch(
-					.makeSimpleModel(tpts, ratesSpecs[[i]][[1]], log_shift, 
-						.time_transf, deSolve::ode, .rxnrateSimple)
-					, error=function(e) .makeEmptyModel(tpts)
-					)
-				)
+
+	if(object@params$No4sU & object@params$estimateRatesWith == "int")
+	{
+		a <- log_shift
+		c <- abs(min(.time_transf(tpts,a)))
+
+		## solve the differential equation model for each gene
+		modelRates <- lapply(1:nGenes, function(i) {
+			tryCatch(
+				.makeModel(tpts = tpts
+						 , hyp = ratesSpecs[[i]][[1]]
+						 , log_shift = log_shift
+						 , .time_transf = .time_transf_No4sU
+						 , ode = deSolve::ode
+						 , .rxnrate = .rxnrate
+						 , c = c)
+				, error=function(e) .makeEmptyModel(tpts)
+			)
 		})
+
+	}else if(!object@params$No4sU)
+	{
+		## solve the differential equation model for each gene
+		modelRates <- lapply(1:nGenes, function(i) {
+			tryCatch(
+				.makeModel(tpts, ratesSpecs[[i]][[1]], log_shift, 
+					.time_transf, deSolve::ode, .rxnrate)
+				, error=function(e)
+					tryCatch(
+						.makeSimpleModel(tpts, ratesSpecs[[i]][[1]], log_shift, 
+							.time_transf, deSolve::ode, .rxnrateSimple)
+						, error=function(e) .makeEmptyModel(tpts)
+						)
+					)
+		})
+	}else{
+
+		a <- log_shift
+		c <- abs(min(.time_transf(tpts,a)))
+		## solve the differential equation model for each gene
+		modelRates <- lapply(1:nGenes, function(i) {
+			if(any(bestModels[i]==c("b","c","bc")))
+			{
+				tryCatch(
+					.makeModel(tpts = tpts
+							 , hyp = ratesSpecs[[i]][[1]]
+							 , log_shift = log_shift
+							 , .time_transf = .time_transf_No4sU
+							 , ode = deSolve::ode
+							 , .rxnrate = .rxnrate
+							 , c = c)
+					, error=function(e) .makeEmptyModel(tpts)
+				)
+			}else{
+				tryCatch(
+					.makeModel_Derivative(tpts = tpts
+							 , hyp = ratesSpecs[[i]][[1]]
+							 , log_shift = log_shift
+							 , .time_transf = .time_transf_No4sU
+							 , ode = deSolve::ode
+							 , .rxnrate = .rxnrate
+							 , c = c
+							 , geneBestModel = bestModels[i])
+					, error=function(e) .makeEmptyModel(tpts)
+				)
+			}
+		})
+	}
 	## make an objec of ExpressionSet class
 	exprData <- cbind(
 		t(sapply(modelRates, function(x) x$total))
@@ -136,5 +196,6 @@ setMethod('makeModelRates', 'INSPEcT', function(object, ...) {
 		)
 	## update and return the object
 	object@modelRates <- modelRates
+
 	return(object)
-	})
+})

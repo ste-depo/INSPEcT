@@ -25,13 +25,13 @@ This method allow to access to the estimated synthesis, degradation, processing 
 concentrations the way they were calculated by the constructor function \code{\link{newINSPEcT}}.
 }
 \examples{
-data('rpkms', package='INSPEcT')
-tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
-tL <- 1/6
-mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
-# get estimated synthesis rates
-ratesFirstGuess(mycerIds, 'synthesis')
+data('mycerIds10', package='INSPEcT')
+
+ratesFirstGuess(mycerIds10, 'total')
+ratesFirstGuess(mycerIds10, 'preMRNA')
+ratesFirstGuess(mycerIds10, 'synthesis')
+ratesFirstGuess(mycerIds10, 'processing')
+ratesFirstGuess(mycerIds10, 'degradation')
 }
 \seealso{
 \code{\link{newINSPEcT}}, \code{\link{ratesFirstGuessVar}}

@@ -9,6 +9,8 @@
 #' data('mycerIds10', package='INSPEcT')
 #' viewModelRates(mycerIds10, 'synthesis')
 setMethod('viewModelRates', 'INSPEcT', function(object, feature) {
-	ix <- pData(object@modelRates)$feature == feature
+
+	ix <- grep(feature,pData(object@modelRates)$feature)
 	exprs(object@modelRates)[,ix, drop=FALSE]
+
 	})

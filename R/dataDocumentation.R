@@ -1,17 +1,7 @@
-#' intron, exons RPKM values of 500 genes from 4sU-seq and RNA-seq experiments
+#' A list containing total and 4su counts for exons and introns, three replicates and 11 time points: 0,1/6,1/3,1/2,1,1.5,2,4,8,12,16 hours.
 #'
-#' A dataset containing the values of exonic and intronic RPKMs of 500 genes 
-#' both in 4sU-seq and RNA-seq experiments. The variables are as follows:
-#'
-#' \itemize{
-#'   \item rpkms_4su_exons
-#'   \item rpkms_4su_introns
-#'   \item rpkms_total_exons
-#'   \item rpkms_total_introns
-#' }
-#'
-#' @format A list of 4 matrices with 500 rows and 9 columns
-#' @name rpkms
+#' @format A list of 4 matrices 500 x 44
+#' @name allcounts4su
 NULL
 
 #' An INSPEcT object with evaluated and modeled rates and concentrations
@@ -36,34 +26,43 @@ NULL
 #' An INSPEcT object with 1000 simulated rates and concentration and their modeled rates
 #'
 #' A dataset containing the rates and concentrations obtained from the dataset
-#' simRates with 1 replicates and time points corresponding to: 0, 1/6, 1/3, 1/2, 
-#' 1, 2, 4, 8, 16 hours. On this dataset rates and concentrations
-#' have been modeled with the method modelRates
+#' simRates; 3 replicates and time points corresponding to: 0,1/6,1/3,1/2,1,1.5,2,4,8,12,16 hours.
 #'
 #' @format An INSPEcT object
-#' @name simData1rep
+#' @name simData3rep_4su
+NULL
+
+
+#' An INSPEcT object with 1000 simulated rates and concentration and their modeled rates
+#'
+#' A dataset containing the rates and concentrations obtained from the dataset
+#' simRates; 3 replicates and time points corresponding to: 0,1/6,1/3,1/2,1,1.25,1.5,2,3,4,6,8,10,12,16 hours.
+#'
+#' @format An INSPEcT object
+#' @name simData4rep_4su
 NULL
 
 #' An INSPEcT object with 1000 simulated rates and concentration and their modeled rates
 #'
 #' A dataset containing the rates and concentrations obtained from the dataset
-#' simRates with 3 replicates and time points corresponding to: 0, 1/6, 1/3, 1/2, 
-#' 1, 1.5, 2, 4, 8, 12, 16 and 24 hours. On this dataset rates and concentrations
+#' simRates with 1 replicates and time points corresponding to: 0, 1/6, 1/3, 1/2, 
+#' 1, 2, 4, 8, 16 hours. On this dataset rates and concentrations
 #' have been modeled with the method modelRates
 #'
 #' @format An INSPEcT object
-#' @name simData3rep
+#' @name simData3rep_No4su
 NULL
 
-
-#' A Gtf file containing exons definition of 100 genes
+#' An INSPEcT object with 1000 simulated rates and concentration and their modeled rates
 #'
-#' @format A tab separated file
-#' @name UCSC_mm9_genes_exons
+#' A dataset containing the rates and concentrations obtained from the dataset
+#' simRates with 1 replicates and time points corresponding to: 0, 1/6, 1/3, 1/2, 
+#' 1, 2, 4, 8, 16 hours. On this dataset rates and concentrations
+#' have been modeled with the method modelRates
+#'
+#' @format An INSPEcT object
+#' @name simData4rep_No4su
 NULL
 
-#' A Gtf file containing introns definition of 100 genes
-#'
-#' @format A tab separated file
-#' @name UCSC_mm9_genes_introns
-NULL
+
+

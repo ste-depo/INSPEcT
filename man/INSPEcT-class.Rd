@@ -67,6 +67,8 @@ Methods that apply to INSPEcT class are
 
 \item{\code{ratesFirstGuess}}{An object of class ExpressionSet that contains all the rates and concentrations guessed from the first part of INSPEcT analysis (before modeling)}
 
+\item{\code{ratesFirstGuessP}}{An object containing the rates first guess part of INSPEcT analysis (before modeling)}
+
 \item{\code{precision}}{A matrix that contains the estimated precision of the rates. Rows represent genes, Columns represent time points.}
 
 \item{\code{model}}{An object of class INSPEcT_model that contains the output of the mdoeling}

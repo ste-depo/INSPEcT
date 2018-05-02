@@ -30,9 +30,12 @@ Possible arguments to "plotMA":
 }
 }
 \examples{
-data('simData3rep', package='INSPEcT')
-data('simData3rep_2', package='INSPEcT')
-diffrates <- compareSteady(simData3rep, simData3rep_2)
+data('simRates', package='INSPEcT')
+data('simData3rep_4su', package='INSPEcT')
+## generate a new data set with 3 replicate to make the comparison
+newTpts <- c(0, 16)
+simData3rep_4su_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
+diffrates <- compareSteady(simData3rep_4su, simData3rep_4su_2)
 plotMA(diffrates, alpha=.5)
 }
 \seealso{
