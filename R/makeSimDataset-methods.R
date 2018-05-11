@@ -95,29 +95,29 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 	tpts <- rep(tpts, nRep)
 	colnames(totalSimReplicates)<-colnames(preMRNASimReplicates)<-colnames(alphaSimReplicates) <- tpts
 
-	## create the INSPEcT object
-	newObject <- newINSPEcT(tpts = tpts
-						  , labeling_time = 1
-						  , rpkms_4su_introns = NULL
-						  , rpkms_4su_exons = alphaSimReplicates
-						  , rpkms_total_exons = totalSimReplicates
-						  , rpkms_total_introns = preMRNASimReplicates
-						  , simulatedData = TRUE
-						  , dispersion_parameters_DESeq2 = NULL
-						  , varSamplingCondition = as.character(tpts[[1]]))
-
-	if(No4sU)
+	if(!No4sU)
 	{
-		newObject@ratesFirstGuess@featureData@data <- newObject@ratesFirstGuess@featureData@data[-grep("synthesis\\.",names(newObject@ratesFirstGuess@featureData@data))]
-		newObject@ratesFirstGuess@featureData@data["synthesis\\."] <- rep(1,nGenes)
-
-		newObject@params$No4sU <- TRUE
-
-		boolTemp <- rep(TRUE,nrow(newObject@ratesFirstGuess@featureData@varMetadata))
-		boolTemp[grep("synthesis\\.",rownames(newObject@ratesFirstGuess@featureData@varMetadata))] <- FALSE
-
-		newObject@ratesFirstGuess@featureData@varMetadata <- subset(newObject@ratesFirstGuess@featureData@varMetadata,boolTemp)
-		newObject@ratesFirstGuess@featureData@varMetadata["synthesis",] <- NA	
+		## create the INSPEcT object
+		newObject <- newINSPEcT(tpts = tpts
+							  , labeling_time = 1
+							  , rpkms_4su_introns = NULL
+							  , rpkms_4su_exons = alphaSimReplicates
+							  , rpkms_total_exons = totalSimReplicates
+							  , rpkms_total_introns = preMRNASimReplicates
+							  , simulatedData = TRUE
+							  , dispersion_parameters_DESeq2 = NULL
+							  , varSamplingCondition = as.character(tpts[[1]]))	
+	}else{
+		## create the INSPEcT object
+		newObject <- newINSPEcT(tpts = tpts
+							  , labeling_time = NULL
+							  , rpkms_4su_introns = NULL
+							  , rpkms_4su_exons = NULL
+							  , rpkms_total_exons = totalSimReplicates
+							  , rpkms_total_introns = preMRNASimReplicates
+							  , simulatedData = TRUE
+							  , dispersion_parameters_DESeq2 = NULL
+							  , varSamplingCondition = as.character(tpts[[1]]))
 	}
 
 	return(newObject)

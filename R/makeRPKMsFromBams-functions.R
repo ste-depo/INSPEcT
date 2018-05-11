@@ -85,7 +85,7 @@ makeRPKMsFromBams <- function(txdb
 
 	if( is.null(names(paths_total)) ) names(paths_total) <- paths_total
 
-	message('Generating annotation from txdb...BAM')
+	message('Generating annotation from txdb...')
 
 	by <- by[1]
 	if( by=="gene" ) {

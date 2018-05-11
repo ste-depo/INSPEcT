@@ -687,44 +687,44 @@ chisq <- function(experiment, model, variance=NULL)
 		
 		# calculate beta
 		
-		inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=75) 
-		####### accurate function for estimating the degradation rates
-		####### using the solution of the differential equation system under 
-		####### the condtion that degradation rate is constant between two 
-		####### consecutive time points - more stable that using derivatives
-		####### estimates
-		{
-		solveBeta <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1, 
-		P_t0, P_t1 ) 
-		{
-		mAlpha <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
-		qAlpha <- alpha_t0 - mAlpha * t0
-		#
-		mPreMRNA <- (P_t0 - P_t1 ) / (t0 - t1 )
-		qPreMRNA <- P_t0 - mPreMRNA * t0
-		#
-		X_t1 - X_t0 * exp(-beta*(t1-t0)) - 
-		((mAlpha*t1*beta + qAlpha*beta - mAlpha ) / (beta^2 ) - (mAlpha*t0*beta + qAlpha*beta - mAlpha ) * exp(-beta*(t1-t0)) / (beta^2 )) -
-		beta*((mPreMRNA*t1*beta + qPreMRNA*beta - mPreMRNA ) / (beta^2 ) - (mPreMRNA*t0*beta + qPreMRNA*beta - mPreMRNA ) * exp(-beta*(t1-t0)) / (beta^2 ))
-		}
-		bplapply(2:length(tpts), function(j)
-		lapply(1:nrow(total), function(i) {
-		tryCatch(
-		uniroot(solveBeta
-		, c(1e-5, maxBeta)
-		, t0 = tpts[j-1]
-		, t1 = tpts[j]
-		, alpha_t0 = alpha[i,j-1]
-		, alpha_t1 = alpha[i,j]
-		, X_t0 = total[i,j-1]
-		, X_t1 = total[i,j]
-		, P_t0 = preMRNA[i,j-1]
-		, P_t1 = preMRNA[i,j]
-		)
-		, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
-		)})
-		, BPPARAM=BPPARAM)
-		}
+		# inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=75) 
+		###### accurate function for estimating the degradation rates
+		###### using the solution of the differential equation system under 
+		###### the condtion that degradation rate is constant between two 
+		###### consecutive time points - more stable that using derivatives
+		###### estimates
+		# {
+			solveBeta <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1, P_t0, P_t1 ) 
+			{
+				mAlpha <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
+				qAlpha <- alpha_t0 - mAlpha * t0
+				#
+				mPreMRNA <- (P_t0 - P_t1 ) / (t0 - t1 )
+				qPreMRNA <- P_t0 - mPreMRNA * t0
+				#
+				X_t1 - X_t0 * exp(-beta*(t1-t0)) - 
+				((mAlpha*t1*beta + qAlpha*beta - mAlpha ) / (beta^2 ) - (mAlpha*t0*beta + qAlpha*beta - mAlpha ) * exp(-beta*(t1-t0)) / (beta^2 )) -
+				beta*((mPreMRNA*t1*beta + qPreMRNA*beta - mPreMRNA ) / (beta^2 ) - (mPreMRNA*t0*beta + qPreMRNA*beta - mPreMRNA ) * exp(-beta*(t1-t0)) / (beta^2 ))
+			}
+	
+			bplapply(2:length(tpts), function(j)
+			lapply(1:nrow(total), function(i) {
+			tryCatch(
+				uniroot(solveBeta
+				, c(1e-5, maxBeta)
+				, t0 = tpts[j-1]
+				, t1 = tpts[j]
+				, alpha_t0 = alpha[i,j-1]
+				, alpha_t1 = alpha[i,j]
+				, X_t0 = total[i,j-1]
+				, X_t1 = total[i,j]
+				, P_t0 = preMRNA[i,j-1]
+				, P_t1 = preMRNA[i,j]
+				)
+				, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
+			)})
+			, BPPARAM=BPPARAM)
+		# }
 		
 		message('Estimating degradation rates...')
 		if( steadyStateMode == 1 ) TexoDer[,1] <- 0
@@ -1561,7 +1561,7 @@ chisq <- function(experiment, model, variance=NULL)
 			y_group <- y[,acceptedTests, drop=FALSE]
 			fX2 <- fisherSum(y_group[ix, , drop=FALSE])
 			k_group <- length(which(acceptedTests))
-			xout_matrix <- stats::cor(y_group, use='complete.obs')
+			xout_matrix <- suppressWarnings(stats::cor(y_group, use='complete.obs'))
 			xout_vector <- xout_matrix[which(as.vector(lower.tri(xout_matrix)))]
 			s2X2 <- 4 * k_group + 2 * sum(approx(seq(-1,1,.1),tmp,xout=xout_vector)$y)
 			f <- 2 * (2 * k_group)^2 /s2X2
@@ -2474,11 +2474,12 @@ chisq <- function(experiment, model, variance=NULL)
 
 	if(preferPValue)
 	{
-		pValues <- t(10^sapply(object@ratesSpecs,function(g)sapply(g,"[[","test")))
+		pValues <- chisqtest(object)
 		rownames(pValues) <- rownames(ratePvals)
 
 		geneClass <- sapply(rownames(ratePvals),function(i)
 		{
+
 			acceptableModelsTemp <- which(pValues[i,] <= cTsh)
 			if(length(acceptableModelsTemp)==0){return("0")}
 			if(length(acceptableModelsTemp)==1){return(colnames(pValues)[acceptableModelsTemp])}    
@@ -2498,7 +2499,7 @@ chisq <- function(experiment, model, variance=NULL)
 						 ,"KVV" = "bc"
 						 ,"VVV" = "abc")[nameTemp]
 
-			if(pValues[i,nameTemp]<=cTsh){return(nameTemp)}else{
+			if(pValues[i,nameTemp]<=cTsh|!is.finite(pValues[i,nameTemp])){return(nameTemp)}else{
 				return(names(which.min(pValues[i,])))}
     	})
 
@@ -2535,6 +2536,7 @@ chisq <- function(experiment, model, variance=NULL)
 
 	}
 }
+
 
 ####################################################################################################k1KKK_No4sU <- function(x, par){par[1]*par[3]}
 
@@ -2744,7 +2746,7 @@ secondStepError_No4sU <- function(tpts
 	# 	sapply(tpts,function(t){k1KKK_No4sU(t,par = c(mean(mature[g,],na.rm = T),ratesConstantPriors[g,'k2'],ratesConstantPriors[g,'k3']))})
 	# }))
 
-	betaTC <- matrix(rep(ratesConstantPriors[,'k3'],length(tpts)),ncol=length(tpts))
+#	betaTC <- matrix(rep(ratesConstantPriors[,'k3'],length(tpts)),ncol=length(tpts))
 	gammaTC <- matrix(rep(ratesConstantPriors[,'k2'],length(tpts)),ncol=length(tpts))
 
 	prematureDer <- as.matrix(t(sapply(1:nrow(premature),function(i){
@@ -2757,11 +2759,26 @@ secondStepError_No4sU <- function(tpts
 	alphaTC <- prematureDer + gammaTC * premature
 	alphaTC[alphaTC<0] <- NaN
 
+	#Evaluate beta as constant between intervals
+
+	betaT0 <- alphaTC[,1] / mature[,1]
+	betaT0[betaT0 < 0 | !is.finite(betaT0)] <- NA
+	
+	betaOut <- inferKBetaFromIntegralWithPre(tpts, alphaTC, total, premature, 
+				maxBeta=quantile(betaT0,na.rm=TRUE,probs=.99)*10
+				)
+	betaTC <- cbind(betaT0, 
+		sapply(betaOut, function(x) sapply(x, '[[', 'root'))
+	)
+	ratesEstimPrec <- cbind(0,
+		sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))
+	)
+
 	pModel <- fits[,"p"]
 	pModel[apply(alphaTC,1,function(row)any(!is.finite(row)))] <- NaN
 
 	alphaTC_var <- rep(1, length(eiGenes))
-	ratesEstimPrec <- matrix(, nrow=length(eiGenes), ncol=length(tpts))
+	#ratesEstimPrec <- matrix(, nrow=length(eiGenes), ncol=length(tpts))
 
 	total <- total[eiGenes,]
 	totalVariance <- totalVariance[eiGenes,]
@@ -2920,6 +2937,7 @@ errorKKK_Int_No4sU <- function(parameters, tpts, premature, mature, prematureVar
 
   prematureEstimated <- prematureKKK_Int_No4sU(x = tpts, parameters = parameters)
   matureEstimated <- matureParameters
+
   prematureChiSquare <- sum((premature - prematureEstimated )^2/prematureVariance)
   matureChiSquare <- sum((mature - matureEstimated)^2/matureVariance)
 
@@ -3190,6 +3208,7 @@ prematureVKK_Der_No4sU <- function(x, parameters, c)
 
 	t_fact <- 2^(x-c)*log(2)
 	(.DimpulseModel(x, matureParameters)*t_fact + k3Parameters * .impulseModel(x, matureParameters))/k2Parameters
+
 }
 
 errorVKK_Der_No4sU <- function(parameters
@@ -3203,6 +3222,7 @@ errorVKK_Der_No4sU <- function(parameters
 
 	matureParameters <- parameters[1:6]
 
+  	if( abs(matureParameters[6]) > 5 ) return(NaN)
 	D2 <- .D2impulseModel(tpts,matureParameters)
 	k1 <- k1VKK_Der_No4sU(tpts,parameters, c)
 
@@ -3247,9 +3267,9 @@ errorVVK_Der_No4sU <- function(parameters
 
 	matureParameters <- parameters[1:6]
 
-#	if( abs(matureParameters[6]) > 5 ) return(NaN)
-#	if( abs(parameters[12]) > 5 ) return(NaN)
-#
+	if( abs(matureParameters[6]) > 5 ) return(NaN)
+	if( abs(parameters[12]) > 5 ) return(NaN)
+
 	D2 <- .D2impulseModel(tpts,matureParameters)
 	k1 <- k1VVK_Der_No4sU(tpts,parameters, c)
 
@@ -3292,9 +3312,9 @@ errorVKV_Der_No4sU <- function(parameters
 {
 	matureParameters <- parameters[1:6]
 
-#	if( abs(matureParameters[6]) > 5 ) return(NaN)
-#	if( abs(parameters[13]) > 5 ) return(NaN)
-#
+	if( abs(matureParameters[6]) > 5 ) return(NaN)
+	if( abs(parameters[13]) > 5 ) return(NaN)
+
 	D2 <- .D2impulseModel(tpts,matureParameters)
 	k1 <- k1VKV_Der_No4sU(tpts,parameters, c)
 
@@ -3338,9 +3358,10 @@ errorVVV_Der_No4sU <- function(parameters
 {
 
 	matureParameters <- parameters[1:6]
-#	if( abs(matureParameters[6]) > 5 ) return(NaN)
-#	if( abs(parameters[12]) > 5 ) return(NaN)
-#	if( abs(parameters[18]) > 5 ) return(NaN)
+
+	if( abs(matureParameters[6]) > 5 ) return(NaN)
+	if( abs(parameters[12]) > 5 ) return(NaN)
+	if( abs(parameters[18]) > 5 ) return(NaN)
 
 	D2 <- .D2impulseModel(tpts,matureParameters)
 	k1 <- k1VVV_Der_No4sU(tpts,parameters, c)
@@ -3470,7 +3491,7 @@ errorVVV_Der_No4sU <- function(parameters
 		k1 <- k1VKK_Der_No4sU(tptsLinear,parameters,c)
 		p <- prematureVKK_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
 
-		if(all(k1>0) & all(p>0)) return(1)
+		if(all(k1>0,na.rm=TRUE) & all(p>0,na.rm=TRUE) & all(is.finite(k1)) & all(is.finite(p))) return(1)
 
 		suppressWarnings(optimize( function(x)
 		{
@@ -3481,7 +3502,7 @@ errorVVV_Der_No4sU <- function(parameters
 			k1 <- k1VKK_Der_No4sU(tptsLinear,parameters,c)
     		p <- prematureVKK_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
 
-		if(!all(k1>0) | !all(p>0)) NaN else sum(c(k1
+		if(!all(k1>0,na.rm=TRUE) | !all(p>0,na.rm=TRUE) | !all(is.finite(k1)) | !all(is.finite(p))) NaN else sum(c(k1
 												 ,k2median*x*length(tptsOriginal)
       									 		 ,k3median*x*length(tptsOriginal)))
   		},c(1, 1e5) ))$minimum
@@ -3539,7 +3560,7 @@ errorVVV_Der_No4sU <- function(parameters
 						, k3median)
 		k1 <- k1VVK_Der_No4sU(tptsLinear,parameters, c)
 		p <- prematureVVK_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
-		if(all(k1>0) & all(p>0)) return(1)
+		if(all(k1>0,na.rm=TRUE) & all(p>0,na.rm=TRUE) & all(is.finite(k1)) & all(is.finite(p))) return(1)
 		suppressWarnings(optimize( function(x) {
 			parameters <- unname(c(matureFitImpulse[[row]][1:6]
 							  , c(rep(k2median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
@@ -3548,7 +3569,7 @@ errorVVV_Der_No4sU <- function(parameters
 			k1 <- k1VVK_Der_No4sU(tptsLinear,parameters, c)
 			p <- prematureVVK_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)      
      
-			if(!all(k1>0) | !all(p>0)) NaN else sum(c(k1,.impulseModel(tptsLinear,c(rep(k2median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)),k3median*x*length(tptsOriginal)))
+			if(!all(k1>0,na.rm=TRUE) | !all(p>0,na.rm=TRUE) | !all(is.finite(k1)) | !all(is.finite(p))) NaN else sum(c(k1,.impulseModel(tptsLinear,c(rep(k2median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)),k3median*x*length(tptsOriginal)))
    		}, c(1, 1e5) ))$minimum
 	})
 
@@ -3612,7 +3633,7 @@ errorVVV_Der_No4sU <- function(parameters
   		k1 <- k1VKV_Der_No4sU(tptsLinear,parameters, c)
 		p <- prematureVKV_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
 
-		if(all(k1>0) & all(p>0)) return(1)
+		if(all(k1>0,na.rm=TRUE) & all(p>0,na.rm=TRUE) & all(is.finite(k1)) & all(is.finite(p))) return(1)
 
 		suppressWarnings(optimize( function(x) {
 
@@ -3623,7 +3644,7 @@ errorVVV_Der_No4sU <- function(parameters
 			k1 <- k1VKV_Der_No4sU(tptsLinear,parameters, c)
 			p <- prematureVKV_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
       
-			if(!all(k1>0) | !all(p>0)) NaN else sum(k1,k2median*x*length(tptsOriginal),.impulseModel(tptsLinear,c(rep(k3median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)))
+			if(!all(k1>0,na.rm=TRUE) | !all(p>0,na.rm=TRUE) | !all(is.finite(k1)) | !all(is.finite(p))) NaN else sum(k1,k2median*x*length(tptsOriginal),.impulseModel(tptsLinear,c(rep(k3median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)))
 
 		}, c(1, 1e5) ))$minimum
 	})
@@ -3688,7 +3709,7 @@ errorVVV_Der_No4sU <- function(parameters
 		k1 <- k1VVV_Der_No4sU(tptsLinear,parameters, c)
 		p <- prematureVVV_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
 	
-		if(all(k1>0) & all(p>0)) return(1)
+		if(all(k1>0,na.rm=TRUE) & all(p>0,na.rm=TRUE) & all(is.finite(k1)) & all(is.finite(p))) return(1)
 	
 		suppressWarnings(optimize( function(x) {
 	
@@ -3699,7 +3720,7 @@ errorVVV_Der_No4sU <- function(parameters
 			k1 <- k1VVV_Der_No4sU(tptsLinear,parameters, c)
 			p <- prematureVVV_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)      
 	      
-			if(!all(k1>0) | !all(p>0)) NaN else sum(k1
+			if(!all(k1>0,na.rm=TRUE) | !all(p>0,na.rm=TRUE) | !all(is.finite(k1)) | !all(is.finite(p))) NaN else sum(k1
 	      										, .impulseModel(tptsLinear,c(rep(k2median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1))
 	      										, .impulseModel(tptsLinear,c(rep(k3median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)))
 	
@@ -4018,14 +4039,14 @@ errorVVV_Der_No4sU <- function(parameters
 		                               , model = modelVVV
 		                               , variance = c(matureVariance[g,],prematureVariance[g,]))
 
-		KKVTemp <- tryCatch(loglikKVV_Int_No4sU(KVV[[g]][grep("par",names(KVV[[g]]))]
+		KKVTemp <- tryCatch(loglikKKV_Int_No4sU(KKV[[g]][grep("par",names(KKV[[g]]))]
 												   ,tptsOriginal
 												   ,c(matureSmooth[g,],prematureSmooth[g,])
 												   ,c(matureVariance[g,],prematureVariance[g,])
 												   ,a
 												   ,c),error = function(e)NaN)
 
-		KVKTemp <- tryCatch(loglikKVV_Int_No4sU(KVV[[g]][grep("par",names(KVV[[g]]))]
+		KVKTemp <- tryCatch(loglikKVK_Int_No4sU(KVK[[g]][grep("par",names(KVK[[g]]))]
 												   ,tptsOriginal
 												   ,c(matureSmooth[g,],prematureSmooth[g,])
 												   ,c(matureVariance[g,],prematureVariance[g,])
@@ -4973,4 +4994,45 @@ errorVVV_Der_No4sU <- function(parameters
  		})
 
 		return(ratesSpecs)
+}
+
+
+# 11/5/18
+
+inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=75) 
+####### accurate function for estimating the degradation rates
+####### using the solution of the differential equation system under 
+####### the condtion that degradation rate is constant between two 
+####### consecutive time points - more stable that using derivatives
+####### estimates
+{
+	solveBeta <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1, P_t0, P_t1 ) 
+	{
+		mAlpha <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
+		qAlpha <- alpha_t0 - mAlpha * t0
+		#
+		mPreMRNA <- (P_t0 - P_t1 ) / (t0 - t1 )
+		qPreMRNA <- P_t0 - mPreMRNA * t0
+		#
+		X_t1 - X_t0 * exp(-beta*(t1-t0)) - 
+		((mAlpha*t1*beta + qAlpha*beta - mAlpha ) / (beta^2 ) - (mAlpha*t0*beta + qAlpha*beta - mAlpha ) * exp(-beta*(t1-t0)) / (beta^2 )) -
+		beta*((mPreMRNA*t1*beta + qPreMRNA*beta - mPreMRNA ) / (beta^2 ) - (mPreMRNA*t0*beta + qPreMRNA*beta - mPreMRNA ) * exp(-beta*(t1-t0)) / (beta^2 ))
+	}
+	bplapply(2:length(tpts), function(j)
+	lapply(1:nrow(total), function(i) {
+	tryCatch(
+		uniroot(solveBeta
+		, c(1e-5, maxBeta)
+		, t0 = tpts[j-1]
+		, t1 = tpts[j]
+		, alpha_t0 = alpha[i,j-1]
+		, alpha_t1 = alpha[i,j]
+		, X_t0 = total[i,j-1]
+		, X_t1 = total[i,j]
+		, P_t0 = preMRNA[i,j-1]
+		, P_t1 = preMRNA[i,j]
+		)
+		, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
+	)})
+	, BPPARAM=BPPARAM)
 }

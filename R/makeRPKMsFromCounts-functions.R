@@ -62,7 +62,7 @@ makeRPKMsFromCounts <- function(txdb
 		No4sU <- FALSE
 	}
 
-	message('Generating annotation from txdb...COUNTS')
+	message('Generating annotation from txdb...')
 
 	by <- by[1]
 	if( by=="gene" ) {

@@ -27,12 +27,12 @@ setMethod('rocCurve', signature(object='INSPEcT_model', object2='INSPEcT_model')
 	allResponses <- geneClass(object)
 	ratePvals <- ratePvals(object2, cTsh)
 	# AT LEAST ONE FINITE PVALUE FOR EACH CONTROL CLASS!!!
-	rAlpha <- roc(response=grepl('a', allResponses)
-		, predictor=ratePvals$synthesis)
-	rBeta <- roc(response=grepl('b', allResponses)
-		, predictor=ratePvals$degradation)
-	rGamma <- roc(response=grepl('c', allResponses)
-		, predictor=ratePvals$processing)
+	rAlpha <- roc(response=as.numeric(grepl('a', allResponses))
+		, predictor=ratePvals$synthesis,direction=">")
+	rBeta <- roc(response=as.numeric(grepl('b', allResponses))
+		, predictor=ratePvals$degradation,direction=">")
+	rGamma <- roc(response=as.numeric(grepl('c', allResponses))
+		, predictor=ratePvals$processing,direction=">")
 	if( plot ) {
 		legendText <- paste(
 			c('synthesis', 'degradation', 'processing')

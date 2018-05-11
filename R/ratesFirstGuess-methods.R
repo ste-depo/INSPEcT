@@ -46,5 +46,8 @@ setMethod('ratesFirstGuessVar', 'INSPEcT', function(object, feature) {
 		rownames(temp) <- rownames(object@ratesFirstGuess@featureData@data)
 		colnames(temp) <- feature
 	}
-	as.matrix(temp)
+	temp <- as.matrix(temp)
+	colnamesTemp <- colnames(ratesFirstGuess(object,feature))
+	if(length(colnamesTemp)==ncol(temp)){colnames(temp) <- colnamesTemp}
+	temp
 	})
