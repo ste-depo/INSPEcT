@@ -732,7 +732,7 @@ chisq <- function(experiment, model, variance=NULL)
 		betaT0[betaT0 < 0 | !is.finite(betaT0)] <- NA
 		if( length(tpts)>1 ) {
 			betaOut <- inferKBetaFromIntegralWithPre(tpts, alphaTC, Texo, Tint, 
-				maxBeta=quantile(betaT0,na.rm=TRUE,probs=.99)*10
+				maxBeta=quantile(betaT0,na.rm=TRUE,probs=.99)*10,BPPARAM=BPPARAM
 				)
 			betaTC <- cbind(betaT0, 
 				sapply(betaOut, function(x) sapply(x, '[[', 'root'))
@@ -2653,15 +2653,13 @@ secondStepError_No4sU <- function(tpts
 													, tpts
 													, BPPARAM=bpparam()
 													, modellingParameters=list(Dmin = 1e-6
-																			 , Dmax = 10
-																			 , BPPARAM = bpparam())
+																			 , Dmax = 10)
 													, genesFilter
 													)
 {
 
 	Dmin <- modellingParameters$Dmin
 	Dmax <- modellingParameters$Dmax
-	BPPARAM <- modellingParameters$BPPARAM
 
 	eiGenes <- rownames(totRpkms$exons)
 
@@ -2765,7 +2763,7 @@ secondStepError_No4sU <- function(tpts
 	betaT0[betaT0 < 0 | !is.finite(betaT0)] <- NA
 	
 	betaOut <- inferKBetaFromIntegralWithPre(tpts, alphaTC, total, premature, 
-				maxBeta=quantile(betaT0,na.rm=TRUE,probs=.99)*10
+				maxBeta=quantile(betaT0,na.rm=TRUE,probs=.99)*10,BPPARAM=BPPARAM
 				)
 	betaTC <- cbind(betaT0, 
 		sapply(betaOut, function(x) sapply(x, '[[', 'root'))
@@ -2853,7 +2851,7 @@ fitSmooth <- function(tpts
 	im_chisq_mature <- function(par, tpts, experiment, variance=NULL, tt_c)
 	{
 		model <- .impulseModel(tpts,par)
-		if( abs(par[6]) > 5 ) return(NaN)
+		if( abs(par[6]) > -Inf ) return(NaN)
 		if( any(model < 0) ) return(NaN)
 		chisq(experiment, model, variance)
 	}
@@ -3222,7 +3220,7 @@ errorVKK_Der_No4sU <- function(parameters
 
 	matureParameters <- parameters[1:6]
 
-  	if( abs(matureParameters[6]) > 5 ) return(NaN)
+  	if( abs(matureParameters[6]) > -Inf ) return(NaN)
 	D2 <- .D2impulseModel(tpts,matureParameters)
 	k1 <- k1VKK_Der_No4sU(tpts,parameters, c)
 
@@ -3267,8 +3265,8 @@ errorVVK_Der_No4sU <- function(parameters
 
 	matureParameters <- parameters[1:6]
 
-	if( abs(matureParameters[6]) > 5 ) return(NaN)
-	if( abs(parameters[12]) > 5 ) return(NaN)
+	if( abs(matureParameters[6]) > -Inf ) return(NaN)
+	if( abs(parameters[12]) > -Inf ) return(NaN)
 
 	D2 <- .D2impulseModel(tpts,matureParameters)
 	k1 <- k1VVK_Der_No4sU(tpts,parameters, c)
@@ -3312,8 +3310,8 @@ errorVKV_Der_No4sU <- function(parameters
 {
 	matureParameters <- parameters[1:6]
 
-	if( abs(matureParameters[6]) > 5 ) return(NaN)
-	if( abs(parameters[13]) > 5 ) return(NaN)
+	if( abs(matureParameters[6]) > -Inf ) return(NaN)
+	if( abs(parameters[13]) > -Inf ) return(NaN)
 
 	D2 <- .D2impulseModel(tpts,matureParameters)
 	k1 <- k1VKV_Der_No4sU(tpts,parameters, c)
@@ -3359,9 +3357,9 @@ errorVVV_Der_No4sU <- function(parameters
 
 	matureParameters <- parameters[1:6]
 
-	if( abs(matureParameters[6]) > 5 ) return(NaN)
-	if( abs(parameters[12]) > 5 ) return(NaN)
-	if( abs(parameters[18]) > 5 ) return(NaN)
+	if( abs(matureParameters[6]) > -Inf ) return(NaN)
+	if( abs(parameters[12]) > -Inf ) return(NaN)
+	if( abs(parameters[18]) > -Inf ) return(NaN)
 
 	D2 <- .D2impulseModel(tpts,matureParameters)
 	k1 <- k1VVV_Der_No4sU(tpts,parameters, c)
@@ -4999,7 +4997,7 @@ errorVVV_Der_No4sU <- function(parameters
 
 # 11/5/18
 
-inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=75) 
+inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=75, BPPARAM=bpparam()) 
 ####### accurate function for estimating the degradation rates
 ####### using the solution of the differential equation system under 
 ####### the condtion that degradation rate is constant between two 

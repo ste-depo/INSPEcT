@@ -288,8 +288,7 @@ newINSPEcT <- function(tpts
 															, tpts
 															, BPPARAM=BPPARAM
 															, modellingParameters=list(Dmin = Dmin
-																					 , Dmax = Dmax
-																					 , BPPARAM = BPPARAM)
+																					 , Dmax = Dmax)
 															, genesFilter = genesFilter)
 	
 		colnames(outIntEx$concentrations$total_var) <- colnames(outIntEx$concentrations$preMRNA_var) <- NULL
