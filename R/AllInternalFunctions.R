@@ -2689,6 +2689,8 @@ secondStepError_No4sU <- function(tpts
 	premature <- premature[eiGenes,]
 	matureVariance <- matureVariance[eiGenes,]
 	prematureVariance <- prematureVariance[eiGenes,]
+	total <- total[eiGenes,]
+	totalVariance <- totalVariance[eiGenes,]
 
 	# Constant post transcriptional rates and fixed post transcriptional ratio 
 	k3Prior <- firstStep_No4sU(tpts = tpts
@@ -2772,14 +2774,14 @@ secondStepError_No4sU <- function(tpts
 		sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))
 	)
 
+#	browser()
+
 	pModel <- fits[,"p"]
 	pModel[apply(alphaTC,1,function(row)any(!is.finite(row)))] <- NaN
 
 	alphaTC_var <- rep(1, length(eiGenes))
 	#ratesEstimPrec <- matrix(, nrow=length(eiGenes), ncol=length(tpts))
 
-	total <- total[eiGenes,]
-	totalVariance <- totalVariance[eiGenes,]
 
 	attr(alphaTC, 'dimnames') <- NULL
 	attr(betaTC, 'dimnames') <- NULL
