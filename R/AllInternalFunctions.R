@@ -2774,8 +2774,6 @@ secondStepError_No4sU <- function(tpts
 		sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))
 	)
 
-#	browser()
-
 	pModel <- fits[,"p"]
 	pModel[apply(alphaTC,1,function(row)any(!is.finite(row)))] <- NaN
 
@@ -2853,7 +2851,7 @@ fitSmooth <- function(tpts
 	im_chisq_mature <- function(par, tpts, experiment, variance=NULL, tt_c)
 	{
 		model <- .impulseModel(tpts,par)
-		if( abs(par[6]) > -Inf ) return(NaN)
+		if( abs(par[6]) > Inf ) return(NaN)
 		if( any(model < 0) ) return(NaN)
 		chisq(experiment, model, variance)
 	}
@@ -3222,7 +3220,7 @@ errorVKK_Der_No4sU <- function(parameters
 
 	matureParameters <- parameters[1:6]
 
-  	if( abs(matureParameters[6]) > -Inf ) return(NaN)
+  	if( abs(matureParameters[6]) > Inf ) return(NaN)
 	D2 <- .D2impulseModel(tpts,matureParameters)
 	k1 <- k1VKK_Der_No4sU(tpts,parameters, c)
 
@@ -3267,8 +3265,8 @@ errorVVK_Der_No4sU <- function(parameters
 
 	matureParameters <- parameters[1:6]
 
-	if( abs(matureParameters[6]) > -Inf ) return(NaN)
-	if( abs(parameters[12]) > -Inf ) return(NaN)
+	if( abs(matureParameters[6]) > Inf ) return(NaN)
+	if( abs(parameters[12]) > Inf ) return(NaN)
 
 	D2 <- .D2impulseModel(tpts,matureParameters)
 	k1 <- k1VVK_Der_No4sU(tpts,parameters, c)
@@ -3312,8 +3310,8 @@ errorVKV_Der_No4sU <- function(parameters
 {
 	matureParameters <- parameters[1:6]
 
-	if( abs(matureParameters[6]) > -Inf ) return(NaN)
-	if( abs(parameters[13]) > -Inf ) return(NaN)
+	if( abs(matureParameters[6]) > Inf ) return(NaN)
+	if( abs(parameters[13]) > Inf ) return(NaN)
 
 	D2 <- .D2impulseModel(tpts,matureParameters)
 	k1 <- k1VKV_Der_No4sU(tpts,parameters, c)
@@ -3359,9 +3357,9 @@ errorVVV_Der_No4sU <- function(parameters
 
 	matureParameters <- parameters[1:6]
 
-	if( abs(matureParameters[6]) > -Inf ) return(NaN)
-	if( abs(parameters[12]) > -Inf ) return(NaN)
-	if( abs(parameters[18]) > -Inf ) return(NaN)
+	if( abs(matureParameters[6]) > Inf ) return(NaN)
+	if( abs(parameters[12]) > Inf ) return(NaN)
+	if( abs(parameters[18]) > Inf ) return(NaN)
 
 	D2 <- .D2impulseModel(tpts,matureParameters)
 	k1 <- k1VVV_Der_No4sU(tpts,parameters, c)
@@ -3467,7 +3465,7 @@ errorVVV_Der_No4sU <- function(parameters
 				,mature = mature[row,]
 				,prematureVariance = prematureVariance[row,]
 				,matureVariance = matureVariance[row,]
-				,control = list(maxit = nIter)),
+				,control = list(maxit = 100*(nIter))),
 			error=function(e) c(par1 = NaN
 							  , par2 = NaN
 							  , par3 = NaN
@@ -3534,7 +3532,7 @@ errorVVV_Der_No4sU <- function(parameters
 			             ,prematureVariance = prematureVariance[row,]
 			             ,matureVariance = matureVariance[row,]
 	                  	 ,c = c
-	                  	 ,control = list(maxit = nIter)),
+	                  	 ,control = list(maxit = 100*(nIter))),
 	    		error=function(e) c(par1 = NaN
 	    						  , par2 = NaN
 	    						  , par3 = NaN
@@ -3600,7 +3598,7 @@ errorVVV_Der_No4sU <- function(parameters
 						,prematureVariance = prematureVariance[row,]
 						,matureVariance = matureVariance[row,]
 						,c = c
-						,control = list(maxit = nIter)),
+						,control = list(maxit = 100*(nIter))),
 				error=function(e) c(par1 = NaN
 								   ,par2 = NaN
 								   ,par3 = NaN
@@ -3676,7 +3674,7 @@ errorVVV_Der_No4sU <- function(parameters
 						,prematureVariance = prematureVariance[row,]
 						,matureVariance = matureVariance[row,]
 						,c = c
-						,control = list(maxit = nIter)),
+						,control = list(maxit = 100*(nIter))),
 				error=function(e) c(par1 = NaN
 								   ,par2 = NaN
 								   ,par3 = NaN
@@ -3753,7 +3751,7 @@ errorVVV_Der_No4sU <- function(parameters
 						,prematureVariance = prematureVariance[row,]
 						,matureVariance = matureVariance[row,]
 						,c = c
-						,control = list(maxit = nIter)),
+						,control = list(maxit = 100*(nIter))),
 				error=function(e) c(par1 = NaN
 								   ,par2 = NaN
 								   ,par3 = NaN
