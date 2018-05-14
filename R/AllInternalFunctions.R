@@ -2718,6 +2718,7 @@ secondStepError_No4sU <- function(tpts
 		sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))
 	)
 
+<<<<<<< HEAD
 	#Evaluate gamma as constant between intervals
 
 	gammaT0 <- alphaTC[,1] / premature[,1]
@@ -2744,6 +2745,8 @@ secondStepError_No4sU <- function(tpts
 
 	## caluculate error through integration of alphaTC, betaTC, gammaTC?
 
+=======
+>>>>>>> f7d7f2c07ed09f1c3246f3f5954906b07f324835
 	pModel <- fits[,"p"]
 	pModel[apply(alphaTC,1,function(row)any(!is.finite(row)))] <- NaN
 
@@ -3481,7 +3484,7 @@ errorVVV_Der_No4sU <- function(parameters
 				,mature = mature[row,]
 				,prematureVariance = prematureVariance[row,]
 				,matureVariance = matureVariance[row,]
-				,control = list(maxit = nIter)),
+				,control = list(maxit = 100*(nIter))),
 			error=function(e) c(par1 = NaN
 							  , par2 = NaN
 							  , par3 = NaN
@@ -3548,7 +3551,11 @@ errorVVV_Der_No4sU <- function(parameters
 			             ,prematureVariance = prematureVariance[row,]
 			             ,matureVariance = matureVariance[row,]
 	                  	 ,c = c
+<<<<<<< HEAD
 	                  	 ,control = list(maxit = nIter * 100)),
+=======
+	                  	 ,control = list(maxit = 100*(nIter))),
+>>>>>>> f7d7f2c07ed09f1c3246f3f5954906b07f324835
 	    		error=function(e) c(par1 = NaN
 	    						  , par2 = NaN
 	    						  , par3 = NaN
@@ -3614,7 +3621,11 @@ errorVVV_Der_No4sU <- function(parameters
 						,prematureVariance = prematureVariance[row,]
 						,matureVariance = matureVariance[row,]
 						,c = c
+<<<<<<< HEAD
 						,control = list(maxit = nIter * 100)),
+=======
+						,control = list(maxit = 100*(nIter))),
+>>>>>>> f7d7f2c07ed09f1c3246f3f5954906b07f324835
 				error=function(e) c(par1 = NaN
 								   ,par2 = NaN
 								   ,par3 = NaN
@@ -3690,7 +3701,11 @@ errorVVV_Der_No4sU <- function(parameters
 						,prematureVariance = prematureVariance[row,]
 						,matureVariance = matureVariance[row,]
 						,c = c
+<<<<<<< HEAD
 						,control = list(maxit = nIter * 100)),
+=======
+						,control = list(maxit = 100*(nIter))),
+>>>>>>> f7d7f2c07ed09f1c3246f3f5954906b07f324835
 				error=function(e) c(par1 = NaN
 								   ,par2 = NaN
 								   ,par3 = NaN
@@ -3767,7 +3782,11 @@ errorVVV_Der_No4sU <- function(parameters
 						,prematureVariance = prematureVariance[row,]
 						,matureVariance = matureVariance[row,]
 						,c = c
+<<<<<<< HEAD
 						,control = list(maxit = nIter * 100)),
+=======
+						,control = list(maxit = 100*(nIter))),
+>>>>>>> f7d7f2c07ed09f1c3246f3f5954906b07f324835
 				error=function(e) c(par1 = NaN
 								   ,par2 = NaN
 								   ,par3 = NaN
