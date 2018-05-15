@@ -1,16 +1,5 @@
 library(devtools)
-load_all("Dropbox/INSPEcT_Cluster")
-
-library(DESeq2)
-library(plgem)
-library(GenomicAlignments)
-library(GenomicFeatures)  
-
-source("Dropbox/INSPEcT_Dev/R/AllInternalFunctions.R")
-source("Dropbox/INSPEcT_Dev/R/makeRPKMsFromCounts-functions.R")
-source("Dropbox/INSPEcT_Dev/R/makeRPKMsFromBams-functions.R")
-source("Dropbox/INSPEcT_Dev/R/quantifyExpressionFromTrAbundance.R")
-source("Dropbox/INSPEcT_Dev/R/newINSPEcT-functions.R")
+load_all("Dropbox/INSPEcT_Dev")
 
 #Test on BAMs
 require(TxDb.Mmusculus.UCSC.mm9.knownGene)
@@ -20,14 +9,14 @@ paths <- system.file('extdata/', c('bamRep1.bam','bamRep2.bam','bamRep3.bam','ba
 
 experimentalDesign <- c(0,0,1,1)
 
-makeExpOutFromBAMs <- makeExpressionsFromBAMs(txdb = txdb
-											, BAMfiles = paths
-											, DESeq2 = TRUE
-											, experimentalDesign = experimentalDesign
-											, varSamplingCondition = NULL) 
+makeExpOutFromBAMs <- quantifyExpressionsFromBAMs(txdb = txdb
+												, BAMfiles = paths
+												, DESeq2 = TRUE
+												, experimentalDesign = experimentalDesign
+												, varSamplingCondition = NULL) 
 
 #Test on Counts
-data('allcounts4su', package='INSPEcT')
+data('allcountsNascent', package='INSPEcT')
 
 exonsDB <- reduce(exonsBy(txdb ,'gene'))
 exonsDB <- exonsDB[elementNROWS(range(exonsDB))==1]
@@ -36,9 +25,9 @@ intronsDB <- intronsDB[elementNROWS(intronsDB)>0]
 
 experimentalDesign <- rep(c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16),3)
 
-testGenes <- rownames(allcounts$exonCounts)
+testGenes <- rownames(allcountsNascent$Nascent$exonCounts)
 
-allcounts <- allcounts4su$total
+allcounts <- allcountsNascent$total
 
 libsize <- colSums(allcounts$stat[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
 exonsWidths <- sapply(width(exonsDB),sum)
@@ -60,7 +49,7 @@ makeExpOutFromCounts_plgem_total <- quantifyExpressionsFromTrCounts(libsize = li
 																   , experimentalDesign = experimentalDesign
 																   , varSamplingCondition = as.character(experimentalDesign[[1]]))
 
-allcounts <- allcounts4su$foursu
+allcounts <- allcountsNascent$Nascent
 
 libsize <- colSums(allcounts$stat[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
 exonsWidths <- sapply(width(exonsDB),sum)
