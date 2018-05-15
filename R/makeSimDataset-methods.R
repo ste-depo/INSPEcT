@@ -9,7 +9,7 @@
 #' @param object An object of class INSPEcT_model, usually the output of \code{\link{makeSimModel}}
 #' @param tpts A numeric vector of time points where rates and concentrations have to be evaluated
 #' @param nRep Number of replicates to simulate
-#' @param No4sU A logical which, if true, makes the output of the method suitable for an analysis wothout 4sU
+#' @param NoNascent A logical which, if true, makes the output of the method suitable for an analysis wothout Nascent
 #' @param seed A numeric to obtain reproducible results
 #' @return An object of the class ExpressionSet containing rates and concentrations
 #' @seealso \code{\link{makeSimModel}}
@@ -18,12 +18,12 @@
 #' 
 #' tpts <- simRates@params$tpts
 #' 
-#' simData2rep_4su <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,No4sU=FALSE,seed=1)
+#' simData2rep_Nascent <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
 
 setMethod('makeSimDataset', 'INSPEcT_model', function(object
 													, tpts
 													, nRep
-													, No4sU = FALSE
+													, NoNascent = FALSE
 													, seed=NULL)
 {
 
@@ -95,13 +95,13 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 	tpts <- rep(tpts, nRep)
 	colnames(totalSimReplicates)<-colnames(preMRNASimReplicates)<-colnames(alphaSimReplicates) <- tpts
 
-	if(!No4sU)
+	if(!NoNascent)
 	{
 		## create the INSPEcT object
 		newObject <- newINSPEcT(tpts = tpts
 							  , labeling_time = 1
-							  , rpkms_4su_introns = NULL
-							  , rpkms_4su_exons = alphaSimReplicates
+							  , rpkms_Nascent_introns = NULL
+							  , rpkms_Nascent_exons = alphaSimReplicates
 							  , rpkms_total_exons = totalSimReplicates
 							  , rpkms_total_introns = preMRNASimReplicates
 							  , simulatedData = TRUE
@@ -111,8 +111,8 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 		## create the INSPEcT object
 		newObject <- newINSPEcT(tpts = tpts
 							  , labeling_time = NULL
-							  , rpkms_4su_introns = NULL
-							  , rpkms_4su_exons = NULL
+							  , rpkms_Nascent_introns = NULL
+							  , rpkms_Nascent_exons = NULL
 							  , rpkms_total_exons = totalSimReplicates
 							  , rpkms_total_introns = preMRNASimReplicates
 							  , simulatedData = TRUE

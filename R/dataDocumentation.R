@@ -1,7 +1,7 @@
-#' A list containing total and 4su counts for exons and introns, three replicates and 11 time points: 0,1/6,1/3,1/2,1,1.5,2,4,8,12,16 hours.
+#' A list containing total and Nascent counts for exons and introns, three replicates and 11 time points: 0,1/6,1/3,1/2,1,1.5,2,4,8,12,16 hours.
 #'
 #' @format A list of 4 matrices 500 x 44
-#' @name allcounts4su
+#' @name allcountsNascent
 NULL
 
 #' An INSPEcT object with evaluated and modeled rates and concentrations
@@ -29,7 +29,7 @@ NULL
 #' simRates; 3 replicates and time points corresponding to: 0,1/6,1/3,1/2,1,1.5,2,4,8,12,16 hours.
 #'
 #' @format An INSPEcT object
-#' @name simData3rep_4su
+#' @name simData3rep_Nascent
 NULL
 
 
@@ -39,7 +39,7 @@ NULL
 #' simRates; 3 replicates and time points corresponding to: 0,1/6,1/3,1/2,1,1.25,1.5,2,3,4,6,8,10,12,16 hours.
 #'
 #' @format An INSPEcT object
-#' @name simData4rep_4su
+#' @name simData4rep_Nascent
 NULL
 
 #' An INSPEcT object with 1000 simulated rates and concentration and their modeled rates
@@ -50,7 +50,7 @@ NULL
 #' have been modeled with the method modelRates
 #'
 #' @format An INSPEcT object
-#' @name simData3rep_No4su
+#' @name simData3rep_NoNascent
 NULL
 
 #' An INSPEcT object with 1000 simulated rates and concentration and their modeled rates
@@ -61,7 +61,7 @@ NULL
 #' have been modeled with the method modelRates
 #'
 #' @format An INSPEcT object
-#' @name simData4rep_No4su
+#' @name simData4rep_NoNascent
 NULL
 
 

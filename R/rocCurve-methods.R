@@ -19,8 +19,8 @@
 #' @seealso \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}, \code{\link{rocThresholds}}
 #' @examples
 #' data('simRates', package='INSPEcT')
-#' data('simData3rep_4su', package='INSPEcT')
-#' rocCurve(simRates[1:10], simData3rep_4su)
+#' data('simData3rep_Nascent', package='INSPEcT')
+#' rocCurve(simRates[1:10], simData3rep_Nascent)
 setMethod('rocCurve', signature(object='INSPEcT_model', object2='INSPEcT_model'), 
 	function(object, object2, cTsh=NULL, plot=TRUE) {
 	## obtain the response

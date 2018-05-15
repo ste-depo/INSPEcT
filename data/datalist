@@ -1,6 +1,6 @@
-allcounts4su
-simData2rep_4su.rds
-simData2rep_No4su.rds
-simData3rep_4su.rds
-simData3rep_No4su.rds
+allcountsNascent
+simData2rep_Nascent.rds
+simData2rep_NoNascent.rds
+simData3rep_Nascent.rds
+simData3rep_NoNascent.rds
 simRates.rds

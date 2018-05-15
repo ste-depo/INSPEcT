@@ -135,7 +135,7 @@ setMethod('totalSF', 'INSPEcT', function(object) {
 #' Accessor to obtain the labeledSF slot associated with the object of class INSPEcT
 #' @param object An object of class INSPEcT
 #' @return A numeric that indicates the scaling factors applied between time points
-#' of the data coming from 4sU-seq library (applies directly to synthesis
+#' of the data coming from Nascent-seq library (applies directly to synthesis
 #' rates and indirectly to degradation rates)
 #' @examples
 #' data('mycerIds10',package="INSPEcT")

@@ -64,6 +64,12 @@ paths_total <- system.file('extdata/', c('bamRep1.bam'
 
 temporalDesign <- c(0,0,1,1)
 
+makeRPKMsOut_4su <- makeExpressionsFromBams(txdb = txdb
+          , BAMfiles = paths_4su
+          , DESeq2 = TRUE
+          , experimentalDesign = temporalDesign
+          , varSamplingCondition = NULL) 
+
 makeRPKMsOut_4su <- makeRPKMsFromBams(txdb=txdb
                                      ,paths_foursu=paths_4su
                                      ,paths_total=paths_total

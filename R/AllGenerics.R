@@ -39,7 +39,7 @@ setGeneric('geneClass', function(object, bTsh=NULL, cTsh=NULL)
 setGeneric('makeModelRates', function(object, ...) 
 	standardGeneric('makeModelRates'))
 #' Generate synthetic rates and concentrations
-setGeneric('makeSimDataset', function(object, tpts, nRep, No4sU = FALSE, seed=NULL)
+setGeneric('makeSimDataset', function(object, tpts, nRep, NoNascent = FALSE, seed=NULL)
 	standardGeneric('makeSimDataset'))
 #' Display rate classification performance
 setGeneric('rocCurve', function(object, object2, cTsh=NULL, plot=TRUE) 
@@ -88,7 +88,7 @@ setGeneric('getModel<-', function(object, value)
 # #' @rdname nCores
 # setGeneric('nCores<-', function(object, value) 
 # 	standardGeneric('nCores<-'))
-#' A nice plot to see scaling factors used for RNA-seq and 4sU-seq libraries
+#' A nice plot to see scaling factors used for RNA-seq and Nascent-seq libraries
 setGeneric('sfPlot', function(object) 
 	standardGeneric('sfPlot'))
 #' Retrieve pre-modeling rates and concentrations

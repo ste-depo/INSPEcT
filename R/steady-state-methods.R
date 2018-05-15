@@ -13,12 +13,12 @@
 #' @examples
 #' ## load data
 #' data('simRates', package='INSPEcT')
-#' data('simData3rep_4su', package='INSPEcT')
+#' data('simData3rep_Nascent', package='INSPEcT')
 #' ## generate a new data set with 3 replicate to make the comparison
 #' newTpts <- c(0, 16)
-#' simData3rep_4su_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
+#' simData3rep_Nascent_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
 #' ## compare
-#' diffrates <- compareSteady(simData3rep_4su, simData3rep_4su_2)
+#' diffrates <- compareSteady(simData3rep_Nascent, simData3rep_Nascent_2)
 #' ## visualize results
 #' diffrates
 setMethod('compareSteady', signature('INSPEcT','INSPEcT'), 
@@ -147,12 +147,12 @@ setMethod('compareSteady', signature('INSPEcT','INSPEcT'),
 #' @rdname INSPEcT_diffsteady-class
 #' @examples
 #' data('simRates', package='INSPEcT')
-#' data('simData3rep_4su', package='INSPEcT')
+#' data('simData3rep_Nascent', package='INSPEcT')
 #' ## generate a new data set with 3 replicate to make the comparison
 #' newTpts <- c(0, 16)
-#' simData3rep_4su_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
+#' simData3rep_Nascent_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
 #' ## compare
-#' diffrates <- compareSteady(simData3rep_4su, simData3rep_4su_2)
+#' diffrates <- compareSteady(simData3rep_Nascent, simData3rep_Nascent_2)
 #' head(synthesis(diffrates))
 setMethod('synthesis', 'INSPEcT_diffsteady', function(object) slot(object, 'synthesis'))
 #' @rdname INSPEcT_diffsteady-class
@@ -188,11 +188,11 @@ NULL
 #' @rdname INSPEcT_diffsteady-class
 #' @examples
 #' data('simRates', package='INSPEcT')
-#' data('simData3rep_4su', package='INSPEcT')
+#' data('simData3rep_Nascent', package='INSPEcT')
 #' ## generate a new data set with 3 replicate to make the comparison
 #' newTpts <- c(0, 16)
-#' simData3rep_4su_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
-#' diffrates <- compareSteady(simData3rep_4su, simData3rep_4su_2)
+#' simData3rep_Nascent_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
+#' diffrates <- compareSteady(simData3rep_Nascent, simData3rep_Nascent_2)
 #' plotMA(diffrates, alpha=.5)
 setMethod('plotMA', 'INSPEcT_diffsteady', function(object, ...) {
 	addargs <- list(...)

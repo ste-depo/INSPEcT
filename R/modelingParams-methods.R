@@ -41,11 +41,8 @@ setReplaceMethod('modelingParams', 'INSPEcT', function(object, value) {
 
 	if(!is.list(value))
 		stop('modelingParams: value argument must be a list')
-#	if( !identical(names(value), c('nInit', 'nIter', 'na.rm', 'cores', 'Dmax', 'Dmin',
-#		 'verbose', 'estimateRatesWith', 'useSigmoidFun', 'testOnSmooth', 'No4sU')) )
-#		stop('modelingParams: value argument must be named list. Names must be "nInit", "nIter", "na.rm", "verbose", "estimateRatesWith", "useSigmoidFun", "testOnSmooth"')
-	if( !is.logical(value$No4sU) )
-		stop('modelingParams: No4sU element of value argument must be a logical')
+	if( !is.logical(value$NoNascent) )
+		stop('modelingParams: NoNascent element of value argument must be a logical')
 	if( !is.numeric(value$nInit) )
 		stop('modelingParams: nInit element of value argument must be a numeric')
 	if( !is.numeric(value$nIter) )

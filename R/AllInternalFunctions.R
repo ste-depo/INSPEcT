@@ -4,7 +4,7 @@
 	return(newtime)
 } 
 
-.time_transf_No4sU <- function(t, log_shift, c) 
+.time_transf_NoNascent <- function(t, log_shift, c) 
 {
 	newtime <- log2(t+log_shift) + c
 	return(newtime)
@@ -134,7 +134,7 @@ chisq <- function(experiment, model, variance=NULL)
 		}
 		
 		#########################
-		#### scale 4sU rpkms ###
+		#### scale Nascent rpkms ###
 		#########################
 		
 		## only exons mode
@@ -144,7 +144,7 @@ chisq <- function(experiment, model, variance=NULL)
 			if( !is.null(labeledSF) & labeledMedianNorm )
 			stop('If labeledSF is provided labeledMedianNorm must be set to FALSE')
 			
-			# normalize 4su according to median
+			# normalize Nascent according to median
 			if( labeledMedianNorm ) {
 			ssq.residuals <- function(a, x, y) stats::median(x - a*y, na.rm=TRUE)^2
 			# calculate a scaling factor for each time point
@@ -207,7 +207,7 @@ chisq <- function(experiment, model, variance=NULL)
 				labeledSF_prior <- labeledSF
 			}else{
 		
-				message('Calculating scaling factor between total and 4su libraries...')
+				message('Calculating scaling factor between total and Nascent libraries...')
 		
 				#########################
 				##### local functions ######
@@ -242,7 +242,7 @@ chisq <- function(experiment, model, variance=NULL)
 				##################
 				# preMRNA derivative as splines 
 				# (force the first time point to have derivative zero )
-				# estimate of alpha and gamma from 4sU data
+				# estimate of alpha and gamma from Nascent data
 		
 				gammaTC <- do.call('cbind',bplapply(1:length(tpts), function(j) 
 					sapply(1:nrow(Lint), function(i, Lint, Lexo, tL) 
@@ -266,7 +266,7 @@ chisq <- function(experiment, model, variance=NULL)
 				warning('When introns of labelled and total fraction are provided normalization of 
 				labelled fraction is computed internally. "labeledSF" argument is ignored.')
 		
-				# message('Calculating scaling factor between total and 4su libraries...')
+				# message('Calculating scaling factor between total and Nascent libraries...')
 		
 				## select the 500 most synthesized genes at time zero
 				## to calculate the scaling factor
@@ -279,7 +279,7 @@ chisq <- function(experiment, model, variance=NULL)
 				## re-calculate scaling factor
 				
 				## degradation during pulse
-				# system with 4su scaling factor as a 4th variable to be identified
+				# system with Nascent scaling factor as a 4th variable to be identified
 				initOneGene <- function(i, j) {
 					c(Lexo[i,j]/tL
 					,(Lexo[i,j]/tL-TexoDer[i,j])/(Texo[i,j]-Tint[i,j])
@@ -287,7 +287,7 @@ chisq <- function(experiment, model, variance=NULL)
 					)
 				}
 	
-				sys4suScale <- function(x) {
+				sysNascentScale <- function(x) {
 					y <- numeric(4)
 					y[1] <- TintDer[i,j] - x[1] + x[3]*Tint[i,j]
 					y[2] <- TexoDer[i,j] - x[1] + x[2]*(Texo[i,j]-Tint[i,j])
@@ -296,7 +296,7 @@ chisq <- function(experiment, model, variance=NULL)
 					x[2]^2*exp(x[2]*tL)-x[3]^2*exp(x[2]*tL)))/(x[2]*(x[2]-x[3])*x[3])
 					y/c(x[1],x[1],x[4]*Lint[i,j],x[4]*Lexo[i,j])
 				}
-				## get only 4sU scales
+				## get only Nascent scales
 				nGenes <- nrow(Lexo)
 				nTpts <- ncol(Lexo)
 	
@@ -308,7 +308,7 @@ chisq <- function(experiment, model, variance=NULL)
 						for( j in 1:nTpts ) {
 							init <- initOneGene(i,j)*labeledSF_prior[j]
 							mrOut <- tryCatch(
-								multiroot(sys4suScale, c(init,labeledSF_prior[j]))
+								multiroot(sysNascentScale, c(init,labeledSF_prior[j]))
 							
 							, error=function(e)
 							list(root=rep(NA, 4), estim.precis=NA)
@@ -422,7 +422,7 @@ chisq <- function(experiment, model, variance=NULL)
 		,(Lexo[i,j]*labeledSF[j]/tL-TexoDer[i,j])/Texo[i,j]
 		)
 		}
-		sys4suSmall <- function(x) {
+		sysNascentSmall <- function(x) {
 		y <- numeric(2)
 		y[1] <- TexoDer[i,j] - x[1] + x[2]*Texo[i,j]
 		y[2] <- Lexo[i,j] - x[1]/x[2]*(1-exp(-x[2]*tL))
@@ -441,7 +441,7 @@ chisq <- function(experiment, model, variance=NULL)
 		# if( all(is.finite(init)) ) {
 		mrOut <- tryCatch(
 		multiroot(
-		sys4suSmall
+		sysNascentSmall
 		, initOneGene(i,j)
 		# , labeledSF=labeledSF
 		# , control = list(maxit=1e3)
@@ -596,7 +596,7 @@ chisq <- function(experiment, model, variance=NULL)
 		,(Lexo[i,j]*labeledSF[j]/tL-TintDer[i,j])/Tint[i,j]
 		)
 		}
-		sys4su <- function(x, labeledSF) {
+		sysNascent <- function(x, labeledSF) {
 		y <- numeric(3)
 		y[1] <- TintDer[i,j] - x[1] + x[3]*Tint[i,j]
 		y[2] <- TexoDer[i,j] - x[1] + x[2]*(Texo[i,j]-Tint[i,j])
@@ -617,7 +617,7 @@ chisq <- function(experiment, model, variance=NULL)
 		# if( all(is.finite(init)) ) {
 		mrOut <- tryCatch(
 		multiroot(
-		sys4su
+		sysNascent
 		, initOneGene(i,j)
 		, labeledSF=labeledSF
 		# , control = list(maxit=1e3)
@@ -708,18 +708,18 @@ chisq <- function(experiment, model, variance=NULL)
 			}
 	
 			bplapply(2:length(tpts), function(j)
-			lapply(1:nrow(total), function(i) {
+			lapply(1:nrow(Texo), function(i) {
 			tryCatch(
 				uniroot(solveBeta
 				, c(1e-5, maxBeta)
 				, t0 = tpts[j-1]
 				, t1 = tpts[j]
-				, alpha_t0 = alpha[i,j-1]
-				, alpha_t1 = alpha[i,j]
-				, X_t0 = total[i,j-1]
-				, X_t1 = total[i,j]
-				, P_t0 = preMRNA[i,j-1]
-				, P_t1 = preMRNA[i,j]
+				, alpha_t0 = alphaTC[i,j-1]
+				, alpha_t1 = alphaTC[i,j]
+				, X_t0 = Texo[i,j-1]
+				, X_t1 = Texo[i,j]
+				, P_t0 = Tint[i,j-1]
+				, P_t1 = Tint[i,j]
 				)
 				, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
 			)})
@@ -1634,7 +1634,7 @@ chisq <- function(experiment, model, variance=NULL)
 	par[1]+(par[2]-par[1])*(1/(1+exp(-par[4]*(x-par[3]))))
 }
 ## compiled version
-.sigmoidModel <- cmpfun(.sigmoidModel)
+#.sigmoidModel <- cmpfun(.sigmoidModel)
 
 .DsigmoidModel <- function(x, par) 
 {
@@ -1670,7 +1670,7 @@ chisq <- function(experiment, model, variance=NULL)
 		(par[3]+(par[2]-par[3])*(1/(1+exp(par[6]*(x-par[5])))))
 }
 ## compiled version
-.impulseModel <- cmpfun(.impulseModel)
+#.impulseModel <- cmpfun(.impulseModel)
 
 .DimpulseModel <- function(x, par) 
 {
@@ -2538,11 +2538,11 @@ chisq <- function(experiment, model, variance=NULL)
 }
 
 
-####################################################################################################k1KKK_No4sU <- function(x, par){par[1]*par[3]}
+####################################################################################################k1KKK_NoNascent <- function(x, par){par[1]*par[3]}
 
 mcsapply <- function( X, FUN, ... ) do.call('cbind', bplapply( X, FUN, ... ))
 
-lineCoefficients_No4sU <- function(xInitial
+lineCoefficients_NoNascent <- function(xInitial
 								  ,xFinal
 								  ,yInitial
 								  ,yFinal)
@@ -2551,7 +2551,7 @@ lineCoefficients_No4sU <- function(xInitial
           ,q = (yInitial*xFinal-yFinal*xInitial)/(xFinal-xInitial)))
 }
 
-firstStep_No4sU <- function(tpts
+firstStep_NoNascent <- function(tpts
 						   ,mature
 						   ,premature
 						   ,matureVariance
@@ -2560,7 +2560,7 @@ firstStep_No4sU <- function(tpts
 {
 	fits <- lapply(1:nrow(mature), function(row)
   	{
-	    optimize(firstStepError_No4sU
+	    optimize(firstStepError_NoNascent
 	            ,c(Dmin, Dmax)
 	            ,k2K3Ratio = mature[row,1]/premature[row,1]
 	            ,tpts = tpts
@@ -2575,7 +2575,7 @@ firstStep_No4sU <- function(tpts
 	return(out)
 }
 
-firstStepError_No4sU <- function(tpts
+firstStepError_NoNascent <- function(tpts
 								,mature
 								,premature
 								,matureVariance
@@ -2595,7 +2595,7 @@ firstStepError_No4sU <- function(tpts
 
 		matureInitial <- matureEstimated[t-1]
 
-		coefficients <- lineCoefficients_No4sU(xInitial = tInitial
+		coefficients <- lineCoefficients_NoNascent(xInitial = tInitial
 		                                	  ,xFinal = tFinal
 		                                	  ,yInitial = prematureInitial
 		                                	  ,yFinal = prematureFinal)
@@ -2611,7 +2611,7 @@ firstStepError_No4sU <- function(tpts
    return(sum((mature[-1] - matureEstimated[-1])^2/matureVariance[-1]))
 }
 
-secondStepError_No4sU <- function(tpts
+secondStepError_NoNascent <- function(tpts
 								 ,mature
 								 ,premature
 								 ,matureVariance
@@ -2633,7 +2633,7 @@ secondStepError_No4sU <- function(tpts
 
 		matureInitial <- matureEstimated[t-1]
 
-		coefficients <- lineCoefficients_No4sU(xInitial = tInitial
+		coefficients <- lineCoefficients_NoNascent(xInitial = tInitial
 											  ,xFinal = tFinal
 											  ,yInitial = prematureInitial
 											  ,yFinal = prematureFinal)
@@ -2649,7 +2649,7 @@ secondStepError_No4sU <- function(tpts
 	return(mean((mature[-1] - matureEstimated[-1])^2/matureVariance[-1]))
 }
 
-.getRatesAndConcentrationsFromRpkms_No4sU <- function(totRpkms
+.getRatesAndConcentrationsFromRpkms_NoNascent <- function(totRpkms
 													, tpts
 													, BPPARAM=bpparam()
 													, modellingParameters=list(Dmin = 1e-6
@@ -2693,7 +2693,7 @@ secondStepError_No4sU <- function(tpts
 	totalVariance <- totalVariance[eiGenes,]
 
 	# Constant post transcriptional rates and fixed post transcriptional ratio 
-	k3Prior <- firstStep_No4sU(tpts = tpts
+	k3Prior <- firstStep_NoNascent(tpts = tpts
 							  ,mature = mature
 							  ,premature = premature
 							  ,matureVariance = matureVariance
@@ -2707,7 +2707,7 @@ secondStepError_No4sU <- function(tpts
 		unlist(
 			tryCatch(
 	    		optim(par = c(mature[row,1]/premature[row,1]*k3Prior[row,'k3'], k3Prior[row,'k3'])
-	    				   ,fn = secondStepError_No4sU
+	    				   ,fn = secondStepError_NoNascent
 	        			   ,tpts = tpts
 	        			   ,premature = premature[row,]
 	        			   ,mature = mature[row,]
@@ -2743,7 +2743,7 @@ secondStepError_No4sU <- function(tpts
 
 	# alphaTC <- t(sapply(seq_along(ratesConstantPriors[,'k3']),function(g)
 	# {
-	# 	sapply(tpts,function(t){k1KKK_No4sU(t,par = c(mean(mature[g,],na.rm = T),ratesConstantPriors[g,'k2'],ratesConstantPriors[g,'k3']))})
+	# 	sapply(tpts,function(t){k1KKK_NoNascent(t,par = c(mean(mature[g,],na.rm = T),ratesConstantPriors[g,'k2'],ratesConstantPriors[g,'k3']))})
 	# }))
 
 #	betaTC <- matrix(rep(ratesConstantPriors[,'k3'],length(tpts)),ncol=length(tpts))
@@ -2884,7 +2884,7 @@ fitSmooth <- function(tpts
 	unlist(outIM[,bestIM])
 }
 
-prematureKKK_Int_No4sU <- function(x, parameters)
+prematureKKK_Int_NoNascent <- function(x, parameters)
 {
   matureParameters <- parameters[1]
   k2Parameters <- parameters[2]
@@ -2893,7 +2893,7 @@ prematureKKK_Int_No4sU <- function(x, parameters)
   return((k3Parameters*matureParameters)/k2Parameters)
 }
 
-k1KKK_Int_No4sU <- function(x, par)
+k1KKK_Int_NoNascent <- function(x, par)
 {
   par[1]*par[3]
 }
@@ -2926,7 +2926,7 @@ systemSolution <- function(k1F,k2F,k3F,times)
   return(modData) 
 }
 
-errorKKK_Int_No4sU <- function(parameters, tpts, premature, mature, prematureVariance, matureVariance)
+errorKKK_Int_NoNascent <- function(parameters, tpts, premature, mature, prematureVariance, matureVariance)
 {
 
   if(parameters[1]<0)return(NaN)
@@ -2935,7 +2935,7 @@ errorKKK_Int_No4sU <- function(parameters, tpts, premature, mature, prematureVar
 
   matureParameters <- parameters[1]
 
-  prematureEstimated <- prematureKKK_Int_No4sU(x = tpts, parameters = parameters)
+  prematureEstimated <- prematureKKK_Int_NoNascent(x = tpts, parameters = parameters)
   matureEstimated <- matureParameters
 
   prematureChiSquare <- sum((premature - prematureEstimated )^2/prematureVariance)
@@ -2944,7 +2944,7 @@ errorKKK_Int_No4sU <- function(parameters, tpts, premature, mature, prematureVar
   return(sum(c(prematureChiSquare,matureChiSquare)))
 }
 
-errorVKK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+errorVKK_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 
   k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
@@ -2960,7 +2960,7 @@ errorVKK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
   return(chi2)
 }
 
-errorVKV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+errorVKV_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 
   k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
@@ -2979,7 +2979,7 @@ errorVKV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
   return(chi2)
 }
 
-errorVVV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+errorVVV_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 
   k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
@@ -2998,7 +2998,7 @@ errorVVV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
   return(chi2)
 }
 
-errorKVV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+errorKVV_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 
   k1F <- function(x) return(parameters[1])
@@ -3017,7 +3017,7 @@ errorKVV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
   return(chi2)
 }
 
-errorVVK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+errorVVK_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 
 	k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
@@ -3033,7 +3033,7 @@ errorVVK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
 	return(chi2)
 }
 
-errorKVK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+errorKVK_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 	k1F <- function(x)return(parameters[1])
 	k2F <- function(x){.impulseModel(log2(x+a)+c,parameters[2:7])}
@@ -3048,7 +3048,7 @@ errorKVK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
 	return(chi2)
 }
 
-errorKKV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+errorKKV_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 
   k1F <- function(x) return(parameters[1])
@@ -3070,7 +3070,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
     sum(log(2*pnorm(-abs(experiment-model),mean=0,sd=sqrt(variance))))
 }
 
-loglikKKK_Int_No4sU <- function(parameters
+loglikKKK_Int_NoNascent <- function(parameters
 	                    	   ,tpts
 	                    	   ,premature
 	                    	   ,mature
@@ -3080,7 +3080,7 @@ loglikKKK_Int_No4sU <- function(parameters
 
 	matureParameters <- parameters[1]
 
-	prematureEstimated <- prematureKKK_Int_No4sU(x = tpts, parameters = parameters)
+	prematureEstimated <- prematureKKK_Int_NoNascent(x = tpts, parameters = parameters)
 	matureEstimated <- matureParameters
 
 	logLikelihoodFunction(premature, prematureEstimated, prematureVariance) + 
@@ -3088,7 +3088,7 @@ loglikKKK_Int_No4sU <- function(parameters
 
 }
 
-loglikVKK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+loglikVKK_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 
   k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
@@ -3103,7 +3103,7 @@ loglikVKK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
 
 }
 
-loglikKVK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+loglikKVK_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 
   k1F <- function(x) return(parameters[1])
@@ -3120,7 +3120,7 @@ loglikKVK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
   logLikelihoodFunction(data, modData, datavar)
 }
 
-loglikKKV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+loglikKKV_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 
   k1F <- function(x) return(parameters[1])
@@ -3134,7 +3134,7 @@ loglikKKV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
   logLikelihoodFunction(data, modData, datavar)
 }
 
-loglikVVK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+loglikVVK_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 
   k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
@@ -3148,7 +3148,7 @@ loglikVVK_Int_No4sU <- function(parameters, times, data, datavar, a, c)
   logLikelihoodFunction(data, modData, datavar)
 }
 
-loglikVKV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+loglikVKV_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 
   k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
@@ -3162,7 +3162,7 @@ loglikVKV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
   logLikelihoodFunction(data, modData, datavar)
 }
 
-loglikKVV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+loglikKVV_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 
   k1F <- function(x) return(parameters[1])
@@ -3176,7 +3176,7 @@ loglikKVV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
   logLikelihoodFunction(data, modData, datavar)
 }
 
-loglikVVV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
+loglikVVV_Int_NoNascent <- function(parameters, times, data, datavar, a, c)
 {
 
   k1F <- function(x) {.impulseModel(log2(x+a)+c,parameters[1:6])}
@@ -3194,13 +3194,13 @@ loglikVVV_Int_No4sU <- function(parameters, times, data, datavar, a, c)
 
 ###########################################################################
 
-k1VKK_Der_No4sU <- function(x, par, c)
+k1VKK_Der_NoNascent <- function(x, par, c)
 {
 	t_fact <- 2^(x-c)*log(2)
 	.D2impulseModel(x, par[1:6])*t_fact^2/par[7] + .DimpulseModel(x, par[1:6])*(1+par[8]/par[7])*t_fact + par[8]*.impulseModel(x, par[1:6])
 }
 
-prematureVKK_Der_No4sU <- function(x, parameters, c)
+prematureVKK_Der_NoNascent <- function(x, parameters, c)
 {
 	matureParameters <- parameters[1:6]
 	k2Parameters <- parameters[7]
@@ -3211,7 +3211,7 @@ prematureVKK_Der_No4sU <- function(x, parameters, c)
 
 }
 
-errorVKK_Der_No4sU <- function(parameters
+errorVKK_Der_NoNascent <- function(parameters
 							  ,tpts
 							  ,premature
 							  ,mature
@@ -3224,9 +3224,9 @@ errorVKK_Der_No4sU <- function(parameters
 
   	if( abs(matureParameters[6]) > -Inf ) return(NaN)
 	D2 <- .D2impulseModel(tpts,matureParameters)
-	k1 <- k1VKK_Der_No4sU(tpts,parameters, c)
+	k1 <- k1VKK_Der_NoNascent(tpts,parameters, c)
 
-	prematureEstimated <- prematureVKK_Der_No4sU(x = tpts, parameters = parameters, c = c)
+	prematureEstimated <- prematureVKK_Der_NoNascent(x = tpts, parameters = parameters, c = c)
 	matureEstimated <- .impulseModel(x = tpts, par = matureParameters)
 
 	if( any(is.na(D2)) | any(k1<0) | any(prematureEstimated<0) | any(matureEstimated<0) ) return(NaN)
@@ -3237,7 +3237,7 @@ errorVKK_Der_No4sU <- function(parameters
 	return(sum(c(prematureChiSquare,matureChiSquare)))
 }
 
-k1VVK_Der_No4sU <- function(x, par, c)
+k1VVK_Der_NoNascent <- function(x, par, c)
 {
 	t_fact <- 2^(x-c)*log(2)
 	.D2impulseModel(x, par[1:6])/.impulseModel(x, par[7:12])*t_fact^2 +
@@ -3245,7 +3245,7 @@ k1VVK_Der_No4sU <- function(x, par, c)
 	log(2)*.impulseModel(x, par[1:6])*(par[13]/log(2) - (par[13]*.DimpulseModel(x, par[7:12]))/.impulseModel(x, par[7:12])^2 )
 }
 
-prematureVVK_Der_No4sU <- function(x, parameters, c)
+prematureVVK_Der_NoNascent <- function(x, parameters, c)
 {
 	matureParameters <- parameters[1:6]
 	k2Parameters <- parameters[7:12]
@@ -3256,7 +3256,7 @@ prematureVVK_Der_No4sU <- function(x, parameters, c)
 	      + k3Parameters * .impulseModel(x, matureParameters))/.impulseModel(x, k2Parameters))
 }
 
-errorVVK_Der_No4sU <- function(parameters
+errorVVK_Der_NoNascent <- function(parameters
                     	 ,tpts
                     	 ,premature
                     	 ,mature
@@ -3271,9 +3271,9 @@ errorVVK_Der_No4sU <- function(parameters
 	if( abs(parameters[12]) > -Inf ) return(NaN)
 
 	D2 <- .D2impulseModel(tpts,matureParameters)
-	k1 <- k1VVK_Der_No4sU(tpts,parameters, c)
+	k1 <- k1VVK_Der_NoNascent(tpts,parameters, c)
 
-	prematureEstimated <- prematureVVK_Der_No4sU(x = tpts, parameters = parameters, c = c)
+	prematureEstimated <- prematureVVK_Der_NoNascent(x = tpts, parameters = parameters, c = c)
 	matureEstimated <- .impulseModel(x = tpts, par = matureParameters)
 
 	if( any(is.na(D2)) | any(k1<0) | any(prematureEstimated<0) | any(matureEstimated<0) ) return(NaN)
@@ -3284,7 +3284,7 @@ errorVVK_Der_No4sU <- function(parameters
 	return(sum(c(prematureChiSquare,matureChiSquare)))
 }
 
-k1VKV_Der_No4sU <- function(x, par, c)
+k1VKV_Der_NoNascent <- function(x, par, c)
 {
 	t_fact <- 2^(x-c)*log(2)
 	.D2impulseModel(x, par[1:6])/par[7]*t_fact^2 +
@@ -3292,7 +3292,7 @@ k1VKV_Der_No4sU <- function(x, par, c)
 	log(2)*.impulseModel(x, par[1:6])*( .DimpulseModel(x, par[8:13])/par[7] + .impulseModel(x, par[8:13])/log(2) )
 }
 
-prematureVKV_Der_No4sU <- function(x, parameters, c)
+prematureVKV_Der_NoNascent <- function(x, parameters, c)
 {
 	matureParameters <- parameters[1:6]
 	k2Parameters <- parameters[7]
@@ -3302,7 +3302,7 @@ prematureVKV_Der_No4sU <- function(x, parameters, c)
 	(.DimpulseModel(x, matureParameters)*t_fact + .impulseModel(x, k3Parameters) * .impulseModel(x, matureParameters))/k2Parameters
 }
 
-errorVKV_Der_No4sU <- function(parameters
+errorVKV_Der_NoNascent <- function(parameters
 									 ,tpts
 									 ,premature
 									 ,mature
@@ -3316,9 +3316,9 @@ errorVKV_Der_No4sU <- function(parameters
 	if( abs(parameters[13]) > -Inf ) return(NaN)
 
 	D2 <- .D2impulseModel(tpts,matureParameters)
-	k1 <- k1VKV_Der_No4sU(tpts,parameters, c)
+	k1 <- k1VKV_Der_NoNascent(tpts,parameters, c)
 
-	prematureEstimated <- prematureVKV_Der_No4sU(x = tpts, parameters = parameters, c = c)
+	prematureEstimated <- prematureVKV_Der_NoNascent(x = tpts, parameters = parameters, c = c)
 	matureEstimated <- .impulseModel(x = tpts, par = matureParameters)
 
 	if( any(is.na(D2)) | any(k1<0) | any(prematureEstimated<0) | any(matureEstimated<0) ) return(NaN)
@@ -3329,7 +3329,7 @@ errorVKV_Der_No4sU <- function(parameters
 	return(sum(c(prematureChiSquare,matureChiSquare)))
 }
 
-k1VVV_Der_No4sU <- function(x, par, c)
+k1VVV_Der_NoNascent <- function(x, par, c)
 {
   t_fact <- 2^(x-c)*log(2)
   .D2impulseModel(x, par[1:6])/.impulseModel(x, par[7:12])*t_fact^2 +
@@ -3337,7 +3337,7 @@ k1VVV_Der_No4sU <- function(x, par, c)
   log(2)*.impulseModel(x, par[1:6])*(.DimpulseModel(x, par[13:18])/.impulseModel(x, par[7:12]) + .impulseModel(x, par[13:18])/log(2) - (.impulseModel(x, par[13:18])*.DimpulseModel(x, par[7:12]))/.impulseModel(x, par[7:12])^2 )
 }
 
-prematureVVV_Der_No4sU <- function(x, parameters, c)
+prematureVVV_Der_NoNascent <- function(x, parameters, c)
 {
 	matureParameters <- parameters[1:6]
 	k2Parameters <- parameters[7:12]
@@ -3348,7 +3348,7 @@ prematureVVV_Der_No4sU <- function(x, parameters, c)
 		+ .impulseModel(x, k3Parameters)*.impulseModel(x, matureParameters))/.impulseModel(x, k2Parameters))
 }
 
-errorVVV_Der_No4sU <- function(parameters
+errorVVV_Der_NoNascent <- function(parameters
 									 ,tpts
 									 ,premature
 									 ,mature
@@ -3364,9 +3364,9 @@ errorVVV_Der_No4sU <- function(parameters
 	if( abs(parameters[18]) > -Inf ) return(NaN)
 
 	D2 <- .D2impulseModel(tpts,matureParameters)
-	k1 <- k1VVV_Der_No4sU(tpts,parameters, c)
+	k1 <- k1VVV_Der_NoNascent(tpts,parameters, c)
 
-	prematureEstimated <- prematureVVV_Der_No4sU(x = tpts, parameters = parameters, c = c)
+	prematureEstimated <- prematureVVV_Der_NoNascent(x = tpts, parameters = parameters, c = c)
 	matureEstimated <- .impulseModel(x = tpts, par = matureParameters)
 
 	if( any(is.na(D2)) | any(k1<0) | any(prematureEstimated<0) | any(matureEstimated<0) ) return(NaN)
@@ -3377,7 +3377,7 @@ errorVVV_Der_No4sU <- function(parameters
 	return(sum(c(prematureChiSquare,matureChiSquare)))
 }
 
-.inspect.engine_Derivative_No4sU <- function(tptsOriginal
+.inspect.engine_Derivative_NoNascent <- function(tptsOriginal
 										   , tptsLinear
 										   , a
 										   , c
@@ -3461,7 +3461,7 @@ errorVVV_Der_No4sU <- function(parameters
 	unlist(
 		tryCatch(
 			optim(c(matureParameters, k2Parameters, k3Parameters)
-				,errorKKK_Int_No4sU
+				,errorKKK_Int_NoNascent
 				,tpts = tptsLinear
 				,premature = premature[row,]
 				,mature = mature[row,]
@@ -3488,8 +3488,8 @@ errorVVV_Der_No4sU <- function(parameters
 							 , k2median
 							 , k3median))
 
-		k1 <- k1VKK_Der_No4sU(tptsLinear,parameters,c)
-		p <- prematureVKK_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
+		k1 <- k1VKK_Der_NoNascent(tptsLinear,parameters,c)
+		p <- prematureVKK_Der_NoNascent(x = tptsLinear, parameters = parameters, c = c)
 
 		if(all(k1>0,na.rm=TRUE) & all(p>0,na.rm=TRUE) & all(is.finite(k1)) & all(is.finite(p))) return(1)
 
@@ -3499,8 +3499,8 @@ errorVVV_Der_No4sU <- function(parameters
 								 , k2median*x
 								 , k3median*x))
 
-			k1 <- k1VKK_Der_No4sU(tptsLinear,parameters,c)
-    		p <- prematureVKK_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
+			k1 <- k1VKK_Der_NoNascent(tptsLinear,parameters,c)
+    		p <- prematureVKK_Der_NoNascent(x = tptsLinear, parameters = parameters, c = c)
 
 		if(!all(k1>0,na.rm=TRUE) | !all(p>0,na.rm=TRUE) | !all(is.finite(k1)) | !all(is.finite(p))) NaN else sum(c(k1
 												 ,k2median*x*length(tptsOriginal)
@@ -3527,7 +3527,7 @@ errorVVV_Der_No4sU <- function(parameters
 		unlist(
 			tryCatch(
 	      			optim(unname(c(matureParameters, k2Parameters, k3Parameters))
-	                  	 ,errorVKK_Der_No4sU
+	                  	 ,errorVKK_Der_NoNascent
         				 ,tpts = tptsLinear
 			             ,premature = premature[row,]
 			             ,mature = mature[row,]
@@ -3558,16 +3558,16 @@ errorVVV_Der_No4sU <- function(parameters
 		parameters <- c(unname(matureFitImpulse[[row]][1:6])
 						, rep(k2median,3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1
 						, k3median)
-		k1 <- k1VVK_Der_No4sU(tptsLinear,parameters, c)
-		p <- prematureVVK_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
+		k1 <- k1VVK_Der_NoNascent(tptsLinear,parameters, c)
+		p <- prematureVVK_Der_NoNascent(x = tptsLinear, parameters = parameters, c = c)
 		if(all(k1>0,na.rm=TRUE) & all(p>0,na.rm=TRUE) & all(is.finite(k1)) & all(is.finite(p))) return(1)
 		suppressWarnings(optimize( function(x) {
 			parameters <- unname(c(matureFitImpulse[[row]][1:6]
 							  , c(rep(k2median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
 							  , k3median * x))
      
-			k1 <- k1VVK_Der_No4sU(tptsLinear,parameters, c)
-			p <- prematureVVK_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)      
+			k1 <- k1VVK_Der_NoNascent(tptsLinear,parameters, c)
+			p <- prematureVVK_Der_NoNascent(x = tptsLinear, parameters = parameters, c = c)      
      
 			if(!all(k1>0,na.rm=TRUE) | !all(p>0,na.rm=TRUE) | !all(is.finite(k1)) | !all(is.finite(p))) NaN else sum(c(k1,.impulseModel(tptsLinear,c(rep(k2median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)),k3median*x*length(tptsOriginal)))
    		}, c(1, 1e5) ))$minimum
@@ -3593,7 +3593,7 @@ errorVVV_Der_No4sU <- function(parameters
 		unlist(
 			tryCatch(
 				optim(unname(c(matureParameters, k2Parameters, k3Parameters))
-			        	,errorVVK_Der_No4sU
+			        	,errorVVK_Der_NoNascent
 						,tpts = tptsLinear
 						,premature = premature[row,]
 						,mature = mature[row,]
@@ -3630,8 +3630,8 @@ errorVVV_Der_No4sU <- function(parameters
 		parameters <- c(unname(matureFitImpulse[[row]][1:6])
 							 , k2median
 			  				 , rep(k3median,3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
-  		k1 <- k1VKV_Der_No4sU(tptsLinear,parameters, c)
-		p <- prematureVKV_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
+  		k1 <- k1VKV_Der_NoNascent(tptsLinear,parameters, c)
+		p <- prematureVKV_Der_NoNascent(x = tptsLinear, parameters = parameters, c = c)
 
 		if(all(k1>0,na.rm=TRUE) & all(p>0,na.rm=TRUE) & all(is.finite(k1)) & all(is.finite(p))) return(1)
 
@@ -3641,8 +3641,8 @@ errorVVV_Der_No4sU <- function(parameters
 								 , k2median * x
 								 , rep(k3median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
       
-			k1 <- k1VKV_Der_No4sU(tptsLinear,parameters, c)
-			p <- prematureVKV_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
+			k1 <- k1VKV_Der_NoNascent(tptsLinear,parameters, c)
+			p <- prematureVKV_Der_NoNascent(x = tptsLinear, parameters = parameters, c = c)
       
 			if(!all(k1>0,na.rm=TRUE) | !all(p>0,na.rm=TRUE) | !all(is.finite(k1)) | !all(is.finite(p))) NaN else sum(k1,k2median*x*length(tptsOriginal),.impulseModel(tptsLinear,c(rep(k3median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)))
 
@@ -3669,7 +3669,7 @@ errorVVV_Der_No4sU <- function(parameters
 		unlist(
 			tryCatch(
 				optim(unname(c(matureParameters, k2Parameters, k3Parameters))
-          				,errorVKV_Der_No4sU
+          				,errorVKV_Der_NoNascent
 						,tpts = tptsLinear
 						,premature = premature[row,]
 						,mature = mature[row,]
@@ -3706,8 +3706,8 @@ errorVVV_Der_No4sU <- function(parameters
 		parameters <- c(unname(matureFitImpulse[[row]][1:6])
 					  , rep(k2median,3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1
 					  , rep(k3median,3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
-		k1 <- k1VVV_Der_No4sU(tptsLinear,parameters, c)
-		p <- prematureVVV_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)
+		k1 <- k1VVV_Der_NoNascent(tptsLinear,parameters, c)
+		p <- prematureVVV_Der_NoNascent(x = tptsLinear, parameters = parameters, c = c)
 	
 		if(all(k1>0,na.rm=TRUE) & all(p>0,na.rm=TRUE) & all(is.finite(k1)) & all(is.finite(p))) return(1)
 	
@@ -3717,8 +3717,8 @@ errorVVV_Der_No4sU <- function(parameters
 						  , rep(k2median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1
 						  , rep(k3median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
 	
-			k1 <- k1VVV_Der_No4sU(tptsLinear,parameters, c)
-			p <- prematureVVV_Der_No4sU(x = tptsLinear, parameters = parameters, c = c)      
+			k1 <- k1VVV_Der_NoNascent(tptsLinear,parameters, c)
+			p <- prematureVVV_Der_NoNascent(x = tptsLinear, parameters = parameters, c = c)      
 	      
 			if(!all(k1>0,na.rm=TRUE) | !all(p>0,na.rm=TRUE) | !all(is.finite(k1)) | !all(is.finite(p))) NaN else sum(k1
 	      										, .impulseModel(tptsLinear,c(rep(k2median,3) * x, max(tptsLinear)/3, max(tptsLinear)/3*2, 1))
@@ -3746,7 +3746,7 @@ errorVVV_Der_No4sU <- function(parameters
 			unlist(
 			tryCatch(
 				optim(unname(c(matureParameters, k2Parameters, k3Parameters))
-          				,errorVVV_Der_No4sU
+          				,errorVVV_Der_NoNascent
 						,tpts = tptsLinear
 						,premature = premature[row,]
 						,mature = mature[row,]
@@ -3784,13 +3784,13 @@ errorVVV_Der_No4sU <- function(parameters
 
 	KKV <- bplapply(eiGenes, function(row){
  
-		k1Parameters <- mean(k1VKV_Der_No4sU(tptsLinear, VKV[[row]], c),na.rm=T)
+		k1Parameters <- mean(k1VKV_Der_NoNascent(tptsLinear, VKV[[row]], c),na.rm=T)
 		k2Parameters <- VKV[[row]][7]
 		k3Parameters <- VKV[[row]][8:13]
 		unlist(
 			tryCatch(
 				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
-		        	,errorKKV_Int_No4sU
+		        	,errorKKV_Int_NoNascent
 		        	,times = tptsOriginal
 		        	,data = c( mature[row,], premature[row,] )
 		        	,datavar = c( matureVariance[row,] , prematureVariance[row,] )
@@ -3817,14 +3817,14 @@ errorVVV_Der_No4sU <- function(parameters
 
 	KVK <- bplapply(eiGenes, function(row){
  
-		k1Parameters <- mean(k1VVK_Der_No4sU(tptsLinear, VVK[[row]], c),na.rm=T)
+		k1Parameters <- mean(k1VVK_Der_NoNascent(tptsLinear, VVK[[row]], c),na.rm=T)
 		k2Parameters <- VVK[[row]][7:12]
 		k3Parameters <- VVK[[row]][13]
 		
 		unlist(
 			tryCatch(
 				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
-					 ,errorKVK_Int_No4sU
+					 ,errorKVK_Int_NoNascent
 					 ,times = tptsOriginal
 					 ,data = c( mature[row,], premature[row,] )
 					 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
@@ -3851,13 +3851,13 @@ errorVVV_Der_No4sU <- function(parameters
 
 	KVV <- bplapply(eiGenes, function(row){
 	
-		k1Parameters <- mean(k1VVV_Der_No4sU(tptsLinear, VVV[[row]], c),na.rm=T)
+		k1Parameters <- mean(k1VVV_Der_NoNascent(tptsLinear, VVV[[row]], c),na.rm=T)
 		k2Parameters <- VVV[[row]][7:12]
 		k3Parameters <- VVV[[row]][13:18]
 		unlist(
 			tryCatch(
 				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
-					 ,errorKVV_Int_No4sU
+					 ,errorKVV_Int_NoNascent
 					 ,times = tptsOriginal
 					 ,data = c( mature[row,], premature[row,] )
 					 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
@@ -3906,14 +3906,14 @@ errorVVV_Der_No4sU <- function(parameters
 
 	chi2data <- t(mcsapply(eiGenes,function(g)
 	{
-		KKKTemp <- tryCatch(errorKKK_Int_No4sU(KKK[[g]][grep("par",names(KKK[[g]]))]
+		KKKTemp <- tryCatch(errorKKK_Int_NoNascent(KKK[[g]][grep("par",names(KKK[[g]]))]
 											  ,tptsLinear
 											  ,prematureSmooth[g,]
 											  ,matureSmooth[g,]
 											  ,prematureVariance[g,]
 											  ,matureVariance[g,]),error = function(e)NaN)
 	
-		VKKTemp <- tryCatch(errorVKK_Der_No4sU(VKK[[g]][grep("par",names(VKK[[g]]))]
+		VKKTemp <- tryCatch(errorVKK_Der_NoNascent(VKK[[g]][grep("par",names(VKK[[g]]))]
 											  ,tptsLinear
 											  ,prematureSmooth[g,]
 											  ,matureSmooth[g,]
@@ -3921,21 +3921,21 @@ errorVVV_Der_No4sU <- function(parameters
 											  ,matureVariance[g,]
 											  ,c),error = function(e)NaN)
 	
-		KVKTemp <- tryCatch(errorKVK_Int_No4sU(KVK[[g]][grep("par",names(KVK[[g]]))]
+		KVKTemp <- tryCatch(errorKVK_Int_NoNascent(KVK[[g]][grep("par",names(KVK[[g]]))]
 											  ,tptsOriginal
 											  ,c(matureSmooth[g,],prematureSmooth[g,])
 											  ,c(matureVariance[g,],prematureVariance[g,])
 											  ,a
 											  ,c),error = function(e)NaN)
 
-		KKVTemp <- tryCatch(errorKKV_Int_No4sU(KKV[[g]][grep("par",names(KKV[[g]]))]
+		KKVTemp <- tryCatch(errorKKV_Int_NoNascent(KKV[[g]][grep("par",names(KKV[[g]]))]
 											  ,tptsOriginal
 											  ,c(matureSmooth[g,],prematureSmooth[g,])
 											  ,c(matureVariance[g,],prematureVariance[g,])
 											  ,a
 											  ,c),error = function(e)NaN)
 	
-		VVKTemp <- tryCatch(errorVVK_Der_No4sU(VVK[[g]][grep("par",names(VVK[[g]]))]
+		VVKTemp <- tryCatch(errorVVK_Der_NoNascent(VVK[[g]][grep("par",names(VVK[[g]]))]
 													 ,tptsLinear
 													 ,prematureSmooth[g,]
 													 ,matureSmooth[g,]
@@ -3943,7 +3943,7 @@ errorVVV_Der_No4sU <- function(parameters
 													 ,matureVariance[g,]
 													 ,c),error = function(e)NaN)
 	
-		VKVTemp <- tryCatch(errorVKV_Der_No4sU(VKV[[g]][grep("par",names(VKV[[g]]))]
+		VKVTemp <- tryCatch(errorVKV_Der_NoNascent(VKV[[g]][grep("par",names(VKV[[g]]))]
 													 ,tptsLinear
 													 ,prematureSmooth[g,]
 													 ,matureSmooth[g,]
@@ -3951,14 +3951,14 @@ errorVVV_Der_No4sU <- function(parameters
 													 ,matureVariance[g,]
 													 ,c),error = function(e)NaN)
 
-		KVVTemp <- tryCatch(errorKVV_Int_No4sU(KVV[[g]][grep("par",names(KVV[[g]]))]
+		KVVTemp <- tryCatch(errorKVV_Int_NoNascent(KVV[[g]][grep("par",names(KVV[[g]]))]
 											  ,tptsOriginal
 											  ,c(matureSmooth[g,],prematureSmooth[g,])
 											  ,c(matureVariance[g,],prematureVariance[g,])
 											  ,a
 											  ,c),error = function(e)NaN)
 	
-		VVVTemp <- tryCatch(errorVVV_Der_No4sU(VVV[[g]][grep("par",names(VVV[[g]]))]
+		VVVTemp <- tryCatch(errorVVV_Der_NoNascent(VVV[[g]][grep("par",names(VVV[[g]]))]
 													 ,tptsLinear
 													 ,prematureSmooth[g,]
 													 ,matureSmooth[g,]
@@ -3991,18 +3991,18 @@ errorVVV_Der_No4sU <- function(parameters
 
 	logLikelihood <- t(mcsapply(eiGenes,function(g)
 	{
-		prematureKKKTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureKKK_Int_No4sU(x = tptsLinear[t]
+		prematureKKKTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureKKK_Int_NoNascent(x = tptsLinear[t]
 																						   , parameters = KKK[[g]][grep("par",names(KKK[[g]]))])))
-		prematureVKKTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureVKK_Der_No4sU(x = tptsLinear[t]
+		prematureVKKTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureVKK_Der_NoNascent(x = tptsLinear[t]
 		                                                                         , parameters = VKK[[g]][grep("par",names(VKK[[g]]))]
 		                                                                         , c = c)))
-		prematureVVKTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureVVK_Der_No4sU(x = tptsLinear[t]
+		prematureVVKTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureVVK_Der_NoNascent(x = tptsLinear[t]
 		                                                            , parameters = VVK[[g]][grep("par",names(VVK[[g]]))]
 		                                                            , c = c)))
-		prematureVKVTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureVKV_Der_No4sU(x = tptsLinear[t]
+		prematureVKVTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureVKV_Der_NoNascent(x = tptsLinear[t]
 		                                                            , parameters = VKV[[g]][grep("par",names(VKV[[g]]))]
 		                                                            , c = c)))
-		prematureVVVTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureVVV_Der_No4sU(x = tptsLinear[t]
+		prematureVVVTemp <- c(sapply(seq_along(tptsLinear),function(t)prematureVVV_Der_NoNascent(x = tptsLinear[t]
 		                                                            , parameters = VVV[[g]][grep("par",names(VVV[[g]]))]
 		                                                            , c = c)))		
 
@@ -4039,21 +4039,21 @@ errorVVV_Der_No4sU <- function(parameters
 		                               , model = modelVVV
 		                               , variance = c(matureVariance[g,],prematureVariance[g,]))
 
-		KKVTemp <- tryCatch(loglikKKV_Int_No4sU(KKV[[g]][grep("par",names(KKV[[g]]))]
+		KKVTemp <- tryCatch(loglikKKV_Int_NoNascent(KKV[[g]][grep("par",names(KKV[[g]]))]
 												   ,tptsOriginal
 												   ,c(matureSmooth[g,],prematureSmooth[g,])
 												   ,c(matureVariance[g,],prematureVariance[g,])
 												   ,a
 												   ,c),error = function(e)NaN)
 
-		KVKTemp <- tryCatch(loglikKVK_Int_No4sU(KVK[[g]][grep("par",names(KVK[[g]]))]
+		KVKTemp <- tryCatch(loglikKVK_Int_NoNascent(KVK[[g]][grep("par",names(KVK[[g]]))]
 												   ,tptsOriginal
 												   ,c(matureSmooth[g,],prematureSmooth[g,])
 												   ,c(matureVariance[g,],prematureVariance[g,])
 												   ,a
 												   ,c),error = function(e)NaN)
 
-		KVVTemp <- tryCatch(loglikKVV_Int_No4sU(KVV[[g]][grep("par",names(KVV[[g]]))]
+		KVVTemp <- tryCatch(loglikKVV_Int_NoNascent(KVV[[g]][grep("par",names(KVV[[g]]))]
 												   ,tptsOriginal
 												   ,c(matureSmooth[g,],prematureSmooth[g,])
 												   ,c(matureVariance[g,],prematureVariance[g,])
@@ -4253,40 +4253,40 @@ errorVVV_Der_No4sU <- function(parameters
 
 	if(geneBestModel == "0")
 	{
-		prematureTemp <- sapply(tpts,function(t)prematureKKK_Int_No4sU(t,c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params)))
-		k1Temp <- sapply(tpts,function(t)k1KKK_Int_No4sU(t,c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params)))
+		prematureTemp <- sapply(tpts,function(t)prematureKKK_Int_NoNascent(t,c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params)))
+		k1Temp <- sapply(tpts,function(t)k1KKK_Int_NoNascent(t,c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params)))
 		
 		k2Temp <- rep(hyp$gamma$params, length.out = length(tpts))
 		k3Temp <- rep(hyp$beta$params, length.out = length(tpts))
 	
 	}else if(geneBestModel == "a")
 	{
-		prematureTemp <- prematureVKK_Der_No4sU(.time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
-		k1Temp <- k1VKK_Der_No4sU(.time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+		prematureTemp <- prematureVKK_Der_NoNascent(.time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+		k1Temp <- k1VKK_Der_NoNascent(.time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
 
 		k2Temp <- rep(hyp$gamma$params, length.out = length(tpts))
 		k3Temp <- rep(hyp$beta$params, length.out = length(tpts))
 
 	}else if(geneBestModel == "ac")
 	{
-		prematureTemp <- prematureVVK_Der_No4sU(.time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
-		k1Temp <- k1VVK_Der_No4sU(.time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+		prematureTemp <- prematureVVK_Der_NoNascent(.time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+		k1Temp <- k1VVK_Der_NoNascent(.time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
 
 		k2Temp <- .impulseModel(.time_transf(tpts,log_shift,c), hyp$gamma$params)
 		k3Temp <- rep(hyp$beta$params, length.out = length(tpts))
 
 	}else if(geneBestModel == "ab")
 	{
-		prematureTemp <- prematureVKV_Der_No4sU(.time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
-		k1Temp <- k1VKV_Der_No4sU(.time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+		prematureTemp <- prematureVKV_Der_NoNascent(.time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+		k1Temp <- k1VKV_Der_NoNascent(.time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
 
 		k2Temp <- rep(hyp$gamma$params, length.out = length(tpts))
 		k3Temp <- .impulseModel(.time_transf(tpts,log_shift,c), hyp$beta$params)
 
 	}else if(geneBestModel == "abc")
 	{
-		prematureTemp <- prematureVVV_Der_No4sU(.time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
-		k1Temp <- k1VVV_Der_No4sU(.time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+		prematureTemp <- prematureVVV_Der_NoNascent(.time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+		k1Temp <- k1VVV_Der_NoNascent(.time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
 
 		k2Temp <- .impulseModel(.time_transf(tpts,log_shift,c), hyp$gamma$params)
 		k3Temp <- .impulseModel(.time_transf(tpts,log_shift,c), hyp$beta$params)
@@ -4300,7 +4300,7 @@ errorVVV_Der_No4sU <- function(parameters
 }
 
 
-.inspect.engine_Integrative_No4sU <- function(tptsOriginal
+.inspect.engine_Integrative_NoNascent <- function(tptsOriginal
 										    , tptsLinear
 										    , a
 										    , c
@@ -4382,7 +4382,7 @@ errorVVV_Der_No4sU <- function(parameters
 			unlist(
 				tryCatch(
 					optim(c(matureParameters, k2Parameters, k3Parameters)
-						,errorKKK_Int_No4sU
+						,errorKKK_Int_NoNascent
 						,tpts = tptsLinear
 						,premature = premature[row,]
 						,mature = mature[row,]
@@ -4404,14 +4404,14 @@ errorVVV_Der_No4sU <- function(parameters
 	
 		VKK <- bplapply(eiGenes,function(row){
 
-			k1Parameters <- c(rep(k1KKK_Int_No4sU(0,KKK[[row]]),3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			k1Parameters <- c(rep(k1KKK_Int_NoNascent(0,KKK[[row]]),3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
 			k2Parameters <- KKK[[row]][2]
 			k3Parameters <- KKK[[row]][3]
 	  
 			unlist(
 				tryCatch(
 	      			optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
-	                  	 ,errorVKK_Int_No4sU
+	                  	 ,errorVKK_Int_NoNascent
 	                  	 ,times = tptsOriginal
 	                  	 ,data = c( mature[row,], premature[row,] )
 	                  	 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
@@ -4445,7 +4445,7 @@ errorVVV_Der_No4sU <- function(parameters
 			unlist(
 				tryCatch(
 					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
-			        	,errorKKV_Int_No4sU
+			        	,errorKKV_Int_NoNascent
 			        	,times = tptsOriginal
 			        	,data = c( mature[row,], premature[row,] )
 			        	,datavar = c( matureVariance[row,] , prematureVariance[row,] )
@@ -4479,7 +4479,7 @@ errorVVV_Der_No4sU <- function(parameters
 			unlist(
 				tryCatch(
 					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
-						 ,errorKVK_Int_No4sU
+						 ,errorKVK_Int_NoNascent
 						 ,times = tptsOriginal
 						 ,data = c( mature[row,], premature[row,] )
 						 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
@@ -4506,14 +4506,14 @@ errorVVV_Der_No4sU <- function(parameters
 
 		VKV <- bplapply(eiGenes, function(row){
 
-			k1Parameters <- c(rep(k1KKK_Int_No4sU(0,KKK[[row]]),3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			k1Parameters <- c(rep(k1KKK_Int_NoNascent(0,KKK[[row]]),3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
 			k2Parameters <- KKK[[row]][2]
 			k3Parameters <- c(rep(KKK[[row]][3],3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
 			
 			unlist(
 				tryCatch(
 					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
-						 ,errorVKV_Int_No4sU
+						 ,errorVKV_Int_NoNascent
 						 ,times = tptsOriginal
 						 ,data = c( mature[row,], premature[row,] )
 						 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
@@ -4545,14 +4545,14 @@ errorVVV_Der_No4sU <- function(parameters
 
 		VVK <- bplapply(eiGenes, function(row){
 
-			k1Parameters <- c(rep(k1KKK_Int_No4sU(0,KKK[[row]]),3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			k1Parameters <- c(rep(k1KKK_Int_NoNascent(0,KKK[[row]]),3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
 			k2Parameters <- c(rep(KKK[[row]][2],3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
 			k3Parameters <- KKK[[row]][3]
 
 			unlist(
 				tryCatch(
 					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
-        				 ,errorVVK_Int_No4sU
+        				 ,errorVVK_Int_NoNascent
         				 ,times = tptsOriginal
         				 ,data = c( mature[row,], premature[row,] )
         				 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
@@ -4590,7 +4590,7 @@ errorVVV_Der_No4sU <- function(parameters
 			unlist(
 				tryCatch(
 					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
-						 ,errorKVV_Int_No4sU
+						 ,errorKVV_Int_NoNascent
 						 ,times = tptsOriginal
 						 ,data = c( mature[row,], premature[row,] )
 						 ,datavar = c( matureVariance[row,] , prematureVariance[row,] )
@@ -4622,14 +4622,14 @@ errorVVV_Der_No4sU <- function(parameters
 
 		VVV <- bplapply(eiGenes, function(row){
 
-			k1Parameters <- c(rep(k1KKK_Int_No4sU(0,KKK[[row]]),3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
+			k1Parameters <- c(rep(k1KKK_Int_NoNascent(0,KKK[[row]]),3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
 			k2Parameters <- c(rep(KKK[[row]][2],3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
 			k3Parameters <- c(rep(KKK[[row]][3],3), max(tptsLinear)/3, max(tptsLinear)/3*2, 1)
 			
 			unlist(
 				tryCatch(
 					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
-						,errorVVV_Int_No4sU
+						,errorVVV_Int_NoNascent
 						,times = tptsOriginal
 						,data = c( mature[row,], premature[row,] )
 						,datavar = c( matureVariance[row,] , prematureVariance[row,] )
@@ -4686,56 +4686,56 @@ errorVVV_Der_No4sU <- function(parameters
 
 		chi2data <- t(mcsapply(eiGenes,function(g)
 		{
-			KKKTemp <- tryCatch(errorKKK_Int_No4sU(KKK[[g]][grep("par",names(KKK[[g]]))]
+			KKKTemp <- tryCatch(errorKKK_Int_NoNascent(KKK[[g]][grep("par",names(KKK[[g]]))]
 												  ,tptsOriginal
 												  ,prematureSmooth[g,]
 												  ,matureSmooth[g,]
 												  ,prematureVariance[g,]
 												  ,matureVariance[g,]),error = function(e)NaN)
 
-			VKKTemp <- tryCatch(errorVKK_Int_No4sU(VKK[[g]][grep("par",names(VKK[[g]]))]
+			VKKTemp <- tryCatch(errorVKK_Int_NoNascent(VKK[[g]][grep("par",names(VKK[[g]]))]
 												  ,tptsOriginal
 												  ,c(matureSmooth[g,],prematureSmooth[g,])
 												  ,c(matureVariance[g,],prematureVariance[g,])
 												  ,a
 												  ,c),error = function(e)NaN)
 
-			KVKTemp <- tryCatch(errorKVK_Int_No4sU(KVK[[g]][grep("par",names(KVK[[g]]))]
+			KVKTemp <- tryCatch(errorKVK_Int_NoNascent(KVK[[g]][grep("par",names(KVK[[g]]))]
 												  ,tptsOriginal
 												  ,c(matureSmooth[g,],prematureSmooth[g,])
 												  ,c(matureVariance[g,],prematureVariance[g,])
 												  ,a
 												  ,c),error = function(e)NaN)
 
-			KKVTemp <- tryCatch(errorKKV_Int_No4sU(KKV[[g]][grep("par",names(KKV[[g]]))]
+			KKVTemp <- tryCatch(errorKKV_Int_NoNascent(KKV[[g]][grep("par",names(KKV[[g]]))]
 												  ,tptsOriginal
 												  ,c(matureSmooth[g,],prematureSmooth[g,])
 												  ,c(matureVariance[g,],prematureVariance[g,])
 												  ,a
 												  ,c),error = function(e)NaN)
 
-			VVKTemp <- tryCatch(errorVVK_Int_No4sU(VVK[[g]][grep("par",names(VVK[[g]]))]
+			VVKTemp <- tryCatch(errorVVK_Int_NoNascent(VVK[[g]][grep("par",names(VVK[[g]]))]
 												  ,tptsOriginal
 												  ,c(matureSmooth[g,],prematureSmooth[g,])
 												  ,c(matureVariance[g,],prematureVariance[g,])
 												  ,a
 												  ,c),error = function(e)NaN)
 
-			VKVTemp <- tryCatch(errorVKV_Int_No4sU(VKV[[g]][grep("par",names(VKV[[g]]))]
+			VKVTemp <- tryCatch(errorVKV_Int_NoNascent(VKV[[g]][grep("par",names(VKV[[g]]))]
 												  ,tptsOriginal
 												  ,c(matureSmooth[g,],prematureSmooth[g,])
 												  ,c(matureVariance[g,],prematureVariance[g,])
 												  ,a
 												  ,c),error = function(e)NaN)
 
-			KVVTemp <- tryCatch(errorKVV_Int_No4sU(KVV[[g]][grep("par",names(KVV[[g]]))]
+			KVVTemp <- tryCatch(errorKVV_Int_NoNascent(KVV[[g]][grep("par",names(KVV[[g]]))]
 												  ,tptsOriginal
 												  ,c(matureSmooth[g,],prematureSmooth[g,])
 												  ,c(matureVariance[g,],prematureVariance[g,])
 												  ,a
 												  ,c),error = function(e)NaN)
 
-			VVVTemp <- tryCatch(errorVVV_Int_No4sU(VVV[[g]][grep("par",names(VVV[[g]]))]
+			VVVTemp <- tryCatch(errorVVV_Int_NoNascent(VVV[[g]][grep("par",names(VVV[[g]]))]
 												  ,tptsOriginal
 												  ,c(matureSmooth[g,],prematureSmooth[g,])
 												  ,c(matureVariance[g,],prematureVariance[g,])
@@ -4767,51 +4767,51 @@ errorVVV_Der_No4sU <- function(parameters
 
 		logLikelihood <- t(mcsapply(eiGenes,function(g)
 		{
-			KKKTemp <- tryCatch(loglikKKK_Int_No4sU(KKK[[g]][grep("par",names(KKK[[g]]))]
+			KKKTemp <- tryCatch(loglikKKK_Int_NoNascent(KKK[[g]][grep("par",names(KKK[[g]]))]
 											  ,tptsOriginal,prematureSmooth[g,]
 											  ,matureSmooth[g,]
 											  ,prematureVariance[g,]
 											  ,matureVariance[g,]),error = function(e)NaN)
 
-			VKKTemp <- tryCatch(loglikVKK_Int_No4sU(VKK[[g]][grep("par",names(VKK[[g]]))]
+			VKKTemp <- tryCatch(loglikVKK_Int_NoNascent(VKK[[g]][grep("par",names(VKK[[g]]))]
 											  ,tptsOriginal
 											  ,c(matureSmooth[g,],prematureSmooth[g,])
 											  ,c(matureVariance[g,],prematureVariance[g,])
 											  ,a
 											  ,c),error = function(e)NaN)
 
-		  	KVKTemp <- tryCatch(loglikKVK_Int_No4sU(KVK[[g]][grep("par",names(KVK[[g]]))]
+		  	KVKTemp <- tryCatch(loglikKVK_Int_NoNascent(KVK[[g]][grep("par",names(KVK[[g]]))]
             				                  ,tptsOriginal
             				                  ,c(matureSmooth[g,],prematureSmooth[g,])
             				                  ,c(matureVariance[g,],prematureVariance[g,])
             				                  ,a
             				                  ,c),error = function(e)NaN)
 
-			KKVTemp <- tryCatch(loglikKKV_Int_No4sU(KKV[[g]][grep("par",names(KKV[[g]]))]
+			KKVTemp <- tryCatch(loglikKKV_Int_NoNascent(KKV[[g]][grep("par",names(KKV[[g]]))]
 												   ,tptsOriginal
 												   ,c(matureSmooth[g,],prematureSmooth[g,])
 												   ,c(matureVariance[g,],prematureVariance[g,])
 												   ,a
 												   ,c),error = function(e)NaN)
-			VVKTemp <- tryCatch(loglikVVK_Int_No4sU(VVK[[g]][grep("par",names(VVK[[g]]))]
+			VVKTemp <- tryCatch(loglikVVK_Int_NoNascent(VVK[[g]][grep("par",names(VVK[[g]]))]
 												   ,tptsOriginal
 												   ,c(matureSmooth[g,],prematureSmooth[g,])
 												   ,c(matureVariance[g,],prematureVariance[g,])
 												   ,a
 												   ,c),error = function(e)NaN)
-			VKVTemp <- tryCatch(loglikVKV_Int_No4sU(VKV[[g]][grep("par",names(VKV[[g]]))]
+			VKVTemp <- tryCatch(loglikVKV_Int_NoNascent(VKV[[g]][grep("par",names(VKV[[g]]))]
 												   ,tptsOriginal
 												   ,c(matureSmooth[g,],prematureSmooth[g,])
 												   ,c(matureVariance[g,],prematureVariance[g,])
 												   ,a
 												   ,c),error = function(e)NaN)
-			KVVTemp <- tryCatch(loglikKVV_Int_No4sU(KVV[[g]][grep("par",names(KVV[[g]]))]
+			KVVTemp <- tryCatch(loglikKVV_Int_NoNascent(KVV[[g]][grep("par",names(KVV[[g]]))]
 												   ,tptsOriginal
 												   ,c(matureSmooth[g,],prematureSmooth[g,])
 												   ,c(matureVariance[g,],prematureVariance[g,])
 												   ,a
 												   ,c),error = function(e)NaN)
-			VVVTemp <- tryCatch(loglikVVV_Int_No4sU(VVV[[g]][grep("par",names(VVV[[g]]))]
+			VVVTemp <- tryCatch(loglikVVV_Int_NoNascent(VVV[[g]][grep("par",names(VVV[[g]]))]
 												   ,tptsOriginal
 												   ,c(matureSmooth[g,],prematureSmooth[g,])
 												   ,c(matureVariance[g,],prematureVariance[g,])
@@ -4840,7 +4840,7 @@ errorVVV_Der_No4sU <- function(parameters
  				"0" = list(alpha = list(fun = .constantModelP
 									 ,type = "constant"
 									 ,df = 1
-									 ,params = c(alpha = k1KKK_Int_No4sU(x = 0,par = KKK[[gene]])))
+									 ,params = c(alpha = k1KKK_Int_NoNascent(x = 0,par = KKK[[gene]])))
  					    ,beta = list(fun = .constantModelP
 									,type = "constant"
 									,df = 1
@@ -5036,3 +5036,6 @@ inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=7
 	)})
 	, BPPARAM=BPPARAM)
 }
+
+counts2expressions <- function(counts, widths, libsize) counts*(10^9/(widths[rownames(counts)]%o%libsize))
+countVar2expressions <- function(vars, widths, libsize) vars*(10^9/(widths%o%libsize))^2

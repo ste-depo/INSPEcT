@@ -39,7 +39,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
 					sqrt(ratesFirstGuessVar(oneGene, 'preMRNA'))
 				, viewModelRates(oneGene, 'preMRNA')
 				))
-			if(!object@params$No4sU)
+			if(!object@params$NoNascent)
 			{
 			alpha <- t(rbind(
 				ratesFirstGuess(oneGene, 'synthesis')
@@ -70,9 +70,9 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
 			processingYlim <- quantile(ratesFirstGuess(object, 'processing'), probs=c(.02, .98), na.rm=TRUE)
 
 			log_shift <- .find_tt_par(tpts)
-			if(object@params$No4sU)
+			if(object@params$NoNascent)
 			{
-				x <- .time_transf_No4sU(tpts, log_shift, abs(min(.time_transf(tpts, log_shift))))
+				x <- .time_transf_NoNascent(tpts, log_shift, abs(min(.time_transf(tpts, log_shift))))
 			}else{x <- .time_transf(tpts, log_shift)}
 
 			par(mfrow=c(1,5))
@@ -82,7 +82,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
 			matplot(x, preMRNA, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
 				, col=2, main='pre-mRNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
-			if(object@params$No4sU)
+			if(object@params$NoNascent)
 			{
 				matplot(x, alpha, type='l', lty=c(1,1), lwd=c(1,3)
 					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
@@ -100,9 +100,9 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
 			axis(1, at=x, labels=signif(tpts, 2), las=3)		
 		} else {
 			log_shift <- .find_tt_par(tpts)
-			if(object@params$No4sU)
+			if(object@params$NoNascent)
 			{
-				x <- .time_transf_No4sU(tpts, log_shift, abs(min(.time_transf(tpts, log_shift))))
+				x <- .time_transf_NoNascent(tpts, log_shift, abs(min(.time_transf(tpts, log_shift))))
 			}else{x <- .time_transf(tpts, log_shift)}
 			par(mfrow=c(1,5))
 			matplot(x, total, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
@@ -111,7 +111,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
 			matplot(x, preMRNA, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
 				, col=2, main='pre-mRNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
-			if(object@params$No4sU)
+			if(object@params$NoNascent)
 			{
 				matplot(x, alpha, type='l', lty=c(1,1), lwd=c(1,3)
 					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
@@ -146,7 +146,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
 			, ratesFirstGuess(oneGene, 'preMRNA') - 
 				sqrt(ratesFirstGuessVar(oneGene, 'preMRNA'))
 			))
-		if(!object@params$No4sU)
+		if(!object@params$NoNascent)
 		{
 			alpha <- t(rbind(
 				ratesFirstGuess(oneGene, 'synthesis')

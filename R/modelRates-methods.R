@@ -65,7 +65,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 	# 	prematureVariance <- concentrations$preMRNA_var
 	
 	# 	# Constant post transcriptional rates and fixed post transcriptional ratio 
-	# 	k3Prior <- firstStep_No4sU(tpts = tpts
+	# 	k3Prior <- firstStep_NoNascent(tpts = tpts
 	# 							  ,mature = mature
 	# 							  ,premature = premature
 	# 							  ,matureVariance = matureVariance
@@ -79,7 +79,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 	# 		unlist(
 	# 			tryCatch(
 	# 	    		optim(par = c(mature[row,1]/premature[row,1]*k3Prior[row,'k3'], k3Prior[row,'k3'])
-	# 	    				   ,fn = secondStepError_No4sU
+	# 	    				   ,fn = secondStepError_NoNascent
 	# 	        			   ,tpts = tpts
 	# 	        			   ,premature = premature[row,]
 	# 	        			   ,mature = mature[row,]
@@ -115,7 +115,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 	
 	# 	# alphaTC <- t(sapply(seq_along(ratesConstantPriors[,'k3']),function(g)
 	# 	# {
-	# 	# 	sapply(tpts,function(t){k1KKK_No4sU(t,par = c(mean(mature[g,],na.rm = T),ratesConstantPriors[g,'k2'],ratesConstantPriors[g,'k3']))})
+	# 	# 	sapply(tpts,function(t){k1KKK_NoNascent(t,par = c(mean(mature[g,],na.rm = T),ratesConstantPriors[g,'k2'],ratesConstantPriors[g,'k3']))})
 	# 	# }))
 	
 	# 	betaTC <- matrix(rep(ratesConstantPriors[,'k3'],length(tpts)),ncol=length(tpts))
@@ -137,14 +137,14 @@ setMethod('modelRates', 'INSPEcT', function(object
 	
 	# }
 
-	No4sU <- object@params$No4sU
+	NoNascent <- object@params$NoNascent
 
-	if(No4sU){print("No nascent RNA data mode.")}
-	if(!No4sU){print("Nascent RNA data mode.")}
+	if(NoNascent){print("No nascent RNA data mode.")}
+	if(!NoNascent){print("Nascent RNA data mode.")}
 
 	object@params$seed <- seed
 	
-	if(No4sU){
+	if(NoNascent){
 		nInit <- object@params$nInit
 		nIter <- object@params$nIter
 		cores <- object@params$cores
@@ -198,7 +198,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 		# {
 			if(object@params$estimateRatesWith=="int")
 			{
-				ratesSpecs <- .inspect.engine_Integrative_No4sU(tptsOriginal = tptsOriginal
+				ratesSpecs <- .inspect.engine_Integrative_NoNascent(tptsOriginal = tptsOriginal
 																,tptsLinear = tptsLinear
 																,a = a
 																,c = c
@@ -212,7 +212,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 																,nInit = nInit
 																,nIter = nIter)
 			}else{
-				ratesSpecs <- .inspect.engine_Derivative_No4sU(tptsOriginal = tptsOriginal
+				ratesSpecs <- .inspect.engine_Derivative_NoNascent(tptsOriginal = tptsOriginal
 															  ,tptsLinear = tptsLinear
 															  ,a = a
 															  ,c = c

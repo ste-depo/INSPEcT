@@ -19,8 +19,8 @@
 #' 
 #' tpts <- simRates@params$tpts
 #' 
-#' simData2rep_4su <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,No4sU=FALSE,seed=1)
-#' simData2rep_4su <- modelRates(simData2rep_4su[1:10], seed=1)
+#' simData2rep_Nascent <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
+#' simData2rep_Nascent <- modelRates(simData2rep_Nascent[1:10], seed=1)
 setMethod('makeSimModel', 'INSPEcT', function(object
 											, nGenes
 											, probs=c(constant=.5

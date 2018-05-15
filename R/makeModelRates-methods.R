@@ -100,7 +100,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 
 	nGenes <- length(ratesSpecs)
 
-	if(object@params$No4sU & object@params$estimateRatesWith == "int")
+	if(object@params$NoNascent & object@params$estimateRatesWith == "int")
 	{
 		a <- log_shift
 		c <- abs(min(.time_transf(tpts,a)))
@@ -111,7 +111,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 				.makeModel(tpts = tpts
 						 , hyp = ratesSpecs[[i]][[1]]
 						 , log_shift = log_shift
-						 , .time_transf = .time_transf_No4sU
+						 , .time_transf = .time_transf_NoNascent
 						 , ode = deSolve::ode
 						 , .rxnrate = .rxnrate
 						 , c = c)
@@ -119,7 +119,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 			)
 		})
 
-	}else if(!object@params$No4sU)
+	}else if(!object@params$NoNascent)
 	{
 		## solve the differential equation model for each gene
 		modelRates <- lapply(1:nGenes, function(i) {
@@ -146,7 +146,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 					.makeModel(tpts = tpts
 							 , hyp = ratesSpecs[[i]][[1]]
 							 , log_shift = log_shift
-							 , .time_transf = .time_transf_No4sU
+							 , .time_transf = .time_transf_NoNascent
 							 , ode = deSolve::ode
 							 , .rxnrate = .rxnrate
 							 , c = c)
@@ -157,7 +157,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 					.makeModel_Derivative(tpts = tpts
 							 , hyp = ratesSpecs[[i]][[1]]
 							 , log_shift = log_shift
-							 , .time_transf = .time_transf_No4sU
+							 , .time_transf = .time_transf_NoNascent
 							 , ode = deSolve::ode
 							 , .rxnrate = .rxnrate
 							 , c = c
