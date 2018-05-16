@@ -58,13 +58,15 @@ quantifyExpressionsFromBAMs <- function(txdb
 					, strandSpecific = 0
 					, isPairedEnd = FALSE
 					, DESeq2 = TRUE
-					, varSamplingCondition = NULL) 
+					, varSamplingCondition = NULL
+					, plgemFits = NULL
+					, returnPlgemFits = FALSE)
 {
 
 	############################################
 	### CHECK ARGUMENTS ########################
 	############################################
-	if( !is.logical(DESeq2) & !any(as.character(experimentalDesign)==varSamplingCondition) )
+	if( !is.logical(DESeq2) & !any(as.character(experimentalDesign)==varSamplingCondition) & is.null(plgemFits))
 		stop('makeExpressions: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
 	if(length(experimentalDesign)!=length(BAMfiles))
 		stop('makeExpressions: each bam file must be accounted in the experimentalDesign')
@@ -183,6 +185,8 @@ quantifyExpressionsFromBAMs <- function(txdb
 										 , by = by
 										 , DESeq2 = DESeq2
 										 , experimentalDesign = experimentalDesign
-										 , varSamplingCondition = varSamplingCondition))
+										 , varSamplingCondition = varSamplingCondition
+										 , plgemFits = plgemFits
+										 , returnPlgemFits = returnPlgemFits))
 
 }

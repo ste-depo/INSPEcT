@@ -52,7 +52,9 @@ quantifyExpressionsFromTrCounts <- function(libsize
 							  , by = c('gene','tx')
 							  , DESeq2 = TRUE
 							  , experimentalDesign
-							  , varSamplingCondition = NULL)
+							  , varSamplingCondition = NULL
+							  , plgemFits = NULL
+							  , returnPlgemFits = FALSE)
 {
 	exonsCounts <- allcounts$exonsCounts
 	intronsCounts <- allcounts$intronsCounts
@@ -60,7 +62,7 @@ quantifyExpressionsFromTrCounts <- function(libsize
 	############################################
 	### CHECK ARGUMENTS ########################
 	############################################
-	if( !is.logical(DESeq2) & !any(as.character(experimentalDesign)==varSamplingCondition) )
+	if( !is.logical(DESeq2) & !any(as.character(experimentalDesign)==varSamplingCondition) & is.null(plgemFits))
 		stop('makeExpressions: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
 	if(all(table(experimentalDesign)==1))
 		stop("makeExpressions: at least one replicate is required.")
@@ -85,6 +87,7 @@ quantifyExpressionsFromTrCounts <- function(libsize
 		sampleTptsNames <- factor(signif(experimentalDesign,2))
 		colData <- data.frame(tpts=sampleTptsNames)
 		countsTemp <- list(exonsCounts,intronsCounts)
+
 		ddsList <- lapply(countsTemp,function(countData){ori <- DESeqDataSetFromMatrix(countData = countData
 																,colData = colData
 																,design = ~ tpts)
@@ -137,11 +140,10 @@ quantifyExpressionsFromTrCounts <- function(libsize
 		############## with PLGEM ##################
 		return(quantifyExpressionsFromTrAbundance(exonsAbundances = expressionExons
 										       , intronsAbundances = expressionIntrons
-							  				   , libsize = libsize
-							  				   , exonsWidths = exonsWidths
-							  				   , intronsWidths =intronsWidths
 											   , experimentalDesign = experimentalDesign
-											   , varSamplingCondition = varSamplingCondition))
+											   , varSamplingCondition = varSamplingCondition
+											   , plgemFits = plgemFits
+											   , returnPlgemFits = returnPlgemFits))
 
 	}
 }
