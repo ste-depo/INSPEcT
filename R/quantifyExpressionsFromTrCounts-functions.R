@@ -64,12 +64,10 @@ quantifyExpressionsFromTrCounts <- function(libsize
 	############################################
 	if( !is.logical(DESeq2) & !any(as.character(experimentalDesign)==varSamplingCondition) & is.null(plgemFits))
 		stop('makeExpressions: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
-	if(all(table(experimentalDesign)==1))
+	if(all(table(experimentalDesign)==1) & is.null(plgemFits))
 		stop("makeExpressions: at least one replicate is required.")
 	if(length(experimentalDesign)!=ncol(exonsCounts))
 		stop('makeExpressions: each counts column must be accounted in the experimentalDesign')
-	if(all(table(experimentalDesign)==1))
-		stop("makeExpressions: at least one replicate is required.")
 	if(ncol(exonsCounts)!=ncol(intronsCounts)
 	 | ncol(exonsCounts)!=length(libsize)
 	 | nrow(exonsCounts)!=length(exonsWidths)

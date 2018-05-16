@@ -70,7 +70,7 @@ quantifyExpressionsFromBAMs <- function(txdb
 		stop('makeExpressions: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
 	if(length(experimentalDesign)!=length(BAMfiles))
 		stop('makeExpressions: each bam file must be accounted in the experimentalDesign')
-	if(all(table(experimentalDesign)==1))
+	if(all(table(experimentalDesign)==1) & is.null(plgemFits))
 		stop("makeExpressions: at least one replicate is required.")
 	if( any(!file.exists(BAMfiles)) )
 	 	stop('makeExpressions: at least one file specified in "BAMfiles" argument does not exist.')
