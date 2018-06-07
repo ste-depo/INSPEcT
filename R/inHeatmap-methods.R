@@ -2,14 +2,14 @@
 #'
 #' @description
 #' A method to see as an heatmap the logRatios of synthesis, degradation and processing rates and 
-#' pre-mRNA and total mRNA concentration of a population of genes, either at the level of 
+#' pre-RNA and total RNA concentration of a population of genes, either at the level of 
 #' etimated or modeled rates.
 #' @param object An object of class INSPEcT
 #' @param type Eiher "pre-model" or "model" to switch between pre-modeled or modeled features
 #' @param breaks A vector of breaks for the heatmap
 #' @param palette A color generating function, output of colorRampPalette
-#' @param plot_matureRNA A logical. If set to TRUE, matrue-mRNA is displayed instead of 
-#'   total-mRNA (default: FALSE)
+#' @param plot_matureRNA A logical. If set to TRUE, matrue-RNA is displayed instead of 
+#'   total-RNA (default: FALSE)
 #' @param absoluteExpression A logical. If set to FALSE, the plot representing the 
 #'   intensity of expression is omitted. (default=TRUE)
 #' @param rowLabels A character that represent the label names that will be
@@ -18,16 +18,16 @@
 #' @param clustering A logical. If set to FALSE, it displys genes the order they are, 
 #'   with no clustering (default: TRUE)
 #' @param clustIdx A numeric. Indicates which of the features are used for the 
-#'   clustering. 0=absoluteExpression; 1=total-mRNA/mature-mRNA; 2=preMRNA; 
+#'   clustering. 0=absoluteExpression; 1=total-RNA/mature-RNA; 2=preMRNA; 
 #'   3=synthesis; 4=degradation; 5=processing (default=3:5, meaning that
 #'   synthesis, degradation and processing are used for the clustering)
-#' @return A list of matrices containing the logRatios for total mRNA levels, pre-mRNA levels,
+#' @return A list of matrices containing the logRatios for total RNA levels, pre-RNA levels,
 #' synthesis rates, degradation rates and processing rates. Matrices are ordered according to
 #' the clustering.
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' inHeatmap(mycerIds10, 'pre-model')
-#' inHeatmap(mycerIds10, 'model')
+#' data('nascentInspObj10', package='INSPEcT')
+#' inHeatmap(nascentInspObj10, 'pre-model')
+#' inHeatmap(nascentInspObj10, 'model')
 setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 	, breaks=seq(-1,1,length.out=51)
 	, palette=colorRampPalette(c("green", "black", "firebrick3"))
@@ -178,7 +178,7 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 	}
 
 	##
-	if( plot_matureRNA ) {totalMain <- 'mature mRNA'} else {totalMain <- 'total mRNA'}
+	if( plot_matureRNA ) {totalMain <- 'mature RNA'} else {totalMain <- 'total RNA'}
 
 	if( is.null(rowLabels) ) rowLabels <- featureNames(object)
 	rowLabels <- rowLabels[geneOrder]
@@ -191,7 +191,7 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 		, xaxt='n', yaxt='n', main=totalMain, xlab='time')
 	axis(1, at=atX, labels=colLabels, las=3)
 	image(t(preMRNA_l2fc[geneOrder,,drop=FALSE]), col=cols, breaks=breaks
-		, xaxt='n', yaxt='n', main='pre-mRNA', xlab='time')
+		, xaxt='n', yaxt='n', main='pre-RNA', xlab='time')
 	axis(1, at=atX, labels=colLabels, las=3)
 	image(t(alpha_l2fc[geneOrder,,drop=FALSE]), col=cols, breaks=breaks
 		, xaxt='n', yaxt='n', main='synthesis', xlab='time')

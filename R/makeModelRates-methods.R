@@ -9,9 +9,9 @@
 #'  tpts : A vector of time points where rates and concentrations have to be evaluated
 #' @return An object of class ExpressionSet containing the modeled rates and concentrations
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' tpts <- mycerIds10@tpts
-#' eSet <- makeModelRates(getModel(mycerIds10), tpts=tpts)
+#' data('nascentInspObj10', package='INSPEcT')
+#' tpts <- nascentInspObj10@tpts
+#' eSet <- makeModelRates(getModel(nascentInspObj10), tpts=tpts)
 #' exprs(eSet)
 setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
 	args <- list(...)
@@ -77,12 +77,12 @@ setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
 #' This method can be used to regenerate the rates assiciated to the modeling, in case
 #' some testing parameters has changed.
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' viewModelRates(mycerIds10, 'degradation')
+#' data('nascentInspObj10', package='INSPEcT')
+#' viewModelRates(nascentInspObj10, 'degradation')
 #' ## force every degradation rate to be accepted as variable
-#' thresholds(getModel(mycerIds10))$brown <- c(synthesis=.01, degradation=1, processing=.01)
-#' mycerIds10 <- makeModelRates(mycerIds10)
-#' viewModelRates(mycerIds10, 'degradation')
+#' thresholds(getModel(nascentInspObj10))$brown <- c(synthesis=.01, degradation=1, processing=.01)
+#' nascentInspObj10 <- makeModelRates(nascentInspObj10)
+#' viewModelRates(nascentInspObj10, 'degradation')
 
 setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 	## get ratesSpec field

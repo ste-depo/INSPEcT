@@ -1,53 +1,35 @@
-#' Calculate Expression and count values on introns and exons from bam/sam files
-#' @description Given a TranscriptDb object and a list of bam/sam files for total and eventually RNA 
-#' experiments, "makeExpressionsFromBAMs" function calculates read counts and Expression on exonic and intronic 
-#' features per each gene. Reads that fall where intronic and exonic features overlaps are 
-#' univoquely assigned to exons.
+#' Evaluate introns and exons expressions from BAM or SAM files
+#' @description Given a TranscriptDb object and a list of BAM or SAM files 
+#' "quantifyExpressionsFormBAMs" evaluates exons and introns expressions
+#' and the associated variances per each gene.
 #' @param txdb A TranscriptDB object
-#' @param paths_foursu A vector of paths of Nascent-seq sam files
-#' @param BAMfiles A vector of paths of RNA-seq sam files
+#' @param BAMfiles A vector of paths
+#' @param experimentalDesign A numerical which reports the desing of the experiment in terms of time points and replicates.
+#' Time points must be ordered according to the sequence of files submitted for the analysis, these labels characterize
+#' different files as replicates of a given condition.
 #' @param by A character, either "gene" or "tx", indicating if expressions and counts should be summarized at the levels of genes or transcripts. "gene" by default
 #' @param countMultiMappingReads A logical, if multimapping reads should be counted, FALSE by default. Multimap reads are 
 #' identified using the tag "NH" in the bam/sam file.
 #' @param allowMultiOverlap A logical, indicating if a read is allowed to be assigned to more than one feature, FALSE by default
 #' @param strandSpecific Numeric, 0 if no strand-specific read counting should be performed, 1 stranded, 2 reversely-stranded. 0 by default
 #' @param isPairedEnd A logical, if paired-end reads are used, FALSE by default
-#' @param DESeq2 A logical, if TRUE the Expressions from exons and introns and associated variances are evaluated through the package DESeq2
-#' @param experimentalDesign A numerical which reports the desing of the experiment in terms of time points and replicates. The time points must be ordered according
-#' to the sequence of bam files submitted for the analysis, these labels characterize different files as replicates of a given conditions.
-#' @return A list containing expressions, counts and the annotation extracted from TxDB for exons and introns, if DESeq2 = TRUE the output also contains a set of data
-#' needed to estimate expressions variances.
+#' @param DESeq2 A logical, if TRUE exons and introns variances are evaluated through the package DESeq2, if FALSE through plgem
+#' @param varSamplingCondition A character reporting which experimental condition should be used to sample the variance if DESeq2 = FALSE
+#' @return A list containing expressions and associated variances for exons and introns.
 #' @examples
 #' require(TxDb.Mmusculus.UCSC.mm9.knownGene)
-#' txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
+#' txdb<-TxDb.Mmusculus.UCSC.mm9.knownGene
+#' expDes<-c(0,0,1,1)
 #' 
-#' paths_Nascent <- system.file('extdata', c('bamRep1.bam','bamRep2.bam','bamRep3.bam','bamRep4.bam') , package="INSPEcT")
-#' BAMfiles <- system.file('extdata', c('bamRep1.bam','bamRep2.bam','bamRep3.bam','bamRep4.bam') , package="INSPEcT")
-#' 
-#' experimentalDesign <- c(0,0,1,1)
-#' 
-#' #Nascent analysis with DESeq2
-#' makeExpressionsOut_Nascent <- makeExpressionsFromBAMs(txdb=txdb,paths_foursu=paths_Nascent,BAMfiles=BAMfiles,experimentalDesign=experimentalDesign,DESeq2 = TRUE)
-#' 
-#' expressions_Nascent <- makeExpressionsOut_Nascent$expressions
-#' counts_Nascent <- makeExpressionsOut_Nascent$counts
-#' annotations_Nascent <- makeExpressionsOut_Nascent$annotations
-#' dispersion_parameters_DESeq2_Nascent <- makeExpressionsOut_Nascent$dispersion_parameters_DESeq2
-#' 
-#' #Nascent analysis without DESeq2
-#' makeExpressionsOut_Nascent <- makeExpressionsFromBAMs(txdb=txdb,paths_foursu=paths_Nascent,BAMfiles=BAMfiles,experimentalDesign=experimentalDesign,DESeq2 = FALSE)
-#' 
-#' expressions_Nascent <- makeExpressionsOut_Nascent$expressions
-#' counts_Nascent <- makeExpressionsOut_Nascent$counts
-#' annotations_Nascent <- makeExpressionsOut_Nascent$annotations
-#' 
-#' #NoNascent analysis with DESeq2
-#' makeExpressionsOut_NoNascent <- makeExpressionsFromBAMs(txdb=txdb,paths_foursu=NULL,BAMfiles=BAMfiles,experimentalDesign=experimentalDesign,DESeq2 = TRUE)
-#' 
-#' expressions_NoNascent <- makeExpressionsOut_NoNascent$expressions
-#' counts_NoNascent <- makeExpressionsOut_NoNascent$counts
-#' annotations_NoNascent <- makeExpressionsOut_NoNascent$annotations
-#' dispersion_parameters_DESeq2_NoNascent <- makeExpressionsOut_NoNascent$dispersion_parameters_DESeq2
+#' paths_total<-system.file('extdata/', c('bamRep1.bam'
+#'                                       ,'bamRep2.bam'
+#'                                       ,'bamRep3.bam'
+#'                                       ,'bamRep4.bam')
+#'                         ,package='INSPEcT')
+#' matExp<-quantifyExpressionsFromBAMs(txdb=txdb
+#'                                    ,BAMfiles=paths_total
+#'                                    ,DESeq2=TRUE
+#'                                    ,experimentalDesign=expDes)
 
 quantifyExpressionsFromBAMs <- function(txdb
 					, BAMfiles
@@ -58,19 +40,17 @@ quantifyExpressionsFromBAMs <- function(txdb
 					, strandSpecific = 0
 					, isPairedEnd = FALSE
 					, DESeq2 = TRUE
-					, varSamplingCondition = NULL
-					, plgemFits = NULL
-					, returnPlgemFits = FALSE)
+					, varSamplingCondition = NULL)
 {
 
 	############################################
 	### CHECK ARGUMENTS ########################
 	############################################
-	if( !is.logical(DESeq2) & !any(as.character(experimentalDesign)==varSamplingCondition) & is.null(plgemFits))
+	if( !is.logical(DESeq2) & !any(as.character(experimentalDesign)==varSamplingCondition))
 		stop('makeExpressions: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
 	if(length(experimentalDesign)!=length(BAMfiles))
 		stop('makeExpressions: each bam file must be accounted in the experimentalDesign')
-	if(all(table(experimentalDesign)==1) & is.null(plgemFits))
+	if(all(table(experimentalDesign)==1))
 		stop("makeExpressions: at least one replicate is required.")
 	if( any(!file.exists(BAMfiles)) )
 	 	stop('makeExpressions: at least one file specified in "BAMfiles" argument does not exist.')
@@ -185,8 +165,5 @@ quantifyExpressionsFromBAMs <- function(txdb
 										 , by = by
 										 , DESeq2 = DESeq2
 										 , experimentalDesign = experimentalDesign
-										 , varSamplingCondition = varSamplingCondition
-										 , plgemFits = plgemFits
-										 , returnPlgemFits = returnPlgemFits))
-
+										 , varSamplingCondition = varSamplingCondition))
 }

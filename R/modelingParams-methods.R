@@ -21,12 +21,12 @@
 #'    to fit rates and concentrations. In case not, always impulse function is used. 
 #'    (default is TRUE)
 #'  \item testOnSmooth A logical, wheter models should be tested on smoothed pre-mRNA, 
-#'    total mRNA and synthesis rates or not. (default is TRUE)
+#'    total mRNA and eventually synthesis rates or not. (default is TRUE)
 #' }
 #' @seealso \code{\link{modelRates}}
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' modelingParams(mycerIds10)
+#' data('nascentInspObj10', package='INSPEcT')
+#' modelingParams(nascentInspObj10)
 setMethod('modelingParams', 'INSPEcT', function(object) {
 	return(object@params)
 	})
@@ -34,9 +34,9 @@ setMethod('modelingParams', 'INSPEcT', function(object) {
 #'
 #' @param value A list with new parameters
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' mycerIds10 <- removeModel(mycerIds10)
-#' modelingParams(mycerIds10)$useSigmoidFun <- FALSE
+#' data('nascentInspObj10', package='INSPEcT')
+#' nascentInspObj10 <- removeModel(nascentInspObj10)
+#' modelingParams(nascentInspObj10)$useSigmoidFun <- FALSE
 setReplaceMethod('modelingParams', 'INSPEcT', function(object, value) {
 
 	if(!is.list(value))

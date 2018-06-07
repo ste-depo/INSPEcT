@@ -54,9 +54,9 @@ NULL
 
 #' @rdname testingParams
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' modelSelection(mycerIds10)
-#' modelSelection(mycerIds10) <- 'aic'
+#' data('nascentInspObj10', package='INSPEcT')
+#' modelSelection(nascentInspObj10)
+#' modelSelection(nascentInspObj10) <- 'aic'
 setMethod('modelSelection', 'INSPEcT', function(object) {
 	return(object@model@params$modelSelection)
 	})
@@ -66,10 +66,6 @@ setReplaceMethod('modelSelection', 'INSPEcT', function(object, value) {
 		stop('modelSelection: value argument must be a character')
 	if( !value %in% c('aic', 'llr') )
 		stop('modelSelection: value argument must either "llr" or "aic"')
-	# if( value == 'aic' ) {
-	# 	warning('modelSelection: aic option is still not active')
-	# 	return(object)
-	# }
 	if( !identical(value, object@model@params$modelSelection) ) {
 		object@model@params$modelSelection <- value
 		# if modeled rates already exist, update them
@@ -96,10 +92,10 @@ setReplaceMethod('modelSelection', 'INSPEcT_model', function(object, value) {
 
 #' @rdname testingParams
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' thresholds(mycerIds10)
-#' thresholds(mycerIds10)$chisquare <- 1e-3
-#' thresholds(mycerIds10)$brown['synthesis'] <- 1e-3
+#' data('nascentInspObj10', package='INSPEcT')
+#' thresholds(nascentInspObj10)
+#' thresholds(nascentInspObj10)$chisquare <- 1e-3
+#' thresholds(nascentInspObj10)$brown['synthesis'] <- 1e-3
 setMethod('thresholds', 'INSPEcT', function(object) {
 	return(object@model@params$thresholds)
 	})
@@ -151,9 +147,9 @@ setReplaceMethod('thresholds', 'INSPEcT_model', function(object, value) {
 
 #' @rdname testingParams
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' llrtests(mycerIds10)
-#' llrtests(mycerIds10)$synthesis <- list(c('0','a'), c('b','ab'))
+#' data('nascentInspObj10', package='INSPEcT')
+#' llrtests(nascentInspObj10)
+#' llrtests(nascentInspObj10)$synthesis <- list(c('0','a'), c('b','ab'))
 setMethod('llrtests', 'INSPEcT', function(object) {
 	return(object@model@params$llrtests)
 	})

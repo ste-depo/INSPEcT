@@ -25,6 +25,6 @@ A matrix of AIC values
 This method is used to retrieve AIC values for all models tested for all genes.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-AIC(mycerIds10)
+data('nascentInspObj10', package='INSPEcT')
+AIC(nascentInspObj10)
 }

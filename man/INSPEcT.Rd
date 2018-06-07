@@ -6,9 +6,9 @@
 \alias{INSPEcT-package}
 \title{INSPEcT package}
 \description{
-INSPEcT (INference of Synthesis, Processing and dEgradation rates in Time-cousre experiments) 
-is a package that analyse 4sU-seq and RNA-seq time-course data in order to evaluate synthesis, 
-processing and degradation rates and asses via modeling the rates that determines changes in mature mRNA levels.
+INSPEcT (INference of Synthesis, Processing and dEgradation rates from Transcriptome data),
+is a package that analyse RNA-seq data in order to evaluate synthesis, processing and degradation
+rates and asses via modeling the rates that determines changes in RNA levels.
 
 It implements two classes (\code{\linkS4class{INSPEcT_model}} and 
 \code{\linkS4class{INSPEcT}}) and their corresponding methods. To have a detailed 

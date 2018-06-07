@@ -1,6 +1,3 @@
-allcountsNascent
-simData2rep_Nascent.rds
-simData2rep_NoNascent.rds
-simData3rep_Nascent.rds
-simData3rep_NoNascent.rds
-simRates.rds
+allcounts
+nascentInspObj
+nascentInspObj10

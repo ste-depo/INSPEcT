@@ -40,12 +40,12 @@ provided. This method has to be used before the \code{\link{makeSimDataset}} met
 The method \code{\link{makeSimModel}} generates an object of class INSPEcT_model that stores the parametric functions to genrate clean rates of a time-course. To any of the rates also a noise variance is associate but not used yet. In a typical workflow the output of \code{\link{makeSimModel}} is the input of the method \code{\link{makeSimDataset}}, that build the noisy rates and concentrations, given a specified number of replicates.
 }
 \examples{
-data('simRates', package='INSPEcT')
-
+data('nascentInspObj', package='INSPEcT')
+simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
 tpts <- simRates@params$tpts
 
-simData2rep_4su <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,No4sU=FALSE,seed=1)
-simData2rep_4su <- modelRates(simData2rep_4su[1:10], seed=1)
+simData2rep_Nascent <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
+simData2rep_Nascent <- modelRates(simData2rep_Nascent[1:10], seed=1)
 }
 \seealso{
 \code{\link{makeSimDataset}}

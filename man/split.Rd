@@ -24,7 +24,7 @@ A list containing objects of class INSPEcT
 Divides the INSPEcT object into the groups defined by 'f',
 }
 \examples{
-data('mycerIds10',package="INSPEcT")
+data('nascentInspObj10',package="INSPEcT")
 splitIdx <- c(1,1,1,2,2,2,3,3,3,4)
-mycerIds10Split <- split(mycerIds10, splitIdx)
+nascentInspObj10Split <- split(nascentInspObj10, splitIdx)
 }

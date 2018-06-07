@@ -25,8 +25,8 @@ inHeatmap(object, type = "pre-model", breaks = seq(-1, 1, length.out = 51),
 
 \item{palette}{A color generating function, output of colorRampPalette}
 
-\item{plot_matureRNA}{A logical. If set to TRUE, matrue-mRNA is displayed instead of 
-total-mRNA (default: FALSE)}
+\item{plot_matureRNA}{A logical. If set to TRUE, matrue-RNA is displayed instead of 
+total-RNA (default: FALSE)}
 
 \item{absoluteExpression}{A logical. If set to FALSE, the plot representing the 
 intensity of expression is omitted. (default=TRUE)}
@@ -39,12 +39,12 @@ shown on the y-axis of the heatmap. If NULL featureNames(object) will be shown
 with no clustering (default: TRUE)}
 
 \item{clustIdx}{A numeric. Indicates which of the features are used for the 
-clustering. 0=absoluteExpression; 1=total-mRNA/mature-mRNA; 2=preMRNA; 
+clustering. 0=absoluteExpression; 1=total-RNA/mature-RNA; 2=preMRNA; 
 3=synthesis; 4=degradation; 5=processing (default=3:5, meaning that
 synthesis, degradation and processing are used for the clustering)}
 }
 \value{
-A list of matrices containing the logRatios for total mRNA levels, pre-mRNA levels,
+A list of matrices containing the logRatios for total RNA levels, pre-RNA levels,
 synthesis rates, degradation rates and processing rates. Matrices are ordered according to
 the clustering.
 }
@@ -52,11 +52,11 @@ the clustering.
 Heatmap that represent the fold changes of all the five features
 
 A method to see as an heatmap the logRatios of synthesis, degradation and processing rates and 
-pre-mRNA and total mRNA concentration of a population of genes, either at the level of 
+pre-RNA and total RNA concentration of a population of genes, either at the level of 
 etimated or modeled rates.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-inHeatmap(mycerIds10, 'pre-model')
-inHeatmap(mycerIds10, 'model')
+data('nascentInspObj10', package='INSPEcT')
+inHeatmap(nascentInspObj10, 'pre-model')
+inHeatmap(nascentInspObj10, 'model')
 }

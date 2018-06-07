@@ -33,9 +33,9 @@ tries to combine, the information from one object will be used and a
 warning will be reported
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-mycerIds_2genes <- mycerIds10[1:2]
-mycerIds_5genes <- mycerIds10[6:10]
-mycerIds_7genes <- combine(mycerIds_2genes, mycerIds_5genes)
+data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10_2genes <- nascentInspObj10[1:2]
+nascentInspObj10_5genes <- nascentInspObj10[6:10]
+nascentInspObj10_7genes <- combine(nascentInspObj10_2genes, nascentInspObj10_5genes)
 
 }

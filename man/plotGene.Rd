@@ -19,18 +19,18 @@ plotGene(object, ix, fix.yaxis = FALSE)
 relative to their distributions}
 }
 \value{
-A list containing total mRNA levels and their confidence interval (levels plus and minus
-one standard deviation), pre-mRNA lelevs and their confidence intervals, synthsis rates and 
+A list containing total RNA levels and their confidence interval (levels plus and minus
+one standard deviation), pre-RNA lelevs and their confidence intervals, synthsis rates and 
 their confidence intervals, degradation rates and processing rates of the selected gene.
 }
 \description{
 Plot the pre-modeled and modeled profiles for one gene
 
-A method to see the shapes of the estimated synthesis, degradation and processing rates, pre-mRNA and total mRNA 
+A method to see the shapes of the estimated synthesis, degradation and processing rates, pre-RNA and total RNA 
 concentrations (solid thin lines) their variances (dashed lines) and the modeled rates and concentrations 
 (ticker solid line) of a single gene.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-plotGene(mycerIds10, 1)
+data('nascentInspObj10', package='INSPEcT')
+plotGene(nascentInspObj10, 1)
 }

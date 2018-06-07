@@ -6,8 +6,8 @@
 #' @param ... Additional arguments for the generic
 #' @return A matrix of log likelihood test results for all the tested model comparisons
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' logLik(mycerIds10)
+#' data('nascentInspObj10', package='INSPEcT')
+#' logLik(nascentInspObj10)
 setMethod('logLik', 'INSPEcT_model', function(object, ...) {
 	t(sapply(object@ratesSpecs, function(x) 
 		tryCatch(sapply(x, '[[', 'logLik'),

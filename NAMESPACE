@@ -17,6 +17,7 @@ importFrom("S4Vectors","subjectHits","queryHits","queryLength","elementNROWS")
 importFrom("stats", "approx", "dist", "ecdf", "hclust", "lm","na.omit", "optim", "optimize", "pchisq", "pnorm","quantile", "rnorm", "runif", "splinefun", "uniroot", "p.adjust", "pt")
 importFrom("utils", "capture.output", "read.table", "write.table", "head")
 
+export("compareSteadyNoNascent")
 export("newINSPEcT", "quantifyExpressionsFromBAMs")
 export("newINSPEcT", "quantifyExpressionsFromTrCounts")
 exportMethods( "[", "chisqmodel", "chisqtest", "combine", "compareSteady", "degradation", "dim", 

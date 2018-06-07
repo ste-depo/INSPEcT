@@ -6,8 +6,8 @@
 #' @param feature A character indicating the feature to retireve, "synthesis", "degradation", "processing" for rates, "total" for total mRNA concentrations or "preMRNA" for premature mRNA concentrations
 #' @return A numeric matrix containing the values for the selected feature
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' viewModelRates(mycerIds10, 'synthesis')
+#' data('nascentInspObj10', package='INSPEcT')
+#' viewModelRates(nascentInspObj10, 'synthesis')
 setMethod('viewModelRates', 'INSPEcT', function(object, feature) {
 
 	ix <- grep(feature,pData(object@modelRates)$feature)

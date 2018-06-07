@@ -1,49 +1,75 @@
-#' Calculate RPKM and count values on introns and exons from bam/sam files
-#' @description Given a TranscriptDb object and a matrix of counts for total and eventually RNA 
-#' experiments, "quantifyExpressionsFromTrCounts" function calculates RPKM on exonic and intronic 
-#' features per each gene. Reads that fall where intronic and exonic features overlaps are 
-#' univoquely assigned to exons.
-#' @param txdb A TranscriptDB object
-#' @param allcounts A list object containing intronic and exonic counts from total and eventually Nascent experiments with the associated statistics redarding the assigned reads.
+#' Evaluates introns and exons RPKMs, per gene, from counts data.
+#' @param libsize A numeric reporting the number of assigned reads.
+#' @param exonsWidths A numeric containing the exons widths.
+#' @param intronsWidths A numeric containing the intorns widths.
+#' @param allcounts A list object containing introns and exons counts.
 #' @param by A character, either "gene" or "tx", indicating if rpkms and counts should be summarized at the levels of genes or transcripts. "gene" by default
-#' @param DESeq2 A logical, if TRUE the RPKMs from exons and introns and associated variances are evaluated through the package DESeq2
+#' @param DESeq2 A logical, if TRUE the RPKMs variances are evaluated through the package DESeq2, if FALSE plgem is used.
 #' @param experimentalDesign A numerical which reports the desing of the experiment in terms of time points and replicates. The time points must be ordered according
 #' to the columns of the count matrices submitted for the analysis; these labels define conditions and replicates.
-#' @return A list containing rpkms, counts and the annotation extracted from TxDB for exons and introns, if DESeq2 = TRUE the output also contains a set of data
-#' needed to estimate rpkms variances.
+#' @param varSamplingCondition A character reporting which experimental condition should be used to sample the fatiance if DESeq2 = FALSE.
+#' @return A list containing RPKMs and associated variances for exons and introns.
 #' @examples
+#' data('allcounts', package='INSPEcT')
+#' 
+#' nascentCounts<-allcounts$nascent
+#' matureCounts<-allcounts$mature
+#' 
+#' testGenes<-rownames(matureCounts$exonsCounts)
+#' 
 #' require(TxDb.Mmusculus.UCSC.mm9.knownGene)
-#' txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
+#' txdb<-TxDb.Mmusculus.UCSC.mm9.knownGene
 #' 
-#' data('allcountsNascent', package='INSPEcT')
+#' exonsDB<-reduce(exonsBy(txdb ,'gene'))
+#' exonsDB<-exonsDB[elementNROWS(range(exonsDB))==1]
+#' intronsDB<-psetdiff(unlist(range(exonsDB)),exonsDB)
+#' intronsDB<-intronsDB[elementNROWS(intronsDB)>0]
 #' 
-#' tpts <- c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16)
-#' experimentalDesign <- rep(tpts,3)
+#' exWdths<-sapply(width(exonsDB),sum)
+#' intWdths<-sapply(width(intronsDB),sum)
 #' 
-#' #Nascent analysis with DESeq2
-#' makeRPKMsOut_Nascent <- quantifyExpressionsFromTrCounts(txdb=txdb,allcounts=allcountsNascent,experimentalDesign=experimentalDesign,DESeq2=TRUE)
+#' exWdths<-exWdths[testGenes]
+#' intWdths<-intWdths[testGenes]
 #' 
-#' rpkms_Nascent <- makeRPKMsOut_Nascent$rpkms
-#' counts_Nascent <- makeRPKMsOut_Nascent$counts
-#' annotations_Nascent <- makeRPKMsOut_Nascent$annotation
-#' dispersion_parameters_DESeq2_Nascent <- makeRPKMsOut_Nascent$dispersion_parameters_DESeq2
+#' nascentLS<-colSums(nascentCounts$
+#'   stat[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
 #' 
-#' #Nascent analysis without DESeq2
-#' makeRPKMsOut_Nascent <- quantifyExpressionsFromTrCounts(txdb=txdb,allcounts=allcountsNascent,experimentalDesign=experimentalDesign,DESeq2=FALSE)
+#' totalLS<-colSums(matureCounts$
+#'   stat[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
 #' 
-#' rpkms_Nascent <- makeRPKMsOut_Nascent$rpkms
-#' counts_Nascent <- makeRPKMsOut_Nascent$counts
-#' annotations_Nascent <- makeRPKMsOut_Nascent$annotation
+#' expDes<-rep(c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16),3)
 #' 
-#' #NoNascent analysis with DESeq2
-#' allcounts <- allcountsNascent$total
+#' nasExp_DESeq2<-quantifyExpressionsFromTrCounts(libsize=nascentLS
+#'                                               ,exonsWidths=exWdths
+#'                                               ,intronsWidths=intWdths
+#'                                               ,allcounts=nascentCounts
+#'                                               ,DESeq2=TRUE
+#'                                               ,experimentalDesign=expDes)
 #' 
-#' makeRPKMsOut_NoNascent <- quantifyExpressionsFromTrCounts(txdb=txdb,allcounts=allcounts,experimentalDesign=experimentalDesign,DESeq2=TRUE)
+#' matExp_DESeq2<-quantifyExpressionsFromTrCounts(libsize=totalLS
+#'                                               ,exonsWidths=exWdths
+#'                                               ,intronsWidths=intWdths
+#'                                               ,allcounts=matureCounts
+#'                                               ,DESeq2=TRUE
+#'                                               ,experimentalDesign=expDes)
 #' 
-#' rpkms_NoNascent <- makeRPKMsOut_NoNascent$rpkms
-#' counts_NoNascent <- makeRPKMsOut_NoNascent$counts
-#' annotations_NoNascent <- makeRPKMsOut_NoNascent$annotation
-#' dispersion_parameters_DESeq2_NoNascent <- makeRPKMsOut_NoNascent$dispersion_parameters_DESeq2
+#' vsc<-as.character(expDes[[1]])
+#' 
+#' nasExp_plgem<-quantifyExpressionsFromTrCounts(libsize=nascentLS
+#'                                              ,exonsWidths=exWdths
+#'                                              ,intronsWidths=intWdths
+#'                                              ,allcounts=nascentCounts
+#'                                              ,DESeq2=FALSE
+#'                                              ,experimentalDesign=expDes
+#'                                              ,varSamplingCondition=vsc)
+#' 
+#' matExp_plgem<-quantifyExpressionsFromTrCounts(libsize=totalLS
+#'                                              ,exonsWidths=exWdths
+#'                                              ,intronsWidths=intWdths
+#'                                              ,allcounts=matureCounts
+#'                                              ,DESeq2=FALSE
+#'                                              ,experimentalDesign=expDes
+#'                                              ,varSamplingCondition=vsc)
 
 quantifyExpressionsFromTrCounts <- function(libsize
 							  , exonsWidths
@@ -52,9 +78,7 @@ quantifyExpressionsFromTrCounts <- function(libsize
 							  , by = c('gene','tx')
 							  , DESeq2 = TRUE
 							  , experimentalDesign
-							  , varSamplingCondition = NULL
-							  , plgemFits = NULL
-							  , returnPlgemFits = FALSE)
+							  , varSamplingCondition = NULL)
 {
 	exonsCounts <- allcounts$exonsCounts
 	intronsCounts <- allcounts$intronsCounts
@@ -62,9 +86,9 @@ quantifyExpressionsFromTrCounts <- function(libsize
 	############################################
 	### CHECK ARGUMENTS ########################
 	############################################
-	if( !is.logical(DESeq2) & !any(as.character(experimentalDesign)==varSamplingCondition) & is.null(plgemFits))
+	if( !is.logical(DESeq2) & !any(as.character(experimentalDesign)==varSamplingCondition))
 		stop('makeExpressions: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
-	if(all(table(experimentalDesign)==1) & is.null(plgemFits))
+	if(all(table(experimentalDesign)==1))
 		stop("makeExpressions: at least one replicate is required.")
 	if(length(experimentalDesign)!=ncol(exonsCounts))
 		stop('makeExpressions: each counts column must be accounted in the experimentalDesign')
@@ -139,9 +163,7 @@ quantifyExpressionsFromTrCounts <- function(libsize
 		return(quantifyExpressionsFromTrAbundance(exonsAbundances = expressionExons
 										       , intronsAbundances = expressionIntrons
 											   , experimentalDesign = experimentalDesign
-											   , varSamplingCondition = varSamplingCondition
-											   , plgemFits = plgemFits
-											   , returnPlgemFits = returnPlgemFits))
+											   , varSamplingCondition = varSamplingCondition))
 
 	}
 }

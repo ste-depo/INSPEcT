@@ -20,9 +20,7 @@ modelRates(object, seed = NULL, BPPARAM = bpparam(), verbose = NULL)
 
 \item{verbose}{Either NULL or logical. If logical indicates whether to output some text
 during computation or not, if NULL  it takes the information from the object
-(see \code{\link{modelingParams}}) (Default: NULL)
-used for parallelization (if nCores=1 doesn't parallelize). If NULL takes the information
-from the object (see \code{\link{modelingParams}}) (Default: NULL)}
+(see \code{\link{modelingParams}}) (Default: NULL)}
 }
 \value{
 An object of class INSPEcT with modeled rates
@@ -30,12 +28,12 @@ An object of class INSPEcT with modeled rates
 \description{
 Launch the modeling process with parameters set with \code{\link{modelingParams}}
 
-This method model the synthesis, degradation and processign rates after their estimation by the constructor function
+This method model the synthesis, degradation and processing rates after their estimation by the constructor function
 \code{\link{newINSPEcT}}. Estimated rates are not guaranteed to optimally describes provided input data yet. 
 To this purpose, modeled rates can be generated and genes can be assigned to a transcriptional regulatory mechanism.
 Modeled rates can be accessed via the method \code{\link{viewModelRates}} and gene classification according 
 to the regulatory mechanism can be accessed by \code{\link{geneClass}}. The modeling procedure can be set by the
-user by modyging the parameters via \code{\link{modelingParams}}
+user changing the parameters via \code{\link{modelingParams}}
 }
 \details{
 When modeling many genes, parallelization is strongly suggested to reduce computational time.
@@ -49,23 +47,15 @@ and the whole data set can be obtaied by combining the chunks (see Examples).
 }
 \examples{
 
-data('mycerIds10', package='INSPEcT')
+data('nascentInspObj10', package='INSPEcT')
 ## models removal
-mycerIdsThreeGenes <- removeModel(mycerIds10[1:3])
-mycerIdsThreeGenes <- modelRates(mycerIdsThreeGenes, seed=1, BPPARAM=SerialParam())
+nascentInspObjThreeGenes <- removeModel(nascentInspObj10[1:3])
+nascentInspObjThreeGenes <- modelRates(nascentInspObjThreeGenes, seed=1, BPPARAM=SerialParam())
 ## view modeled synthesis rates
-viewModelRates(mycerIdsThreeGenes, 'synthesis')
+viewModelRates(nascentInspObjThreeGenes, 'synthesis')
 ## view gene classes
-geneClass(mycerIdsThreeGenes)
+geneClass(nascentInspObjThreeGenes)
 
-## Divide a parallel computation into chunks
-\dontrun{
-nCores(mycerIds10) <- parallel::detectCores()
-chunkSize <- 100
-splitIdx <- ceiling(c(1:nGenes(mycerIds10))/chunkSize)
-chunks <- lapply(split(mycerIds10, splitIdx), modelRates)
-mycerIdsModeled <- do.call('combine', chunks)
-}
 }
 \seealso{
 \code{\link{viewModelRates}}, \code{\link{geneClass}}, \code{\link{modelingParams}}
