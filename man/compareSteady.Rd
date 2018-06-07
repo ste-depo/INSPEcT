@@ -3,21 +3,26 @@
 \docType{methods}
 \name{compareSteady}
 \alias{compareSteady}
-\alias{compareSteady,INSPEcT,INSPEcT-method}
+\alias{compareSteady,INSPEcT,INSPEcT,numeric,numeric-method}
 \title{Generate an object of class INSPEcT_diffsteady from two objects of class INSPEcT}
 \usage{
-compareSteady(inspectIds1, inspectIds2)
+compareSteady(inspectIds1, inspectIds2, nRep1, nRep2)
 
-\S4method{compareSteady}{INSPEcT,INSPEcT}(inspectIds1, inspectIds2)
+\S4method{compareSteady}{INSPEcT,INSPEcT,numeric,numeric}(inspectIds1,
+  inspectIds2, nRep1, nRep2)
 }
 \arguments{
 \item{inspectIds1}{An object of calss INSPEcT}
 
 \item{inspectIds2}{A second object of calss INSPEcT}
+
+\item{nRep1}{number of replicates of the first object}
+
+\item{nRep2}{number of replicates of the second object}
 }
 \value{
 An object of class INSPEcT_diffsteady which contains both the absolute 
-quantification of the rates as well as the comparison with the statistcal significance
+quantification of the rates as well as the comparison with the statistical significance
 associated for each gene and rate. (See \code{\link{INSPEcT_diffsteady-class}})
 }
 \description{
@@ -29,14 +34,24 @@ The two INSPEcT objects must have been profiled with replicates in order to prov
 a statistical significance to the differences between their rates.
 }
 \examples{
-## load data
-data('simRates', package='INSPEcT')
-data('simData3rep_4su', package='INSPEcT')
-## generate a new data set with 3 replicate to make the comparison
-newTpts <- c(0, 16)
-simData3rep_4su_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
-## compare
-diffrates <- compareSteady(simData3rep_4su, simData3rep_4su_2)
-## visualize results
+data('nascentInspObj', package='INSPEcT')	
+simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+newTpts<-c(0, 16)
+nascentInspObj_sim3<-makeSimDataset(object=simRates
+                                   ,tpts=newTpts
+                                   ,nRep=3
+                                   ,NoNascent=FALSE
+                                   ,seed=1)
+newTpts<-c(0, 16)
+nascentInspObj_sim4<-makeSimDataset(object=simRates
+                                   ,tpts=newTpts
+                                   ,nRep=4
+                                   ,NoNascent=FALSE
+                                   ,seed=2)
+
+diffrates<-compareSteady(inspectIds1=nascentInspObj_sim3
+                        ,inspectIds2=nascentInspObj_sim4
+                        ,nRep1=3
+                        ,nRep2=4)
 diffrates
 }

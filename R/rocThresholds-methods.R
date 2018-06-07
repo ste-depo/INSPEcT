@@ -17,12 +17,21 @@
 #' @return None
 #' @seealso \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}, \code{\link{rocCurve}}
 #' @examples
-#' data('simRates', package='INSPEcT')
-#' data('simData3rep_Nascent', package='INSPEcT')
-#' rocThresholds(simRates[1:10], simData3rep_Nascent)
-#' # Increase the Brown threshold for all rates (be more relaxed)
-#' thresholds(simData3rep_Nascent)$brown <- c(synthesis=.05, degradation=.05, processing=.05)
-#' rocThresholds(simRates[1:10], simData3rep_Nascent)
+#' data('nascentInspObj', package='INSPEcT')	
+#'
+#' simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+#'  
+#' newTpts<-simRates@params$tpts
+#' nascentInspObj_sim3<-makeSimDataset(object=simRates
+#'                                    ,tpts=newTpts
+#'                                    ,nRep=3
+#'                                    ,NoNascent=FALSE
+#'                                    ,seed=1)
+#' nascentInspObj_sim3<-modelRates(nascentInspObj_sim3[1:10]
+#'                                ,seed=1)
+#'
+#' rocThresholds(simRates[1:10],nascentInspObj_sim3,bTsh=c(.01,.01,.05),cTsh=.1)
+
 setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT_model'), 
 	function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1)) {
 	if( is.null(bTsh) ) {

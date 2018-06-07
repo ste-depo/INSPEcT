@@ -33,14 +33,14 @@ This method can be used to regenerate the rates assiciated to the modeling, in c
 some testing parameters has changed.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-tpts <- mycerIds10@tpts
-eSet <- makeModelRates(getModel(mycerIds10), tpts=tpts)
+data('nascentInspObj10', package='INSPEcT')
+tpts <- nascentInspObj10@tpts
+eSet <- makeModelRates(getModel(nascentInspObj10), tpts=tpts)
 exprs(eSet)
-data('mycerIds10', package='INSPEcT')
-viewModelRates(mycerIds10, 'degradation')
+data('nascentInspObj10', package='INSPEcT')
+viewModelRates(nascentInspObj10, 'degradation')
 ## force every degradation rate to be accepted as variable
-thresholds(getModel(mycerIds10))$brown <- c(synthesis=.01, degradation=1, processing=.01)
-mycerIds10 <- makeModelRates(mycerIds10)
-viewModelRates(mycerIds10, 'degradation')
+thresholds(getModel(nascentInspObj10))$brown <- c(synthesis=.01, degradation=1, processing=.01)
+nascentInspObj10 <- makeModelRates(nascentInspObj10)
+viewModelRates(nascentInspObj10, 'degradation')
 }

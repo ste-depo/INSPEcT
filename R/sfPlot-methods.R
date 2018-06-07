@@ -6,9 +6,8 @@
 #' Nascent-seq scaling can be in fact considered as a yield of the synthesis within the cells.
 #' @param object An object of class INSPEcT
 #' @return None
-#' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' sfPlot(mycerIds10)
+#' data('nascentInspObj10', package='INSPEcT')
+#' sfPlot(nascentInspObj10)
 setMethod('sfPlot', 'INSPEcT', function(object) {
 	mat <- cbind(object@totalSF, object@labeledSF)
 	matplot(mat, type='l', lty=1, xlab='time index', ylab='scaling factor')

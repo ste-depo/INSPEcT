@@ -25,13 +25,13 @@ This method allow to access to the estimated synthesis, degradation, processing 
 concentrations the way they were calculated by the constructor function \code{\link{newINSPEcT}}.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
+data('nascentInspObj10', package='INSPEcT')
 
-ratesFirstGuess(mycerIds10, 'total')
-ratesFirstGuess(mycerIds10, 'preMRNA')
-ratesFirstGuess(mycerIds10, 'synthesis')
-ratesFirstGuess(mycerIds10, 'processing')
-ratesFirstGuess(mycerIds10, 'degradation')
+ratesFirstGuess(nascentInspObj10, 'total')
+ratesFirstGuess(nascentInspObj10, 'preMRNA')
+ratesFirstGuess(nascentInspObj10, 'synthesis')
+ratesFirstGuess(nascentInspObj10, 'processing')
+ratesFirstGuess(nascentInspObj10, 'degradation')
 }
 \seealso{
 \code{\link{newINSPEcT}}, \code{\link{ratesFirstGuessVar}}

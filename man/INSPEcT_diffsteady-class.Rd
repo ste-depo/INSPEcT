@@ -62,13 +62,25 @@ processing rates}
 }}
 
 \examples{
-data('simRates', package='INSPEcT')
-data('simData3rep_4su', package='INSPEcT')
-## generate a new data set with 3 replicate to make the comparison
-newTpts <- c(0, 16)
-simData3rep_4su_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
-## compare
-diffrates <- compareSteady(simData3rep_4su, simData3rep_4su_2)
+data('nascentInspObj', package='INSPEcT')	
+simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+newTpts<-c(0, 16)
+nascentInspObj_sim3<-makeSimDataset(object=simRates
+                                   ,tpts=newTpts
+                                   ,nRep=3
+                                   ,NoNascent=FALSE
+                                   ,seed=1)
+newTpts<-c(0, 16)
+nascentInspObj_sim4<-makeSimDataset(object=simRates
+                                   ,tpts=newTpts
+                                   ,nRep=4
+                                   ,NoNascent=FALSE
+                                   ,seed=2)
+
+diffrates<-compareSteady(inspectIds1=nascentInspObj_sim3
+                        ,inspectIds2=nascentInspObj_sim4
+                        ,nRep1=3
+                        ,nRep2=4)
 head(synthesis(diffrates))
 head(processing(diffrates))
 head(degradation(diffrates))

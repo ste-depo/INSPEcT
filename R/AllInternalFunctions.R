@@ -5200,3 +5200,51 @@ impute_na_tc <- function(tpts, tcdata) {
 	return(tcdata)
 
 }
+
+
+########## Compare steady state no nascent
+
+standardCurveFitFunction <- function(p,m,err)
+{
+	n_outliers <- function(alpha, x, y, err) {
+
+		#Conversion
+		pi_angle <- alpha * pi/180
+		#Angular coefficient
+		coef_ang <- tan(pi_angle)
+
+		delta_intercept <- err/cos(pi_angle)
+		intercept <- median(y,na.rm=TRUE) - coef_ang*median(x,na.rm=TRUE)
+
+		outliers <- y > coef_ang * x + intercept + delta_intercept |
+			y < coef_ang * x + intercept - delta_intercept
+
+		length(which(outliers))
+	}
+
+	all_alphas <- seq(-89,90)
+	all_alphas_outliers <- sapply(all_alphas, function(i) n_outliers(alpha = i, x=log2(p), y=log2(m), err = err))
+	return(seq(-89,90)[which.min(all_alphas_outliers)])
+}
+
+classificationFunction <- function(p,m,alpha,err)
+{
+	standardCurveFit <- alpha
+	classificationTmp <- sapply(rownames(p),function(g)
+	{
+		x <- log2(p[g,])
+		y <- log2(m[g,])
+
+		pi_angle <- standardCurveFit * pi/180
+		coef_ang <- tan(pi_angle)
+		delta_intercept <- err/cos(pi_angle)
+
+		intercept <- median(y,na.rm=TRUE) - coef_ang*median(x,na.rm=TRUE)
+
+		outliers <- y > coef_ang * x + intercept + delta_intercept |
+				y < coef_ang * x + intercept - delta_intercept
+		return(outliers)
+	})
+
+	return(t(classificationTmp))
+}

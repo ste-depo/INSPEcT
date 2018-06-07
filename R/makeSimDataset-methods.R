@@ -4,8 +4,9 @@
 #' This method generates rates and concentrations where noise is added according to the desired number of 
 #' replicates that the user set as an arguments from the INSPEcT_model object that has been created by the 
 #' method of the class INSPEcT \code{\link{makeSimModel}}. Rates and concentrations can be generated at the 
-#' time-points of interest. This method generates an INSPEcT object that can be modeled and the performance of
-#' the modeling can be tested directly aginst the INSPEcT_model object created by \code{\link{makeSimModel}}.
+#' time-points of interest within the original time window. This method generates an INSPEcT object that can
+#' be modeled and the performance of the modeling can be tested directly aginst the INSPEcT_model object
+#' created by \code{\link{makeSimModel}}.
 #' @param object An object of class INSPEcT_model, usually the output of \code{\link{makeSimModel}}
 #' @param tpts A numeric vector of time points where rates and concentrations have to be evaluated
 #' @param nRep Number of replicates to simulate
@@ -14,11 +15,11 @@
 #' @return An object of the class ExpressionSet containing rates and concentrations
 #' @seealso \code{\link{makeSimModel}}
 #' @examples
-#' data('simRates', package='INSPEcT')
-#' 
+#' data('nascentInspObj', package='INSPEcT')
+#' simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
 #' tpts <- simRates@params$tpts
 #' 
-#' simData2rep_Nascent <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
+#' nascentInspObj_sim3 <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
 
 setMethod('makeSimDataset', 'INSPEcT_model', function(object
 													, tpts
@@ -92,34 +93,38 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 	alphaSimReplicates <- do.call('cbind', 
 		lapply(1:nRep, function(i) addNoise(alphaSim,alphaSim_noisevar)))
 	rownames(alphaSimReplicates) <- 1:nGenes
-	tpts <- rep(tpts, nRep)
-	colnames(totalSimReplicates)<-colnames(preMRNASimReplicates)<-colnames(alphaSimReplicates) <- tpts
+	experimentalDesign <- rep(tpts, nRep)
+	colnames(totalSimReplicates)<-colnames(preMRNASimReplicates)<-colnames(alphaSimReplicates) <- experimentalDesign
+
+	nascentExpressions <- quantifyExpressionsFromTrAbundance(exonsAbundances = alphaSimReplicates
+										     , intronsAbundances = NULL
+											 , experimentalDesign = experimentalDesign
+											 , varSamplingCondition = as.character(tpts[[1]])
+											 , simulatedData = TRUE)
+
+	matureExpressions <- quantifyExpressionsFromTrAbundance(exonsAbundances = totalSimReplicates
+										     			 , intronsAbundances = preMRNASimReplicates
+											 			 , experimentalDesign = experimentalDesign
+											 			 , varSamplingCondition = as.character(tpts[[1]]))
 
 	if(!NoNascent)
 	{
 		## create the INSPEcT object
 		newObject <- newINSPEcT(tpts = tpts
 							  , labeling_time = 1
-							  , rpkms_Nascent_introns = NULL
-							  , rpkms_Nascent_exons = alphaSimReplicates
-							  , rpkms_total_exons = totalSimReplicates
-							  , rpkms_total_introns = preMRNASimReplicates
-							  , simulatedData = TRUE
-							  , dispersion_parameters_DESeq2 = NULL
-							  , varSamplingCondition = as.character(tpts[[1]]))	
+							  , nascentExpressions = nascentExpressions
+							  , matureExpressions = matureExpressions
+							  , simulatedData = TRUE)
 	}else{
 		## create the INSPEcT object
 		newObject <- newINSPEcT(tpts = tpts
 							  , labeling_time = NULL
-							  , rpkms_Nascent_introns = NULL
-							  , rpkms_Nascent_exons = NULL
-							  , rpkms_total_exons = totalSimReplicates
-							  , rpkms_total_introns = preMRNASimReplicates
-							  , simulatedData = TRUE
-							  , dispersion_parameters_DESeq2 = NULL
-							  , varSamplingCondition = as.character(tpts[[1]]))
+							  , nascentExpressions = NULL
+							  , matureExpressions = matureExpressions
+							  , simulatedData = TRUE)
 	}
 
 	return(newObject)
 
 })
+

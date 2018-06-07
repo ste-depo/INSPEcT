@@ -6,10 +6,10 @@
 \alias{makeSimDataset,INSPEcT_model-method}
 \title{Generate synthetic rates and concentrations}
 \usage{
-makeSimDataset(object, tpts, nRep, No4sU = FALSE, seed = NULL)
+makeSimDataset(object, tpts, nRep, NoNascent = FALSE, seed = NULL)
 
-\S4method{makeSimDataset}{INSPEcT_model}(object, tpts, nRep, No4sU = FALSE,
-  seed = NULL)
+\S4method{makeSimDataset}{INSPEcT_model}(object, tpts, nRep,
+  NoNascent = FALSE, seed = NULL)
 }
 \arguments{
 \item{object}{An object of class INSPEcT_model, usually the output of \code{\link{makeSimModel}}}
@@ -18,7 +18,7 @@ makeSimDataset(object, tpts, nRep, No4sU = FALSE, seed = NULL)
 
 \item{nRep}{Number of replicates to simulate}
 
-\item{No4sU}{A logical which, if true, makes the output of the method suitable for an analysis wothout 4sU}
+\item{NoNascent}{A logical which, if true, makes the output of the method suitable for an analysis wothout Nascent}
 
 \item{seed}{A numeric to obtain reproducible results}
 }
@@ -31,15 +31,16 @@ Generate synthetic rates and concentrations
 This method generates rates and concentrations where noise is added according to the desired number of 
 replicates that the user set as an arguments from the INSPEcT_model object that has been created by the 
 method of the class INSPEcT \code{\link{makeSimModel}}. Rates and concentrations can be generated at the 
-time-points of interest. This method generates an INSPEcT object that can be modeled and the performance of
-the modeling can be tested directly aginst the INSPEcT_model object created by \code{\link{makeSimModel}}.
+time-points of interest within the original time window. This method generates an INSPEcT object that can
+be modeled and the performance of the modeling can be tested directly aginst the INSPEcT_model object
+created by \code{\link{makeSimModel}}.
 }
 \examples{
-data('simRates', package='INSPEcT')
-
+data('nascentInspObj', package='INSPEcT')
+simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
 tpts <- simRates@params$tpts
 
-simData2rep_4su <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,No4sU=FALSE,seed=1)
+nascentInspObj_sim3 <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
 }
 \seealso{
 \code{\link{makeSimModel}}

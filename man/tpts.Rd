@@ -22,6 +22,6 @@ Accessor to the slot tpts of an INSPEcT object
 Accessor to obtain the tpts associated with the object of class INSPEcT
 }
 \examples{
-data('mycerIds10',package="INSPEcT")
-tpts(mycerIds10)
+data('nascentInspObj10',package="INSPEcT")
+tpts(nascentInspObj10)
 }

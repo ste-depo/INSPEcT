@@ -25,13 +25,13 @@ This method allow to access to the estimated variance of synthesis rates and pre
 concentrations the way they were calculated by the constructor function \code{\link{newINSPEcT}}.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
+data('nascentInspObj10', package='INSPEcT')
 
-ratesFirstGuessVar(mycerIds10, 'total')
-ratesFirstGuessVar(mycerIds10, 'preMRNA')
-ratesFirstGuessVar(mycerIds10, 'synthesis')
-ratesFirstGuessVar(mycerIds10, 'processing')
-ratesFirstGuessVar(mycerIds10, 'degradation')
+ratesFirstGuessVar(nascentInspObj10, 'total')
+ratesFirstGuessVar(nascentInspObj10, 'preMRNA')
+ratesFirstGuessVar(nascentInspObj10, 'synthesis')
+ratesFirstGuessVar(nascentInspObj10, 'processing')
+ratesFirstGuessVar(nascentInspObj10, 'degradation')
 }
 \seealso{
 \code{\link{newINSPEcT}}, \code{\link{ratesFirstGuess}}

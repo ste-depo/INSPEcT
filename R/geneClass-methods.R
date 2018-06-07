@@ -11,12 +11,12 @@
 #' @return A character containing the regulatory class for each gene
 #' @seealso \code{\link{ratePvals}}
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' geneClass(mycerIds10)
+#' data('nascentInspObj10', package='INSPEcT')
+#' geneClass(nascentInspObj10)
 #' # see the classification with another threshold for chi-squared test 
-#' geneClass(mycerIds10, cTsh=.2)
+#' geneClass(nascentInspObj10, cTsh=.2)
 #' # set the new threshold permanently within the object
-#' thresholds(mycerIds10)$chisquare <- .2
+#' thresholds(nascentInspObj10)$chisquare <- .2
 setMethod('geneClass', 'INSPEcT_model', 
 	function(object, bTsh=NULL, cTsh=NULL) {
 		## get ratesSpec field

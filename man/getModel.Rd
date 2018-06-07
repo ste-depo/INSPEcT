@@ -32,8 +32,8 @@ is particularly useful to get and set testing parameters of the INSPEcT_model ob
 within the INSPEcT object.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-getModel(mycerIds10)
+data('nascentInspObj10', package='INSPEcT')
+getModel(nascentInspObj10)
 }
 \seealso{
 \code{\link{testingParams}}

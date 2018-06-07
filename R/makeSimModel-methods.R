@@ -15,8 +15,9 @@
 #' @return An object of class INSPEcT_model with synthetic rates
 #' @seealso \code{\link{makeSimDataset}}
 #' @examples
-#' data('simRates', package='INSPEcT')
-#' 
+#' data('nascentInspObj', package='INSPEcT')
+#' simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+
 #' tpts <- simRates@params$tpts
 #' 
 #' simData2rep_Nascent <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
@@ -32,17 +33,20 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 
 	tpts <- object@tpts
 
+	#I remove genes without intronic signal
+	genesTmp <- which(apply(ratesFirstGuess(object, 'preMRNA'),1,function(r)all(is.finite(r))&all(r>0)))		
+
 	concentrations <- list(
-		total=ratesFirstGuess(object, 'total')
-		, total_var=ratesFirstGuessVar(object, 'total')
-		, preMRNA=ratesFirstGuess(object, 'preMRNA')
-		, preMRNA_var=ratesFirstGuessVar(object, 'preMRNA')
+		total=ratesFirstGuess(object, 'total')[genesTmp,]
+		, total_var=ratesFirstGuessVar(object, 'total')[genesTmp,]
+		, preMRNA=ratesFirstGuess(object, 'preMRNA')[genesTmp,]
+		, preMRNA_var=ratesFirstGuessVar(object, 'preMRNA')[genesTmp,]
 		)
 	rates <- list(
-		alpha=ratesFirstGuess(object, 'synthesis')
-		, alpha_var=ratesFirstGuessVar(object, 'synthesis')
-		, beta=ratesFirstGuess(object, 'degradation')
-		, gamma=ratesFirstGuess(object, 'processing')
+		alpha=ratesFirstGuess(object, 'synthesis')[genesTmp,]
+		, alpha_var=ratesFirstGuessVar(object, 'synthesis')[genesTmp,]
+		, beta=ratesFirstGuess(object, 'degradation')[genesTmp,]
+		, gamma=ratesFirstGuess(object, 'processing')[genesTmp,]
 		)
 	#
 	suppressWarnings(

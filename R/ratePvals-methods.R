@@ -18,16 +18,17 @@
 #' @return A matrix containing p-values calculated for each rate
 #' @seealso \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' ratePvals(mycerIds10)
+#' data('nascentInspObj10', package='INSPEcT')
+#' ratePvals(nascentInspObj10)
 #' # calculate agin the p-values with Brown with a different threshold 
 #' # for considering a model valid for the log likelihood ratio test
-#' ratePvals(mycerIds10, cTsh=.2)
-#' # Set permaenently the chi-squared threshold at .2 for mycerIds10 object
-#' thresholds(mycerIds10)$chisquare <- .2
+#' ratePvals(nascentInspObj10, cTsh=.2)
+#' # Set permaenently the chi-squared threshold at .2 for nascentInspObj10 object
+#' thresholds(nascentInspObj10)$chisquare <- .2
 setMethod('ratePvals', 'INSPEcT_model', function(object, cTsh=NULL) {
 	## calculates the pval to be varying per rate per gene, 
 	## according to the threshold set for the chisq masking step)
+
 	if( object@params$modelSelection=='llr' ) {
 		if( is.null(cTsh) )
 			cTsh <- object@params$thresholds$chisquare
@@ -115,10 +116,13 @@ setMethod('ratePvals', 'INSPEcT_model', function(object, cTsh=NULL) {
 		betaLLRtestPvlas <- betaLLRtestPvlas[,which(apply(betaLLRtestPvlas,2,var,na.rm=T)!=0)]
 		gammaLLRtestPvlas <- gammaLLRtestPvlas[,which(apply(gammaLLRtestPvlas,2,var,na.rm=T)!=0)]
 
-		# collect and store pvals for each rate
-		synthesisBP <- .brown_method_mask(alphaLLRtestPvlas, alphaChisqMask)
-		degradationBP <- .brown_method_mask(betaLLRtestPvlas, betaChisqMask)
-		processingBP <- .brown_method_mask(gammaLLRtestPvlas, gammaChisqMask)
+		#If we have a matrix of pValues we proceed with the Brown's test, otherwise it is useless
+		if(is.matrix(alphaLLRtestPvlas)){synthesisBP <- .brown_method_mask(alphaLLRtestPvlas, alphaChisqMask)}
+		else{synthesisBP <- alphaLLRtestPvlas}
+		if(is.matrix(betaLLRtestPvlas)){degradationBP <- .brown_method_mask(betaLLRtestPvlas, betaChisqMask)}
+		else{degradationBP <- betaLLRtestPvlas}
+		if(is.matrix(gammaLLRtestPvlas)){processingBP <- .brown_method_mask(gammaLLRtestPvlas, gammaChisqMask)}
+		else{processingBP <- gammaLLRtestPvlas}
 
 		if(object@params$padjG)
 		{

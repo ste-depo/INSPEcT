@@ -1,19 +1,14 @@
 #' Create a new INSPEcT object
 #'
 #' @description
-#' The function newINSPEcT creates a new instance of the class INSPEcT provided the experimental time points, RPKMs of total RNA
-#' and eventually the Nascent-seq experiments. For the Nascent analysis, it is also requires the labeling time and the scaling factor to
-#' normalize the Nascent-seq libraries. This latter parameter can also be calculated by the function itself if both exonic and intronic
-#' RPKMs are provided; otherwise it must be given as an input and it is essential to guarantee the robustness of the analysis.
-#' The function new INSPEcT also evaluates the variance associated with the RPKMs. It can be done through DESeq2, if the package has
-#' been previously used in \code{\link{quantifyExpressionsFromBAMs}} or \code{\link{quantifyExpressionsFromTrCounts}}, or from the experimental data in a
-#' specific experimental condition.
+#' The function newINSPEcT creates a new instance of the class INSPEcT provided the experimental time points, expression data (like RPKMs) of mature
+#' and eventually nascent RNA. For the nascent analysis, it is also requires a collecting time and the scaling factor to
+#' normalize the nascent RNA-seq libraries. This latter parameter can also be calculated by the function itself if both exonic and intronic
+#' expression data are provided; otherwise it must be given as an input and it is essential to guarantee the robustness of the analysis.
 #' @param tpts A vector of time points, one for each sample
 #' @param labeling_time A number, lenght of the Nascent pulse
-#' @param rpkms_Nascent_exons A matrix containing expression levels of Nascent exons
-#' @param rpkms_total_exons A matrix containing expression levels of total exons
-#' @param rpkms_Nascent_introns A matrix containing expression levels of Nascent introns
-#' @param rpkms_total_introns A matrix containing expression levels of total introns
+#' @param nascentExpressions A list which contains exons and introns expression matrices and variances for the nascent RNA
+#' @param matureExpressions A list which contains exons and introns expression matrices and variances for the mature RNA
 #' @param BPPARAM Configuration for BiocParallel parallelization. By default is set to bpparam()
 #' @param totalMedianNorm A logical to perform median normalization over total RNA exons rpkms, it will apply also on introns
 #' @param labeledMedianNorm A logical to perform median normalization over Nascent RNA exons rpkms, it will apply also on introns
@@ -26,36 +21,53 @@
 #' @param Dmin A numerical, it is the lower bound of the degradation rate domain for the prior optimization 
 #' @param Dmax A numerical, it is the upper bound of the degradation rate domain for the prior optimization
 #' @param genesFilter, A logical which, if TRUE, filters out genes which have no signal in at least 2/3 of the time points in each feature
-#' @param dispersion_parameters_DESeq2, A list of parameters for total and, eventually, Nascent data produced by the DESeq2 analysis and exploited by newINSPEcT
-#' for the estimation of the variance in the DESeq2 configuration 
-#' @param varSamplingCondition, a character containing the name of the time points selected for the evaluation of the variance if DESeq2 is not used
-#' @return An object of class INSPEcT with rates guessed, rates can be accessed by \code{\link{ratesFirstGuess}} method.
+#' @return An object of class INSPEcT with a first estimation of the rates which can be accessed by the method \code{\link{ratesFirstGuess}}.
 #' @examples
 #' require(TxDb.Mmusculus.UCSC.mm9.knownGene)
 #' txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
 #' 
-#' data('allcountsNascent', package='INSPEcT')
+#' data('allcounts', package='INSPEcT')
 #' 
-#' tpts <- c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16)
-#' temporalDesign <- rep(tpts,3)
-#' tL <- 1/6
+#' matureCounts<-allcounts$mature
 #' 
-#' #Nascent analysis with DESeq2
-#' makeRPKMsOut_Nascent <- quantifyExpressionsFromTrCounts(txdb=txdb,allcounts=allcountsNascent,temporalDesign=temporalDesign,DESeq2=TRUE)
+#' testGenes<-rownames(matureCounts$exonsCounts)
 #' 
-#' rpkms_Nascent <- makeRPKMsOut_Nascent$rpkms
-#' counts_Nascent <- makeRPKMsOut_Nascent$counts
-#' annotations_Nascent <- makeRPKMsOut_Nascent$annotation
-#' dispersion_parameters_DESeq2_Nascent <- makeRPKMsOut_Nascent$dispersion_parameters_DESeq2
+#' require(TxDb.Mmusculus.UCSC.mm9.knownGene)
+#' txdb<-TxDb.Mmusculus.UCSC.mm9.knownGene
 #' 
-#' #Analysis with Nascent and DESeq2
+#' exonsDB<-reduce(exonsBy(txdb ,'gene'))
+#' exonsDB<-exonsDB[elementNROWS(range(exonsDB))==1]
+#' intronsDB<-psetdiff(unlist(range(exonsDB)),exonsDB)
+#' intronsDB<-intronsDB[elementNROWS(intronsDB)>0]
 #' 
-#' mycerIds_Nascent <- newINSPEcT(tpts=temporalDesign,labeling_time=tL,rpkms_Nascent_exons=rpkms_Nascent$foursu_exons,rpkms_total_exons=rpkms_Nascent$total_exons,rpkms_Nascent_introns=rpkms_Nascent$foursu_introns,rpkms_total_introns=rpkms_Nascent$total_introns,dispersion_parameters_DESeq2=dispersion_parameters_DESeq2_Nascent,varSamplingCondition=NULL)
+#' exWdths<-sapply(width(exonsDB),sum)
+#' intWdths<-sapply(width(intronsDB),sum)
+#' 
+#' exWdths<-exWdths[testGenes]
+#' intWdths<-intWdths[testGenes]
+#'     
+#' totalLS<-colSums(matureCounts$
+#'   stat[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
+#' 
+#' tpts<-c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16)
+#' expDes<-rep(tpts,3)
+#'     
+#' matExp_DESeq2<-quantifyExpressionsFromTrCounts(libsize=totalLS
+#'                                               ,exonsWidths=exWdths
+#'                                               ,intronsWidths=intWdths
+#'                                               ,allcounts=matureCounts
+#'                                               ,DESeq2=TRUE
+#'                                               ,experimentalDesign=expDes)
+#' 
+#' matureInspObj<-newINSPEcT(tpts=tpts
+#'                          ,labeling_time=NULL
+#'                          ,nascentExpressions=NULL
+#'                          ,matureExpressions=matExp_DESeq2)
 
 newINSPEcT <- function(tpts
 					 , labeling_time = NULL
 					 , nascentExpressions = NULL
-					 , totalExpressions
+					 , matureExpressions
 					 , BPPARAM = bpparam()
 					 , totalMedianNorm = TRUE
 					 , labeledMedianNorm = FALSE
@@ -74,10 +86,10 @@ newINSPEcT <- function(tpts
 	else if(!is.null(labeling_time) & !is.null(nascentExpressions)){NoNascent <- FALSE}
 	else(stop('newINSPEcT: labeling_time and nascentExpressions must be both NULL or defined'))
 
-	rpkms_total_exons <- totalExpressions$exonsExpressions
-	rpkms_total_exons_variances <- totalExpressions$exonsVariance
-	rpkms_total_introns <- totalExpressions$intronsExpressions
-	rpkms_total_introns_variances <- totalExpressions$intronsVariance
+	rpkms_total_exons <- matureExpressions$exonsExpressions
+	rpkms_total_exons_variances <- matureExpressions$exonsVariance
+	rpkms_total_introns <- matureExpressions$intronsExpressions
+	rpkms_total_introns_variances <- matureExpressions$intronsVariance
 
 	if(NoNascent)
 	{
@@ -474,48 +486,69 @@ newINSPEcT <- function(tpts
 		}
 
 		## if replicates are available at time zero, compute rate variances
-		t0ix <- originalTpts==originalTpts[1]
-		nRepT0 <- length(which(t0ix))
-		evaluateRateVarAtT0 <- nRepT0>1 # & !simulatedData
+#		evaluateRateVarAtT0 <- nRepT0>1 # & !simulatedData
+		evaluateRateVarAtT0 <- TRUE
 		if( evaluateRateVarAtT0 ) {
 	
 			message('Estimating rate variances at time zero...')
-	
-			a <- matrix(NA, ncol=nRepT0, nrow=length(out$geneNames))
-			rownames(a) <- out$geneNames
-			p <- t <- a
-			a[rownames(rpkms_Nascent_exons),] <- rpkms_Nascent_exons[,t0ix]/out$tL*out$labeledSF[1]
-			t[rownames(rpkms_total_exons),] <- rpkms_total_exons[,t0ix]*out$totalSF[1]
-			p[rownames(rpkms_total_introns),] <- rpkms_total_introns[,t0ix]*out$totalSF[1]
-			mean_a <- apply(a, 1, mean, na.rm=TRUE)
-			mean_t <- apply(t, 1, mean, na.rm=TRUE)
-			mean_p <- apply(p, 1, mean, na.rm=TRUE)
-			mean_1_over_p <- apply(1/p, 1, mean, na.rm=TRUE)
-			mean_t_minus_p <- apply(t-p, 1, mean, na.rm=TRUE)
-			mean_1_over_t <- apply(1/t, 1, mean, na.rm=TRUE)
-			mean_1_over_t_minus_p <- apply(1/(t-p), 1, mean, na.rm=TRUE)
-	
-			matCov <- function(x, y)
-				sapply(1:nrow(x), function(i) 
-					tryCatch(cov(x[i,], y[i,], use="complete.obs"), error=function(e) NA))	
-	
-			var_a <- apply(a, 1, stats::var, na.rm=TRUE)
-			var_t <- apply(t, 1, stats::var, na.rm=TRUE)
-			var_p <- apply(p, 1, stats::var, na.rm=TRUE)
-			var_t_minus_p <- var_t + var_p - 2*matCov(t, p)
-			var_1_over_p <- apply(1/p, 1, stats::var, na.rm=TRUE)
-			var_c <- var_a_over_p <- matCov(a^2,1/p^2) + ( var_a + mean_a^2 )*( var_1_over_p + mean_1_over_p^2 ) -
-				( matCov(a, 1/p) + mean_a*mean_1_over_p )^2
-			var_1_over_t <- apply(1/t, 1, stats::var, na.rm=TRUE)
-			var_1_over_t_minus_p <- apply(1/(t-p), 1, stats::var, na.rm=TRUE)
-			var_a_over_t_minus_p <- matCov(a^2, 1/(t-p)^2) + ( var_a + mean_a^2 )*( var_1_over_t_minus_p + mean_1_over_t_minus_p^2 ) -
-				( matCov(a, 1/(t-p)) + mean_a*mean_1_over_t_minus_p )^2
-			var_a_over_t <- matCov(a^2, 1/t^2) + ( var_a + mean_a^2 )*( var_1_over_t + mean_1_over_t^2 ) -
-				( matCov(a, 1/t) + mean_a*mean_1_over_t )^2
-			var_b <- ifelse(is.na(mean_p), var_a_over_t, var_a_over_t_minus_p)
-			# mask (non-sensed) negative variances
+
+			a <- rpkms_Nascent_exons[,1]/out$tL*out$labeledSF[1]
+			t <- rpkms_total_exons[,1]*out$totalSF[1]
+			p <- rpkms_total_introns[,1]*out$totalSF[1]
+
+			p[setdiff(names(t),names(p))] <- NaN
+
+			c <- a/p
+			b <- a/(t - p)
+
+			var_a <- rpkms_Nascent_exons_variances[,1]/out$tL*out$labeledSF[1]
+			var_t <- rpkms_total_exons_variances[,1]*out$totalSF[1]
+			var_p <- rpkms_total_introns_variances[,1]*out$totalSF[1]
+
+			var_b <- var_a/(t-p)^2 + (a^2)/(t-p)^4*(var_t + var_p)
+			var_c <- var_a/p^2 + (p^4*var_p)/a^2
+
+			var_a[var_a<0] <- NaN
+			var_t[var_t<0] <- NaN
+			var_p[var_p<0] <- NaN
 			var_b[var_b<0] <- NaN
 			var_c[var_c<0] <- NaN
+
+#			a <- matrix(NA, ncol=nRepT0, nrow=length(out$geneNames))
+#			rownames(a) <- out$geneNames
+#			p <- t <- a
+#			a[rownames(rpkms_Nascent_exons),] <- rpkms_Nascent_exons[,t0ix]/out$tL*out$labeledSF[1]
+#			t[rownames(rpkms_total_exons),] <- rpkms_total_exons[,t0ix]*out$totalSF[1]
+#			p[rownames(rpkms_total_introns),] <- rpkms_total_introns[,t0ix]*out$totalSF[1]
+#			mean_a <- apply(a, 1, mean, na.rm=TRUE)
+#			mean_t <- apply(t, 1, mean, na.rm=TRUE)
+#			mean_p <- apply(p, 1, mean, na.rm=TRUE)
+#			mean_1_over_p <- apply(1/p, 1, mean, na.rm=TRUE)
+#			mean_t_minus_p <- apply(t-p, 1, mean, na.rm=TRUE)
+#			mean_1_over_t <- apply(1/t, 1, mean, na.rm=TRUE)
+#			mean_1_over_t_minus_p <- apply(1/(t-p), 1, mean, na.rm=TRUE)
+#	
+#			matCov <- function(x, y)
+#				sapply(1:nrow(x), function(i) 
+#					tryCatch(cov(x[i,], y[i,], use="complete.obs"), error=function(e) NA))	
+#	
+#			var_a <- apply(a, 1, stats::var, na.rm=TRUE)
+#			var_t <- apply(t, 1, stats::var, na.rm=TRUE)
+#			var_p <- apply(p, 1, stats::var, na.rm=TRUE)
+#			var_t_minus_p <- var_t + var_p - 2*matCov(t, p)
+#			var_1_over_p <- apply(1/p, 1, stats::var, na.rm=TRUE)
+#			var_c <- var_a_over_p <- matCov(a^2,1/p^2) + ( var_a + mean_a^2 )*( var_1_over_p + mean_1_over_p^2 ) -
+#				( matCov(a, 1/p) + mean_a*mean_1_over_p )^2
+#			var_1_over_t <- apply(1/t, 1, stats::var, na.rm=TRUE)
+#			var_1_over_t_minus_p <- apply(1/(t-p), 1, stats::var, na.rm=TRUE)
+#			var_a_over_t_minus_p <- matCov(a^2, 1/(t-p)^2) + ( var_a + mean_a^2 )*( var_1_over_t_minus_p + mean_1_over_t_minus_p^2 ) -
+#				( matCov(a, 1/(t-p)) + mean_a*mean_1_over_t_minus_p )^2
+#			var_a_over_t <- matCov(a^2, 1/t^2) + ( var_a + mean_a^2 )*( var_1_over_t + mean_1_over_t^2 ) -
+#				( matCov(a, 1/t) + mean_a*mean_1_over_t )^2
+#			var_b <- ifelse(is.na(mean_p), var_a_over_t, var_a_over_t_minus_p)
+#			# mask (non-sensed) negative variances
+#			var_b[var_b<0] <- NaN
+#			var_c[var_c<0] <- NaN
 	
 		}		
 
@@ -545,7 +578,8 @@ newINSPEcT <- function(tpts
 			, synthesis_t0=if( evaluateRateVarAtT0 ) var_a else NA
 			, degradation_t0=if( evaluateRateVarAtT0 ) var_b else NA
 			, processing_t0=if( evaluateRateVarAtT0 ) var_c else NA
-			, nRepT0=if( evaluateRateVarAtT0 ) nRepT0 else NA
+			, nRepT0=NA
+#			, nRepT0=if( evaluateRateVarAtT0 ) nRepT0 else NA
 			)
 		rownames(fData) <- out$geneNames
 		## adjust variance of "gamma" of "onlyExGenes", assigning NA

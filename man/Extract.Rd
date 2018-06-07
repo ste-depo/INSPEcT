@@ -30,14 +30,14 @@ INSPEcT objects can be subsetted either by gene id or time point. In case
 of subsetting an INSPEcT object by time point, the model should be empty.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-mycerIds_5genes <- mycerIds10[1:5]
+data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10_5genes <- nascentInspObj10[1:5]
 \dontrun{
 ## This will turn out into an error:
-mycerIds_5genes_5tpts <- mycerIds10[1:5, 1:5]
+nascentInspObj10_5genes_5tpts <- nascentInspObj10[1:5, 1:5]
 }
 ## Before subsetting time points, the model should be removed:
-mycerIds_5genes_5tpts <- removeModel(mycerIds10)[1:5, 1:5]
+nascentInspObj10_5genes_5tpts <- removeModel(nascentInspObj10)[1:5, 1:5]
 }
 \seealso{
 removeModel

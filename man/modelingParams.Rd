@@ -38,7 +38,7 @@ List of parameters and their values
    to fit rates and concentrations. In case not, always impulse function is used. 
    (default is TRUE)
  \item testOnSmooth A logical, wheter models should be tested on smoothed pre-mRNA, 
-   total mRNA and synthesis rates or not. (default is TRUE)
+   total mRNA and eventually synthesis rates or not. (default is TRUE)
 }
 }
 \description{
@@ -48,11 +48,11 @@ A method to get and set the parameters that will be used in the modeling of esti
 concentrations by the method \code{\link{modelRates}}
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-modelingParams(mycerIds10)
-data('mycerIds10', package='INSPEcT')
-mycerIds10 <- removeModel(mycerIds10)
-modelingParams(mycerIds10)$useSigmoidFun <- FALSE
+data('nascentInspObj10', package='INSPEcT')
+modelingParams(nascentInspObj10)
+data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- removeModel(nascentInspObj10)
+modelingParams(nascentInspObj10)$useSigmoidFun <- FALSE
 }
 \seealso{
 \code{\link{modelRates}}

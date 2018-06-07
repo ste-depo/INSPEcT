@@ -8,8 +8,8 @@
 #' @return An object of class INSPEcT model
 #' @seealso \code{\link{testingParams}}
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' getModel(mycerIds10)
+#' data('nascentInspObj10', package='INSPEcT')
+#' getModel(nascentInspObj10)
 setMethod('getModel', 'INSPEcT', function(object) {
 	return(object@model)
 	})

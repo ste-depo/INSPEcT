@@ -42,9 +42,21 @@ Consequently, sensitivity and specificity are computed using increasing threshol
 and the ability of correctly classifying a rate is measured through the area under the curve (AUC) for each rate.
 }
 \examples{
-data('simRates', package='INSPEcT')
-data('simData3rep_4su', package='INSPEcT')
-rocCurve(simRates[1:10], simData3rep_4su)
+data('nascentInspObj', package='INSPEcT')	
+
+simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+ 
+newTpts<-simRates@params$tpts
+nascentInspObj_sim3<-makeSimDataset(object=simRates
+                                   ,tpts=newTpts
+                                   ,nRep=3
+                                   ,NoNascent=FALSE
+                                   ,seed=1)
+nascentInspObj_sim3<-modelRates(nascentInspObj_sim3[1:10]
+                               ,seed=1)
+
+rocCurve(simRates[1:10],nascentInspObj_sim3)
+title("3rep. 11t.p. Total and nascent RNA", line=3)
 }
 \seealso{
 \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}, \code{\link{rocThresholds}}

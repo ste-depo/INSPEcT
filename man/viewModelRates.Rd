@@ -24,6 +24,6 @@ Retrieve the modeled rates and concentrations
 A method to access the modeld rates via the method \code{\link{modelRates}}
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-viewModelRates(mycerIds10, 'synthesis')
+data('nascentInspObj10', package='INSPEcT')
+viewModelRates(nascentInspObj10, 'synthesis')
 }
