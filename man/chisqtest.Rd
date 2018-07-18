@@ -27,6 +27,6 @@ Retrieve all results of chi-squared test
 This method is used to retrieve all the chi-squared test results for all models tested for all genes.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-chisqtest(mycerIds10)
+data('nascentInspObj10', package='INSPEcT')
+chisqtest(nascentInspObj10)
 }

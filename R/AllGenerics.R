@@ -39,7 +39,7 @@ setGeneric('geneClass', function(object, bTsh=NULL, cTsh=NULL)
 setGeneric('makeModelRates', function(object, ...) 
 	standardGeneric('makeModelRates'))
 #' Generate synthetic rates and concentrations
-setGeneric('makeSimDataset', function(object, tpts, nRep, seed=NULL) 
+setGeneric('makeSimDataset', function(object, tpts, nRep, NoNascent = FALSE, seed=NULL)
 	standardGeneric('makeSimDataset'))
 #' Display rate classification performance
 setGeneric('rocCurve', function(object, object2, cTsh=NULL, plot=TRUE) 
@@ -82,13 +82,7 @@ setGeneric('getModel', function(object)
 #' @rdname getModel
 setGeneric('getModel<-', function(object, value) 
 	standardGeneric('getModel<-'))
-# #' Get and set number of cores to be used for the modeling
-# setGeneric('nCores', function(object, ...) 
-# 	standardGeneric('nCores'))
-# #' @rdname nCores
-# setGeneric('nCores<-', function(object, value) 
-# 	standardGeneric('nCores<-'))
-#' A nice plot to see scaling factors used for RNA-seq and 4sU-seq libraries
+#' A nice plot to see scaling factors used for RNA-seq and Nascent-seq libraries
 setGeneric('sfPlot', function(object) 
 	standardGeneric('sfPlot'))
 #' Retrieve pre-modeling rates and concentrations
@@ -120,7 +114,7 @@ setGeneric('inHeatmap', function(object, type='pre-model'
 	standardGeneric('inHeatmap'))
 
 #' Generate an object of class INSPEcT_diffsteady from two objects of class INSPEcT
-setGeneric('compareSteady', function(inspectIds1, inspectIds2) 
+setGeneric('compareSteady', function(inspectIds1, inspectIds2, nRep1, nRep2) 
 	standardGeneric('compareSteady'))
 
 ##########################################
@@ -133,13 +127,4 @@ setGeneric('synthesis', function(object) standardGeneric('synthesis'))
 setGeneric('processing', function(object) standardGeneric('processing'))
 #' @rdname INSPEcT_diffsteady-class
 setGeneric('degradation', function(object) standardGeneric('degradation'))
-
-# #############################
-# # generics for class TxDb ####
-# ###############################
-
-# #' @rdname makeGtfFromDb
-# setGeneric( 'makeExonsGtfFromDb' , function( object , type, filename ) standardGeneric( 'makeExonsGtfFromDb' ) )
-# #' @rdname makeGtfFromDb
-# setGeneric( 'makeIntronsGtfFromDb' , function( object , type, filename ) standardGeneric( 'makeIntronsGtfFromDb' ) )
 

@@ -1,5 +1,6 @@
-import("methods","Biobase","BiocParallel","pROC")
+import("methods","Biobase","BiocParallel","pROC", "DESeq2","plgem","SummarizedExperiment","TxDb.Mmusculus.UCSC.mm9.knownGene")
 
+importFrom("stats", "median")
 importFrom("BiocGenerics", "unlist", "plotMA", "invertStrand")
 importFrom("compiler", "cmpfun")
 importFrom("deSolve", "ode")
@@ -16,7 +17,9 @@ importFrom("S4Vectors","subjectHits","queryHits","queryLength","elementNROWS")
 importFrom("stats", "approx", "dist", "ecdf", "hclust", "lm","na.omit", "optim", "optimize", "pchisq", "pnorm","quantile", "rnorm", "runif", "splinefun", "uniroot", "p.adjust", "pt")
 importFrom("utils", "capture.output", "read.table", "write.table", "head")
 
-export("newINSPEcT", "makeRPKMs")
+export("compareSteadyNoNascent")
+export("newINSPEcT", "quantifyExpressionsFromBAMs")
+export("newINSPEcT", "quantifyExpressionsFromTrCounts")
 exportMethods( "[", "chisqmodel", "chisqtest", "combine", "compareSteady", "degradation", "dim", 
     "featureNames", "featureNames<-", "geneClass", "getModel", "getModel<-", "inHeatmap", "labeledSF", 
     "llrtests", "llrtests<-", "logLik", "makeModelRates", "makeSimDataset", 
@@ -26,9 +29,4 @@ exportMethods( "[", "chisqmodel", "chisqtest", "combine", "compareSteady", "degr
     "rocCurve", "rocThresholds", "sfPlot", "show", "synthesis", "thresholds", "thresholds<-", 
     "totalSF", "tpts", "viewModelRates")
 exportClasses("INSPEcT", "INSPEcT_model", "INSPEcT_diffsteady" )
-
-
-
-
-
 

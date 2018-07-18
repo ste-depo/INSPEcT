@@ -27,6 +27,6 @@ Retrieve results of log likelihood test
 This method is used to retrieve all the log likelihood ratio test results for all pairs tested for all genes.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-logLik(mycerIds10)
+data('nascentInspObj10', package='INSPEcT')
+logLik(nascentInspObj10)
 }

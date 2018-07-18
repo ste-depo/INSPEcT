@@ -21,12 +21,12 @@
 #'    to fit rates and concentrations. In case not, always impulse function is used. 
 #'    (default is TRUE)
 #'  \item testOnSmooth A logical, wheter models should be tested on smoothed pre-mRNA, 
-#'    total mRNA and synthesis rates or not. (default is TRUE)
+#'    total mRNA and eventually synthesis rates or not. (default is TRUE)
 #' }
 #' @seealso \code{\link{modelRates}}
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' modelingParams(mycerIds10)
+#' data('nascentInspObj10', package='INSPEcT')
+#' modelingParams(nascentInspObj10)
 setMethod('modelingParams', 'INSPEcT', function(object) {
 	return(object@params)
 	})
@@ -34,23 +34,21 @@ setMethod('modelingParams', 'INSPEcT', function(object) {
 #'
 #' @param value A list with new parameters
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' mycerIds10 <- removeModel(mycerIds10)
-#' modelingParams(mycerIds10)$useSigmoidFun <- FALSE
+#' data('nascentInspObj10', package='INSPEcT')
+#' nascentInspObj10 <- removeModel(nascentInspObj10)
+#' modelingParams(nascentInspObj10)$useSigmoidFun <- FALSE
 setReplaceMethod('modelingParams', 'INSPEcT', function(object, value) {
-	if( !is.list(value) )
+
+	if(!is.list(value))
 		stop('modelingParams: value argument must be a list')
-	if( !identical(names(value), c('nInit', 'nIter', 'na.rm', #'nCores',
-		 'verbose', 'estimateRatesWith', 'useSigmoidFun', 'testOnSmooth')) )
-		stop('modelingParams: value argument must be named list. Names must be "nInit", "nIter", "na.rm", "verbose", "estimateRatesWith", "useSigmoidFun", "testOnSmooth"')
+	if( !is.logical(value$NoNascent) )
+		stop('modelingParams: NoNascent element of value argument must be a logical')
 	if( !is.numeric(value$nInit) )
 		stop('modelingParams: nInit element of value argument must be a numeric')
 	if( !is.numeric(value$nIter) )
 		stop('modelingParams: nIter element of value argument must be a numeric')		
 	if( !is.logical(value$'na.rm') )
 		stop('modelingParams: na.rm element of value argument must be a logical')		
-	# if( !is.numeric(value$nCores) )
-	# 	stop('modelingParams: nCores element of value argument must be a numeric')
 	if( !is.logical(value$verbose) )
 		stop('modelingParams: verbose element of value argument must be a logical')		
 	if( !is.character(value$estimateRatesWith) )

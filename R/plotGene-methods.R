@@ -1,59 +1,68 @@
 #' @rdname plotGene
 #'
 #' @description
-#' A method to see the shapes of the estimated synthesis, degradation and processing rates, pre-mRNA and total mRNA 
+#' A method to see the shapes of the estimated synthesis, degradation and processing rates, pre-RNA and total RNA 
 #' concentrations (solid thin lines) their variances (dashed lines) and the modeled rates and concentrations 
 #' (ticker solid line) of a single gene. 
 #' @param object An object of class INSPEcT
 #' @param ix Eiher a rowname or a row number to select one single gene
 #' @param fix.yaxis A logical, indicating whether the limits for y-axis of degradation and processing rates should be fixed
 #' relative to their distributions
-#' @return A list containing total mRNA levels and their confidence interval (levels plus and minus
-#' one standard deviation), pre-mRNA lelevs and their confidence intervals, synthsis rates and 
+#' @return A list containing total RNA levels and their confidence interval (levels plus and minus
+#' one standard deviation), pre-RNA lelevs and their confidence intervals, synthsis rates and 
 #' their confidence intervals, degradation rates and processing rates of the selected gene.
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' plotGene(mycerIds10, 1)
+#' data('nascentInspObj10', package='INSPEcT')
+#' plotGene(nascentInspObj10, 1)
 setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
 
 	ix <- ix[1]
 	tpts <- object@tpts
+
 	oneGene <- object[ix]
 
 	if( length(object@model@ratesSpecs) > 0 ) {
 
-		total <- t(rbind(
-			ratesFirstGuess(oneGene, 'total')
-			, ratesFirstGuess(oneGene, 'total') + 
-				sqrt(ratesFirstGuessVar(oneGene, 'total'))
-			, ratesFirstGuess(oneGene, 'total') - 
-				sqrt(ratesFirstGuessVar(oneGene, 'total'))
-			, viewModelRates(oneGene, 'total')
-			))
-		preMRNA <- t(rbind(
-			ratesFirstGuess(oneGene, 'preMRNA')
-			, ratesFirstGuess(oneGene, 'preMRNA') + 
-				sqrt(ratesFirstGuessVar(oneGene, 'preMRNA'))
-			, ratesFirstGuess(oneGene, 'preMRNA') - 
-				sqrt(ratesFirstGuessVar(oneGene, 'preMRNA'))
-			, viewModelRates(oneGene, 'preMRNA')
-			))
-		alpha <- t(rbind(
-			ratesFirstGuess(oneGene, 'synthesis')
-			, ratesFirstGuess(oneGene, 'synthesis') + 
-				sqrt(ratesFirstGuessVar(oneGene, 'synthesis'))
-			, ratesFirstGuess(oneGene, 'synthesis') - 
-				sqrt(ratesFirstGuessVar(oneGene, 'synthesis'))
-			, viewModelRates(oneGene, 'synthesis')
-			))
-		beta <- t(rbind(
-			ratesFirstGuess(oneGene, 'degradation')
-			, viewModelRates(oneGene, 'degradation')
-			))
-		gamma <- t(rbind(
-			ratesFirstGuess(oneGene, 'processing')
-			, viewModelRates(oneGene, 'processing')
-			))
+			total <- t(rbind(
+				ratesFirstGuess(oneGene, 'total')
+				, ratesFirstGuess(oneGene, 'total') + 
+					sqrt(ratesFirstGuessVar(oneGene, 'total'))
+				, ratesFirstGuess(oneGene, 'total') - 
+					sqrt(ratesFirstGuessVar(oneGene, 'total'))
+				, viewModelRates(oneGene, 'total')
+				))
+			preMRNA <- t(rbind(
+				ratesFirstGuess(oneGene, 'preMRNA')
+				, ratesFirstGuess(oneGene, 'preMRNA') + 
+					sqrt(ratesFirstGuessVar(oneGene, 'preMRNA'))
+				, ratesFirstGuess(oneGene, 'preMRNA') - 
+					sqrt(ratesFirstGuessVar(oneGene, 'preMRNA'))
+				, viewModelRates(oneGene, 'preMRNA')
+				))
+			if(!object@params$NoNascent)
+			{
+			alpha <- t(rbind(
+				ratesFirstGuess(oneGene, 'synthesis')
+				, ratesFirstGuess(oneGene, 'synthesis') + 
+					sqrt(ratesFirstGuessVar(oneGene, 'synthesis'))
+				, ratesFirstGuess(oneGene, 'synthesis') - 
+					sqrt(ratesFirstGuessVar(oneGene, 'synthesis'))
+				, viewModelRates(oneGene, 'synthesis')
+				))
+			}else{
+			alpha <- t(rbind(
+				ratesFirstGuess(oneGene, 'synthesis')
+				, viewModelRates(oneGene, 'synthesis')
+				))			
+			}
+			beta <- t(rbind(
+				ratesFirstGuess(oneGene, 'degradation')
+				, viewModelRates(oneGene, 'degradation')
+				))
+			gamma <- t(rbind(
+				ratesFirstGuess(oneGene, 'processing')
+				, viewModelRates(oneGene, 'processing')
+				))
 
 		if( fix.yaxis ) {
 
@@ -61,17 +70,28 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
 			processingYlim <- quantile(ratesFirstGuess(object, 'processing'), probs=c(.02, .98), na.rm=TRUE)
 
 			log_shift <- .find_tt_par(tpts)
-			x <- .time_transf(tpts, log_shift)
+			if(object@params$NoNascent)
+			{
+				x <- .time_transf_NoNascent(tpts, log_shift, abs(min(.time_transf(tpts, log_shift))))
+			}else{x <- .time_transf(tpts, log_shift)}
+
 			par(mfrow=c(1,5))
 			matplot(x, total, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
-				, col=1, main='total mRNA', xaxt='n', xlab='time', ylab='')
+				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 			matplot(x, preMRNA, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
-				, col=2, main='pre-mRNA', xaxt='n', xlab='time', ylab='')
+				, col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
-			matplot(x, alpha, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
-				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')
-			axis(1, at=x, labels=signif(tpts, 2), las=3)
+			if(object@params$NoNascent)
+			{
+				matplot(x, alpha, type='l', lty=c(1,1), lwd=c(1,3)
+					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
+				axis(1, at=x, labels=signif(tpts, 2), las=3)
+			}else{
+				matplot(x, alpha, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
+					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
+				axis(1, at=x, labels=signif(tpts, 2), las=3)
+			}
 			matplot(x, beta, type='l', lty=c(1,1), lwd=c(1,3), col=4
 				, main='degradation', xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
@@ -80,17 +100,27 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
 			axis(1, at=x, labels=signif(tpts, 2), las=3)		
 		} else {
 			log_shift <- .find_tt_par(tpts)
-			x <- .time_transf(tpts, log_shift)
+			if(object@params$NoNascent)
+			{
+				x <- .time_transf_NoNascent(tpts, log_shift, abs(min(.time_transf(tpts, log_shift))))
+			}else{x <- .time_transf(tpts, log_shift)}
 			par(mfrow=c(1,5))
 			matplot(x, total, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
-				, col=1, main='total mRNA', xaxt='n', xlab='time', ylab='')
+				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 			matplot(x, preMRNA, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
-				, col=2, main='pre-mRNA', xaxt='n', xlab='time', ylab='')
+				, col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
-			matplot(x, alpha, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
-				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')
-			axis(1, at=x, labels=signif(tpts, 2), las=3)
+			if(object@params$NoNascent)
+			{
+				matplot(x, alpha, type='l', lty=c(1,1), lwd=c(1,3)
+					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
+				axis(1, at=x, labels=signif(tpts, 2), las=3)
+			}else{
+				matplot(x, alpha, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
+					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
+				axis(1, at=x, labels=signif(tpts, 2), las=3)
+			}
 			matplot(x, beta, type='l', lty=c(1,1), lwd=c(1,3), col=4
 				, main='degradation', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
@@ -116,13 +146,20 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
 			, ratesFirstGuess(oneGene, 'preMRNA') - 
 				sqrt(ratesFirstGuessVar(oneGene, 'preMRNA'))
 			))
+		if(!object@params$NoNascent)
+		{
+			alpha <- t(rbind(
+				ratesFirstGuess(oneGene, 'synthesis')
+				, ratesFirstGuess(oneGene, 'synthesis') + 
+					sqrt(ratesFirstGuessVar(oneGene, 'synthesis'))
+				, ratesFirstGuess(oneGene, 'synthesis') - 
+					sqrt(ratesFirstGuessVar(oneGene, 'synthesis'))
+				))
+		}else{
 		alpha <- t(rbind(
 			ratesFirstGuess(oneGene, 'synthesis')
-			, ratesFirstGuess(oneGene, 'synthesis') + 
-				sqrt(ratesFirstGuessVar(oneGene, 'synthesis'))
-			, ratesFirstGuess(oneGene, 'synthesis') - 
-				sqrt(ratesFirstGuessVar(oneGene, 'synthesis'))
-			))
+			))			
+		}
 		beta <- t(rbind(
 			ratesFirstGuess(oneGene, 'degradation')
 			))
@@ -139,10 +176,10 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
 			x <- .time_transf(tpts, log_shift)
 			par(mfrow=c(1,5))
 			matplot(x, total, type='l', lty=c(1,2,2), lwd=c(1,1,1)
-				, col=1, main='total mRNA', xaxt='n', xlab='time', ylab='')
+				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 			matplot(x, preMRNA, type='l', lty=c(1,2,2), lwd=c(1,1,1)
-				, col=2, main='pre-mRNA', xaxt='n', xlab='time', ylab='')
+				, col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 			matplot(x, alpha, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')
@@ -158,10 +195,10 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
 			x <- .time_transf(tpts, log_shift)
 			par(mfrow=c(1,5))
 			matplot(x, total, type='l', lty=c(1,2,2), lwd=c(1,1,1)
-				, col=1, main='total mRNA', xaxt='n', xlab='time', ylab='')
+				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 			matplot(x, preMRNA, type='l', lty=c(1,2,2), lwd=c(1,1,1)
-				, col=2, main='pre-mRNA', xaxt='n', xlab='time', ylab='')
+				, col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 			matplot(x, alpha, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')

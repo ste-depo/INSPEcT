@@ -14,8 +14,9 @@ License: GPL-2
 Depends: R (>= 3.2), methods, Biobase, BiocParallel
 Imports: pROC, deSolve, rootSolve, compiler, preprocessCore,
         GenomicFeatures, GenomicRanges, IRanges, BiocGenerics,
-        GenomicAlignments, Rsamtools, S4Vectors
-Suggests: BiocStyle, knitr, TxDb.Mmusculus.UCSC.mm9.knownGene
+        GenomicAlignments, Rsamtools, S4Vectors,
+        DESeq2, plgem, SummarizedExperiment, TxDb.Mmusculus.UCSC.mm9.knownGene
+Suggests: BiocStyle, knitr
 VignetteBuilder: knitr
 biocViews: Sequencing, RNASeq, GeneRegulation, TimeCourse,
         SystemsBiology

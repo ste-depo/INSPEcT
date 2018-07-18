@@ -18,20 +18,34 @@
 #' @return A list of objects of class pROC with summary of each roc curve
 #' @seealso \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}, \code{\link{rocThresholds}}
 #' @examples
-#' data('simRates', package='INSPEcT')
-#' data('simData3rep', package='INSPEcT')
-#' rocCurve(simRates, simData3rep)
+#' data('nascentInspObj', package='INSPEcT')	
+#'
+#' simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+#'  
+#' newTpts<-simRates@params$tpts
+#' nascentInspObj_sim3<-makeSimDataset(object=simRates
+#'                                    ,tpts=newTpts
+#'                                    ,nRep=3
+#'                                    ,NoNascent=FALSE
+#'                                    ,seed=1)
+#' nascentInspObj_sim3<-modelRates(nascentInspObj_sim3[1:10]
+#'                                ,seed=1)
+#'
+#' rocCurve(simRates[1:10],nascentInspObj_sim3)
+#' title("3rep. 11t.p. Total and nascent RNA", line=3)
+
 setMethod('rocCurve', signature(object='INSPEcT_model', object2='INSPEcT_model'), 
 	function(object, object2, cTsh=NULL, plot=TRUE) {
 	## obtain the response
 	allResponses <- geneClass(object)
 	ratePvals <- ratePvals(object2, cTsh)
-	rAlpha <- roc(response=grepl('a', allResponses)
-		, predictor=ratePvals$synthesis)
-	rBeta <- roc(response=grepl('b', allResponses)
-		, predictor=ratePvals$degradation)
-	rGamma <- roc(response=grepl('c', allResponses)
-		, predictor=ratePvals$processing)
+	# AT LEAST ONE FINITE PVALUE FOR EACH CONTROL CLASS!!!
+	rAlpha <- roc(response=as.numeric(grepl('a', allResponses))
+		, predictor=ratePvals$synthesis,direction=">")
+	rBeta <- roc(response=as.numeric(grepl('b', allResponses))
+		, predictor=ratePvals$degradation,direction=">")
+	rGamma <- roc(response=as.numeric(grepl('c', allResponses))
+		, predictor=ratePvals$processing,direction=">")
 	if( plot ) {
 		legendText <- paste(
 			c('synthesis', 'degradation', 'processing')

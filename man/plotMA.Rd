@@ -30,10 +30,26 @@ Possible arguments to "plotMA":
 }
 }
 \examples{
-data('simData3rep', package='INSPEcT')
-data('simData3rep_2', package='INSPEcT')
-diffrates <- compareSteady(simData3rep, simData3rep_2)
-plotMA(diffrates, alpha=.5)
+data('nascentInspObj', package='INSPEcT')	
+simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+newTpts<-c(0, 16)
+nascentInspObj_sim3<-makeSimDataset(object=simRates
+                                   ,tpts=newTpts
+                                   ,nRep=3
+                                   ,NoNascent=FALSE
+                                   ,seed=1)
+newTpts<-c(0, 16)
+nascentInspObj_sim4<-makeSimDataset(object=simRates
+                                   ,tpts=newTpts
+                                   ,nRep=4
+                                   ,NoNascent=FALSE
+                                   ,seed=2)
+
+diffrates<-compareSteady(inspectIds1=nascentInspObj_sim3
+                        ,inspectIds2=nascentInspObj_sim4
+                        ,nRep1=3
+                        ,nRep2=4)
+plotMA(diffrates, alpha=.95)
 }
 \seealso{
 \url{http://en.wikipedia.org/wiki/MA_plot}

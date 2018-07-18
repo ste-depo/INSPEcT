@@ -22,6 +22,6 @@ Get the number of genes within the INSPEcT object
 A method to obtain the number of the genes associated with the object of class INSPEcT
 }
 \examples{
-data('mycerIds10')
-nGenes(mycerIds10)
+data('nascentInspObj10',package="INSPEcT")
+nGenes(nascentInspObj10)
 }

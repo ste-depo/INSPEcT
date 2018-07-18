@@ -18,16 +18,17 @@
 #' @return A matrix containing p-values calculated for each rate
 #' @seealso \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' ratePvals(mycerIds10)
+#' data('nascentInspObj10', package='INSPEcT')
+#' ratePvals(nascentInspObj10)
 #' # calculate agin the p-values with Brown with a different threshold 
 #' # for considering a model valid for the log likelihood ratio test
-#' ratePvals(mycerIds10, cTsh=.2)
-#' # Set permaenently the chi-squared threshold at .2 for mycerIds10 object
-#' thresholds(mycerIds10)$chisquare <- .2
+#' ratePvals(nascentInspObj10, cTsh=.2)
+#' # Set permaenently the chi-squared threshold at .2 for nascentInspObj10 object
+#' thresholds(nascentInspObj10)$chisquare <- .2
 setMethod('ratePvals', 'INSPEcT_model', function(object, cTsh=NULL) {
 	## calculates the pval to be varying per rate per gene, 
 	## according to the threshold set for the chisq masking step)
+
 	if( object@params$modelSelection=='llr' ) {
 		if( is.null(cTsh) )
 			cTsh <- object@params$thresholds$chisquare
@@ -38,9 +39,9 @@ setMethod('ratePvals', 'INSPEcT_model', function(object, cTsh=NULL) {
 		## generic tests
 		chisq_pvals <- chisqtest(object)
 		logLik_vals <- logLik(object)
-		##########
-		# alpha ####
-		##########
+		#########
+		# alpha #
+		#########
 		alphaCols <- object@params$llrtests$synthesis
 		alphaLLRtestPvlas <- sapply(alphaCols, function(compare) {
 			null <- compare[1]; alt <- compare[2]
@@ -51,6 +52,7 @@ setMethod('ratePvals', 'INSPEcT_model', function(object, cTsh=NULL) {
 		alphaChisqMask <- sapply(alphaCols, function(compare) {
 			chisq_pvals[,compare[1]] <= cTsh | 
 				chisq_pvals[,compare[2]] <= cTsh})
+
 		if( !is.matrix(alphaLLRtestPvlas) ) {
 			alphaLLRtestPvlas <- t(as.matrix(alphaLLRtestPvlas))
 			alphaChisqMask <- t(as.matrix(alphaChisqMask))
@@ -59,9 +61,9 @@ setMethod('ratePvals', 'INSPEcT_model', function(object, cTsh=NULL) {
 		}
 		colnames(alphaLLRtestPvlas) <- colnames(alphaChisqMask) <-
 			sapply(alphaCols, paste, collapse='_VS_')
-		##########
-		# beta ####
-		#########
+		########
+		# beta #
+		########
 		betaCols <- object@params$llrtests$degradation
 		## make the logLikRatio tests
 		betaLLRtestPvlas <- sapply(betaCols, function(compare) {
@@ -81,9 +83,9 @@ setMethod('ratePvals', 'INSPEcT_model', function(object, cTsh=NULL) {
 		}
 		colnames(betaLLRtestPvlas) <- colnames(betaChisqMask) <-
 			sapply(betaCols, paste, collapse='_VS_')
-		##########
-		# gamma ####
-		##########
+		#########
+		# gamma #
+		#########
 		gammaCols <- object@params$llrtests$processing
 		## make the logLikRatio tests
 		gammaLLRtestPvlas <- sapply(gammaCols, function(compare) {
@@ -103,11 +105,35 @@ setMethod('ratePvals', 'INSPEcT_model', function(object, cTsh=NULL) {
 		}
 		colnames(gammaLLRtestPvlas) <- colnames(gammaChisqMask) <-
 			sapply(gammaCols, paste, collapse='_VS_')
-		# collect and store pvals for each rate
+
+		# remove comparisons which have null variance due to the impossibility to evaluate a correlation mandatory for the brown's test
+
+		alphaChisqMask <- alphaChisqMask[,which(apply(alphaLLRtestPvlas,2,var,na.rm=T)!=0)]
+		betaChisqMask <- betaChisqMask[,which(apply(betaLLRtestPvlas,2,var,na.rm=T)!=0)]
+		gammaChisqMask <- gammaChisqMask[,which(apply(gammaLLRtestPvlas,2,var,na.rm=T)!=0)]
+
+		alphaLLRtestPvlas <- alphaLLRtestPvlas[,which(apply(alphaLLRtestPvlas,2,var,na.rm=T)!=0)]
+		betaLLRtestPvlas <- betaLLRtestPvlas[,which(apply(betaLLRtestPvlas,2,var,na.rm=T)!=0)]
+		gammaLLRtestPvlas <- gammaLLRtestPvlas[,which(apply(gammaLLRtestPvlas,2,var,na.rm=T)!=0)]
+
+		#If we have a matrix of pValues we proceed with the Brown's test, otherwise it is useless
+		if(is.matrix(alphaLLRtestPvlas)){synthesisBP <- .brown_method_mask(alphaLLRtestPvlas, alphaChisqMask)}
+		else{synthesisBP <- alphaLLRtestPvlas}
+		if(is.matrix(betaLLRtestPvlas)){degradationBP <- .brown_method_mask(betaLLRtestPvlas, betaChisqMask)}
+		else{degradationBP <- betaLLRtestPvlas}
+		if(is.matrix(gammaLLRtestPvlas)){processingBP <- .brown_method_mask(gammaLLRtestPvlas, gammaChisqMask)}
+		else{processingBP <- gammaLLRtestPvlas}
+
+		if(object@params$padjG)
+		{
+			synthesisBP <- p.adjust(synthesisBP,method="BH",n=length(synthesisBP))
+			degradationBP <- p.adjust(degradationBP,method="BH",n=length(degradationBP))
+			processingBP <- p.adjust(processingBP,method="BH",n=length(processingBP))
+		}
 		ratePvals <- data.frame(
-			synthesis=.brown_method_mask(alphaLLRtestPvlas, alphaChisqMask)
-			, degradation=.brown_method_mask(betaLLRtestPvlas, betaChisqMask)
-			, processing=.brown_method_mask(gammaLLRtestPvlas, gammaChisqMask)
+			synthesis=synthesisBP
+			, degradation=degradationBP
+			, processing=processingBP
 			)		
 	} else if( object@params$modelSelection=='aic' ) {
 		## assign the chi-squared test result of the model selected by AIC

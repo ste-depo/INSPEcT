@@ -4,61 +4,94 @@
 \alias{newINSPEcT}
 \title{Create a new INSPEcT object}
 \usage{
-newINSPEcT(tpts, labeling_time, rpkms_4su_exons, rpkms_total_exons,
-  rpkms_4su_introns = NULL, rpkms_total_introns = NULL,
-  BPPARAM = bpparam(), totalMedianNorm = TRUE, labeledMedianNorm = FALSE,
-  totalSF = NULL, labeledSF = NULL, totalQuantileNorm = FALSE,
-  labeledQuantileNorm = FALSE, simulatedData = FALSE,
-  degDuringPulse = FALSE)
+newINSPEcT(tpts, labeling_time = NULL, nascentExpressions = NULL,
+  matureExpressions, BPPARAM = bpparam(), totalMedianNorm = TRUE,
+  labeledMedianNorm = FALSE, totalSF = NULL, labeledSF = NULL,
+  totalQuantileNorm = FALSE, labeledQuantileNorm = FALSE,
+  simulatedData = FALSE, degDuringPulse = FALSE, Dmin = 1e-06,
+  Dmax = 10, genesFilter = TRUE)
 }
 \arguments{
-\item{tpts}{A vector of time points}
+\item{tpts}{A vector of time points, one for each sample}
 
-\item{labeling_time}{A number, lenght of the 4sU pulse}
+\item{labeling_time}{A number, lenght of the Nascent pulse}
 
-\item{rpkms_4su_exons}{A matrix containing expression levels of 4su exons}
+\item{nascentExpressions}{A list which contains exons and introns expression matrices and variances for the nascent RNA}
 
-\item{rpkms_total_exons}{A matrix containing expression levels of total exons}
-
-\item{rpkms_4su_introns}{A matrix containing expression levels of 4su introns}
-
-\item{rpkms_total_introns}{A matrix containing expression levels of total introns}
+\item{matureExpressions}{A list which contains exons and introns expression matrices and variances for the mature RNA}
 
 \item{BPPARAM}{Configuration for BiocParallel parallelization. By default is set to bpparam()}
 
 \item{totalMedianNorm}{A logical to perform median normalization over total RNA exons rpkms, it will apply also on introns}
 
-\item{labeledMedianNorm}{A logical to perform median normalization over 4sU RNA exons rpkms, it will apply also on introns}
+\item{labeledMedianNorm}{A logical to perform median normalization over Nascent RNA exons rpkms, it will apply also on introns}
 
 \item{totalSF}{A vector storing user defined normalization scale over Total RNA exons and introns rpkms}
 
-\item{labeledSF}{A vector storing user defined normalization scale over 4sU RNA exons and introns rpkms}
+\item{labeledSF}{A vector storing user defined normalization scale over Nascent RNA exons and introns rpkms}
 
 \item{totalQuantileNorm}{A logical to perform to perform median normalization over total RNA exons rpkms, it will apply also on introns}
 
-\item{labeledQuantileNorm}{A logical to perform to perform median normalization over 4sU RNA exons rpkms, it will apply also on introns}
+\item{labeledQuantileNorm}{A logical to perform to perform median normalization over Nascent RNA exons rpkms, it will apply also on introns}
 
 \item{simulatedData}{A logical, set to TRUE in case the analysis is on simulated data}
 
 \item{degDuringPulse}{A logical, set to TRUE in case of a long labelling time. Also degradation of newly synthesized transcripts will be taken into account}
+
+\item{Dmin}{A numerical, it is the lower bound of the degradation rate domain for the prior optimization}
+
+\item{Dmax}{A numerical, it is the upper bound of the degradation rate domain for the prior optimization}
+
+\item{genesFilter, }{A logical which, if TRUE, filters out genes which have no signal in at least 2/3 of the time points in each feature}
 }
 \value{
-An object of class INSPEcT with rates guessed, rates can be accessed by \code{\link{ratesFirstGuess}} method.
+An object of class INSPEcT with a first estimation of the rates which can be accessed by the method \code{\link{ratesFirstGuess}}.
 }
 \description{
-The function newINSPEcT creates a new instance of the class INSPEcT, provided the intronic and exonic RPKMs
-of RNA- and 4sU-seq experiments at different time points, the time points, the labeling time and optionally
-the scaling factor to normalize the libraries. The scaling factor to normalize the 4sU-seq libraries can be 
-calculated by the function itself and this way of calulating the scaling factors gives robustness to the estimation
-of sythesis, degradation and processing rates. 
-In case only exonic RPKMs are provided, only synthesis and degradation rates can be estimated by the function newINSPEcT
-and the scaling factors to normalize 4sU-seq libraries cannot be caluculated. To provide robustness to the procedure
-the argument labeledSF is strongly suggested in this case.
+The function newINSPEcT creates a new instance of the class INSPEcT provided the experimental time points, expression data (like RPKMs) of mature
+and eventually nascent RNA. For the nascent analysis, it is also requires a collecting time and the scaling factor to
+normalize the nascent RNA-seq libraries. This latter parameter can also be calculated by the function itself if both exonic and intronic
+expression data are provided; otherwise it must be given as an input and it is essential to guarantee the robustness of the analysis.
 }
 \examples{
-data('rpkms', package='INSPEcT')
-tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
-tL <- 1/6
-mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
+require(TxDb.Mmusculus.UCSC.mm9.knownGene)
+txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
+
+data('allcounts', package='INSPEcT')
+
+matureCounts<-allcounts$mature
+
+testGenes<-rownames(matureCounts$exonsCounts)
+
+require(TxDb.Mmusculus.UCSC.mm9.knownGene)
+txdb<-TxDb.Mmusculus.UCSC.mm9.knownGene
+
+exonsDB<-reduce(exonsBy(txdb ,'gene'))
+exonsDB<-exonsDB[elementNROWS(range(exonsDB))==1]
+intronsDB<-psetdiff(unlist(range(exonsDB)),exonsDB)
+intronsDB<-intronsDB[elementNROWS(intronsDB)>0]
+
+exWdths<-sapply(width(exonsDB),sum)
+intWdths<-sapply(width(intronsDB),sum)
+
+exWdths<-exWdths[testGenes]
+intWdths<-intWdths[testGenes]
+    
+totalLS<-colSums(matureCounts$
+  stat[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
+
+tpts<-c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16)
+expDes<-rep(tpts,3)
+    
+matExp_DESeq2<-quantifyExpressionsFromTrCounts(libsize=totalLS
+                                              ,exonsWidths=exWdths
+                                              ,intronsWidths=intWdths
+                                              ,allcounts=matureCounts
+                                              ,DESeq2=TRUE
+                                              ,experimentalDesign=expDes)
+
+matureInspObj<-newINSPEcT(tpts=tpts
+                         ,labeling_time=NULL
+                         ,nascentExpressions=NULL
+                         ,matureExpressions=matExp_DESeq2)
 }

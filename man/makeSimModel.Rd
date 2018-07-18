@@ -9,9 +9,8 @@
 makeSimModel(object, nGenes, newTpts = NULL, probs = c(constant = 0.5,
   sigmoid = 0.3, impulse = 0.2), na.rm = TRUE, seed = NULL)
 
-\S4method{makeSimModel}{INSPEcT}(object, nGenes, newTpts = NULL,
-  probs = c(constant = 0.5, sigmoid = 0.3, impulse = 0.2), na.rm = TRUE,
-  seed = NULL)
+\S4method{makeSimModel}{INSPEcT}(object, nGenes, probs = c(constant = 0.5,
+  sigmoid = 0.3, impulse = 0.2), na.rm = TRUE, seed = NULL)
 }
 \arguments{
 \item{object}{An object of class INSPEcT}
@@ -41,29 +40,12 @@ provided. This method has to be used before the \code{\link{makeSimDataset}} met
 The method \code{\link{makeSimModel}} generates an object of class INSPEcT_model that stores the parametric functions to genrate clean rates of a time-course. To any of the rates also a noise variance is associate but not used yet. In a typical workflow the output of \code{\link{makeSimModel}} is the input of the method \code{\link{makeSimDataset}}, that build the noisy rates and concentrations, given a specified number of replicates.
 }
 \examples{
-data('rpkms', package='INSPEcT')
-tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
-tL <- 1/6
-mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
-## generate a synthtic data-set of 10 genes based on the real data-set
-simRates <- makeSimModel(mycerIds, 10)
-simData <- makeSimDataset(simRates, tpts, 1)
-## measure sensitivity/sensibility of synthesis, degradation and processing
-## rates identification
-data('simRates', package='INSPEcT')
-data('simData3rep', package='INSPEcT')
-rocCurve(simRates, simData3rep)
-## measure classification with a different threshold for the chi-suared 
-## test acceptance of models
-rocCurve(simRates, simData3rep, cTsh=.2)
-## generate a synthtic data-set of 10 genes based on the real data-set
-## with more replicates and more time points
-\dontrun{
-newTpts <- c(0, 1/6, 1/3, 1/2, 1, 1.5, 2, 4, 8, 12, 16, 24)
-simRates <- makeSimModel(mycerIds, 10, newTpts=newTpts)
-simData <- makeSimDataset(simRates, newTpts, 3)
-}
+data('nascentInspObj', package='INSPEcT')
+simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+tpts <- simRates@params$tpts
+
+simData2rep_Nascent <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
+simData2rep_Nascent <- modelRates(simData2rep_Nascent[1:10], seed=1)
 }
 \seealso{
 \code{\link{makeSimDataset}}

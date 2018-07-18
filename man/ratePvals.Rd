@@ -40,13 +40,13 @@ Among the many p-values that log likelihood ratio test calculate, a single p-val
 for combining dependent p-values.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-ratePvals(mycerIds10)
+data('nascentInspObj10', package='INSPEcT')
+ratePvals(nascentInspObj10)
 # calculate agin the p-values with Brown with a different threshold 
 # for considering a model valid for the log likelihood ratio test
-ratePvals(mycerIds10, cTsh=.2)
-# Set permaenently the chi-squared threshold at .2 for mycerIds10 object
-thresholds(mycerIds10)$chisquare <- .2
+ratePvals(nascentInspObj10, cTsh=.2)
+# Set permaenently the chi-squared threshold at .2 for nascentInspObj10 object
+thresholds(nascentInspObj10)$chisquare <- .2
 }
 \seealso{
 \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}

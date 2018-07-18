@@ -15,49 +15,50 @@
 #' @return An object of class INSPEcT_model with synthetic rates
 #' @seealso \code{\link{makeSimDataset}}
 #' @examples
-#' data('rpkms', package='INSPEcT')
-#' tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
-#' tL <- 1/6
-#' mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-#' 	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
-#' ## generate a synthtic data-set of 10 genes based on the real data-set
-#' simRates <- makeSimModel(mycerIds, 10)
-#' simData <- makeSimDataset(simRates, tpts, 1)
-#' ## measure sensitivity/sensibility of synthesis, degradation and processing
-#' ## rates identification
-#' data('simRates', package='INSPEcT')
-#' data('simData3rep', package='INSPEcT')
-#' rocCurve(simRates, simData3rep)
-#' ## measure classification with a different threshold for the chi-suared 
-#' ## test acceptance of models
-#' rocCurve(simRates, simData3rep, cTsh=.2)
-#' ## generate a synthtic data-set of 10 genes based on the real data-set
-#' ## with more replicates and more time points
-#' \dontrun{
-#' newTpts <- c(0, 1/6, 1/3, 1/2, 1, 1.5, 2, 4, 8, 12, 16, 24)
-#' simRates <- makeSimModel(mycerIds, 10, newTpts=newTpts)
-#' simData <- makeSimDataset(simRates, newTpts, 3)
-#' }
-setMethod('makeSimModel', 'INSPEcT', 
-	function(object, nGenes, newTpts=NULL, 
-		probs=c(constant=.5,sigmoid=.3,impulse=.2), na.rm=TRUE, seed=NULL) {
+#' data('nascentInspObj', package='INSPEcT')
+#' simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+
+#' tpts <- simRates@params$tpts
+#' 
+#' simData2rep_Nascent <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
+#' simData2rep_Nascent <- modelRates(simData2rep_Nascent[1:10], seed=1)
+setMethod('makeSimModel', 'INSPEcT', function(object
+											, nGenes
+											, probs=c(constant=.5
+													, sigmoid=.3
+													, impulse=.2)
+											, na.rm=TRUE
+											, seed=NULL)
+{
 
 	tpts <- object@tpts
+
+	#I remove genes without intronic signal
+	genesTmp <- which(apply(ratesFirstGuess(object, 'preMRNA'),1,function(r)all(is.finite(r))&all(r>0)))		
+
 	concentrations <- list(
-		total=ratesFirstGuess(object, 'total')
-		, total_var=ratesFirstGuessVar(object, 'total')
-		, preMRNA=ratesFirstGuess(object, 'preMRNA')
-		, preMRNA_var=ratesFirstGuessVar(object, 'preMRNA')
+		total=ratesFirstGuess(object, 'total')[genesTmp,]
+		, total_var=ratesFirstGuessVar(object, 'total')[genesTmp,]
+		, preMRNA=ratesFirstGuess(object, 'preMRNA')[genesTmp,]
+		, preMRNA_var=ratesFirstGuessVar(object, 'preMRNA')[genesTmp,]
 		)
 	rates <- list(
-		alpha=ratesFirstGuess(object, 'synthesis')
-		, alpha_var=ratesFirstGuessVar(object, 'synthesis')
-		, beta=ratesFirstGuess(object, 'degradation')
-		, gamma=ratesFirstGuess(object, 'processing')
+		alpha=ratesFirstGuess(object, 'synthesis')[genesTmp,]
+		, alpha_var=ratesFirstGuessVar(object, 'synthesis')[genesTmp,]
+		, beta=ratesFirstGuess(object, 'degradation')[genesTmp,]
+		, gamma=ratesFirstGuess(object, 'processing')[genesTmp,]
 		)
 	#
-	out <- .makeSimData(nGenes, tpts, concentrations, rates
-		, newTpts=newTpts, probs=probs, na.rm=na.rm, seed=seed)
+	suppressWarnings(
+		out <- .makeSimData(nGenes
+						  , tpts
+						  , concentrations
+						  , rates
+						  , probs = probs
+						  , na.rm = na.rm
+						  , seed = seed)
+	)
+
 	# arrange simdataSpecs form .makeSimData
 	simdataSpecs <- out$simdataSpecs
 	simdataSpecs <- lapply(simdataSpecs, function(x) list(x))
@@ -67,7 +68,10 @@ setMethod('makeSimModel', 'INSPEcT',
 	newObject@params$sim$flag <- TRUE
 	newObject@params$sim$foldchange <- out$simulatedFC
 	newObject@params$sim$noiseVar <- out$noiseVar
+	newObject@params$sim$noiseFunctions <- out$noiseFunctions
+	newObject@params$tpts <- tpts
 
+	if(length(out$simdataSpecs)>nGenes){return(newObject[1:nGenes])} #Return only the required number of genes or less
 	return(newObject)
 
 	})

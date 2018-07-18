@@ -22,6 +22,6 @@ Get the number of time points within the INSPEcT object
 A method to obtain the number of the tpts associated with the object of class INSPEcT
 }
 \examples{
-data('mycerIds10')
-nTpts(mycerIds10)
+data('nascentInspObj10',package="INSPEcT")
+nTpts(nascentInspObj10)
 }

@@ -15,7 +15,7 @@ labeledSF(object)
 }
 \value{
 A numeric that indicates the scaling factors applied between time points
-of the data coming from 4sU-seq library (applies directly to synthesis
+of the data coming from Nascent-seq library (applies directly to synthesis
 rates and indirectly to degradation rates)
 }
 \description{
@@ -24,6 +24,6 @@ Accessor to the slot labeledSF of an INSPEcT object
 Accessor to obtain the labeledSF slot associated with the object of class INSPEcT
 }
 \examples{
-data('mycerIds10')
-labeledSF(mycerIds10)
+data('nascentInspObj10',package="INSPEcT")
+labeledSF(nascentInspObj10)
 }
