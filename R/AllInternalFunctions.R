@@ -389,9 +389,9 @@ chisq <- function(experiment, model, variance=NULL)
 	
 	}
 	
-	###################################
-	## estimate degradation rates #########
-	#####################################
+	################################
+	## estimate degradation rates ##
+	################################
 	
 	# only exons mode
 	if( onlyExonsMode ) {
@@ -4037,14 +4037,16 @@ errorVVV_Der_NoNascent <- function(parameters
 			,VVV = 18)
 
 	# P values
-	pvaluesdata <- cbind(KKK=pchisq(chi2data[,'KKK'], 2*length(tptsOriginal)-dof['KKK'])
-						,VKK=pchisq(chi2data[,'VKK'], 2*length(tptsOriginal)-dof['VKK'])
-						,KVK=pchisq(chi2data[,'KVK'], 2*length(tptsOriginal)-dof['KVK'])
-						,KKV=pchisq(chi2data[,'KKV'], 2*length(tptsOriginal)-dof['KKV'])
-						,VVK=pchisq(chi2data[,'VVK'], 2*length(tptsOriginal)-dof['VVK'])
-						,VKV=pchisq(chi2data[,'VKV'], 2*length(tptsOriginal)-dof['VKV'])
-						,KVV=pchisq(chi2data[,'KVV'], 2*length(tptsOriginal)-dof['KVV'])
-						,VVV=pchisq(chi2data[,'VVV'], 2*length(tptsOriginal)-dof['VVV']))
+	pvaluesdata <- cbind(KKK=pchisq(chi2data[,'KKK'], min(c(0,2*length(tptsOriginal)-dof['KKK'])))
+						,VKK=pchisq(chi2data[,'VKK'], min(c(0,2*length(tptsOriginal)-dof['VKK'])))
+						,KVK=pchisq(chi2data[,'KVK'], min(c(0,2*length(tptsOriginal)-dof['KVK'])))
+						,KKV=pchisq(chi2data[,'KKV'], min(c(0,2*length(tptsOriginal)-dof['KKV'])))
+						,VVK=pchisq(chi2data[,'VVK'], min(c(0,2*length(tptsOriginal)-dof['VVK'])))
+						,VKV=pchisq(chi2data[,'VKV'], min(c(0,2*length(tptsOriginal)-dof['VKV'])))
+						,KVV=pchisq(chi2data[,'KVV'], min(c(0,2*length(tptsOriginal)-dof['KVV'])))
+						,VVV=pchisq(chi2data[,'VVV'], min(c(0,2*length(tptsOriginal)-dof['VVV']))))
+
+	
 
 	logLikelihood <- t(mcsapply(eiGenes,function(g)
 	{
@@ -4840,14 +4842,14 @@ errorVVV_Der_NoNascent <- function(parameters
 				,VVV = 18)
 
 		# P values
-		pvaluesdata <- cbind(KKK=pchisq(chi2data[,'KKK'], 2*length(tptsOriginal)-dof['KKK'])
-							,VKK=pchisq(chi2data[,'VKK'], 2*length(tptsOriginal)-dof['VKK'])
-							,KVK=pchisq(chi2data[,'KVK'], 2*length(tptsOriginal)-dof['KVK'])
-							,KKV=pchisq(chi2data[,'KKV'], 2*length(tptsOriginal)-dof['KKV'])
-							,VVK=pchisq(chi2data[,'VVK'], 2*length(tptsOriginal)-dof['VVK'])
-							,VKV=pchisq(chi2data[,'VKV'], 2*length(tptsOriginal)-dof['VKV'])
-							,KVV=pchisq(chi2data[,'KVV'], 2*length(tptsOriginal)-dof['KVV'])
-							,VVV=pchisq(chi2data[,'VVV'], 2*length(tptsOriginal)-dof['VVV']))
+		pvaluesdata <- cbind(KKK=pchisq(chi2data[,'KKK'], min(c(0,2*length(tptsOriginal)-dof['KKK'])))
+							,VKK=pchisq(chi2data[,'VKK'], min(c(0,2*length(tptsOriginal)-dof['VKK'])))
+							,KVK=pchisq(chi2data[,'KVK'], min(c(0,2*length(tptsOriginal)-dof['KVK'])))
+							,KKV=pchisq(chi2data[,'KKV'], min(c(0,2*length(tptsOriginal)-dof['KKV'])))
+							,VVK=pchisq(chi2data[,'VVK'], min(c(0,2*length(tptsOriginal)-dof['VVK'])))
+							,VKV=pchisq(chi2data[,'VKV'], min(c(0,2*length(tptsOriginal)-dof['VKV'])))
+							,KVV=pchisq(chi2data[,'KVV'], min(c(0,2*length(tptsOriginal)-dof['KVV'])))
+							,VVV=pchisq(chi2data[,'VVV'], min(c(0,2*length(tptsOriginal)-dof['VVV']))))
 
 		logLikelihood <- t(mcsapply(eiGenes,function(g)
 		{
@@ -5248,3 +5250,75 @@ classificationFunction <- function(p,m,alpha,err)
 
 	return(t(classificationTmp))
 }
+
+# plotRegressionCurve <- function(premature, mature, alpha, err, main, xlimU, ylimU, smooth=TRUE, outliers=FALSE)
+# {
+# 	if(is.matrix(premature)&is.matrix(mature))
+# 	{
+# 		x <- log2(apply(premature,1,median,na.rm=TRUE))
+# 		y <- log2(apply(mature,1,median,na.rm=TRUE))
+# 	}else{
+# 		x <- log2(premature)
+# 		y <- log2(mature)
+# 	}
+
+# 	pi_angle <- alpha * pi/180
+# 	coef_ang <- tan(pi_angle)
+# 	delta_intercept <- err/cos(pi_angle)
+
+# 	intercept <- median(y,na.rm=TRUE) - coef_ang*median(x,na.rm=TRUE)
+
+# 	if(smooth){
+# 		smoothScatter(x,y,xlab="Log2 median premature RNA",ylab="Log2 median mature RNA",main=main)
+
+# 		abline(intercept,coef_ang,col=2,lw=3)
+# 		abline(intercept + delta_intercept,coef_ang,col=2,lw=3,lty=2)	
+# 		abline(intercept - delta_intercept,coef_ang,col=2,lw=3,lty=2)
+
+
+# 	}else{
+# 		if(!outliers)
+# 		{
+# 			df <- data.frame(x = x
+# 						   , y = y
+# 						   , d = densCols(x, y, colramp = colorRampPalette(rev(rainbow(10, end = 4/6))))
+# 						   , cyl = rep(15,length(x)))
+	
+# 			p <- ggplot(df) + xlim(xlimU) + ylim(ylimU) +
+#     		geom_point(aes(x, y, col = d), size = 2, shape=df$cyl) +
+#     		scale_color_identity() +
+#     		theme_bw() + labs(x = "Log2 premature RNA", y = "Log2 mature RNA", title = main)+
+#     		geom_abline(intercept = intercept, slope = coef_ang, color="red", size=1.5)+
+#     		geom_abline(intercept = intercept+ delta_intercept,linetype="dashed", slope = coef_ang, color="red", size=1.5)+
+#     		geom_abline(intercept = intercept- delta_intercept,linetype="dashed", slope = coef_ang, color="red", size=1.5)
+# 			print(p)
+# 		}
+# 		if(outliers)
+# 		{
+# 			x <- x[is.finite(x)&is.finite(y)]
+# 			y <- y[names(x)]
+
+# 			df <- data.frame(x = x, y = y)
+
+# 			boolTmp <- apply(as.matrix(df),1,function(r)
+# 			{
+# 				as.numeric(r[1])*coef_ang + (intercept + delta_intercept) > as.numeric(r[2]) & as.numeric(r[1]) * coef_ang + (intercept- delta_intercept) < as.numeric(r[2])
+# 			})	
+
+# 			dfT <- data.frame(x=df$x[boolTmp],y=df$y[boolTmp], col =  densCols(df$x[boolTmp], df$y[boolTmp], colramp = colorRampPalette(rev(c("gray46","gray88")))))
+# 			dfF <- data.frame(x=df$x[!boolTmp],y=df$y[!boolTmp], col =  densCols(df$x[!boolTmp], df$y[!boolTmp], colramp = colorRampPalette(rev(rainbow(10, end = 4/6)))))
+
+# 			p <- ggplot()
+# 			p <- p + xlim(xlimU) + ylim(ylimU)
+# 			p <- p + geom_point(aes(dfT$x, dfT$y, col = dfT$col), size = 2, shape=15)
+# 			p <- p + geom_point(aes(dfF$x, dfF$y, col = dfF$col), size = 2, shape=15)
+#     		p <- p + scale_color_identity()
+#      		p <- p + labs(x = "Log2 premature RNA", y = "Log2 mature RNA", title = main) +
+#     			geom_abline(intercept = intercept, slope = coef_ang, color="red", size=1.5)+
+#     			geom_abline(intercept = intercept+ delta_intercept,linetype="dashed", slope = coef_ang, color="red", size=1.5)+
+#     			geom_abline(intercept = intercept- delta_intercept,linetype="dashed", slope = coef_ang, color="red", size=1.5)
+# 			p <- p + theme_light()
+# 			print(p)
+# 		}
+# 	}
+# }

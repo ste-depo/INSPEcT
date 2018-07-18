@@ -152,7 +152,9 @@ quantifyExpressionsFromTrCounts <- function(libsize
 		return(list(exonsExpressions = expressionsExons
 				  , intronsExpressions = expressionsIntrons
 				  , exonsVariance = varianceExpressionsExons
-				  , intronsVariance = varianceExpressionsIntrons))
+				  , intronsVariance = varianceExpressionsIntrons
+				  , exonsCounts = exonsCounts
+				  , intronsCounts = intronsCounts))
 
 	} else {
 

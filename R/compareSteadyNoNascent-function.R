@@ -44,15 +44,8 @@
 #' head(regGenes)
 #' table(regGenes)
 
-
 compareSteadyNoNascent <- function(expressionMatrices,expressionThreshold=0.25,log2FCThreshold=2.)
 {
-
-	#	var_ex <- err$exons
-	#	var_int <- err$introns
-	#
-	#	var_m <- var_int + var_ex
-	#	var_p <- var_int
 
 	eiGenes <- intersect(rownames(expressionMatrices$exonsExpressions),rownames(expressionMatrices$intronsExpressions))
 	print(paste0("compareSteadyNoNascent: ",length(eiGenes)," genes with introns and exons under analysis."))
@@ -61,25 +54,18 @@ compareSteadyNoNascent <- function(expressionMatrices,expressionThreshold=0.25,l
 	premature <- expressionMatrices$intronsExpressions[eiGenes,]
 	total <- expressionMatrices$exonsExpressions[eiGenes,]
 
-	#	var_log2p <- var_p/(median(premature,na.rm=TRUE)*log(2))^2
-	#	var_log2m <- var_m/(median(mature,na.rm=TRUE)*log(2))^2
-	#	sigma_log2p <- sqrt(var_log2p)
-	#	sigma_log2m <- sqrt(var_log2m)
-	#	err <- (sigma_log2m*cos(atan(sigma_log2m/sigma_log2p)))*sigmas
-
-	#	print(paste0("compareSteadyNoNascent: acceptance parameter equal ",round(err,2)))
-
 	prematureMedian <- apply(premature,1,function(r)median(r,na.rm=T))
 	matureMedian <- apply(mature,1,function(r)median(r,na.rm=T))
 	
-	suppressWarnings(standardCurveFit <- standardCurveFitFunction(p=prematureMedian,m=matureMedian,err=log2FCThreshold))
+	suppressWarnings(standardCurveFit <- standardCurveFitFunction(p=prematureMedian
+																, m=matureMedian
+																, err=log2FCThreshold))
+	print(paste0("Trivial angle: ",standardCurveFit))
 
 	premature[premature<=expressionThreshold] <- NA
 	mature[mature<=expressionThreshold] <- NA
 
 	suppressWarnings(classificationTmp <- classificationFunction(p=premature,m=mature,alpha=standardCurveFit,err=log2FCThreshold))
-
-	#	classificationTmp[!is.finite(classificationTmp)] <- FALSE
 
 	return(classificationTmp)
 }
