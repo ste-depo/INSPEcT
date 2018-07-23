@@ -103,7 +103,7 @@ setGeneric('makeSimModel', function(object, nGenes, newTpts=NULL
 setGeneric('viewModelRates', function(object, feature) 
 	standardGeneric('viewModelRates'))
 #' Plot the pre-modeled and modeled profiles for one gene
-setGeneric('plotGene', function(object, ix, fix.yaxis=FALSE) 
+setGeneric('plotGene', function(object, ix, fix.yaxis=FALSE, priors=TRUE) 
 	standardGeneric('plotGene'))
 #' Heatmap that represent the fold changes of all the five features
 setGeneric('inHeatmap', function(object, type='pre-model'

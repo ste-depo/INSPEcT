@@ -8,59 +8,81 @@
 #' @param ix Eiher a rowname or a row number to select one single gene
 #' @param fix.yaxis A logical, indicating whether the limits for y-axis of degradation and processing rates should be fixed
 #' relative to their distributions
+#' @param priors A logical, if true the priors of the rates are plotted
 #' @return A list containing total RNA levels and their confidence interval (levels plus and minus
 #' one standard deviation), pre-RNA lelevs and their confidence intervals, synthsis rates and 
 #' their confidence intervals, degradation rates and processing rates of the selected gene.
 #' @examples
 #' data('nascentInspObj10', package='INSPEcT')
 #' plotGene(nascentInspObj10, 1)
-setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
+setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TRUE) {
+
 
 	ix <- ix[1]
 	tpts <- object@tpts
 
 	oneGene <- object[ix]
 
+	ratesFirstGuessTotalTmp <- ratesFirstGuess(oneGene, 'total')
+	ratesFirstGuessPreTmp <- ratesFirstGuess(oneGene, 'preMRNA')
+	ratesFirstGuessSynthesisTmp <- ratesFirstGuess(oneGene, 'synthesis')
+	ratesFirstGuessProcessingTmp <- ratesFirstGuess(oneGene, 'processing')
+	ratesFirstGuessDegradationTmp <- ratesFirstGuess(oneGene, 'degradation')
+
+	ratesFirstGuessTotalVarTmp <- ratesFirstGuessVar(oneGene, 'total')
+	ratesFirstGuessPreVarTmp <- ratesFirstGuessVar(oneGene, 'preMRNA')
+	ratesFirstGuessSynthesisVarTmp <- ratesFirstGuessVar(oneGene, 'synthesis')
+	
+	if(!priors)
+	{
+		ratesFirstGuessSynthesisTmp[is.finite(ratesFirstGuessSynthesisTmp)] <- NaN
+		ratesFirstGuessProcessingTmp[is.finite(ratesFirstGuessProcessingTmp)] <- NaN
+		ratesFirstGuessDegradationTmp[is.finite(ratesFirstGuessDegradationTmp)] <- NaN
+		
+		ratesFirstGuessSynthesisVarTmp[is.finite(ratesFirstGuessSynthesisVarTmp)] <- NaN
+	}
+
+
 	if( length(object@model@ratesSpecs) > 0 ) {
 
 			total <- t(rbind(
-				ratesFirstGuess(oneGene, 'total')
-				, ratesFirstGuess(oneGene, 'total') + 
-					sqrt(ratesFirstGuessVar(oneGene, 'total'))
-				, ratesFirstGuess(oneGene, 'total') - 
-					sqrt(ratesFirstGuessVar(oneGene, 'total'))
+				ratesFirstGuessTotalTmp
+				, ratesFirstGuessTotalTmp + 
+					sqrt(ratesFirstGuessTotalVarTmp)
+				, ratesFirstGuessTotalTmp - 
+					sqrt(ratesFirstGuessTotalVarTmp)
 				, viewModelRates(oneGene, 'total')
 				))
 			preMRNA <- t(rbind(
-				ratesFirstGuess(oneGene, 'preMRNA')
-				, ratesFirstGuess(oneGene, 'preMRNA') + 
-					sqrt(ratesFirstGuessVar(oneGene, 'preMRNA'))
-				, ratesFirstGuess(oneGene, 'preMRNA') - 
-					sqrt(ratesFirstGuessVar(oneGene, 'preMRNA'))
+				ratesFirstGuessPreTmp
+				, ratesFirstGuessPreTmp + 
+					sqrt(ratesFirstGuessPreVarTmp)
+				, ratesFirstGuessPreTmp - 
+					sqrt(ratesFirstGuessPreVarTmp)
 				, viewModelRates(oneGene, 'preMRNA')
 				))
 			if(!object@params$NoNascent)
 			{
 			alpha <- t(rbind(
-				ratesFirstGuess(oneGene, 'synthesis')
-				, ratesFirstGuess(oneGene, 'synthesis') + 
-					sqrt(ratesFirstGuessVar(oneGene, 'synthesis'))
-				, ratesFirstGuess(oneGene, 'synthesis') - 
-					sqrt(ratesFirstGuessVar(oneGene, 'synthesis'))
+				ratesFirstGuessSynthesisTmp
+				, ratesFirstGuessSynthesisTmp + 
+					sqrt(ratesFirstGuessSynthesisVarTmp)
+				, ratesFirstGuessSynthesisTmp - 
+					sqrt(ratesFirstGuessSynthesisVarTmp)
 				, viewModelRates(oneGene, 'synthesis')
 				))
 			}else{
 			alpha <- t(rbind(
-				ratesFirstGuess(oneGene, 'synthesis')
+				ratesFirstGuessSynthesisTmp
 				, viewModelRates(oneGene, 'synthesis')
 				))			
 			}
 			beta <- t(rbind(
-				ratesFirstGuess(oneGene, 'degradation')
+				ratesFirstGuessDegradationTmp
 				, viewModelRates(oneGene, 'degradation')
 				))
 			gamma <- t(rbind(
-				ratesFirstGuess(oneGene, 'processing')
+				ratesFirstGuessProcessingTmp
 				, viewModelRates(oneGene, 'processing')
 				))
 
@@ -133,38 +155,38 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE) {
 	} else {
 
 		total <- t(rbind(
-			ratesFirstGuess(oneGene, 'total')
-			, ratesFirstGuess(oneGene, 'total') + 
-				sqrt(ratesFirstGuessVar(oneGene, 'total'))
-			, ratesFirstGuess(oneGene, 'total') - 
-				sqrt(ratesFirstGuessVar(oneGene, 'total'))
+			ratesFirstGuessTotalTmp
+			, ratesFirstGuessTotalTmp + 
+				sqrt(ratesFirstGuessTotalVarTmp)
+			, ratesFirstGuessTotalTmp - 
+				sqrt(ratesFirstGuessTotalVarTmp)
 			))
 		preMRNA <- t(rbind(
-			ratesFirstGuess(oneGene, 'preMRNA')
-			, ratesFirstGuess(oneGene, 'preMRNA') + 
-				sqrt(ratesFirstGuessVar(oneGene, 'preMRNA'))
-			, ratesFirstGuess(oneGene, 'preMRNA') - 
-				sqrt(ratesFirstGuessVar(oneGene, 'preMRNA'))
+			ratesFirstGuessPreTmp
+			, ratesFirstGuessPreTmp + 
+				sqrt(ratesFirstGuessPreVarTmp)
+			, ratesFirstGuessPreTmp - 
+				sqrt(ratesFirstGuessPreVarTmp)
 			))
 		if(!object@params$NoNascent)
 		{
 			alpha <- t(rbind(
-				ratesFirstGuess(oneGene, 'synthesis')
-				, ratesFirstGuess(oneGene, 'synthesis') + 
-					sqrt(ratesFirstGuessVar(oneGene, 'synthesis'))
-				, ratesFirstGuess(oneGene, 'synthesis') - 
-					sqrt(ratesFirstGuessVar(oneGene, 'synthesis'))
+				ratesFirstGuessSynthesisTmp
+				, ratesFirstGuessSynthesisTmp + 
+					sqrt(ratesFirstGuessSynthesisVarTmp)
+				, ratesFirstGuessSynthesisTmp - 
+					sqrt(ratesFirstGuessSynthesisVarTmp)
 				))
 		}else{
 		alpha <- t(rbind(
-			ratesFirstGuess(oneGene, 'synthesis')
+			ratesFirstGuessSynthesisTmp
 			))			
 		}
 		beta <- t(rbind(
-			ratesFirstGuess(oneGene, 'degradation')
+			ratesFirstGuessDegradationTmp
 			))
 		gamma <- t(rbind(
-			ratesFirstGuess(oneGene, 'processing')
+			ratesFirstGuessProcessingTmp
 			))
 
 		if( fix.yaxis ) {
