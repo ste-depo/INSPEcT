@@ -34,7 +34,16 @@ quantifyExpressionsFromTrAbundance <- function(exonsAbundances
 	fData <- data.frame(exprData)
 	featureData <- new('AnnotatedDataFrame', data=fData)
 	foe <- ExpressionSet(assayData=exprData, phenoData=phenoData, featureData=featureData)
-	exonsPlgemFit <- suppressWarnings(plgem.fit(data=foe,fitCondition=varSamplingCondition,p=10,q=.5,plot.file=FALSE,fittingEval=FALSE, verbose=FALSE))
+
+	exonsPlgemFit <- suppressWarnings(plgem.fit(data=foe
+											  , fitCondition=varSamplingCondition
+											  , p=10
+											  , q=.5
+											  , zeroMeanOrSD="trim"
+											  , plot.file=FALSE
+											  , fittingEval=FALSE
+											  , verbose=FALSE))
+
 	exonsPlgemLaw <- function(expression){(exp(exonsPlgemFit$INTERCEPT)*expression^(exonsPlgemFit$SLOPE))^2}
 
 	varianceExpressionsExons <- t(sapply(1:nrow(expressionsExons),function(r)
@@ -63,7 +72,7 @@ quantifyExpressionsFromTrAbundance <- function(exonsAbundances
 		fData <- data.frame(exprData)
 		featureData <- new('AnnotatedDataFrame', data=fData)
 		foe <- ExpressionSet(assayData=exprData, phenoData=phenoData, featureData=featureData)
-		intronsPlgemFit <- suppressWarnings(plgem.fit(data=foe,fitCondition=varSamplingCondition,p=10,q=.5,plot.file=FALSE,fittingEval=FALSE, verbose=FALSE))
+		intronsPlgemFit <- suppressWarnings(plgem.fit(data=foe,fitCondition=varSamplingCondition,p=10,q=.5,zeroMeanOrSD="trim",plot.file=FALSE,fittingEval=FALSE, verbose=FALSE))
 		intronsPlgemLaw <- function(expression){(exp(intronsPlgemFit$INTERCEPT)*expression^(intronsPlgemFit$SLOPE))^2}		
 
 		varianceExpressionsIntrons <- t(sapply(1:nrow(expressionsIntrons),function(r)
