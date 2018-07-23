@@ -149,27 +149,27 @@ chisq <- function(experiment, model, variance=NULL)
 			
 			# normalize Nascent according to median
 			if( labeledMedianNorm ) {
-			ssq.residuals <- function(a, x, y) stats::median(x - a*y, na.rm=TRUE)^2
-			# calculate a scaling factor for each time point
-			labeledSF <- sapply(1:ncol(Lexo), function(i)
-			optimize(ssq.residuals, c(-10,10), x=Lexo[,1], y=Lexo[,i])$minimum)
+				ssq.residuals <- function(a, x, y) stats::median(x - a*y, na.rm=TRUE)^2
+				# calculate a scaling factor for each time point
+				labeledSF <- sapply(1:ncol(Lexo), function(i)
+					optimize(ssq.residuals, c(-10,10), x=Lexo[,1], y=Lexo[,i])$minimum)
 			}
 			
 			# normalize and estimate variance
 			if( !is.null(labeledSF) ) {
-			Lexo <- t(t(Lexo)*labeledSF)
-			if( labeledVarince )
-			t(t(Lexo_var)*labeledSF^2)
-			#Lexo_var <- apply(t(t(Lexo_var)*labeledSF^2), 1, mean, na.rm=TRUE)
-			else
-			Lexo_var <- apply(Lexo, 1, speedyVar)
+				Lexo <- t(t(Lexo)*labeledSF)
+				if( labeledVarince )
+					t(t(Lexo_var)*labeledSF^2)
+				#Lexo_var <- apply(t(t(Lexo_var)*labeledSF^2), 1, mean, na.rm=TRUE)
+				else
+					Lexo_var <- apply(Lexo, 1, speedyVar)
 			} else {
-			# only estimate variance
-			if( labeledVarince )
-			Lexo_var <- Lexo_var
-			#Lexo_var <- apply(Lexo_var, 1, mean, na.rm=TRUE)
-			else
-			Lexo_var <- apply(Lexo, 1, speedyVar)
+				# only estimate variance
+				if( labeledVarince )
+					Lexo_var <- Lexo_var
+				#Lexo_var <- apply(Lexo_var, 1, mean, na.rm=TRUE)
+				else
+					Lexo_var <- apply(Lexo, 1, speedyVar)
 			}
 			
 		## introns and exons mode
@@ -420,16 +420,16 @@ chisq <- function(experiment, model, variance=NULL)
 		
 		## degradation during pulse
 		initOneGene <- function(i, j) {
-		c(
-		Lexo[i,j]*labeledSF[j]/tL
-		,(Lexo[i,j]*labeledSF[j]/tL-TexoDer[i,j])/Texo[i,j]
-		)
+			c(
+				Lexo[i,j]*labeledSF[j]/tL
+				,(Lexo[i,j]*labeledSF[j]/tL-TexoDer[i,j])/Texo[i,j]
+			)
 		}
 		sysNascentSmall <- function(x) {
-		y <- numeric(2)
-		y[1] <- TexoDer[i,j] - x[1] + x[2]*Texo[i,j]
-		y[2] <- Lexo[i,j] - x[1]/x[2]*(1-exp(-x[2]*tL))
-		y
+			y <- numeric(2)
+			y[1] <- TexoDer[i,j] - x[1] + x[2]*Texo[i,j]
+			y[2] <- Lexo[i,j] - x[1]/x[2]*(1-exp(-x[2]*tL))
+			y
 		}
 		## get only the rates
 		nGenes <- nrow(Lexo)
@@ -438,35 +438,35 @@ chisq <- function(experiment, model, variance=NULL)
 		alphaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
 		betaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
 		capture.output(suppressWarnings({
-		for( i in 1:nGenes ) {
-		for( j in 1:nTpts ) {
-		init <- initOneGene(i,j)
-		# if( all(is.finite(init)) ) {
-		mrOut <- tryCatch(
-		multiroot(
-		sysNascentSmall
-		, initOneGene(i,j)
-		# , labeledSF=labeledSF
-		# , control = list(maxit=1e3)
-		# , positive=TRUE
-		)
-		, error=function(e)
-		list(
-		root=rep(NA, 2)
-		, estim.precis=NA
-		)
-		)
-		ratesEstimPrec[i,j] <- mrOut$estim.precis
-		alphaTC[i,j] <- mrOut$root[1]
-		betaTC[i,j] <- mrOut$root[2]
-		# } else {
-		# labeledSfep[i,j] <- NA
-		# alphaTC[i,j] <- NA
-		# betaTC[i,j] <- NA
-		# gammaTC[i,j] <- NA
-		# }
-		}
-		}
+			for( i in 1:nGenes ) {
+				for( j in 1:nTpts ) {
+					init <- initOneGene(i,j)
+					# if( all(is.finite(init)) ) {
+					mrOut <- tryCatch(
+						multiroot(
+							sysNascentSmall
+							, initOneGene(i,j)
+							# , labeledSF=labeledSF
+							# , control = list(maxit=1e3)
+							# , positive=TRUE
+							)
+						, error=function(e)
+						list(
+							root=rep(NA, 2)
+							, estim.precis=NA
+						)
+					)
+					ratesEstimPrec[i,j] <- mrOut$estim.precis
+					alphaTC[i,j] <- mrOut$root[1]
+					betaTC[i,j] <- mrOut$root[2]
+					# } else {
+					# labeledSfep[i,j] <- NA
+					# alphaTC[i,j] <- NA
+					# betaTC[i,j] <- NA
+					# gammaTC[i,j] <- NA
+					# }
+				}
+			}
 		}))
 		
 		# ## keep only the best resolved rates (put to NA the worst 10%
@@ -606,12 +606,12 @@ chisq <- function(experiment, model, variance=NULL)
 		}
 
 		sysNascent <- function(x, labeledSF) {
-		y <- numeric(3)
-		y[1] <- TintDer[i,j] - x[1] + x[3]*Tint[i,j]
-		y[2] <- TexoDer[i,j] - x[1] + x[2]*(Texo[i,j]-Tint[i,j])
-		y[3] <- labeledSF[j]*Lexo[i,j] - (x[1]*exp(-x[2]*tL)*(x[3]^2-x[2]^2*exp((x[2]-x[3])*tL)+
-		x[2]^2*exp(x[2]*tL)-x[3]^2*exp(x[2]*tL)))/(x[2]*(x[2]-x[3])*x[3])
-		y
+			y <- numeric(3)
+			y[1] <- TintDer[i,j] - x[1] + x[3]*Tint[i,j]
+			y[2] <- TexoDer[i,j] - x[1] + x[2]*(Texo[i,j]-Tint[i,j])
+			y[3] <- labeledSF[j]*Lexo[i,j] - (x[1]*exp(-x[2]*tL)*(x[3]^2-x[2]^2*exp((x[2]-x[3])*tL)+
+			x[2]^2*exp(x[2]*tL)-x[3]^2*exp(x[2]*tL)))/(x[2]*(x[2]-x[3])*x[3])
+			y
 
 		}
 		## get only the rates
@@ -622,37 +622,37 @@ chisq <- function(experiment, model, variance=NULL)
 		betaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
 		gammaTC <- matrix(NA, nrow=nGenes, ncol=nTpts)
 		capture.output(suppressWarnings({
-		for( i in 1:nGenes ) {
+			for( i in 1:nGenes ) {
 
-		for( j in 1:nTpts ) {
-		# if( all(is.finite(init)) ) {
-		mrOut <- tryCatch(
-		multiroot(
-		sysNascent
-		, initOneGene(i,j)
-		, labeledSF=labeledSF
-		# , control = list(maxit=1e3)
-		# , positive=TRUE
-		)
-		, error=function(e)
-		list(
-		root=rep(NA, 4)
-		, estim.precis=NA
-		)
-		)
-		ratesEstimPrec[i,j] <- mrOut$estim.precis
-		alphaTC[i,j] <- mrOut$root[1]
-		betaTC[i,j] <- mrOut$root[2]
-		gammaTC[i,j] <- mrOut$root[3]
-		# } else {
-		# labeledSfep[i,j] <- NA
-		# alphaTC[i,j] <- NA
-		# betaTC[i,j] <- NA
-		# gammaTC[i,j] <- NA
-		# }
-		}
+				for( j in 1:nTpts ) {
+					# if( all(is.finite(init)) ) {
+					mrOut <- tryCatch(
+					multiroot(
+						sysNascent
+						, initOneGene(i,j)
+						, labeledSF=labeledSF
+						# , control = list(maxit=1e3)
+						# , positive=TRUE
+						)
+						, error=function(e)
+					list(
+						root=rep(NA, 4)
+						, estim.precis=NA
+						)
+					)
+					ratesEstimPrec[i,j] <- mrOut$estim.precis
+					alphaTC[i,j] <- mrOut$root[1]
+					betaTC[i,j] <- mrOut$root[2]
+					gammaTC[i,j] <- mrOut$root[3]
+					# } else {
+					# labeledSfep[i,j] <- NA
+					# alphaTC[i,j] <- NA
+					# betaTC[i,j] <- NA
+					# gammaTC[i,j] <- NA
+					# }
+				}
 
-		}
+			}
 		}))
 		
 		## put negative values to NA and rise a 
@@ -698,45 +698,6 @@ chisq <- function(experiment, model, variance=NULL)
 		}
 		
 		# calculate beta
-		
-		# inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=75) 
-		###### accurate function for estimating the degradation rates
-		###### using the solution of the differential equation system under 
-		###### the condtion that degradation rate is constant between two 
-		###### consecutive time points - more stable that using derivatives
-		###### estimates
-		# {
-			solveBeta <- function(beta, t0, t1, alpha_t0, alpha_t1, X_t0, X_t1, P_t0, P_t1 ) 
-			{
-				mAlpha <- (alpha_t0 - alpha_t1 ) / (t0 - t1 )
-				qAlpha <- alpha_t0 - mAlpha * t0
-				#
-				mPreMRNA <- (P_t0 - P_t1 ) / (t0 - t1 )
-				qPreMRNA <- P_t0 - mPreMRNA * t0
-				#
-				X_t1 - X_t0 * exp(-beta*(t1-t0)) - 
-				((mAlpha*t1*beta + qAlpha*beta - mAlpha ) / (beta^2 ) - (mAlpha*t0*beta + qAlpha*beta - mAlpha ) * exp(-beta*(t1-t0)) / (beta^2 )) -
-				beta*((mPreMRNA*t1*beta + qPreMRNA*beta - mPreMRNA ) / (beta^2 ) - (mPreMRNA*t0*beta + qPreMRNA*beta - mPreMRNA ) * exp(-beta*(t1-t0)) / (beta^2 ))
-			}
-	
-			bplapply(2:length(tpts), function(j)
-			lapply(1:nrow(Texo), function(i) {
-			tryCatch(
-				uniroot(solveBeta
-				, c(1e-5, maxBeta)
-				, t0 = tpts[j-1]
-				, t1 = tpts[j]
-				, alpha_t0 = alphaTC[i,j-1]
-				, alpha_t1 = alphaTC[i,j]
-				, X_t0 = Texo[i,j-1]
-				, X_t1 = Texo[i,j]
-				, P_t0 = Tint[i,j-1]
-				, P_t1 = Tint[i,j]
-				)
-				, error=function(e) return(list(root=NA, estim.prec=NA, error=e))
-			)})
-			, BPPARAM=BPPARAM)
-		# }
 		
 		message('Estimating degradation rates...')
 		if( steadyStateMode == 1 ) TexoDer[,1] <- 0

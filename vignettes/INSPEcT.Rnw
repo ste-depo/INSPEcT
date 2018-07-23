@@ -23,592 +23,108 @@ BiocStyle::latex()
 
 \section{Introduction}
 
-  \Rpackage{INSPEcT} is an R/Bioconductor compliant solution for the study of RNA transcription.
-  It is based on RNA-seq data and supports the analysis of several different experimental designs: from the comparison of two datasets of total RNA at the steady state to the modelling of nascent and total RNA-seq time-courses. A general overview of the work-flow is presented in REFERENCE TO WORKFLOW and the complete spectrum of possible configurations and related outputs is reported in Table \ref{table:INSPEcTanalysisDesigns}. This scheme is supposed to guide the reader across the vignette making the individuation of the desired examples easier, however, the authors recommend at least one complete reading of the document to understand: the references between sections, the logic behind \Rpackage{INSPEcT} and the potential of the package. For more details about \Rpackage{INSPEcT}, examples of its application and extended methods description refer to REFERENCE TO THE PAPER.
+  \Rpackage{INSPEcT} is an R/Bioconductor compliant solution for the study of RNA transcriptional dynamics
+  from RNA-seq data. The package supports the analysis of several experimental designs. It can handle
+  both time-course data or the comparison of steady-state conditions, and the presence or absence of the nascent RNA 
+  library. \\
+  According to the experimental design the software returns different outputs. A schema of the possible configurations and 
+  related outputs is reported in Table \ref{table:INSPEcTanalysisDesigns}. 
+  This scheme is supposed to guide the reader across the vignette making the individuation of the desired examples easier, 
+  however, the authors recommend at least one complete reading of the document to understand: 
+  the references between sections, the logic behind \Rpackage{INSPEcT} and the potential of the package. 
+  For more details about \Rpackage{INSPEcT}, examples of its application and extended methods description 
+  refer to REFERENCE TO THE PAPER.
 
   \begin{table}\label{table:INSPEcTanalysisDesigns}
   \caption{Table reporting the experimental designs suitable for INSPEcT}
-  \begin{tabular}{cl|c|c|c|l|c|c|c|}
-  \cline{3-5} \cline{7-9}
-                                              &  & \multicolumn{3}{c|}{\textbf{Total and nascent RNA}}             &  & \multicolumn{3}{c|}{\textbf{Total RNA}}                         \\ \cline{3-5} \cline{7-9} 
-                                              &  & \textit{Synthesis} & \textit{Processing} & \textit{Degradation} &  & \textit{Synthesis} & \textit{Processing} & \textit{Degradation} \\ \cline{1-1} \cline{3-5} \cline{7-9} 
-  \multicolumn{1}{|c|}{\textbf{Steady state}} &  & Yes                & Yes                 & Yes                  &  & No                 & \multicolumn{2}{c|}{Ratio $\frac{Processing}{Degradation}$}                 \\ \cline{1-1} \cline{3-5} \cline{7-9} 
-  \multicolumn{1}{|c|}{\textbf{Time-course}}  &  & Yes                & Yes                 & Yes                  &  & Yes                & Yes                 & Yes                  \\ \cline{1-1} \cline{3-5} \cline{7-9} 
+
+  \begin{tabular}{cl|c|c|c|}
+  \cline{3-5}
+                                              &  & \multicolumn{3}{c|}{\textbf{Total and nascent RNA}}              \\ \cline{3-5}
+                                              &  & \textit{Synthesis} & \textit{Processing} & \textit{Degradation}  \\ \cline{1-1} \cline{3-5}
+  \multicolumn{1}{|c|}{\textbf{Steady state}} &  & Yes                & Yes                 & Yes                   \\ \cline{1-1} \cline{3-5}
+  \multicolumn{1}{|c|}{\textbf{Time-course}}  &  & Yes                & Yes                 & Yes                   \\ \cline{1-1} \cline{3-5}
   \end{tabular}
+
+  \begin{tabular}{cl|c|c|c|}
+  \cline{3-5} 
+                                              &  & \multicolumn{3}{c|}{\textbf{Total RNA}}                         \\ \cline{3-5}
+                                              &  & \textit{Synthesis} & \textit{Processing} & \textit{Degradation} \\ \cline{1-1} \cline{3-5}
+  \multicolumn{1}{|c|}{\textbf{Steady state}} &  & No                 & \multicolumn{2}{c|}{Ratio $\frac{Processing}{Degradation}$}                 \\ \cline{1-1} \cline{3-5}
+  \multicolumn{1}{|c|}{\textbf{Time-course}}  &  & Yes                & Yes                 & Yes                  \\ \cline{1-1} \cline{3-5}
+  \end{tabular}
+
   \end{table}
 
 \section{Mature and Nascent time-course RNA-seq data}
 
   \subsection{Transcripts expression quantification}
-    The \Rpackage{INSPEcT} analysis starts with the quantification of exons and introns expressions. It can be done starting from BAM or SAM files through the method \Rmethod{quantifyExpressionsFromBAMs} which exploits the package \Rpackage{GenomicAlignments} to convert RNA-seq reads in counts and then the method \Rmethod{quantifyExpressionsFromTrCounts} to make them RPKMs. The evaluation of the variance is part of this initial stage of the analysis too and it can be done using \Rpackage{DESeq2} (\textit{DESeq2 = TRUE}) or \Rpackage{plgem} (\textit{DESeq2 = FALSE}); the second option requires to select a condition with replicates from the experimental design to use for the variance sampling (\textit{varSamplingCondition}). Two expression matrices, together with the associated variance matrices, constitute the output of the method.\\
-    The user can also access the pipeline providing counts data, calling directly \Rmethod{quantifyExpressionsFromTrCounts}, or expression data (like RPKMs) through \Rmethod{quantifyExpressionsFromTrAbundance}; in the latter case \Rpackage{plgem} is the only choice for variance evaluation.\\
-    In this configuration we assume the coexistence of two populations of transcripts: nascent ($L$) and mature ($R$) RNA molecules. The first group includes all the molecules synthesized during a specific span of time (labelling time $t_L$), which ends with the preparation of the sample for the sequencing, while the second one represents the RNA present in the biological system before $t_L$. Regardless of the role of $L$ and $R$ in the \Rpackage{INSPEcT} analysis framework, which will be clarified soon, the existence of two distinct populations of RNAs implies that the aforementioned procedure must be repeated twice.
+    The \Rpackage{INSPEcT} analysis starts with the quantification of exons and introns expressions and 
+    the estimation of the variance of the quantification from the replicates, which are mandatory.\\
 
     <<INSPEcT_loading,eval=TRUE,echo=TRUE,message=FALSE,warnings=FALSE>>=
     library(INSPEcT)
     @
 
-    <<quantifyExpressionsFromBAMsNascentTimeCourse,eval=FALSE,message=FALSE,warnings=FALSE>>=
-  
-    require(TxDb.Mmusculus.UCSC.mm9.knownGene)
-    txdb<-TxDb.Mmusculus.UCSC.mm9.knownGene
-    
-    expDes<-c(0,0,1,1)
-    
-    paths_nascent<-system.file('extdata/',c('bamRep1.bam'
-                                           ,'bamRep2.bam'
-                                           ,'bamRep3.bam'
-                                           ,'bamRep4.bam')
-                              ,package='INSPEcT')
-    
-    nasExp<-quantifyExpressionsFromBAMs(txdb=txdb
-                                       ,BAMfiles=paths_nascent
-                                       ,DESeq2=TRUE
-                                       ,experimentalDesign=expDes)
-    
-    paths_mature<-system.file('extdata/',c('bamRep1.bam'
-                                          ,'bamRep2.bam'
-                                          ,'bamRep3.bam'
-                                          ,'bamRep4.bam')
-                            ,package='INSPEcT')
-    
-    matExp<-quantifyExpressionsFromBAMs(txdb=txdb
-                                       ,BAMfiles=paths_mature
-                                       ,DESeq2=TRUE
-                                       ,experimentalDesign=expDes)
-    @
+    In particular, INSPEcT quantification of transcripts expression has different entry points according to the 
+    source of data available:
+    \begin{itemize}
+      \item BAM or SAM files (provided with an annotation object of class TxDb)
 
-    <<quantifyExpressionsFromCountsNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
-    
-    data('allcounts', package='INSPEcT')
-    
-    nascentCounts<-allcounts$nascent
-    matureCounts<-allcounts$mature
-    
-    testGenes<-rownames(matureCounts$exonsCounts)
-    
-    require(TxDb.Mmusculus.UCSC.mm9.knownGene)
-    txdb<-TxDb.Mmusculus.UCSC.mm9.knownGene
-    
-    exonsDB<-reduce(exonsBy(txdb ,'gene'))
-    exonsDB<-exonsDB[elementNROWS(range(exonsDB))==1]
-    intronsDB<-psetdiff(unlist(range(exonsDB)),exonsDB)
-    intronsDB<-intronsDB[elementNROWS(intronsDB)>0]
-    
-    exWdths<-sapply(width(exonsDB),sum)
-    intWdths<-sapply(width(intronsDB),sum)
-    
-    exWdths<-exWdths[testGenes]
-    intWdths<-intWdths[testGenes]
-    
-    nascentLS<-colSums(nascentCounts$
-      stat[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
-    
-    totalLS<-colSums(matureCounts$
-      stat[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
-    
-    expDes<-rep(c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16),3)
-    
-    nasExp_DESeq2<-quantifyExpressionsFromTrCounts(libsize=nascentLS
-                                                  ,exonsWidths=exWdths
-                                                  ,intronsWidths=intWdths
-                                                  ,allcounts=nascentCounts
-                                                  ,DESeq2=TRUE
-                                                  ,experimentalDesign=expDes)
-    
-    matExp_DESeq2<-quantifyExpressionsFromTrCounts(libsize=totalLS
-                                                  ,exonsWidths=exWdths
-                                                  ,intronsWidths=intWdths
-                                                  ,allcounts=matureCounts
-                                                  ,DESeq2=TRUE
-                                                  ,experimentalDesign=expDes)
-    
-    vsc<-as.character(expDes[[1]])
-    
-    nasExp_plgem<-quantifyExpressionsFromTrCounts(libsize=nascentLS
-                                                 ,exonsWidths=exWdths
-                                                 ,intronsWidths=intWdths
-                                                 ,allcounts=nascentCounts
-                                                 ,DESeq2=FALSE
-                                                 ,experimentalDesign=expDes
-                                                 ,varSamplingCondition=vsc)
-    
-    matExp_plgem<-quantifyExpressionsFromTrCounts(libsize=totalLS
-                                                 ,exonsWidths=exWdths
-                                                 ,intronsWidths=intWdths
-                                                 ,allcounts=matureCounts
-                                                 ,DESeq2=FALSE
-                                                 ,experimentalDesign=expDes
-                                                 ,varSamplingCondition=vsc)
-    @
-
-  \subsection{INSPEcT object initialization}
-
-    \Rpackage{INSPEcT} is based on a system two of ordinary differential equations (ODEs) describing synthesis and processing of premature RNA and degradation of mature RNA. The equations model the synthesis of new premature RNAs which then decay into mature RNAs, which in turn exponentially degrade and are removed from the cell. The model is based on two main assumptions that are widely used in the description of RNA life cycle: premature RNAs are not degraded and RNAs translocation from nucleus to cytoplasm occurs at a rate considerably faster than the rate of degradation (REFERENCE TO RABANI AND SUN). The model lacks any spatial assumption, like segregation of RNAs into cellular compartments that could impact the degradation rate, but this is a consequence of the non-spatial nature of the data:
-
-    \begin{equation}\label{eq:1}
-      \nonumber
-      \left\{
-        \begin{array}{l l}
-      \dot{P}=a(t) - c(t) \, P \\
-      \dot{T}=a(t) - b(t) \, (T - P)
-        \end{array}
-      \right.
-    \end{equation}
-
-    where $T$ is the total fraction of RNA, $P$ is premature fraction of RNA, $a(t)$ is the synthesis rate, $b(t)$ is the degradation rate and $c(t)$ is the processing rate.\\
-    The very same couple of equations can model the dynamics of both mature and nascent RNAs, integrating this extended system at every time point ($t$) it is possible  to estimate synthesis, processing and degradation rates; this is done by the method \Rmethod{newINSPEcT}. Assuming that the expression of the nascent transcripts before $t_L$ is zero by definition, and that they are not degraded during $t_L$, we can solve the ODEs between $t-t_L$ and $t$ making the extended system simpler:
-  
-    \begin{equation}\label{eq:2}
-      \nonumber
-      \left\{
-        \begin{array}{l l}
-      \dot{P}_{R_t}=a_t - c_t \, P_{R_t}, \\
-      \dot{T}_{R_t}=a_t - b_t \, (T_{R_t} - P_{R_t}), \\
-      P_{L_t}=\frac{a_t}{c_t} - ( 1 - e^{c_t \, t_L} ),  \\
-      T_{L_t}=a_t \, t_L.
-        \end{array}
-      \right.
-    \end{equation}
-  
-    $P_{R_t}$ is equal to the premature RNA level (introns expression), $T_{R_t}$ is equal to the total RNA level (exons expression) while $P_{L_t}$ and $T_{L_t}$ are analogous but as quantified in the nascent library. $\dot{P}_{R_t}$ and $\dot{T}_{R_t}$ are estimated from the interpolation of $P_R(t)$ and $T_R(t)$. The overdetermination of the system (three unknowns and four equations) is used to calculate a time-point specific scaling factor between mature and nascent RNA-seq expression data. This parameter, the estimated rates, $P$, $T$ and the associated variances are stored in a object of class \Rclass{INSPEcT}. Several methods provide access to the slots of this object, among them: \Rmethod{ratesFirstGuess} returns expression data and rates, \Rmethod{ratesFirstGuessVar} visualizes the related variances while \Rmethod{sfPlot} gives back the aforementioned scaling factors.\\
-    This sample code calculates rates and concentrations on a sample set of 500 genes: 
-  
-    <<newINSPEcTNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
-    tpts<-c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16)
-    tL<-1/6
-    
-    nascentInspObj<-newINSPEcT(tpts=tpts
-                              ,labeling_time=tL
-                              ,nascentExpressions=nasExp_DESeq2
-                              ,matureExpressions=matExp_DESeq2)
-    
-    round(head(ratesFirstGuess(nascentInspObj,'total'),5),3)
-    round(head(ratesFirstGuessVar(nascentInspObj,'total'),5),3)
-    round(head(ratesFirstGuess(nascentInspObj,'synthesis'),5),3)
-    @
-  
-    In case of a long $t_L$, more than 10-15 minutes, it could be useful to activate the \textit{degDuringPulse} option to estimate all the rates of the RNA life-cycle without assuming the absence of degradation of the newly synthesized transcripts. The longer the labelling time is the weaker this assumption gets, however, taking into account nascent RNA degradation involves solving a more complicated system of differential equations and for this reason it is not always recommended.
-
-    <<newINSPEcTDegradationDuringPulseNascentTimeCourse,eval=FALSE,message=FALSE,warnings=FALSE>>=
-    tpts<-c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16)
-    tL<-1/6
-    
-    nascentInspObj<-newINSPEcT(tpts=tpts
-                              ,labeling_time=tL
-                              ,nascentExpressions=nasExp_DESeq2
-                              ,matureExpressions=matExp_DESeq2
-                              ,degDuringPulse=TRUE)
-    
-    round(head(ratesFirstGuess(nascentInspObj,'total'),5),3)
-    round(head(ratesFirstGuessVar(nascentInspObj,'total'),5),3)
-    round(head(ratesFirstGuess(nascentInspObj,'synthesis'),5),3)
-    @
-    It is possible to subset the \Rpackage{INSPEcT} object and focus on a specific set of genes, in order to speed up the downstream analysis we focus on the first 10 genes of the dataset.
- 
-    <<newINSPEcTSubsamplingNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
-    nascentInspObj10<-nascentInspObj[1:10]
-    @
-
-    We can now display the total and premature RNA concentrations together with synthesis, degradation and   processing pre-modelling rates using the \Rmethod{inHeatmap} method (Figure \ref{fig:inHeatmapNascentTimeCourse}).  
-  
-    \begin{center}
-    <<inHeatmapNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE, fig.width=6, fig.height=4, fig.cap="Heatmap representing: the concentrations of total RNA, of premature RNA and the prior rates of the RNA life cycle", fig.align="center">>=
-    inHeatmap(nascentInspObj10, clustering=TRUE)
-    @
-    \end{center}
-
-  \subsection{Rates modelling and model selection}
-
-    The rates evaluated by \Rmethod{newINSPEcT} are just priors giving a preliminary idea of genes dynamics and essential to facilitate modelling phase. Once these priors have been computed, \Rpackage{INSPEcT} tests different models of transcriptional regulation to identify the most likely combination of rates explaining the observed changes in gene expression; \Rmethod{modelRates} method. To this purpose, a parametric function is fitted to each rate over time through minimization of residual sum of squares. Once the parametric functionalization for synthesis, degradation and processing rates are obtained, it is possible to test how those parametric functions recapitulate the experimental data they originated from after an additional minimization step. To identify the most likely mechanism of transcriptional regulation, \Rpackage{INSPEcT} tests the possibility that each rate is constant during the time-course by building models that alternatively set as constant one, two or all the three rates.\\
-    During this procedure, many parameters are selected randomly so it is recommendable to set the \Rmethod{modelRates} parameter \textit{seed} to guarantee the reproducibility of the results. 
-
-    <<modelRatesNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
-    nascentInspObj10<-modelRates(nascentInspObj10, seed=1)
-    @
-
-    Following this modelling procedure, new rates are computed and they can be accessed through the \Rmethod{viewModelRates} method and visualized with the \Rmethod{inHeatmap} method (Figure \ref{fig:viewModelRatesAndInHeatmapNascentTimeCourse}).
-
-    \begin{center}
-    <<viewModelRatesAndInHeatmapNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE, fig.width=6, fig.height=4, fig.cap="Heatmap representing: the concentrations of total RNA, of premature RNA and the modelled rates of the RNA life cycle", fig.align="center">>=
-    round(head(viewModelRates(nascentInspObj10, 'synthesis'),5),3)
-    inHeatmap(nascentInspObj10, type='model', clustering=TRUE)
-    @
-    \end{center}
-
-    The \Rmethod{geneClass} method can be used to recapitulate the transcriptional regulatory mechanism assigned to each modelled gene. In particular, each gene is assigned to a class named after the set of varying rates: "0" denotes a gene whose rates are constant over time, "a" denotes a gene whose synthesis changes over time, "b" denotes a gene whose degradation changes over time, "c" denotes a gene whose processing changes over time.\\
-
-    <<geneClassNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
-    geneClass(nascentInspObj10)
-    @
-
-    The \Rmethod{plotGene} method can be used to investigate profiles of RNA concentrations and rates for a given gene. Estimated synthesis, degradation and processing rates, premature RNA and total RNA concentrations are displayed with solid thin lines, while their standard deviations are in dashed lines and the modelled rates and concentrations are in thick solid lines. This example shows a gene of class "ab", indicating that its expression levels are controlled by synthesis and degradation rates (Figure \ref{fig:plotGeneNascentTimeCourse}).
-
-    \begin{center}
-    <<plotGeneNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE, fig.width=6, fig.height=4, fig.cap="Plot of concentrations and rates over time for the given gene.", fig.align="center">>=
-    plotGene(nascentInspObj10, 2, fix.yaxis=FALSE)
-    @
-    \end{center}
-
-    The quality of each model is evaluated through log likelihood and chi-square, to take into account the different complexities of the regulatory scenarios we compute also the chi-square p value; it can visualized as a histogram (Figure \ref{fig:chi2NascentTimeCourse}) and eventually used to discard badly fitted genes.
-
-    \begin{center}
-    <<chi2NascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE, fig.width=3.5, fig.height=3.5, hold=TRUE, fig.cap="Histogram of the p-values from the goodness of fit test for selected models.", fig.align="center">>=
-    chisq<-chisqmodel(nascentInspObj10)
-    hist(log10(chisq), main='', xlab='log10 chi-squared p-value')
-    discard<-which(chisq>1e-4)
-    featureNames(nascentInspObj10)[discard]
-    nascentInspObj_reduced<-nascentInspObj10[-discard]
-    @
-    \end{center}
-
-    The model selection is a fundamental and subtle stage of the analysis, it influences all the results shown above and should be carefully triggered according to the specific dataset under analysis. See the \textbf{Parameters setting} and \textbf{Evaluation of time-course model on simulated data} sections, and the paper REFERENCE TO PAPER for further details.
-
-\section{Mature time-course RNA-seq data}
-
-  \subsection{Transcripts expression quantification}
-
-    The analysis starts again with the quantification of exons and introns expressions, in this configuration only for the mature RNA. It can be done from BAM or SAM files (\Rmethod{quantifyExpressionsFromBAMs}) or from counts (\Rmethod{quantifyExpressionsFromTrCounts}) getting RPKMs and associated variances which may be computed with \Rpackage{DESeq2} (\textit{DESeq2 = TURE}) or \Rpackage{plgem} (\textit{DESeq2 = FALSE}); in the latter case upon selection of an experimental condition for the sampling of the variance (\textit{varSamplingCondition = ...}). Otherwise, the user may provide expression data in the first place (\Rmethod{quantifyExpressionsFromTrAbundances}); in this case the variance will be computed with \Rpackage{plgem}.
-
-    <<quantifyExpressionsFromBAMsTimeCourse,eval=FALSE,message=FALSE,warnings=FALSE>>=
-
-      require(TxDb.Mmusculus.UCSC.mm9.knownGene)
-      txdb<-TxDb.Mmusculus.UCSC.mm9.knownGene
-  
-      expDes<-c(0,0,1,1)
-      
-      paths_total<-system.file('extdata/', c('bamRep1.bam'
-                                            ,'bamRep2.bam'
-                                            ,'bamRep3.bam'
-                                            ,'bamRep4.bam')
-                              ,package='INSPEcT')
-  
-      matExp<-quantifyExpressionsFromBAMs(txdb=txdb
-                                         ,BAMfiles=paths_total
-                                         ,DESeq2=TRUE
-                                         ,experimentalDesign=expDes)
-    @
-
-    <<quantifyExpressionsFromCountsTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
-    
-    data('allcounts', package='INSPEcT')
-    
-    matureCounts<-allcounts$mature
-    
-    testGenes<-rownames(matureCounts$exonsCounts)
-    
-    require(TxDb.Mmusculus.UCSC.mm9.knownGene)
-    txdb<-TxDb.Mmusculus.UCSC.mm9.knownGene
-    
-    exonsDB<-reduce(exonsBy(txdb ,'gene'))
-    exonsDB<-exonsDB[elementNROWS(range(exonsDB))==1]
-    intronsDB<-psetdiff(unlist(range(exonsDB)),exonsDB)
-    intronsDB<-intronsDB[elementNROWS(intronsDB)>0]
-    
-    exWdths<-sapply(width(exonsDB),sum)
-    intWdths<-sapply(width(intronsDB),sum)
-    
-    exWdths<-exWdths[testGenes]
-    intWdths<-intWdths[testGenes]
+          <<quantifyExpressionsFromBAMs,eval=FALSE,message=FALSE,warnings=FALSE>>=
         
-    totalLS<-colSums(matureCounts$
-      stat[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
-    
-    expDes<-rep(c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16),3)
-        
-    matExp_DESeq2<-quantifyExpressionsFromTrCounts(libsize=totalLS
-                                                  ,exonsWidths=exWdths
-                                                  ,intronsWidths=intWdths
-                                                  ,allcounts=matureCounts
-                                                  ,DESeq2=TRUE
-                                                  ,experimentalDesign=expDes)
-    
-    vsc<-as.character(expDes[[1]])
-        
-    matExp_plgem<-quantifyExpressionsFromTrCounts(libsize=totalLS
-                                                 ,exonsWidths=exWdths
-                                                 ,intronsWidths=intWdths
-                                                 ,allcounts=matureCounts
-                                                 ,DESeq2=FALSE
-                                                 ,experimentalDesign=expDes
-                                                 ,varSamplingCondition=vsc)
-    @
+          require(TxDb.Mmusculus.UCSC.mm9.knownGene)
+          txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
 
-  \subsection{INSPEcT object initialization}
+          bamfiles_paths <- system.file('extdata/',
+            c('bamRep1.bam','bamRep2.bam','bamRep3.bam','bamRep4.bam'), 
+            package='INSPEcT')
+          
+          exprFromBAM <- quantifyExpressionsFromBAMs(
+                     txdb=txdb
+                     ,BAMfiles=bamfiles_paths
+                     ,DESeq2=TRUE
+                     ,experimentalDesign=c(0,0,1,1))
+          
+          @
 
-    The ODEs system introduced in the previous section (Equations \ref{eq:1}) is, again, the base for the mature RNA time-course data analysis. The absence of the nascent component makes impossible the identification of a unique solution of the system, for this reason careful modelling and model selection are even more important in this configuration.\\
-    We start solving the equations assuming constant processing and degradation rates and fitting $T_{R_t}$ with a differentiable function. Then, we interpolate $\P_{R_t}$ with a linear piecewise and assuming the rates to be constant piecewise functions we manage to estimate them at each time point.\\
-    This procedure is implemented, again, in the method \Rmethod{newINSPEcT} which creates the \Rclass{INSPEcT} object for the analysis. This object contains expression data, the first estimations of the rates and associated variances which may be accessed through the methods: \Rmethod{ratesFirstGuess} and \Rmethod{ratesFirstGuessVar}.\\
-    In comparison to the mature and nascent configuration, from the practical point of view, nothing changes except for the absence of $t_L$ and new synthesized expression data.
+      \item exonic and intronic read counts
 
-    <<newINSPEcTTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
-    tpts<-c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16)
-    
-    matureInspObj<-newINSPEcT(tpts=tpts
-                            ,labeling_time=NULL
-                            ,nascentExpressions=NULL
-                            ,matureExpressions=matExp_DESeq2)
-    
-    round(head(ratesFirstGuess(matureInspObj,'total'),5),3)
-    round(head(ratesFirstGuessVar(matureInspObj,'total'),5),3)
-    round(head(ratesFirstGuess(matureInspObj,'synthesis'),5),3)
-    @
+          <<quantifyExpressionsFromCountsNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
+          
+              data('allcounts', package='INSPEcT')
+              data('featureWidths', package='INSPEcT')
+              data('libsizes', package='INSPEcT')
 
-    We can subset the \Rpackage{INSPEcT} object and represent experimental data and rates first guesses of the first ten genes in a heatmap with the \Rmethod{inHeatmap} method.  
+              nascentCounts<-allcounts$nascent
+              matureCounts<-allcounts$mature
 
-    \begin{center}
-    <<inHeatmapTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE, fig.width=6, fig.height=4, fig.cap="Heatmap representing: the concentrations of total RNA, of premature RNA and the prior rates of the RNA life cycle", fig.align="center">>=
-    matureInspObj10<-matureInspObj[1:10]
-    inHeatmap(matureInspObj10, clustering=TRUE)
-    @
-    \end{center}
+              expDes<-rep(c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16),3)
 
-  \subsection{Modelling of rates and model selection}
+              nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
+                      allcounts=nascentCounts
+                      ,libsize=nascentLS
+                      ,exonsWidths=exWdths
+                      ,intronsWidths=intWdths
+                      ,experimentalDesign=expDes)
 
-    We can now proceed with modelling and model selection through the method \Rmethod{modelRates}.
+              matExp_DESeq2<-quantifyExpressionsFromTrCounts(
+                      allcounts=matureCounts
+                      ,libsize=totalLS
+                      ,exonsWidths=exWdths
+                      ,intronsWidths=intWdths
+                      ,experimentalDesign=expDes)
 
-    <<modelRatesTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
-    matureInspObj10<-modelRates(matureInspObj10, seed=1)
-    @
+          @
 
-    The results can be accessed in a numerical format via the method \Rmethod{viewModelRates} or graphically: overall through \Rmethod{inHeatmap} (Figure \ref{fig:viewModelRatesAndInHeatmapTimeCourse}) and at a gene level with \Rmethod{plotGene}. In the example (Figure \ref{fig:plotGeneTimeCourse}) we show a gene regulated in synthesis: experimental data and rates first guesses are in solid thin lines, their standard deviations are in dashed lines while modelled rates and concentrations are in thick solid lines. The \Rmethod{geneClass} method, instead, returns genes classification coded as a string of letters each one related with the variability of a rate: "a" for the synthesis, "b" for the degradation and "c" for the processing.\\
+      \item exonic and intronic transcripts abundances
+    \end{itemize}
+    It can be done starting from BAM or SAM files through the method \Rmethod{quantifyExpressionsFromBAMs} which exploits the package \Rpackage{GenomicAlignments} to convert RNA-seq reads in counts and then the method \Rmethod{quantifyExpressionsFromTrCounts} to make them RPKMs. The evaluation of the variance is part of this initial stage of the analysis too and it can be done using \Rpackage{DESeq2} (\textit{DESeq2 = TRUE}) or \Rpackage{plgem} (\textit{DESeq2 = FALSE}); the second option requires to select a condition with replicates from the experimental design to use for the variance sampling (\textit{varSamplingCondition}). Two expression matrices, together with the associated variance matrices, constitute the output of the method.\\
+    The user can also access the pipeline providing counts data, calling directly \Rmethod{quantifyExpressionsFromTrCounts}, or expression data (like RPKMs) through \Rmethod{quantifyExpressionsFromTrAbundance}; in the latter case \Rpackage{plgem} is the only choice for variance evaluation.\\
+    In this configuration we assume the coexistence of two populations of transcripts: nascent ($L$) and mature ($R$) RNA molecules. The first group includes all the molecules synthesized during a specific span of time (labelling time $t_L$), which ends with the preparation of the sample for the sequencing, while the second one represents the RNA present in the biological system before $t_L$. Regardless of the role of $L$ and $R$ in the \Rpackage{INSPEcT} analysis framework, which will be clarified soon, the existence of two distinct populations of RNAs implies that the aforementioned procedure must be repeated twice.
 
-    \begin{center}
-    <<viewModelRatesAndInHeatmapTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE, fig.width=6, fig.height=4, fig.cap="Heatmap representing: the concentrations of total RNA, of premature RNA and the modelled rates of the RNA life cycle", fig.align="center">>=
-    round(head(viewModelRates(matureInspObj10, 'synthesis'),5),3)
-    inHeatmap(matureInspObj10, type='model', clustering=TRUE)
-    @
-    \end{center}
 
-    <<geneClassTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
-    geneClass(matureInspObj10)
-    @
 
-    \begin{center}
-    <<plotGeneTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE, fig.width=6, fig.height=4, fig.cap="Plot of concentrations and rates over time for the given gene.", fig.align="center">>=
-    plotGene(matureInspObj10, 2, fix.yaxis=FALSE)
-    @
-    \end{center}
-
-    The quality of each model is evaluated through log likelihood and chi-square, to take into account the different complexities of the regulatory scenarios we compute also the chi-square p value; it can visualized as a histogram (Figure \ref{fig:chi2TimeCourse}) and eventually used to discard badly fitted genes.    
-
-    \begin{center}
-    <<chi2TimeCourse,eval=TRUE,message=FALSE,warnings=FALSE, fig.width=3.5, fig.height=3.5, hold=TRUE, fig.cap="Histogram of the p-values from the goodness of fit test for selected models.", fig.align="center">>=
-    chisq<-chisqmodel(matureInspObj10)
-    hist(log10(chisq), main='', xlab='log10 chi-squared p-value')
-    discard<-which(chisq>1e-2)
-    featureNames(matureInspObj10)[discard]
-    matureInspObj_reduced<-matureInspObj10[-discard]
-    @
-    \end{center}
-
-    The model selection is a fundamental and subtle stage of the analysis, it influences all the results shown above and should be carefully triggered according to the specific dataset under analysis. See the \textbf{Parameters setting} and \textbf{Evaluation of time-course model on simulated data} sections, and the paper REFERENCE TO PAPER for further details.
-
-\section{Evaluation of time-course models on simulated data}
-
-  \Rpackage{INSPEcT} provides functionalities to build a synthetic dataset for which the transcriptional scenario is known for each gene. Simulated data can be used to evaluate the performance of \Rpackage{INSPEcT} in classifying each rate as constant or variable over time, to estimate the number of time points and replicates necessary to achieve a given performance and to configure the model selection parameters.\\
-  The first step consists in sampling from an \Rpackage{INSPEcT} object: absolute values of the rates, fold changes, correlations between these two elements and associated variances. Once these parameters' distributions have been estimated, they are used to simulate a given number of genes (\textit{nGenes = ...}). Optionally, the user can provide the probabilities for a rate to be modelled as a constant, sigmoid or impulse function; by default they are respectively 0.5, 0.2 and 0.3.\\
-  \Rmethod{makeSimModel} produces an object of class \Rclass{INSPEcT\_model}, to be analysed it must be transformed in an \Rclass{INSPEcT} object using the \Rmethod{makeSimDataset} method. It takes as arguments the number of replicates required and the time points at which the data should be virtually collected. Regarding the latter point, the new time-course must be designed as a sampling of the original experimental time window (same initial and final conditions). The object created by this method can be modelled via \Rmethod{modelRates} as any other object of class \Rclass{INSPEcT}.
-
-  <<simulatedDataNascent,eval=TRUE,message=FALSE,warnings=FALSE>>=
-
-  simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
-  
-  newTpts<-simRates@params$tpts
-  nascentInspObj_sim3<-makeSimDataset(object=simRates
-                                     ,tpts=newTpts
-                                     ,nRep=3
-                                     ,NoNascent=FALSE
-                                     ,seed=1)
-  nascentInspObj_sim3<-modelRates(nascentInspObj_sim3[1:10]
-                                 ,seed=1)
-
-  newTpts<-c(0,1/6,1/3,1/2,1,1.25,1.5,2,3,4,6,8,10,12,16)
-  nascentInspObj_sim4<-makeSimDataset(object=simRates
-                                     ,tpts=newTpts
-                                     ,nRep=4
-                                     ,NoNascent=FALSE
-                                     ,seed=1)
-  nascentInspObj_sim4<-modelRates(nascentInspObj_sim4[1:10]
-                                 ,seed=1)
-  @
-
-  Starting from the very same \Robject{simRates}, it is also possible to generate \Rclass{INSPEcT\_model} objects without information about the nascent RNA (\textit{NoNascent=TRUE}). However, it is not allowed to produce artificial gene sets starting from \Rpackage{INSPEcT} object without nascent RNA because the experimental estimation of the synthesis rate is mandatory to guarantee the good quality of the simulated data.
-
-  <<simulatedData,eval=TRUE,message=FALSE,warnings=FALSE>>=
-
-  simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
-  
-  newTpts<-simRates@params$tpts
-  matureInspObj_sim3<-makeSimDataset(object=simRates
-                                   ,tpts=newTpts
-                                   ,nRep=3
-                                   ,NoNascent=TRUE
-                                   ,seed=1)
-  matureInspObj_sim3<-modelRates(matureInspObj_sim3[1:10]
-                               ,seed=1)
-
-  newTpts<-c(0,1/6,1/3,1/2,1,1.25,1.5,2,3,4,6,8,10,12,16)
-  matureInspObj_sim4<-makeSimDataset(object=simRates
-                                   ,tpts=newTpts
-                                   ,nRep=4
-                                   ,NoNascent=TRUE
-                                   ,seed=1)
-  matureInspObj_sim4<-modelRates(matureInspObj_sim4[1:10]
-                               ,seed=1)
-  @
-
-  Once the simulated data have been produced and analysed, it is possible to evaluate the modelling performance comparing the objects \Robject{...InspObj...} with \Robject{simRates}, that contains the ground truth of rates.\\
-  An easy way to do proceed is using a ROC curve and measuring the Area Under the Curve, \Rfunction{rocCurve} (Figure \ref{fig:ROCs}).
-
-  \begin{center}
-  <<ROCs, message=FALSE, warnings=FALSE, eval=TRUE, fig.width=10, fig.height=5, fig.cap="For each rate, INSPEcT's classification performance is measured in terms of sensitivity, TP / (TP + FN), and specificity, TN / (TN + FP), using a ROC curve analysis. False negatives (FN) represent cases where the rate is identified as constant while it was simulated as varying. False positives (FP) represent cases where INSPEcT identified a rate as varying while it was simulated as constant. On the contrary, true positives (TP) and negatives (TN) are cases of correct classification of varying and constant rates, respectively. Consequently, sensitivity and specificity are computed using increasing thresholds for the Brown's method used to combine multiple p-values derived from the log-likelihood ratio tests", fig.align="center">>=
-
-  par(mfrow=c(2,2))
-  rocCurve(simRates[1:10],nascentInspObj_sim3)
-  title("3rep. 11t.p. Total and nascent RNA", line=3)
-  
-  rocCurve(simRates[1:10],nascentInspObj_sim4)
-  title("4rep. 15t.p. Total and nascent RNA", line=3)
-  
-  rocCurve(simRates[1:10],matureInspObj_sim3)
-  title("3rep. 11t.p. Total RNA", line=3)
-  
-  rocCurve(simRates[1:10],matureInspObj_sim4)
-  title("4rep. 15t.p. Total RNA", line=3)
-
-  @
- \end{center}
-
-  The example is amied at showing an application of \Rfunction{rocCurve} in terms of inputs and outputs, the curves obtained are obviously meaningless because of the low number of genes used.
-
-  The method \Rmethod{rocThresholds} can be used to assess the sensitivity and specificity that is achieved with given thresholds for the chi-squared test and for the Brown's test. If thresholds are not provided default values are used (Figure \ref{fig:ROCsThresholds}).
-
-  \begin{center}
-  <<ROCsThresholds, message=FALSE, warnings=FALSE, eval=TRUE, fig.width=8, fig.height=4, fig.cap="Plot of the sensitivity (black curve) and specificity (red curve) that is achieved after performing the log-likelihood ratio and Brown's method for combining p-values with selected thresholds. Thresholds that can be set for chi-squared test to accept models that will undergo the log-likelihood ratio test and for Brown's p-value to assess variability of rates.">>=
-
-  rocThresholds(simRates[1:10],nascentInspObj_sim3,bTsh=c(.01,.01,.05),cTsh=.1)
- 
-  @
-  \end{center}
-
-\section{Parameters setting}
-  
-  If desired, different parameters can be set for both the modelling and the testing part. Regarding the modelling part, we might want to increase the number of different initializations that are performed for each gene (\textit{ nInit } option) or increase the maximum number of steps in the rates optimization process (\textit{ nIter } option). All these choices could improve the performance of the method, but also the needed computational time; the impact of these options on the quality of the modelling can be evaluated using simulated datasets.
-
-  <<parameters1, message=FALSE, warnings=FALSE, eval=TRUE>>=
-
-  nascentInspObj10<-removeModel(nascentInspObj10)
-
-  modelingParams(nascentInspObj10)$nInit<-20
-  modelingParams(nascentInspObj10)$nIter<-1000
-
-  @
-
-  Instead, we might want to change the thresholds for chi-squared and log-likelihood ratio tests, or define the specific set of models to be compared with log-likelihood ratio test while assessing if a given rate is variable or not. In this example, we are changing the thresholds of both the chi-squared test and the Brown's method for combining p-values. We are also imposing that only the models in which all rates are constant ("0") will be compared to the one in which only processing varies ("c") to assess the variability of the rates using log-likelihood ratio test.
-
-  <<parameters2, message=TRUE, eval=TRUE>>=
-
-  thresholds(matureInspObj10)$chisquare<-.1
-  thresholds(matureInspObj10)$brown<-c(synthesis=.01
-                                      ,processing=.01
-                                      ,degradation=.05)
-  llrtests(matureInspObj10)$processing<-list(c('0','c'))
-  @
-
-  To have a sense of all parameters that can be set, type:
-
-  <<parameters3, message=TRUE, eval=TRUE>>=
-
-  ## modelling
-  modelingParams(matureInspObj10)
-
-  ## model selection and testing framework
-  modelSelection(matureInspObj10)
-  thresholds(matureInspObj10)
-  llrtests(matureInspObj10)
-  @
-
-\section{Mature and Nascent steady state RNA-seq data}
-
-  Synthesis, processing and degradation rates are the determinants of the levels of premature RNA and total RNA. Starting for the ODEs system (Equations \ref{eq:1} and Equations \ref{eq:2}), it is easy to show that, at steady-state, the ratio between synthesis and processing rates determine the premature RNA levels while the ratio synthesis over degradation is equal to the difference between total and premature RNA levels. Estimating the synthesis rate from the nascent RNA expression data, it is possible to define the value of each rate and to propagate the variance .
-  
-  \begin{equation}\label{eq:3}
-  \nonumber
-  \begin{array}{l l}
-  a=\, \frac{T_{L}}{t_L \cdot s_f} \\
-  b=\, \frac{a}{T_{T} - P_{T}} \\
-  c=\, \frac{c}{P_{T}}
-  \end{array}
-  \end{equation}
-
-  where $T_{L}$ is the nascent exonic expression of the gene under consideration, $T_{T}$ is the total exonic expression, $P_{T}$ is the total intronic expression, $t_L$ is the sampling time of the nascent RNA and $s_f$ is a scaling factor that INSPEcT calculates to linearly scale the nascent library.
-
-  Different conditions might express different levels of total RNA or premature RNA for each gene and this difference could arise from the different usage of one, two or all three rates. In order to address the problem, INSPEcT compares rates from two different experimental conditions, at the gene level, by a t-test between rate values. 
-
-  In order to exemplify the steady state analysis task, we generate two sets of simulated data from the \Rclass{INSPEcT\_model} object \Robject{simRates} and compare them by the \Rmethod{compareSteady} method. Due to the nature of the t-test, it is necessary to provide \Rmethod{compareSteady} the number of replicates of the steady state conditions.
-
-  <<steadyStateNascent1, message=FALSE, warnings=FALSE, eval=TRUE>>=
-  
-  newTpts<-c(0, 16)
-  nascentInspObj_sim3<-makeSimDataset(object=simRates
-                                     ,tpts=newTpts
-                                     ,nRep=3
-                                     ,NoNascent=FALSE
-                                     ,seed=1)
-  newTpts<-c(0, 16)
-  nascentInspObj_sim4<-makeSimDataset(object=simRates
-                                     ,tpts=newTpts
-                                     ,nRep=4
-                                     ,NoNascent=FALSE
-                                     ,seed=2)
-
-  diffrates<-compareSteady(inspectIds1=nascentInspObj_sim3
-                          ,inspectIds2=nascentInspObj_sim4
-                          ,nRep1=3
-                          ,nRep2=4)
-  @
-
-  The complete datasets regarding synthesis, processing and degradation can be accessed via the homonym methods:
-
-  <<steadyStateNascent2, message=FALSE, warnings=FALSE, eval=TRUE>>=
-
-  head(synthesis(diffrates))
-  head(processing(diffrates))
-  head(degradation(diffrates))
-  @
-
-  \Rmethod{plotMa} is a method for plotting results for each rate (Figure \ref{fig:steadyStateNascent3}):
-  
-  <<steadyStateNascent3, message=TRUE, eval=TRUE, fig.width=5, fig.height=5, hold=TRUE, fig.cap="Example of the plotMA generated image. Orange triangles correspond to genes whose rates are differentially used between the two conditions, blue cloud correspond to the whole distribution of rates.", fig.align="center">>=
-  plotMA(diffrates, rate='synthesis', alpha=0.95)
-  @
-
-\section{Mature steady state RNA-seq data}
-
-  It is not possible to estimate the kinetic rates from steady state data without nascent RNA expression data because of the underdetermination of the system (Equations \ref{eq:3}). The only information that can be extracted is the ratio:
-
-  \begin{equation}\label{eq:4}
-  \nonumber
-  \frac{P_{T}}{T_{T} - P_{T}} = \frac{b}{c} \\
-  \end{equation}
-
-  However, even from this aggregated quantity, valuable information regarding the differential post transcriptional regulation of genes in different samples can still be obtained.\\
-  This analysis is performed by the function \Rfunction{compareSteadyNoNascent} which takes in input: a list of matrices (\textit{expressionMatrices}) encoding intronic and exonic expression data for all the genes in all the conditions to be compared, an expression threshold, for premature and total RNA, to select reliable data to be analysed (\textit{expressionThreshold}) and the number of log2 fold change from the expected behaviour beyond which a gene should be considered as interesting.
-
-  <<steadyStateTotal1, message=FALSE, warnings=FALSE, eval=TRUE>>=
-
-  regGenes<-compareSteadyNoNascent(expressionMatrices=matExp_DESeq2
-                                  ,expressionThreshold=0.15
-                                  ,log2FCThreshold=0.5)
-
-  head(regGenes)
-  table(regGenes)
-  @
-
-  The output of the function is a matrix of bouleans, as large as the expression input data, where TRUE means that a specific gene, in a given condition, behaves in a odd manner from a post-transcriptional point of view. This consideration is taken in comparison to all the other conditions and a standard expected conduct evaluated according to the information collected genome wide.\\
-  This means that the gene, in a given condition, is post-transcriptionally regulated in a peculiar way.\\
-  The entire analysis is based on the estimation of a standard behaviour of a set of genes which means that benefits from the size of the dataset under analysis. The example is, obviously, just a proff of concept to explicit arguments and output of \Rfunction{compareSteadyNoNascent}; for this reason, we have decided to use time-course data. A real application does not require data to be temporally related in any way.
 
 Enjoy!
 

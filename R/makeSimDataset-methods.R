@@ -29,7 +29,7 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 {
 
 	if(tpts[[1]]!=object@params$tpts[[1]]){stop("makeSimDataset: new and old tpts starts must coincide.")}
-	if(tpts[[length(tpts)]]!=object@params$tpts[[length(simRates@params$tpts)]]){stop("makeSimDataset: new and old tpts ends must coincide.")}
+	if(tpts[[length(tpts)]]!=object@params$tpts[[length(object@params$tpts)]]){stop("makeSimDataset: new and old tpts ends must coincide.")}
 
 	ratesSpecs <- object@ratesSpecs
 	nGenes <- length(ratesSpecs)

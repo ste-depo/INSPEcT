@@ -1,41 +1,21 @@
 #' Evaluates introns and exons RPKMs, per gene, from counts data.
-#' @param libsize A numeric reporting the number of assigned reads.
+#' @param allcounts A named list containing "exonsCounts" and "intronsCounts".
+#' @param experimentalDesign A numerical which reports the desing of the experiment in terms of time points and replicates.
+#' Time points must be ordered according to the sequence of files submitted for the analysis, these labels characterize
+#' different files as replicates of a given condition.
 #' @param exonsWidths A numeric containing the exons widths.
 #' @param intronsWidths A numeric containing the intorns widths.
-#' @param allcounts A list object containing introns and exons counts.
-#' @param by A character, either "gene" or "tx", indicating if rpkms and counts should be summarized at the levels of genes or transcripts. "gene" by default
+#' @param libsize A numeric containing the library size.
 #' @param DESeq2 A logical, if TRUE the RPKMs variances are evaluated through the package DESeq2, if FALSE plgem is used.
-#' @param experimentalDesign A numerical which reports the desing of the experiment in terms of time points and replicates. The time points must be ordered according
-#' to the columns of the count matrices submitted for the analysis; these labels define conditions and replicates.
 #' @param varSamplingCondition A character reporting which experimental condition should be used to sample the fatiance if DESeq2 = FALSE.
 #' @return A list containing RPKMs and associated variances for exons and introns.
 #' @examples
 #' data('allcounts', package='INSPEcT')
+#' data('featureWidths', package='INSPEcT')
+#' data('libsizes', package='INSPEcT')
 #' 
 #' nascentCounts<-allcounts$nascent
 #' matureCounts<-allcounts$mature
-#' 
-#' testGenes<-rownames(matureCounts$exonsCounts)
-#' 
-#' require(TxDb.Mmusculus.UCSC.mm9.knownGene)
-#' txdb<-TxDb.Mmusculus.UCSC.mm9.knownGene
-#' 
-#' exonsDB<-reduce(exonsBy(txdb ,'gene'))
-#' exonsDB<-exonsDB[elementNROWS(range(exonsDB))==1]
-#' intronsDB<-psetdiff(unlist(range(exonsDB)),exonsDB)
-#' intronsDB<-intronsDB[elementNROWS(intronsDB)>0]
-#' 
-#' exWdths<-sapply(width(exonsDB),sum)
-#' intWdths<-sapply(width(intronsDB),sum)
-#' 
-#' exWdths<-exWdths[testGenes]
-#' intWdths<-intWdths[testGenes]
-#' 
-#' nascentLS<-colSums(nascentCounts$
-#'   stat[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
-#' 
-#' totalLS<-colSums(matureCounts$
-#'   stat[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
 #' 
 #' expDes<-rep(c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16),3)
 #' 
@@ -43,65 +23,98 @@
 #'                                               ,exonsWidths=exWdths
 #'                                               ,intronsWidths=intWdths
 #'                                               ,allcounts=nascentCounts
-#'                                               ,DESeq2=TRUE
 #'                                               ,experimentalDesign=expDes)
 #' 
 #' matExp_DESeq2<-quantifyExpressionsFromTrCounts(libsize=totalLS
 #'                                               ,exonsWidths=exWdths
 #'                                               ,intronsWidths=intWdths
 #'                                               ,allcounts=matureCounts
-#'                                               ,DESeq2=TRUE
 #'                                               ,experimentalDesign=expDes)
-#' 
-#' vsc<-as.character(expDes[[1]])
 #' 
 #' nasExp_plgem<-quantifyExpressionsFromTrCounts(libsize=nascentLS
 #'                                              ,exonsWidths=exWdths
 #'                                              ,intronsWidths=intWdths
 #'                                              ,allcounts=nascentCounts
 #'                                              ,DESeq2=FALSE
-#'                                              ,experimentalDesign=expDes
-#'                                              ,varSamplingCondition=vsc)
+#'                                              ,experimentalDesign=expDes)
 #' 
 #' matExp_plgem<-quantifyExpressionsFromTrCounts(libsize=totalLS
 #'                                              ,exonsWidths=exWdths
 #'                                              ,intronsWidths=intWdths
 #'                                              ,allcounts=matureCounts
 #'                                              ,DESeq2=FALSE
-#'                                              ,experimentalDesign=expDes
-#'                                              ,varSamplingCondition=vsc)
+#'                                              ,experimentalDesign=expDes)
 
-quantifyExpressionsFromTrCounts <- function(libsize
+quantifyExpressionsFromTrCounts <- function(allcounts
+							  , experimentalDesign
 							  , exonsWidths
 							  , intronsWidths
-							  , allcounts
-							  , by = c('gene','tx')
+							  , libsize = NULL
 							  , DESeq2 = TRUE
-							  , experimentalDesign
 							  , varSamplingCondition = NULL)
 {
-	exonsCounts <- allcounts$exonsCounts
-	intronsCounts <- allcounts$intronsCounts
 
 	############################################
 	### CHECK ARGUMENTS ########################
 	############################################
-	if( !is.logical(DESeq2) & !any(as.character(experimentalDesign)==varSamplingCondition))
-		stop('makeExpressions: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
-	if(all(table(experimentalDesign)==1))
-		stop("makeExpressions: at least one replicate is required.")
-	if(length(experimentalDesign)!=ncol(exonsCounts))
-		stop('makeExpressions: each counts column must be accounted in the experimentalDesign')
-	if(ncol(exonsCounts)!=ncol(intronsCounts)
-	 | ncol(exonsCounts)!=length(libsize)
-	 | nrow(exonsCounts)!=length(exonsWidths)
-	 | nrow(intronsCounts)!=length(intronsWidths))
-		stop('makeExpressions: dimensionality issue in input data.')
+	# allcounts
+	if( ! is.list(allcounts) )
+		stop('quantifyExpressionsFromTrCounts: "allcounts" must be a list with elements "exonsCounts" and "intronsCounts"')
+	if( ! all(c('exonsCounts','intronsCounts') %in% names(allcounts)) )
+		stop('quantifyExpressionsFromTrCounts: "allcounts" must be a list with elements "exonsCounts" and "intronsCounts"')
 
+	exonsCounts <- allcounts$exonsCounts
+	intronsCounts <- allcounts$intronsCounts
+
+	if( !( is.matrix(exonsCounts) & is.matrix(intronsCounts) ) )
+		stop('quantifyExpressionsFromTrCounts: the elements "exonsCounts" and "intronsCounts" of "allcounts" must be matrices with the same numebr of columns.')
+	if( ncol(exonsCounts) != ncol(intronsCounts) )
+		stop('quantifyExpressionsFromTrCounts: the elements "exonsCounts" and "intronsCounts" of "allcounts" must be matrices with the same numebr of columns.')
+
+	# experimentalDesign
+	if(all(table(experimentalDesign)==1))
+		stop("quantifyExpressionsFromTrCounts: at least one condition with replicates is required.")
+	if(length(experimentalDesign)!=ncol(exonsCounts))
+		stop('quantifyExpressionsFromTrCounts: each counts column must be accounted in the experimentalDesign')
+
+	# exonsWidths
+	if( !is.numeric(exonsWidths) )
+		stop('quantifyExpressionsFromTrCounts: "exonsWidths" must be a numeric of length equal to the number of rows of the element "exonsCounts" of "allcounts".')
+	if( nrow(exonsCounts)!=length(exonsWidths) )
+		stop('quantifyExpressionsFromTrCounts: "exonsWidths" must be a numeric of length equal to the number of rows of the element "exonsCounts" of "allcounts".')
+
+	# intronsWidths
+	if( !is.numeric(intronsWidths) )
+		stop('quantifyExpressionsFromTrCounts: "intronsWidths" must be a numeric of length equal to the number of rows of the element "intronsCounts" of "allcounts".')
+	if( nrow(intronsCounts)!=length(intronsWidths) )
+		stop('quantifyExpressionsFromTrCounts: "intronsWidths" must be a numeric of length equal to the number of rows of the element "intronsCounts" of "allcounts".')
+
+	# libsize
+	if( !is.null(libsize) ) {
+		if( !is.numeric(libsize) )
+			stop('quantifyExpressionsFromTrCounts: "libsize" must be either NULL or a numeric of length equal to the number of columns of the element "exonsCounts" or "intronsCounts" of "allcounts".')
+		if( length(libsize) != ncol(exonsCounts) )
+			stop('quantifyExpressionsFromTrCounts: "libsize" must be either NULL or a numeric of length equal to the number of columns of the element "exonsCounts" or "intronsCounts" of "allcounts".')
+	} else {
+		libsize <- colSums(exonsCounts) + colSums(intronsCounts)
+	}
+
+	# varSamplingCondition
+	if( !DESeq2 ) {
+
+		if( is.null(varSamplingCondition) ) {
+			varSamplingCondition <- as.character(experimentalDesign[1])
+		} else {
+			if( length(which(as.character(experimentalDesign) == varSamplingCondition)) < 2 )
+				stop('quantifyExpressionsFromBAMs: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
+		}
+
+	} 
 
 	############################################
 	### ESTIMATE EXPRESSION AND VARIANCE #######
 	############################################
+
 
 	############## with DESeq2 #################
 	if(DESeq2)

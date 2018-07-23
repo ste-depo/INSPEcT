@@ -14,19 +14,18 @@ importFrom("preprocessCore", "normalize.quantiles")
 importFrom("rootSolve", "multiroot")
 importFrom("Rsamtools", "ScanBamParam")
 importFrom("S4Vectors","subjectHits","queryHits","queryLength","elementNROWS")
-importFrom("stats", "approx", "dist", "ecdf", "hclust", "lm","na.omit", "optim", "optimize", "pchisq", "pnorm","quantile", "rnorm", "runif", "splinefun", "uniroot", "p.adjust", "pt")
+importFrom("stats", "approx", "dist", "ecdf", "hclust", "lm","na.omit", "optim", "optimize", "pchisq", "pnorm", "predict", "quantile", "rnorm", "runif", "splinefun", "uniroot", "p.adjust", "pt")
 importFrom("utils", "capture.output", "read.table", "write.table", "head")
 
-export("compareSteadyNoNascent")
-export("newINSPEcT", "quantifyExpressionsFromBAMs")
-export("newINSPEcT", "quantifyExpressionsFromTrCounts")
-exportMethods( "[", "chisqmodel", "chisqtest", "combine", "compareSteady", "degradation", "dim", 
+export("newINSPEcT", "compareSteadyNoNascent", "quantifyExpressionsFromBAMs",
+	"quantifyExpressionsFromTrCounts", "quantifyExpressionsFromTrAbundance")
+exportMethods( "[", "AIC", "chisqmodel", "chisqtest", "combine", "compareSteady", "degradation", "dim", 
     "featureNames", "featureNames<-", "geneClass", "getModel", "getModel<-", "inHeatmap", "labeledSF", 
     "llrtests", "llrtests<-", "logLik", "makeModelRates", "makeSimDataset", 
     "makeSimModel", "modelingParams", "modelingParams<-", "modelRates", 
     "modelSelection", "modelSelection<-", "nGenes", "nTpts", "processing", "plotGene", "plotMA",
     "ratePvals", "ratesFirstGuess", "ratesFirstGuessVar", "removeModel", 
-    "rocCurve", "rocThresholds", "sfPlot", "show", "synthesis", "thresholds", "thresholds<-", 
+    "rocCurve", "rocThresholds", "sfPlot", "show", "split", "synthesis", "thresholds", "thresholds<-", 
     "totalSF", "tpts", "viewModelRates")
 exportClasses("INSPEcT", "INSPEcT_model", "INSPEcT_diffsteady" )
 

@@ -14,7 +14,7 @@
 #' @param strandSpecific Numeric, 0 if no strand-specific read counting should be performed, 1 stranded, 2 reversely-stranded. 0 by default
 #' @param isPairedEnd A logical, if paired-end reads are used, FALSE by default
 #' @param DESeq2 A logical, if TRUE exons and introns variances are evaluated through the package DESeq2, if FALSE through plgem
-#' @param varSamplingCondition A character reporting which experimental condition should be used to sample the variance if DESeq2 = FALSE
+#' @param varSamplingCondition A character reporting which experimental condition should be used to sample the variance if DESeq2 = FALSE. By default, the first element of "experimentalDesign".
 #' @return A list containing expressions and associated variances for exons and introns.
 #' @examples
 #' require(TxDb.Mmusculus.UCSC.mm9.knownGene)
@@ -26,9 +26,9 @@
 #'                                       ,'bamRep3.bam'
 #'                                       ,'bamRep4.bam')
 #'                         ,package='INSPEcT')
+#'
 #' matExp<-quantifyExpressionsFromBAMs(txdb=txdb
 #'                                    ,BAMfiles=paths_total
-#'                                    ,DESeq2=TRUE
 #'                                    ,experimentalDesign=expDes)
 
 quantifyExpressionsFromBAMs <- function(txdb
@@ -46,16 +46,51 @@ quantifyExpressionsFromBAMs <- function(txdb
 	############################################
 	### CHECK ARGUMENTS ########################
 	############################################
-	if( !is.logical(DESeq2) & !any(as.character(experimentalDesign)==varSamplingCondition))
-		stop('makeExpressions: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
-	if(length(experimentalDesign)!=length(BAMfiles))
-		stop('makeExpressions: each bam file must be accounted in the experimentalDesign')
-	if(all(table(experimentalDesign)==1))
-		stop("makeExpressions: at least one replicate is required.")
-	if( any(!file.exists(BAMfiles)) )
-	 	stop('makeExpressions: at least one file specified in "BAMfiles" argument does not exist.')
 
+	# txdb
+	if( class(txdb) != 'TxDb' ) 
+		stop('quantifyExpressionsFromBAMs: "txdb" must be an object of TxDb class.')
+	# BAMfiles
+	if( any(!file.exists(BAMfiles)) )
+	 	stop('quantifyExpressionsFromBAMs: at least one file specified in "BAMfiles" argument does not exist.')
 	if( is.null(names(BAMfiles)) ) names(BAMfiles) <- BAMfiles
+	# experimentalDesign
+	if(length(experimentalDesign)!=length(BAMfiles))
+		stop('quantifyExpressionsFromBAMs: each bam file must be accounted in the experimentalDesign.')
+	if(all(table(experimentalDesign)==1))
+		stop("quantifyExpressionsFromBAMs: at least one replicate is required.")
+	# by
+	by <- by[1]
+	if( !is.character(by) )
+		stop('quantifyExpressionsFromBAMs: "by" must be either "tx" or "gene".')
+	if( !( by %in% c('gene','tx') ) )
+		stop('quantifyExpressionsFromBAMs: "by" must be either "tx" or "gene".')
+	# countMultiMappingReads
+	if( !is.logical(countMultiMappingReads) )
+		stop('quantifyExpressionsFromBAMs: "countMultiMappingReads" must be a logical.')
+	# allowMultiOverlap
+	if( !is.logical(allowMultiOverlap) )
+		stop('quantifyExpressionsFromBAMs: "allowMultiOverlap" must be a logical.')
+	# strandSpecific
+	if( !( strandSpecific %in% c(0,1,2) ) )
+		stop('quantifyExpressionsFromBAMs: "strandSpecific" must be either a numeric between 0 and 2.')
+	# isPairedEnd
+	if( !is.logical(isPairedEnd) )
+		stop('quantifyExpressionsFromBAMs: "isPairedEnd" must be a logical.')
+	# DESeq2
+	if( !is.logical(DESeq2) )
+		stop('quantifyExpressionsFromBAMs: "DESeq2" must be a logical.')
+	# varSamplingCondition
+	if( !DESeq2 ) {
+
+		if( is.null(varSamplingCondition) ) {
+			varSamplingCondition <- as.character(experimentalDesign[1])
+		} else {
+			if( length(which(as.character(experimentalDesign) == varSamplingCondition)) < 2 )
+				stop('quantifyExpressionsFromBAMs: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
+		}
+
+	} 
 
 	############################################
 	### MAKE ANNOTATION ########################
@@ -79,7 +114,7 @@ quantifyExpressionsFromBAMs <- function(txdb
 
 	} else {
 
-		stop("makeExpressions: argument 'by' not recognized.")
+		stop("quantifyExpressionsFromBAMs: argument 'by' not recognized.")
 
 	}
 
@@ -158,12 +193,13 @@ quantifyExpressionsFromBAMs <- function(txdb
 	exonsWidths <- sapply(width(exonsDB),sum)
 	intronsWidths <- sapply(width(intronsDB),sum)
 
-	return(quantifyExpressionsFromTrCounts(libsize=libsize
+	message('Making expressions from read counts.')
+
+	return(quantifyExpressionsFromTrCounts(allcounts = allcounts
+										 , experimentalDesign = experimentalDesign
 										 , exonsWidths=exonsWidths
 										 , intronsWidths=intronsWidths
-										 , allcounts = allcounts
-										 , by = by
+										 , libsize=libsize
 										 , DESeq2 = DESeq2
-										 , experimentalDesign = experimentalDesign
 										 , varSamplingCondition = varSamplingCondition))
 }
