@@ -13,7 +13,7 @@ BiocStyle::latex()
 \newcommand{\Rmethod}[1]{{\Rfunction{#1}}}
 
 \title{INSPEcT - INference of Synthesis, Processing and dEgradation rates from Transcriptome data}
-\author{de Pretis S. - Furlan M. - Pelizzola M.}
+\author{Furlan M. - de Pretis S. - Pelizzola M.}
 
 \begin{document}
 
@@ -24,16 +24,35 @@ BiocStyle::latex()
 \section{Introduction}
 
   \Rpackage{INSPEcT} is an R/Bioconductor compliant solution for the study of RNA transcriptional dynamics
-  from RNA-seq data. The package supports the analysis of several experimental designs. It can handle
-  both time-course data or the comparison of steady-state conditions, and the presence or absence of the nascent RNA 
-  library. \\
-  According to the experimental design the software returns different outputs. A schema of the possible configurations and 
-  related outputs is reported in Table \ref{table:INSPEcTanalysisDesigns}. 
-  This scheme is supposed to guide the reader across the vignette making the individuation of the desired examples easier, 
-  however, the authors recommend at least one complete reading of the document to understand: 
-  the references between sections, the logic behind \Rpackage{INSPEcT} and the potential of the package. 
-  For more details about \Rpackage{INSPEcT}, examples of its application and extended methods description 
-  refer to REFERENCE TO THE PAPER.
+  from RNA-seq data based on a system two of ordinary differential equations (ODEs) that describes the synthesis and 
+  processing of premature RNA and the degradation of mature RNA: 
+
+  \begin{equation}\label{eq:modelsystem}
+    \nonumber
+    \left\{
+      \begin{array}{l l}
+    \dot{P}=k_1 - k_2 \, P \\
+    \dot{T}=k_1 - k_3 \, (T - P)
+      \end{array}
+    \right.
+  \end{equation}
+
+  where $T$ is the total RNA (measured by the exonic quantification of a transcripts in the RNA-seq experiment), 
+  $P$ is premature RNA (measured by the intronic quantification), 
+  $k_1$ is the synthesis rate, $k_2$ is the degradation rate and $k_3$ is the processing rate.
+  The model is based on two widely used assumptions: premature RNAs are not degraded, but only converted to mature RNA, and 
+  nuclear export occurs at a rate considerably faster than the rate of degradation and is disregarded (REFERENCE TO RABANI AND SUN).\\
+  The package supports the analysis of several experimental designs, such as steady-state conditions or time-course data, 
+  and the presence or absence of the nascent RNA library. According to the experimental design the software 
+  returns different outputs. In particular, when the nascent RNA
+  is present, the rates of synthesis, processing and degradation can be calculated both in time-course and in steady-state
+  state conditions. Moreover, per each gene or transcriptional unit, the set of rates that were differentially regulated 
+  between the conditions (or over time, in case of time-course) is reported. Without the information from the nascent, 
+  rates of synthesis, processing and degradation as well as their significant variation throughout the time-course is 
+  reported by \Rpackage{INSPEcT}, while only a variation in the ratio between processing and degradation 
+  (post-transcriptional ratio) can be reported between two steady states. A schema of the possible configurations 
+  and related outputs is reported in Table \ref{table:INSPEcTanalysisDesigns}. For more details about 
+  \Rpackage{INSPEcT}, examples of its application and extended methods description refer to REFERENCE TO THE PAPER.
 
   \begin{table}\label{table:INSPEcTanalysisDesigns}
   \caption{Table reporting the experimental designs suitable for INSPEcT}
@@ -44,10 +63,8 @@ BiocStyle::latex()
                                               &  & \textit{Synthesis} & \textit{Processing} & \textit{Degradation}  \\ \cline{1-1} \cline{3-5}
   \multicolumn{1}{|c|}{\textbf{Steady state}} &  & Yes                & Yes                 & Yes                   \\ \cline{1-1} \cline{3-5}
   \multicolumn{1}{|c|}{\textbf{Time-course}}  &  & Yes                & Yes                 & Yes                   \\ \cline{1-1} \cline{3-5}
-  \end{tabular}
-
-  \begin{tabular}{cl|c|c|c|}
-  \cline{3-5} 
+  \\
+  \cline{3-5}
                                               &  & \multicolumn{3}{c|}{\textbf{Total RNA}}                         \\ \cline{3-5}
                                               &  & \textit{Synthesis} & \textit{Processing} & \textit{Degradation} \\ \cline{1-1} \cline{3-5}
   \multicolumn{1}{|c|}{\textbf{Steady state}} &  & No                 & \multicolumn{2}{c|}{Ratio $\frac{Processing}{Degradation}$}                 \\ \cline{1-1} \cline{3-5}
@@ -56,23 +73,38 @@ BiocStyle::latex()
 
   \end{table}
 
-\section{Mature and Nascent time-course RNA-seq data}
-
-  \subsection{Transcripts expression quantification}
+  \section{Quantification of Exon and Intron features}
     The \Rpackage{INSPEcT} analysis starts with the quantification of exons and introns expressions and 
-    the estimation of the variance of the quantification from the replicates, which are mandatory.\\
+    the estimation of their variance from the replicates in the different conditions of the
+    analysis. \Rpackage{INSPEcT} can estimate transcripts abundances and associated variances starting from 
+    different entry points according to the source of data available: SAM (or BAM) files, read counts 
+    or transcripts abundances. The user can choose to estimate the variance by means of two different 
+    softwares: \Rpackage{DESeq2} or \Rpackage{plgem}. By default, \Rpackage{DESeq2} is used when starting 
+    from BAM or read counts, while only \Rpackage{plgem} can be used when starting from transcripts abundances.
 
     <<INSPEcT_loading,eval=TRUE,echo=TRUE,message=FALSE,warnings=FALSE>>=
     library(INSPEcT)
     @
 
-    In particular, INSPEcT quantification of transcripts expression has different entry points according to the 
-    source of data available:
-    \begin{itemize}
-      \item BAM or SAM files (provided with an annotation object of class TxDb)
+    \subsection{From BAM or SAM files}
 
-          <<quantifyExpressionsFromBAMs,eval=FALSE,message=FALSE,warnings=FALSE>>=
-        
+        In case the user has access to the raw aligned data, \Rpackage{INSPEcT} can quantify 
+        transcripts abundaces and variances directly from SAM or BAM files. Transcrips annotation should 
+        be provided with an annotation object of class \Rcode{TxDb}. \Rpackage{INSPEcT} retrieves the genomic coordinates of
+        the exons and defines introns as inter-exonic regions. By default, \Rpackage{INSPEcT} collapses the exons of the
+        transcripts that belong to the same gene (argument \Rcode{by} set equal to \Rcode{'gene'}), but can work also 
+        at the transcript level (argument \Rcode{by} set equal to \Rcode{'tx'}). When working at the transcript level, \Rpackage{INSPEcT}
+        cannot discriminate betweeen transcript, therefore we suggest to assign reads to all the overlapping features 
+        by setting the argument \Rcode{allowMultiOverlap} to \Rcode{TRUE}. \Rpackage{INSPEcT} manage strandness of the reads with the 
+        argument \Rcode{strandSpecific}, which can be set to \Rcode{0}, in case of non-stranded reads, \Rcode{1} for stranded
+        and \Rcode{2} for reverse-stranded experiments. \Rpackage{INSPEcT} prioritizes the exon annotation, meaning that only the reads
+        that do not overlap with any of the annotated exon are eventually accounted for introns. Here we report an 
+        example where the data from 4 sample BAM files (2 time points, 2 replicates each, as specified with the 
+        argument \Rcode{experimentalDesign}) is quantified in a non-stranded specific way, at the gene level, 
+        leaving un-assigned the reads mapping to more than one feature.
+
+        <<quantifyExpressionsFromBAMs,eval=TRUE,message=FALSE,warnings=FALSE>>=
+      
           require(TxDb.Mmusculus.UCSC.mm9.knownGene)
           txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
 
@@ -80,15 +112,25 @@ BiocStyle::latex()
             c('bamRep1.bam','bamRep2.bam','bamRep3.bam','bamRep4.bam'), 
             package='INSPEcT')
           
-          exprFromBAM <- quantifyExpressionsFromBAMs(
-                     txdb=txdb
-                     ,BAMfiles=bamfiles_paths
-                     ,DESeq2=TRUE
-                     ,experimentalDesign=c(0,0,1,1))
-          
-          @
+          exprFromBAM <- quantifyExpressionsFromBAMs(txdb=txdb
+                     , BAMfiles=bamfiles_paths
+                     , by = 'gene'
+                     , allowMultiOverlap = FALSE
+                     , strandSpecific = 0
+                     , experimentalDesign=c(0,0,1,1))
+        
+        @
 
-      \item exonic and intronic read counts
+    \subsection{From read counts}
+
+        In case the matices of intronic and exonic reads have been already calulated, \Rpackage{INSPEcT} calulates
+        the mean expression and the associated variance using, by default, the software \Rpackage{DESeq2}. The 
+        package \Rpackage{INSPEcT} contains the read counts associated to the intronic and exonic features of 
+        500 genes profiled both for the nascent and total RNA in 11 time-points and replicated 3 times each 
+        following the induction of Myc in 3T9 cells [ref to the paper]. As a complementary information, the width
+        of the intronic and exonic features for the same set of genes, as well as the sequencing depth of all the 
+        samples is provided within the package. The nascent and total quantification evaluated in this section of
+        the vignette will be used later to generate the synthetic dataset for the benchmarking of the method.
 
           <<quantifyExpressionsFromCountsNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
           
@@ -98,7 +140,6 @@ BiocStyle::latex()
 
               nascentCounts<-allcounts$nascent
               matureCounts<-allcounts$mature
-
               expDes<-rep(c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16),3)
 
               nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
@@ -117,23 +158,189 @@ BiocStyle::latex()
 
           @
 
-      \item exonic and intronic transcripts abundances
-    \end{itemize}
-    It can be done starting from BAM or SAM files through the method \Rmethod{quantifyExpressionsFromBAMs} which exploits the package \Rpackage{GenomicAlignments} to convert RNA-seq reads in counts and then the method \Rmethod{quantifyExpressionsFromTrCounts} to make them RPKMs. The evaluation of the variance is part of this initial stage of the analysis too and it can be done using \Rpackage{DESeq2} (\textit{DESeq2 = TRUE}) or \Rpackage{plgem} (\textit{DESeq2 = FALSE}); the second option requires to select a condition with replicates from the experimental design to use for the variance sampling (\textit{varSamplingCondition}). Two expression matrices, together with the associated variance matrices, constitute the output of the method.\\
-    The user can also access the pipeline providing counts data, calling directly \Rmethod{quantifyExpressionsFromTrCounts}, or expression data (like RPKMs) through \Rmethod{quantifyExpressionsFromTrAbundance}; in the latter case \Rpackage{plgem} is the only choice for variance evaluation.\\
-    In this configuration we assume the coexistence of two populations of transcripts: nascent ($L$) and mature ($R$) RNA molecules. The first group includes all the molecules synthesized during a specific span of time (labelling time $t_L$), which ends with the preparation of the sample for the sequencing, while the second one represents the RNA present in the biological system before $t_L$. Regardless of the role of $L$ and $R$ in the \Rpackage{INSPEcT} analysis framework, which will be clarified soon, the existence of two distinct populations of RNAs implies that the aforementioned procedure must be repeated twice.
+      \subsection{From transcripts abundances}
 
+        In order to exemplify the quantification of mean transcripts abundances and variances 
+        starting from their replicated quantification, we transform the read counts loaded from the package 
+        in the section above into RPKMs using the width of intron and exon and the library sizes 
 
+          <<createExpressions,eval=TRUE,message=FALSE,warnings=FALSE>>=
+              
+              trAbundancesFromCounts <- function(counts, widths, libsize)
+                      t(t(counts/widths)/libsize*10^9)
+              nascentTrAbundance <- list(
+                exonsAbundances=trAbundancesFromCounts(
+                      nascentCounts$exonsCounts, exWdths, nascentLS),
+                intronsAbundances=trAbundancesFromCounts(
+                      nascentCounts$intronsCounts, intWdths, nascentLS))
+          @
 
+          Once we have obtained transcripts abundances for introns and exons in the different conditions 
+          and replicates of the experimental design, we can calulate the mean expression and variance 
+          (using \Rpackage{plgem} by:
 
-Enjoy!
+          <<quantifyExpressionsFromTrAbundancesNascentTimeCourse,eval=TRUE, message=FALSE,warnings=FALSE>>=
+
+            nasExp_plgem<-quantifyExpressionsFromTrAbundance(
+                    trAbundaces = nascentTrAbundance
+                    , experimentalDesign = expDes)
+
+          @
+
+  \section{Analysis of Total and Nascent RNA}
+
+    In case of the joint analysis of total and nascent RNA data, for each transcript with at least one intron, 
+    the exonic and intronic quantifications are available in the Total and in the Nascent RNA libraries. The system 
+    of equations \eqref{eq:modelsystem} describes the exonic and intronic quantifications of the Total library, 
+    but when integrated between zero and the time of labeling used to generate the nascent RNA transcripts ($t_L$) 
+    it describes the exonic and intronic quantifications of the Nascent library. 
+    For matter of simplicity and to avoid unrealistic high rates of synthesis, processing and degradation, 
+    \Rpackage{INSPEcT} assumes by default that the nascent transcripts are not degradaed during the labeling time.
+    The set of equations to describe Total and Nascent RNA is:
+  
+    \begin{equation}\label{eq:2}
+      \nonumber
+      \left\{
+        \begin{array}{l l}
+      \dot{P}_{R}=k_1 - k_2 \, P_{R} \\
+      \dot{T}_{R}=k_1 - k_3 \, (T_{R} - P_{R}) \\
+      s_F \, P_{L}=\frac{k_1}{k_2} - ( 1 - e^{k_2 \, t_L} )  \\
+      s_F \, T_{L}=k_1 \, t_L
+        \end{array}
+      \right.
+    \end{equation}
+  
+    where $P_{R}$ is the premature RNA level in the total library, $T_{R}$ is equal to 
+    the total RNA level in the total library, $P_{L}$ and $T_{L}$ are the analogous but quantified in 
+    the nascent RNA library. This system describes a single condition or time-point. In case of steady-state analysis, 
+    $\dot{P}_{R}$ and $\dot{T}_{R}$ are set to zero, while in case of the time-course analysis 
+    they are estimated from the interpolation of $P_R(t)$ and $T_R(t)$ during the whole time-course via cubic splines. 
+    \Rpackage{INSPEcT} exploit the fact that the system is overdetermined (three unknowns - $k_1$, $k_2$ adn $k_3$, 
+    and four equations) to calculate a scaling factor between the Total and Nascent RNA quantifications, $s_F$, 
+    that multiplies $P_{L}$ and $T_{L}$. To avoid overfitting, a single scaling-factor representative
+    of the entire population of transcripts is used, which represents the normalization factor between 
+    the Nascent and Total libraries (ref to INSPEcT paper).
+    \\
+    
+    \subsection{Estimation of rates from intronic and exonic quantifications}
+    Once obtained the intronic and exonic quantifications from the Total and Nascent library (REF TO SECTION),
+    the rates of synthesis, processing and degradation are calculated following the procedure described in the 
+    section above during the initialization of the \Rpackage{INSPEcT} object with the function \Rmethod{newINSPEcT}:
+
+    <<newINSPEcTNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
+
+      tpts<-c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16)
+      tL<-1/6
+      nascentInspObj<-newINSPEcT(tpts=tpts
+                                ,labeling_time=tL
+                                ,nascentExpressions=nasExp_DESeq2
+                                ,matureExpressions=matExp_DESeq2)
+    @
+
+    In case of a long $t_L$ (more than 30 minutes), it can be useful to set the argument \Rcode{degDuringPulse=TRUE} 
+    to estimate the rates of the RNA life-cycle without assuming that nascent transcripts are 
+    not degradaed during the labeling time. The longer the labelling time is the weaker this assumption gets, 
+    however, taking into account nascent RNA degradation involves the solution of a more complicated system of 
+    equations and can originate unrealistic high rates of synthesis, processing and degradation.
+    \\
+    Once created the \Rpackage{INSPEcT} object, the method \Rmethod{ratesFirstGuess} returns the expressions of premature and total RNA 
+    for the analyzed genes, as well as the rates of synthesis, processing and degradation. Additionally, the method 
+    \Rmethod{ratesFirstGuessVar} returns the variances of premature and total RNA, and of the synthesis rates. 
+
+    <<newINSPEcTNascentTimeCourseShowResults,eval=TRUE,message=FALSE,warnings=FALSE>>=
+      
+      round(ratesFirstGuess(nascentInspObj,'total')[1:5,1:4],3)
+      round(ratesFirstGuessVar(nascentInspObj,'total')[1:5,1:4],3)
+      round(ratesFirstGuess(nascentInspObj,'synthesis')[1:5,1:4],3)
+
+    @
+
+    The \Rpackage{INSPEcT} object can be subsetted to focus on a specific set of genes. For the sake of speeding up 
+    the downstream analysis, we will focus on the first 10 genes of the INSPEcT object. 
+    The complete pattern of total and pre-mRNA concentrations variation together with the synthesis, degradation and 
+    processing rates can be visualized using the \Rmethod{inHeatmap} method (Figure \ref{fig:inHeatmapNascentTimeCourse}).
+  
+    \begin{center}
+    <<inHeatmapNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE, fig.width=6, fig.height=4, fig.cap="Heatmap representing: the concentrations of total RNA, of premature RNA and the prior rates of the RNA life cycle", fig.align="center">>=
+    nascentInspObj10<-nascentInspObj[1:10]
+    inHeatmap(nascentInspObj10, clustering=FALSE)
+    @
+    \end{center}
+
+  \subsection{Selection of the regulative scenario in time-course data}
+
+    The rates evaluated so far are highly exposed to the experimental noise, in particular processing and degradation rates
+    which sum up the noise coming from different sources of experimental data (such as the signal from the 
+    Total and the nascent libraries). For this reason, it could be challenging to distinguish real variations of a rate
+    from noise. Once priors have been computed, the method \Rmethod{modelRates} add a second step of modeling to 
+    identify the rates that are significantly regulated over the time course. This method tests wether the variation of a 
+    rate over time (synthesis, processing, degradation, or a combination of them) is required to obtain a good fit of the experimental data. 
+    To this purpose, 8 different models are tested for each gene, representing all the combinations of constant or variable synthesis, 
+    processing and degradation rates, eventually choosing the best trade off between goodness of fit and simplicity of the model. 
+    During this step, constant functions, sigmoid functions or impulse models are used to represent the rates over time. 
+    This evaluation can be computationally intense and some parameters are initialized randomly, therefore the argument 
+    \Rcode{seed} guarantees the reproducibility of the results.
+
+    <<modelRatesNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
+    nascentInspObj10<-modelRates(nascentInspObj10, seed=1)
+    @
+
+    The rates that are computed through this second modeling procedure can be accessed through the method \Rmethod{viewModelRates} and 
+    visualized with the \Rmethod{inHeatmap} method, setting the argument \Rcode{type='model'} 
+    (Figure \ref{fig:viewModelRatesAndInHeatmapNascentTimeCourse}).
+
+    \begin{center}
+    <<viewModelRatesAndInHeatmapNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE, fig.width=6, fig.height=4, fig.cap="Heatmap representing: the concentrations of total RNA, of premature RNA and the modelled rates of the RNA life cycle", fig.align="center">>=
+    round(viewModelRates(nascentInspObj10, 'synthesis')[1:5,1:4],3)
+    inHeatmap(nascentInspObj10, type='model', clustering=FALSE)
+    @
+    \end{center}
+
+    The metohd \Rmethod{geneClass} returns the transcriptional regulatory mechanism assigned to each modeled gene. 
+    In particular, each gene is assigned to a class named after the set of varying rates: "0" denotes a gene whose rates are 
+    constant over time, "a" denotes a gene whose synthesis changes over time, "b" denotes a gene whose degradation 
+    changes over time, "c" denotes a gene whose processing changes over time.\\
+
+    <<geneClassNascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE>>=
+    geneClass(nascentInspObj10)
+    @
+
+    Additionally, the metohd \Rmethod{plotGene} can be used to fully investigate the profiles of RNA concentrations and 
+    rates of a single gene. Estimated synthesis, degradation and processing rates, premature RNA and total RNA concentrations 
+    are displayed with solid thin lines, while their standard deviations are in dashed lines and the modelled rates 
+    and concentrations are in thick solid lines. This example shows a gene of class "ab", indicating that its expression 
+    levels are controlled by synthesis and degradation rates (Figure \ref{fig:plotGeneNascentTimeCourse}).
+
+    \begin{center}
+    <<plotGeneNascentTimeCourse,eval=TRUE,message=TRUE,warnings=FALSE, fig.width=10, fig.height=3, fig.cap="Plot of concentrations and rates over time for the given gene.", fig.align="center">>=
+    plotGene(nascentInspObj10, ix="101206")
+    @
+    \end{center}
+
+    The quality of each model is evaluated through log likelihood and chi-square, to take into account the different 
+    complexities of the regulatory scenarios we compute also the chi-square p value; it can visualized as a 
+    histogram (Figure \ref{fig:chi2NascentTimeCourse}) and eventually used to discard badly fitted genes.
+
+    \begin{center}
+    <<chi2NascentTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE, fig.width=3.5, fig.height=3.5, hold=TRUE, fig.cap="Histogram of the p-values from the goodness of fit test for selected models.", fig.align="center">>=
+    chisq<-chisqmodel(nascentInspObj10)
+    hist(log10(chisq), main='', xlab='log10 chi-squared p-value')
+    discard<-which(chisq>1e-4)
+    featureNames(nascentInspObj10)[discard]
+    nascentInspObj_reduced<-nascentInspObj10[-discard]
+    @
+    \end{center}
+
+    The model selection is a fundamental and subtle stage of the analysis, it influences all the results shown above and should 
+    be carefully triggered according to the specific dataset under analysis. See the \textbf{Parameters setting} and 
+    \textbf{Evaluation of time-course model on simulated data} sections, and the paper REFERENCE TO PAPER for further details.
+
+  \section{Analysis of Total RNA without Nascent}
+
 
 \section{About this document}
 
 <<r>>=
-
-print("r")
-
 sessionInfo()
 @
 

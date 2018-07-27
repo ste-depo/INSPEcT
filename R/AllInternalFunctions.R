@@ -2596,13 +2596,13 @@ secondStepError_NoNascent <- function(tpts
 	return(mean((mature[-1] - matureEstimated[-1])^2/matureVariance[-1]))
 }
 
-.getRatesAndConcentrationsFromRpkms_NoNascent <- function(totRpkms
-													, tpts
-													, BPPARAM=bpparam()
-													, modellingParameters=list(Dmin = 1e-6
-																			 , Dmax = 10)
-													, genesFilter
-													)
+ratesAndConcentrationsNoNascent <- function(totRpkms
+											, tpts
+											, BPPARAM=bpparam()
+											, modellingParameters=list(Dmin = 1e-6
+																	 , Dmax = 10)
+											, genesFilter
+											)
 {
 
 	Dmin <- modellingParameters$Dmin
@@ -2620,24 +2620,24 @@ secondStepError_NoNascent <- function(tpts
 	prematureVariance <- totRpkms$introns_var
 	totalVariance <- totRpkms$exons_var
 
-	boolExpressionsAndVariances <- apply(mature,1,function(row)any(row < 0)) |
-	                               apply(premature,1,function(row)any(row < 0)) |
-	                               apply(matureVariance,1,function(row)any(row < 0)) |
-	                               apply(prematureVariance,1,function(row)any(row < 0))
+	# boolExpressionsAndVariances <- apply(mature,1,function(row)any(row < 0)) |
+	#                                apply(premature,1,function(row)any(row < 0)) |
+	#                                apply(matureVariance,1,function(row)any(row < 0)) |
+	#                                apply(prematureVariance,1,function(row)any(row < 0))
 
-	boolExpressionsAndVariances[!is.finite(boolExpressionsAndVariances)] <- TRUE
+	# boolExpressionsAndVariances[!is.finite(boolExpressionsAndVariances)] <- TRUE
 
-	if(any(boolExpressionsAndVariances))
-		{print("newINSPEcT: for some genes mRNA or preMRNA expressions or variances are negative. Those genes are excluded from the analysis.")}
+	# if(any(boolExpressionsAndVariances))
+	# 	{message("Some genes have intronic quantification greater than the exonic. Those genes are excluded from the analysis.")}
 
-	eiGenes <- eiGenes[!boolExpressionsAndVariances]
+	# eiGenes <- eiGenes[!boolExpressionsAndVariances]
 
-	mature <- mature[eiGenes,]
-	premature <- premature[eiGenes,]
-	matureVariance <- matureVariance[eiGenes,]
-	prematureVariance <- prematureVariance[eiGenes,]
-	total <- total[eiGenes,]
-	totalVariance <- totalVariance[eiGenes,]
+	# mature <- mature[eiGenes,]
+	# premature <- premature[eiGenes,]
+	# matureVariance <- matureVariance[eiGenes,]
+	# prematureVariance <- prematureVariance[eiGenes,]
+	# total <- total[eiGenes,]
+	# totalVariance <- totalVariance[eiGenes,]
 
 	# Constant post transcriptional rates and fixed post transcriptional ratio 
 	k3Prior <- firstStep_NoNascent(tpts = tpts
@@ -2737,7 +2737,6 @@ secondStepError_NoNascent <- function(tpts
 		sapply(gammaOut, function(x) sapply(x, '[[', 'estim.prec'))
 		)
 
-	print('imputing NA values')
 	# ## impute NA values
 	alphaTC <- do.call('rbind',bplapply(1:nrow(alphaTC), 
 		function(i) impute_na_tc(tpts, alphaTC[i,]), BPPARAM=bpparam()))
@@ -2761,8 +2760,8 @@ secondStepError_NoNascent <- function(tpts
 	attr(total, 'dimnames') <- NULL
 	attr(premature, 'dimnames') <- NULL
 	attr(alphaTC_var, 'names') <- NULL
-	attr(totalVariance, 'names') <- NULL
-	attr(prematureVariance, 'names') <- NULL
+	attr(totalVariance, 'dimnames') <- NULL
+	attr(prematureVariance, 'dimnames') <- NULL
 	attr(ratesEstimPrec, 'dimnames') <- NULL
 
 	return(list(concentrations=list(total=total

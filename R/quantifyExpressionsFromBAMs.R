@@ -7,14 +7,20 @@
 #' @param experimentalDesign A numerical which reports the desing of the experiment in terms of time points and replicates.
 #' Time points must be ordered according to the sequence of files submitted for the analysis, these labels characterize
 #' different files as replicates of a given condition.
-#' @param by A character, either "gene" or "tx", indicating if expressions and counts should be summarized at the levels of genes or transcripts. "gene" by default
+#' @param by A character, either "gene" or "tx", indicating if expressions and counts should be summarized at the levels of 
+#' genes or transcripts. "gene" by default.
+#' In case "tx" is selected, we suggest to set argument "allowMultiOverlap" to TRUE, otherwise the reads mapping to overlapping
+#' transcripts of the same gene will remain unassigned.
 #' @param countMultiMappingReads A logical, if multimapping reads should be counted, FALSE by default. Multimap reads are 
 #' identified using the tag "NH" in the bam/sam file.
 #' @param allowMultiOverlap A logical, indicating if a read is allowed to be assigned to more than one feature, FALSE by default
+#' @param libsize A character, either "assigned" or "all", indicating whether the libsize for expression normalization should include all 
+#' mapped reads or only the reads assigned to any of the features. By default, "assigned" is selected.
 #' @param strandSpecific Numeric, 0 if no strand-specific read counting should be performed, 1 stranded, 2 reversely-stranded. 0 by default
 #' @param isPairedEnd A logical, if paired-end reads are used, FALSE by default
 #' @param DESeq2 A logical, if TRUE exons and introns variances are evaluated through the package DESeq2, if FALSE through plgem
-#' @param varSamplingCondition A character reporting which experimental condition should be used to sample the variance if DESeq2 = FALSE. By default, the first element of "experimentalDesign".
+#' @param varSamplingCondition A character reporting which experimental condition should be used to sample the variance if DESeq2 = FALSE. 
+#' By default, the first element of "experimentalDesign" with replicates.
 #' @return A list containing expressions and associated variances for exons and introns.
 #' @examples
 #' require(TxDb.Mmusculus.UCSC.mm9.knownGene)
@@ -37,6 +43,7 @@ quantifyExpressionsFromBAMs <- function(txdb
 					, by = c('gene','tx')
 					, countMultiMappingReads = FALSE
 					, allowMultiOverlap = FALSE
+					, libsize = c('assigned','all')
 					, strandSpecific = 0
 					, isPairedEnd = FALSE
 					, DESeq2 = TRUE
@@ -82,14 +89,12 @@ quantifyExpressionsFromBAMs <- function(txdb
 		stop('quantifyExpressionsFromBAMs: "DESeq2" must be a logical.')
 	# varSamplingCondition
 	if( !DESeq2 ) {
-
 		if( is.null(varSamplingCondition) ) {
-			varSamplingCondition <- as.character(experimentalDesign[1])
+			varSamplingCondition <- names(which(table(experimentalDesign)>1)[1])
 		} else {
 			if( length(which(as.character(experimentalDesign) == varSamplingCondition)) < 2 )
 				stop('quantifyExpressionsFromBAMs: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
 		}
-
 	} 
 
 	############################################
@@ -193,13 +198,13 @@ quantifyExpressionsFromBAMs <- function(txdb
 	exonsWidths <- sapply(width(exonsDB),sum)
 	intronsWidths <- sapply(width(intronsDB),sum)
 
-	message('Making expressions from read counts.')
-
-	return(quantifyExpressionsFromTrCounts(allcounts = allcounts
-										 , experimentalDesign = experimentalDesign
-										 , exonsWidths=exonsWidths
-										 , intronsWidths=intronsWidths
-										 , libsize=libsize
-										 , DESeq2 = DESeq2
-										 , varSamplingCondition = varSamplingCondition))
+	out <- quantifyExpressionsFromTrCounts(allcounts = allcounts
+											 , experimentalDesign = experimentalDesign
+											 , exonsWidths=exonsWidths
+											 , intronsWidths=intronsWidths
+											 , libsize=libsize
+											 , DESeq2 = DESeq2
+											 , varSamplingCondition = varSamplingCondition)
+	out$countStats <- allcounts$stat
+	return(out)
 }

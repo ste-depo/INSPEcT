@@ -10,6 +10,6 @@
 #' sfPlot(nascentInspObj10)
 setMethod('sfPlot', 'INSPEcT', function(object) {
 	mat <- cbind(object@totalSF, object@labeledSF)
-	matplot(mat, type='l', lty=1, xlab='time index', ylab='scaling factor')
-	legend('bottomleft', legend=c('total','Nascent'), col=1:2, lty=1)
+	matplot(mat, type='b', lty=1, pch=1, xlab='time index', ylab='scaling factor')
+	legend('right', legend=c('total','Nascent'), col=1:2, lty=1)
 	})

@@ -7,7 +7,7 @@
 #' @param intronsWidths A numeric containing the intorns widths.
 #' @param libsize A numeric containing the library size.
 #' @param DESeq2 A logical, if TRUE the RPKMs variances are evaluated through the package DESeq2, if FALSE plgem is used.
-#' @param varSamplingCondition A character reporting which experimental condition should be used to sample the fatiance if DESeq2 = FALSE.
+#' @param varSamplingCondition A character reporting which experimental condition should be used to sample the variance if DESeq2 = FALSE. By default, the first element of "experimentalDesign" with replicates.
 #' @return A list containing RPKMs and associated variances for exons and introns.
 #' @examples
 #' data('allcounts', package='INSPEcT')
@@ -62,33 +62,27 @@ quantifyExpressionsFromTrCounts <- function(allcounts
 		stop('quantifyExpressionsFromTrCounts: "allcounts" must be a list with elements "exonsCounts" and "intronsCounts"')
 	if( ! all(c('exonsCounts','intronsCounts') %in% names(allcounts)) )
 		stop('quantifyExpressionsFromTrCounts: "allcounts" must be a list with elements "exonsCounts" and "intronsCounts"')
-
 	exonsCounts <- allcounts$exonsCounts
 	intronsCounts <- allcounts$intronsCounts
-
 	if( !( is.matrix(exonsCounts) & is.matrix(intronsCounts) ) )
 		stop('quantifyExpressionsFromTrCounts: the elements "exonsCounts" and "intronsCounts" of "allcounts" must be matrices with the same numebr of columns.')
 	if( ncol(exonsCounts) != ncol(intronsCounts) )
 		stop('quantifyExpressionsFromTrCounts: the elements "exonsCounts" and "intronsCounts" of "allcounts" must be matrices with the same numebr of columns.')
-
 	# experimentalDesign
 	if(all(table(experimentalDesign)==1))
 		stop("quantifyExpressionsFromTrCounts: at least one condition with replicates is required.")
 	if(length(experimentalDesign)!=ncol(exonsCounts))
 		stop('quantifyExpressionsFromTrCounts: each counts column must be accounted in the experimentalDesign')
-
 	# exonsWidths
 	if( !is.numeric(exonsWidths) )
 		stop('quantifyExpressionsFromTrCounts: "exonsWidths" must be a numeric of length equal to the number of rows of the element "exonsCounts" of "allcounts".')
 	if( nrow(exonsCounts)!=length(exonsWidths) )
 		stop('quantifyExpressionsFromTrCounts: "exonsWidths" must be a numeric of length equal to the number of rows of the element "exonsCounts" of "allcounts".')
-
 	# intronsWidths
 	if( !is.numeric(intronsWidths) )
 		stop('quantifyExpressionsFromTrCounts: "intronsWidths" must be a numeric of length equal to the number of rows of the element "intronsCounts" of "allcounts".')
 	if( nrow(intronsCounts)!=length(intronsWidths) )
 		stop('quantifyExpressionsFromTrCounts: "intronsWidths" must be a numeric of length equal to the number of rows of the element "intronsCounts" of "allcounts".')
-
 	# libsize
 	if( !is.null(libsize) ) {
 		if( !is.numeric(libsize) )
@@ -98,17 +92,17 @@ quantifyExpressionsFromTrCounts <- function(allcounts
 	} else {
 		libsize <- colSums(exonsCounts) + colSums(intronsCounts)
 	}
-
+	# DESeq2
+	if( !is.logical(DESeq2) )
+		stop('quantifyExpressionsFromTrCounts: "DESeq2" must be a logical.')
 	# varSamplingCondition
 	if( !DESeq2 ) {
-
 		if( is.null(varSamplingCondition) ) {
-			varSamplingCondition <- as.character(experimentalDesign[1])
+			varSamplingCondition <- names(which(table(experimentalDesign)>1)[1])
 		} else {
 			if( length(which(as.character(experimentalDesign) == varSamplingCondition)) < 2 )
-				stop('quantifyExpressionsFromBAMs: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
+				stop('quantifyExpressionsFromTrCounts: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
 		}
-
 	} 
 
 	############################################
@@ -119,14 +113,19 @@ quantifyExpressionsFromTrCounts <- function(allcounts
 	############## with DESeq2 #################
 	if(DESeq2)
 	{
+
+		message('Estimation of expressions and variances using DESeq2...')
+
 		sampleTptsNames <- factor(signif(experimentalDesign,2))
 		colData <- data.frame(tpts=sampleTptsNames)
 		countsTemp <- list(exonsCounts,intronsCounts)
 
-		ddsList <- lapply(countsTemp,function(countData){ori <- DESeqDataSetFromMatrix(countData = countData
-																,colData = colData
-																,design = ~ tpts)
-					return(DESeq(ori))})
+		ddsList <- lapply(countsTemp,function(countData){
+			ori <- DESeqDataSetFromMatrix(countData = countData
+										,colData = colData
+										,design = ~ tpts)
+			suppressMessages(ori <- DESeq(ori))
+			return(ori)})
 
 		muExons<-assays(ddsList[[1]])[['mu']]
 		alphaExons<-dispersions(ddsList[[1]])
@@ -171,14 +170,19 @@ quantifyExpressionsFromTrCounts <- function(allcounts
 
 	} else {
 
+		message('Estimation of expressions and variances using plgem...')
+
 		expressionExons<-counts2expressions(exonsCounts,exonsWidths,libsize)
 		expressionIntrons<-counts2expressions(intronsCounts,intronsWidths,libsize)
 
 		############## with PLGEM ##################
-		return(quantifyExpressionsFromTrAbundance(exonsAbundances = expressionExons
-										       , intronsAbundances = expressionIntrons
-											   , experimentalDesign = experimentalDesign
-											   , varSamplingCondition = varSamplingCondition))
+		return(quantifyExpressionsFromTrAbundance(
+								trAbundaces = list(
+									exonsAbundances = expressionExons
+									, intronsAbundances = expressionIntrons
+									)
+								, experimentalDesign = experimentalDesign
+								, varSamplingCondition = varSamplingCondition))
 
 	}
 }

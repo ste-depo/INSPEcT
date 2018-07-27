@@ -7,19 +7,59 @@
 #' @param simulatedData A boolean which is TRUE if the data under analysis are simulated.
 #' @return A list containing RPKMs and associated variances for exons and introns.
 
-quantifyExpressionsFromTrAbundance <- function(exonsAbundances
-										     , intronsAbundances
+quantifyExpressionsFromTrAbundance <- function(trAbundaces
 											 , experimentalDesign
-											 , varSamplingCondition
+											 , varSamplingCondition = NULL
 											 , simulatedData = FALSE)
 {
 
-	if(table(experimentalDesign)[varSamplingCondition]==1)
-		stop('quantifyExpressions: the varSamplingCondition must have at least one replicate.')
-	if(!simulatedData)
-	{
-		if(ncol(exonsAbundances)!=ncol(intronsAbundances))
-			stop('makeExpressions: dimensionality issue in input data.')
+	if( !is.logical(simulatedData) )
+		stop('quantifyExpressionsFromTrAbundance: "simulatedData" must be a logical.')
+	if( !simulatedData ) {
+		# trAbundaces
+		if( ! is.list(trAbundaces) )
+			stop('quantifyExpressionsFromTrAbundance: "trAbundaces" must be a list with elements "exonsAbundances" and "intronsAbundances"')
+		if( ! all(c('exonsAbundances','intronsAbundances') %in% names(trAbundaces)) )
+			stop('quantifyExpressionsFromTrAbundance: "trAbundaces" must be a list with elements "exonsAbundances" and "intronsAbundances"')
+		exonsAbundances <- trAbundaces$exonsAbundances
+		intronsAbundances <- trAbundaces$intronsAbundances
+		if( !( is.matrix(exonsAbundances) & is.matrix(intronsAbundances) ) )
+			stop('quantifyExpressionsFromTrAbundance: the elements "exonsAbundances" and "intronsAbundances" of "trAbundaces" must be matrices with the same numebr of columns.')
+		if( ncol(exonsAbundances) != ncol(intronsAbundances) )
+			stop('quantifyExpressionsFromTrAbundance: the elements "exonsAbundances" and "intronsAbundances" of "trAbundaces" must be matrices with the same numebr of columns.')
+		# experimentalDesign
+		if(all(table(experimentalDesign)==1))
+			stop("quantifyExpressionsFromTrAbundance: at least one condition with replicates is required.")
+		if(length(experimentalDesign)!=ncol(exonsAbundances))
+			stop('quantifyExpressionsFromTrAbundance: each counts column must be accounted in the experimentalDesign')
+		# varSamplingCondition
+		if( is.null(varSamplingCondition) ) {
+			varSamplingCondition <- names(which(table(experimentalDesign)>1)[1])
+		} else {
+			if( length(which(as.character(experimentalDesign) == varSamplingCondition)) < 2 )
+				stop('quantifyExpressionsFromTrAbundance: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
+		}
+	} else {
+		# trAbundaces
+		if( ! is.list(trAbundaces) )
+			stop('quantifyExpressionsFromTrAbundance: "trAbundaces" must be a list with element "exonsAbundances".')
+		if( ! 'exonsAbundances' %in% names(trAbundaces) )
+			stop('quantifyExpressionsFromTrAbundance: "trAbundaces" must be a list with element "exonsAbundances".')
+		exonsAbundances <- trAbundaces$exonsAbundances
+		if( !is.matrix(exonsAbundances) )
+			stop('quantifyExpressionsFromTrAbundance: the element "exonsAbundances" of "trAbundaces" must be matrix.')
+		# experimentalDesign
+		if(all(table(experimentalDesign)==1))
+			stop("quantifyExpressionsFromTrAbundance: at least one condition with replicates is required.")
+		if(length(experimentalDesign)!=ncol(exonsAbundances))
+			stop('quantifyExpressionsFromTrAbundance: each counts column must be accounted in the experimentalDesign')
+		# varSamplingCondition
+		if( is.null(varSamplingCondition) ) {
+			varSamplingCondition <- names(which(table(experimentalDesign)>1)[1])
+		} else {
+			if( length(which(as.character(experimentalDesign) == varSamplingCondition)) < 2 )
+				stop('quantifyExpressionsFromTrAbundance: if DESeq2 is FALSE varSamplingCondition must be an experimental condition with replicates.')
+		}		
 	}
 
 	expressionsExons <- exonsAbundances
@@ -91,11 +131,13 @@ quantifyExpressionsFromTrAbundance <- function(exonsAbundances
 				  , intronsExpressions = expressionsIntrons
 				  , exonsVariance = varianceExpressionsExons
 				  , intronsVariance = varianceExpressionsIntrons))
-	}
+	} else {
 
-	return(list(exonsExpressions = expressionsExons
-			  , intronsExpressions = NULL
-			  , exonsVariance = varianceExpressionsExons
-			  , intronsVariance = NULL))
+		return(list(exonsExpressions = expressionsExons
+				  , intronsExpressions = NULL
+				  , exonsVariance = varianceExpressionsExons
+				  , intronsVariance = NULL))
+
+	}
 
 }

@@ -96,16 +96,22 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 	experimentalDesign <- rep(tpts, nRep)
 	colnames(totalSimReplicates)<-colnames(preMRNASimReplicates)<-colnames(alphaSimReplicates) <- experimentalDesign
 
-	nascentExpressions <- quantifyExpressionsFromTrAbundance(exonsAbundances = alphaSimReplicates
-										     , intronsAbundances = NULL
+	nascentExpressions <- quantifyExpressionsFromTrAbundance(
+											 trAbundaces = list(
+											 	exonsAbundances = alphaSimReplicates
+										     	, intronsAbundances = NULL
+										     	)
 											 , experimentalDesign = experimentalDesign
 											 , varSamplingCondition = as.character(tpts[[1]])
 											 , simulatedData = TRUE)
 
-	matureExpressions <- quantifyExpressionsFromTrAbundance(exonsAbundances = totalSimReplicates
+	matureExpressions <- quantifyExpressionsFromTrAbundance(
+											 trAbundaces = list(
+														 exonsAbundances = totalSimReplicates
 										     			 , intronsAbundances = preMRNASimReplicates
-											 			 , experimentalDesign = experimentalDesign
-											 			 , varSamplingCondition = as.character(tpts[[1]]))
+										     			 )
+								 			 , experimentalDesign = experimentalDesign
+								 			 , varSamplingCondition = as.character(tpts[[1]]))
 
 	if(!NoNascent)
 	{
