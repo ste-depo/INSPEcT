@@ -24,7 +24,7 @@ an INSPEcT object per time points because when removing time points
 the modeling is not valid anymore.
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 nascentInspObj10_5genes <- nascentInspObj10[1:5]
 
 ## This will turn out into an error:

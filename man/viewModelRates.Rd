@@ -24,6 +24,6 @@ Retrieve the modeled rates and concentrations
 A method to access the modeld rates via the method \code{\link{modelRates}}
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 viewModelRates(nascentInspObj10, 'synthesis')
 }

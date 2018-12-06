@@ -33,11 +33,11 @@ This method can be used to regenerate the rates assiciated to the modeling, in c
 some testing parameters has changed.
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 tpts <- nascentInspObj10@tpts
 eSet <- makeModelRates(getModel(nascentInspObj10), tpts=tpts)
 exprs(eSet)
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 viewModelRates(nascentInspObj10, 'degradation')
 ## force every degradation rate to be accepted as variable
 thresholds(getModel(nascentInspObj10))$brown <- c(synthesis=.01, degradation=1, processing=.01)

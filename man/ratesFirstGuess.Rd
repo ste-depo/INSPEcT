@@ -25,13 +25,11 @@ This method allow to access to the estimated synthesis, degradation, processing 
 concentrations the way they were calculated by the constructor function \code{\link{newINSPEcT}}.
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 
 ratesFirstGuess(nascentInspObj10, 'total')
 ratesFirstGuess(nascentInspObj10, 'preMRNA')
 ratesFirstGuess(nascentInspObj10, 'synthesis')
-ratesFirstGuess(nascentInspObj10, 'processing')
-ratesFirstGuess(nascentInspObj10, 'degradation')
 }
 \seealso{
 \code{\link{newINSPEcT}}, \code{\link{ratesFirstGuessVar}}

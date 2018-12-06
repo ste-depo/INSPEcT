@@ -9,7 +9,7 @@
 #'  tpts : A vector of time points where rates and concentrations have to be evaluated
 #' @return An object of class ExpressionSet containing the modeled rates and concentrations
 #' @examples
-#' data('nascentInspObj10', package='INSPEcT')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' tpts <- nascentInspObj10@tpts
 #' eSet <- makeModelRates(getModel(nascentInspObj10), tpts=tpts)
 #' exprs(eSet)
@@ -27,15 +27,15 @@ setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
 		ratesSpecs <- .bestModel(object)@ratesSpecs
 	## solve the differential equation model for each gene
 	nGenes <- length(ratesSpecs)
-	log_shift <- .find_tt_par(tpts)
+	log_shift <- find_tt_par(tpts)
 	modelRates <- lapply(1:nGenes, function(i) {
 		tryCatch(
 			.makeModel(tpts, ratesSpecs[[i]][[1]], log_shift, 
-				.time_transf, deSolve::ode, .rxnrate)
+				time_transf, deSolve::ode, .rxnrate)
 			, error=function(e)
 				tryCatch(
 					.makeSimpleModel(tpts, ratesSpecs[[i]][[1]], log_shift, 
-						.time_transf, deSolve::ode, .rxnrateSimple)
+						time_transf, deSolve::ode, .rxnrateSimple)
 					, error=function(e) .makeEmptyModel(tpts)
 					)
 				)
@@ -77,7 +77,7 @@ setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
 #' This method can be used to regenerate the rates assiciated to the modeling, in case
 #' some testing parameters has changed.
 #' @examples
-#' data('nascentInspObj10', package='INSPEcT')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' viewModelRates(nascentInspObj10, 'degradation')
 #' ## force every degradation rate to be accepted as variable
 #' thresholds(getModel(nascentInspObj10))$brown <- c(synthesis=.01, degradation=1, processing=.01)
@@ -88,7 +88,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 	## get ratesSpec field
 	ratesSpecs <- object@model@ratesSpecs
 	tpts <- object@tpts
-	log_shift <- .find_tt_par(tpts)
+	log_shift <- find_tt_par(tpts)
 	
 	## in case some elements of ratesSpecs are longer than one,
 	# meaning that a unique choiche for a model has not been done yet,
@@ -100,10 +100,10 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 
 	nGenes <- length(ratesSpecs)
 
-	if(object@params$NoNascent & object@params$estimateRatesWith == "int")
+	if(object@NoNascent & object@params$estimateRatesWith == "int")
 	{
 		a <- log_shift
-		c <- abs(min(.time_transf(tpts,a)))
+		c <- abs(min(time_transf(tpts,a)))
 
 		## solve the differential equation model for each gene
 		modelRates <- lapply(1:nGenes, function(i) {
@@ -111,7 +111,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 				.makeModel(tpts = tpts
 						 , hyp = ratesSpecs[[i]][[1]]
 						 , log_shift = log_shift
-						 , .time_transf = .time_transf_NoNascent
+						 , time_transf = time_transf_NoNascent
 						 , ode = deSolve::ode
 						 , .rxnrate = .rxnrate
 						 , c = c)
@@ -119,17 +119,17 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 			)
 		})
 
-	}else if(!object@params$NoNascent)
+	}else if(!object@NoNascent)
 	{
 		## solve the differential equation model for each gene
 		modelRates <- lapply(1:nGenes, function(i) {
 			tryCatch(
 				.makeModel(tpts, ratesSpecs[[i]][[1]], log_shift, 
-					.time_transf, deSolve::ode, .rxnrate)
+					time_transf, deSolve::ode, .rxnrate)
 				, error=function(e)
 					tryCatch(
 						.makeSimpleModel(tpts, ratesSpecs[[i]][[1]], log_shift, 
-							.time_transf, deSolve::ode, .rxnrateSimple)
+							time_transf, deSolve::ode, .rxnrateSimple)
 						, error=function(e) .makeEmptyModel(tpts)
 						)
 					)
@@ -137,7 +137,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 	}else{
 
 		a <- log_shift
-		c <- abs(min(.time_transf(tpts,a)))
+		c <- abs(min(time_transf(tpts,a)))
 		## solve the differential equation model for each gene
 		modelRates <- lapply(1:nGenes, function(i) {
 			if(any(bestModels[i]==c("b","c","bc")))
@@ -146,7 +146,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 					.makeModel(tpts = tpts
 							 , hyp = ratesSpecs[[i]][[1]]
 							 , log_shift = log_shift
-							 , .time_transf = .time_transf_NoNascent
+							 , time_transf = time_transf_NoNascent
 							 , ode = deSolve::ode
 							 , .rxnrate = .rxnrate
 							 , c = c)
@@ -157,7 +157,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 					.makeModel_Derivative(tpts = tpts
 							 , hyp = ratesSpecs[[i]][[1]]
 							 , log_shift = log_shift
-							 , .time_transf = .time_transf_NoNascent
+							 , time_transf = time_transf_NoNascent
 							 , ode = deSolve::ode
 							 , .rxnrate = .rxnrate
 							 , c = c

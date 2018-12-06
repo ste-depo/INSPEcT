@@ -15,7 +15,7 @@ sfPlot(object)
 }
 \value{
 None
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 sfPlot(nascentInspObj10)
 }
 \description{

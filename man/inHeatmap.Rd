@@ -56,7 +56,7 @@ pre-RNA and total RNA concentration of a population of genes, either at the leve
 etimated or modeled rates.
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 inHeatmap(nascentInspObj10, 'pre-model')
 inHeatmap(nascentInspObj10, 'model')
 }

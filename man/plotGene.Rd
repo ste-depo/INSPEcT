@@ -6,9 +6,9 @@
 \alias{plotGene,INSPEcT-method}
 \title{Plot the pre-modeled and modeled profiles for one gene}
 \usage{
-plotGene(object, ix, fix.yaxis = FALSE)
+plotGene(object, ix, fix.yaxis = FALSE, priors = TRUE)
 
-\S4method{plotGene}{INSPEcT}(object, ix, fix.yaxis = FALSE)
+\S4method{plotGene}{INSPEcT}(object, ix, fix.yaxis = FALSE, priors = TRUE)
 }
 \arguments{
 \item{object}{An object of class INSPEcT}
@@ -17,6 +17,8 @@ plotGene(object, ix, fix.yaxis = FALSE)
 
 \item{fix.yaxis}{A logical, indicating whether the limits for y-axis of degradation and processing rates should be fixed
 relative to their distributions}
+
+\item{priors}{A logical, if true the priors of the rates are plotted}
 }
 \value{
 A list containing total RNA levels and their confidence interval (levels plus and minus
@@ -31,6 +33,6 @@ concentrations (solid thin lines) their variances (dashed lines) and the modeled
 (ticker solid line) of a single gene.
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 plotGene(nascentInspObj10, 1)
 }

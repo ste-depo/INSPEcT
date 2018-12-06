@@ -27,6 +27,6 @@ Retrieve results of log likelihood test
 This method is used to retrieve all the log likelihood ratio test results for all pairs tested for all genes.
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 logLik(nascentInspObj10)
 }

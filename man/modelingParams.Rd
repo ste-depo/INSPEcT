@@ -48,9 +48,9 @@ A method to get and set the parameters that will be used in the modeling of esti
 concentrations by the method \code{\link{modelRates}}
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 modelingParams(nascentInspObj10)
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 nascentInspObj10 <- removeModel(nascentInspObj10)
 modelingParams(nascentInspObj10)$useSigmoidFun <- FALSE
 }

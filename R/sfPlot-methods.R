@@ -6,10 +6,12 @@
 #' Nascent-seq scaling can be in fact considered as a yield of the synthesis within the cells.
 #' @param object An object of class INSPEcT
 #' @return None
-#' data('nascentInspObj10', package='INSPEcT')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' sfPlot(nascentInspObj10)
 setMethod('sfPlot', 'INSPEcT', function(object) {
-	mat <- cbind(object@totalSF, object@labeledSF)
-	matplot(mat, type='b', lty=1, pch=1, xlab='time index', ylab='scaling factor')
-	legend('right', legend=c('total','Nascent'), col=1:2, lty=1)
+	tpts <- tpts(object)
+	log_shift <- find_tt_par(tpts)
+	x <- time_transf(tpts, log_shift)
+	plot(x, labeledSF(object), type='b', lty=1, pch=1, xlab='time', ylab='labeled RNA scaling factor')
+	axis(1, at=x, labels=signif(tpts, 2), las=3)
 	})

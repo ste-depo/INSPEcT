@@ -116,7 +116,9 @@ quantifyExpressionsFromTrCounts <- function(allcounts
 
 		message('Estimation of expressions and variances using DESeq2...')
 
-		sampleTptsNames <- factor(signif(experimentalDesign,2))
+		if( is.numeric(experimentalDesign) ) 
+			experimentalDesign= signif(experimentalDesign,9)
+		sampleTptsNames <- factor(experimentalDesign)
 		colData <- data.frame(tpts=sampleTptsNames)
 		countsTemp <- list(exonsCounts,intronsCounts)
 
@@ -165,8 +167,7 @@ quantifyExpressionsFromTrCounts <- function(allcounts
 				  , intronsExpressions = expressionsIntrons
 				  , exonsVariance = varianceExpressionsExons
 				  , intronsVariance = varianceExpressionsIntrons
-				  , exonsCounts = exonsCounts
-				  , intronsCounts = intronsCounts))
+				  ))
 
 	} else {
 

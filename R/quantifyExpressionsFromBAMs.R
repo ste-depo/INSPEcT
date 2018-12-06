@@ -60,7 +60,6 @@ quantifyExpressionsFromBAMs <- function(txdb
 	# BAMfiles
 	if( any(!file.exists(BAMfiles)) )
 	 	stop('quantifyExpressionsFromBAMs: at least one file specified in "BAMfiles" argument does not exist.')
-	if( is.null(names(BAMfiles)) ) names(BAMfiles) <- BAMfiles
 	# experimentalDesign
 	if(length(experimentalDesign)!=length(BAMfiles))
 		stop('quantifyExpressionsFromBAMs: each bam file must be accounted in the experimentalDesign.')
@@ -127,6 +126,11 @@ quantifyExpressionsFromBAMs <- function(txdb
 	### MAKE COUNTS FROM BAM ###################
 	############################################
 
+	if( is.null(names(BAMfiles)) ) {
+		replicate_id <- unlist(lapply(split(experimentalDesign, experimentalDesign), seq_along))
+		names(BAMfiles) <- paste(experimentalDesign, paste0('rep',replicate_id), sep='_')
+	}
+
 	iecounts <- lapply(BAMfiles, function(bamfile)
 	{
 			message(paste('##### - File:',bamfile,'- #####'))
@@ -189,11 +193,11 @@ quantifyExpressionsFromBAMs <- function(txdb
 					Unassigned_NoFeatures=Unassigned_NoFeatures
 				)
 
-			return(list(exonCounts=exonCounts, intronCounts=intronCounts, stat=stat))
+			return(list(exonCounts=exonCounts, intronCounts=intronCounts, countsStats=stat))
 	})
-	allcounts <- lapply(c(exonsCounts="exonCounts",intronsCounts="intronCounts",stat="stat")
+	allcounts <- lapply(c(exonsCounts="exonCounts",intronsCounts="intronCounts",countsStats="countsStats")
 			, function(name) sapply(iecounts,'[[',name))
-	libsize <- colSums(allcounts$stat[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
+	libsize <- colSums(allcounts$countsStats[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
 
 	exonsWidths <- sapply(width(exonsDB),sum)
 	intronsWidths <- sapply(width(intronsDB),sum)
@@ -205,6 +209,6 @@ quantifyExpressionsFromBAMs <- function(txdb
 											 , libsize=libsize
 											 , DESeq2 = DESeq2
 											 , varSamplingCondition = varSamplingCondition)
-	out$countStats <- allcounts$stat
+	out <- c( out, list(exonsWidths=exonsWidths, intronsWidths=intronsWidths), allcounts )
 	return(out)
 }

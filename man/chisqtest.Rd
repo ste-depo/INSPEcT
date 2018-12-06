@@ -27,6 +27,6 @@ Retrieve all results of chi-squared test
 This method is used to retrieve all the chi-squared test results for all models tested for all genes.
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 chisqtest(nascentInspObj10)
 }

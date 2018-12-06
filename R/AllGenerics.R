@@ -55,9 +55,6 @@ setGeneric('rocThresholds', function(object, object2, cTsh=NULL, bTsh=NULL, xlim
 #' Accessor to the slot tpts of an INSPEcT object
 setGeneric('tpts', function(object) 
 	standardGeneric('tpts'))
-#' Accessor to the slot totalSF of an INSPEcT object
-setGeneric('totalSF', function(object) 
-	standardGeneric('totalSF'))
 #' Accessor to the slot labeledSF of an INSPEcT object
 setGeneric('labeledSF', function(object) 
 	standardGeneric('labeledSF'))
@@ -112,10 +109,21 @@ setGeneric('inHeatmap', function(object, type='pre-model'
 	, plot_matureRNA=FALSE, absoluteExpression=TRUE
 	, rowLabels=NULL, clustering=TRUE, clustIdx=3:5)
 	standardGeneric('inHeatmap'))
-
-#' Generate an object of class INSPEcT_diffsteady from two objects of class INSPEcT
-setGeneric('compareSteady', function(inspectIds1, inspectIds2, nRep1, nRep2) 
+#' Generate an object of class INSPEcT_diffsteady from an object of class INSPEcT
+setGeneric('compareSteady', function(inspectIds, BPPARAM=bpparam()) 
 	standardGeneric('compareSteady'))
+#' Compare mature RNA steady state data from an object of class INSPEcT
+setGeneric('compareSteadyNoNascent', function(inspectIds, expressionThreshold=0.25,log2FCThreshold=2.) 
+	standardGeneric('compareSteadyNoNascent'))
+#' Classify genes as delayed by the processing using the delta and tau metrics
+setGeneric('processingDelay', function(inspectIds, tauThreshold=1.2,deltaThreshold=1.0, silent=TRUE) 
+	standardGeneric('processingDelay'))
+#' @rdname processingDelay
+setGeneric('calculateDelta', function(inspectIds, silent=FALSE) 
+	standardGeneric('calculateDelta'))
+#' @rdname processingDelay
+setGeneric('calculateTau', function(inspectIds, silent=FALSE) 
+	standardGeneric('calculateTau'))
 
 ##########################################
 # generics for class INSPEcT_diffsteady ####

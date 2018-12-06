@@ -1,7 +1,7 @@
 Package: INSPEcT
 Type: Package
 Title: Analysis of 4sU-seq and RNA-seq time-course data
-Version: 1.11.1
+Version: 1.13.1
 Date: 2015-12-15
 Author: Stefano de Pretis
 Maintainer: Stefano de Pretis <ste.depo@gmail.com>
@@ -15,11 +15,12 @@ Depends: R (>= 3.2), methods, Biobase, BiocParallel
 Imports: pROC, deSolve, rootSolve, compiler, preprocessCore,
         GenomicFeatures, GenomicRanges, IRanges, BiocGenerics,
         GenomicAlignments, Rsamtools, S4Vectors,
-        DESeq2, plgem, SummarizedExperiment, TxDb.Mmusculus.UCSC.mm9.knownGene
+        DESeq2, plgem, SummarizedExperiment, 
+        TxDb.Mmusculus.UCSC.mm9.knownGene, shiny
 Suggests: BiocStyle, knitr
 VignetteBuilder: knitr
 biocViews: Sequencing, RNASeq, GeneRegulation, TimeCourse,
         SystemsBiology
 NeedsCompilation: no
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0
 Packaged: 2016-03-21 14:24:31 UTC; sdepreti

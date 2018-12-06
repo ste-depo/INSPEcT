@@ -22,6 +22,6 @@ Accessor to the slot tpts of an INSPEcT object
 Accessor to obtain the tpts associated with the object of class INSPEcT
 }
 \examples{
-data('nascentInspObj10',package="INSPEcT")
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 tpts(nascentInspObj10)
 }

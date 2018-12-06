@@ -1,6 +1,5 @@
 #' Given introns and exons abundances (for example RPKMs) this method returns their variances evaluated thorugh plgem.
-#' @param exonsAbundances A matrix containing the exons abundances for each experimental condition.
-#' @param intronsAbundances A matrix containing the intorns abundances for each experimental condition.
+#' @param trAbundaces A a list with elements "exonsAbundances" and "intronsAbundances".
 #' @param experimentalDesign A numerical which reports the desing of the experiment in terms of time points and replicates. The time points must be ordered according
 #' to the columns of the count matrices submitted for the analysis; these labels define conditions and replicates.
 #' @param varSamplingCondition A character reporting which experimental condition should be used to sample the variance if DESeq2 = FALSE.
@@ -64,8 +63,9 @@ quantifyExpressionsFromTrAbundance <- function(trAbundaces
 
 	expressionsExons <- exonsAbundances
 	
-	print('Powerlaw fit for exons')
-	
+	message('Powerlaw fit for exons')
+	if( is.numeric(experimentalDesign) ) 
+		experimentalDesign= signif(experimentalDesign,9)	
 	exprData <- expressionsExons
 	pData <- data.frame(feature=experimentalDesign)
 	colnames(exprData) <- paste0(pData$feature,"_",seq_along(experimentalDesign))
@@ -102,7 +102,7 @@ quantifyExpressionsFromTrAbundance <- function(trAbundaces
 	{
 		expressionsIntrons <- intronsAbundances
 	
-		print('Powerlaw fit for introns')
+		message('Powerlaw fit for introns')
 	
 		exprData <- intronsAbundances
 		pData <- data.frame(feature=experimentalDesign)
@@ -134,9 +134,9 @@ quantifyExpressionsFromTrAbundance <- function(trAbundaces
 	} else {
 
 		return(list(exonsExpressions = expressionsExons
-				  , intronsExpressions = NULL
+				  , intronsExpressions = expressionsExons
 				  , exonsVariance = varianceExpressionsExons
-				  , intronsVariance = NULL))
+				  , intronsVariance = varianceExpressionsExons))
 
 	}
 

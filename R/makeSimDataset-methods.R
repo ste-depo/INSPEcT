@@ -15,12 +15,11 @@
 #' @return An object of the class ExpressionSet containing rates and concentrations
 #' @seealso \code{\link{makeSimModel}}
 #' @examples
-#' data('nascentInspObj', package='INSPEcT')
+#' nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
 #' simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
-#' tpts <- simRates@params$tpts
+#' tpts <- tpts(nascentInspObj)
 #' 
 #' nascentInspObj_sim3 <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
-
 setMethod('makeSimDataset', 'INSPEcT_model', function(object
 													, tpts
 													, nRep
@@ -37,13 +36,13 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 	## create the clean concentrations and rates for each gene
 	ratesSpecs <- object@ratesSpecs
 	nGenes <- length(ratesSpecs)
-	log_shift <- .find_tt_par(tpts)
+	log_shift <- find_tt_par(tpts)
 	cleanRates <- lapply(1:nGenes, function(i) {
 		tryCatch(
 			.makeModel(tpts
 					 , ratesSpecs[[i]][[1]]
 					 , log_shift
-					 , .time_transf
+					 , time_transf
 					 , deSolve::ode
 					 , .rxnrate)
 			, error=function(e)

@@ -5,9 +5,7 @@
 \title{Create a new INSPEcT object}
 \usage{
 newINSPEcT(tpts, labeling_time = NULL, nascentExpressions = NULL,
-  matureExpressions, BPPARAM = bpparam(), totalMedianNorm = TRUE,
-  labeledMedianNorm = FALSE, totalSF = NULL, labeledSF = NULL,
-  totalQuantileNorm = FALSE, labeledQuantileNorm = FALSE,
+  matureExpressions, BPPARAM = bpparam(), labeledSF = NULL,
   simulatedData = FALSE, degDuringPulse = FALSE, Dmin = 1e-06,
   Dmax = 10, genesFilter = TRUE)
 }
@@ -22,17 +20,7 @@ newINSPEcT(tpts, labeling_time = NULL, nascentExpressions = NULL,
 
 \item{BPPARAM}{Configuration for BiocParallel parallelization. By default is set to bpparam()}
 
-\item{totalMedianNorm}{A logical to perform median normalization over total RNA exons rpkms, it will apply also on introns}
-
-\item{labeledMedianNorm}{A logical to perform median normalization over Nascent RNA exons rpkms, it will apply also on introns}
-
-\item{totalSF}{A vector storing user defined normalization scale over Total RNA exons and introns rpkms}
-
-\item{labeledSF}{A vector storing user defined normalization scale over Nascent RNA exons and introns rpkms}
-
-\item{totalQuantileNorm}{A logical to perform to perform median normalization over total RNA exons rpkms, it will apply also on introns}
-
-\item{labeledQuantileNorm}{A logical to perform to perform median normalization over Nascent RNA exons rpkms, it will apply also on introns}
+\item{labeledSF}{A vector storing user defined normalization scale over Nascent RNA exons and introns quantifications}
 
 \item{simulatedData}{A logical, set to TRUE in case the analysis is on simulated data}
 
@@ -42,10 +30,10 @@ newINSPEcT(tpts, labeling_time = NULL, nascentExpressions = NULL,
 
 \item{Dmax}{A numerical, it is the upper bound of the degradation rate domain for the prior optimization}
 
-\item{genesFilter, }{A logical which, if TRUE, filters out genes which have no signal in at least 2/3 of the time points in each feature}
+\item{genesFilter}{A logical, if TRUE, filters out genes which have no signal in at least 2/3 of the observations}
 }
 \value{
-An object of class INSPEcT with a first estimation of the rates which can be accessed by the method \code{\link{ratesFirstGuess}}.
+An object of class INSPEcT with a first estimation of the rates which can be accessed by the method \code{\link{ratesFirstGuess}}
 }
 \description{
 The function newINSPEcT creates a new instance of the class INSPEcT provided the experimental time points, expression data (like RPKMs) of mature
@@ -54,41 +42,20 @@ normalize the nascent RNA-seq libraries. This latter parameter can also be calcu
 expression data are provided; otherwise it must be given as an input and it is essential to guarantee the robustness of the analysis.
 }
 \examples{
-require(TxDb.Mmusculus.UCSC.mm9.knownGene)
-txdb <- TxDb.Mmusculus.UCSC.mm9.knownGene
-
 data('allcounts', package='INSPEcT')
+data('featureWidths', package='INSPEcT')
+data('libsizes', package='INSPEcT')
 
 matureCounts<-allcounts$mature
-
-testGenes<-rownames(matureCounts$exonsCounts)
-
-require(TxDb.Mmusculus.UCSC.mm9.knownGene)
-txdb<-TxDb.Mmusculus.UCSC.mm9.knownGene
-
-exonsDB<-reduce(exonsBy(txdb ,'gene'))
-exonsDB<-exonsDB[elementNROWS(range(exonsDB))==1]
-intronsDB<-psetdiff(unlist(range(exonsDB)),exonsDB)
-intronsDB<-intronsDB[elementNROWS(intronsDB)>0]
-
-exWdths<-sapply(width(exonsDB),sum)
-intWdths<-sapply(width(intronsDB),sum)
-
-exWdths<-exWdths[testGenes]
-intWdths<-intWdths[testGenes]
-    
-totalLS<-colSums(matureCounts$
-  stat[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])
-
-tpts<-c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16)
+tpts <- c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16)
 expDes<-rep(tpts,3)
-    
-matExp_DESeq2<-quantifyExpressionsFromTrCounts(libsize=totalLS
-                                              ,exonsWidths=exWdths
-                                              ,intronsWidths=intWdths
-                                              ,allcounts=matureCounts
-                                              ,DESeq2=TRUE
-                                              ,experimentalDesign=expDes)
+
+matExp_DESeq2<-quantifyExpressionsFromTrCounts(
+ 	allcounts=matureCounts
+ 	,libsize=totalLS
+ 	,exonsWidths=exWdths
+ 	,intronsWidths=intWdths
+ 	,experimentalDesign=expDes)
 
 matureInspObj<-newINSPEcT(tpts=tpts
                          ,labeling_time=NULL

@@ -25,7 +25,7 @@
 #' synthesis rates, degradation rates and processing rates. Matrices are ordered according to
 #' the clustering.
 #' @examples
-#' data('nascentInspObj10', package='INSPEcT')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' inHeatmap(nascentInspObj10, 'pre-model')
 #' inHeatmap(nascentInspObj10, 'model')
 setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
@@ -197,26 +197,26 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 		, xaxt='n', yaxt='n', main='synthesis', xlab='time')
 	axis(1, at=atX, labels=colLabels, las=3)
 	axis(2, at=atY, labels=rowLabels, las=1, tick=FALSE, line=1)
-	image(t(beta_l2fc[geneOrder,,drop=FALSE]), col=cols, breaks=breaks
-		, xaxt='n', yaxt='n', main='degradation', xlab='time')
-	axis(1, at=atX, labels=colLabels, las=3)
 	image(t(gamma_l2fc[geneOrder,,drop=FALSE]), col=cols, breaks=breaks
 		, xaxt='n', yaxt='n', main='processing', xlab='time')
+	axis(1, at=atX, labels=colLabels, las=3)
+	image(t(beta_l2fc[geneOrder,,drop=FALSE]), col=cols, breaks=breaks
+		, xaxt='n', yaxt='n', main='degradation', xlab='time')
 	axis(1, at=atX, labels=colLabels, las=3)
 
 	if( plot_matureRNA  ) {
 		out <- list(mature_l2fc=total_l2fc[rev(geneOrder),,drop=FALSE]
 			, preMRNA_l2fc=preMRNA_l2fc[rev(geneOrder),,drop=FALSE]
-			, alpha_l2fc=alpha_l2fc[rev(geneOrder),,drop=FALSE]
-			, beta_l2fc=beta_l2fc[rev(geneOrder),,drop=FALSE]
-			, gamma_l2fc=gamma_l2fc[rev(geneOrder),,drop=FALSE]
+			, synthesis_l2fc=alpha_l2fc[rev(geneOrder),,drop=FALSE]
+			, processing_l2fc=gamma_l2fc[rev(geneOrder),,drop=FALSE]
+			, degradation_l2fc=beta_l2fc[rev(geneOrder),,drop=FALSE]
 		)
 	} else {
 		out <- list(total_l2fc=total_l2fc[rev(geneOrder),,drop=FALSE]
 			, preMRNA_l2fc=preMRNA_l2fc[rev(geneOrder),,drop=FALSE]
-			, alpha_l2fc=alpha_l2fc[rev(geneOrder),,drop=FALSE]
-			, beta_l2fc=beta_l2fc[rev(geneOrder),,drop=FALSE]
-			, gamma_l2fc=gamma_l2fc[rev(geneOrder),,drop=FALSE]
+			, synthesis_l2fc=alpha_l2fc[rev(geneOrder),,drop=FALSE]
+			, processing_l2fc=gamma_l2fc[rev(geneOrder),,drop=FALSE]
+			, degradation_l2fc=beta_l2fc[rev(geneOrder),,drop=FALSE]
 		)
 	}
 	out <- out

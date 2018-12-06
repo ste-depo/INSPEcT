@@ -22,6 +22,6 @@ Get the number of time points within the INSPEcT object
 A method to obtain the number of the tpts associated with the object of class INSPEcT
 }
 \examples{
-data('nascentInspObj10',package="INSPEcT")
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 nTpts(nascentInspObj10)
 }

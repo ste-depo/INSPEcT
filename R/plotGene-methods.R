@@ -13,7 +13,7 @@
 #' one standard deviation), pre-RNA lelevs and their confidence intervals, synthsis rates and 
 #' their confidence intervals, degradation rates and processing rates of the selected gene.
 #' @examples
-#' data('nascentInspObj10', package='INSPEcT')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' plotGene(nascentInspObj10, 1)
 setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TRUE) {
 
@@ -61,7 +61,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 					sqrt(ratesFirstGuessPreVarTmp)
 				, viewModelRates(oneGene, 'preMRNA')
 				))
-			if(!object@params$NoNascent)
+			if(!object@NoNascent)
 			{
 			alpha <- t(rbind(
 				ratesFirstGuessSynthesisTmp
@@ -91,11 +91,11 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			degradationYlim <- quantile(ratesFirstGuess(object, 'degradation'), probs=c(.02, .98), na.rm=TRUE)
 			processingYlim <- quantile(ratesFirstGuess(object, 'processing'), probs=c(.02, .98), na.rm=TRUE)
 
-			log_shift <- .find_tt_par(tpts)
-			if(object@params$NoNascent)
+			log_shift <- find_tt_par(tpts)
+			if(object@NoNascent)
 			{
-				x <- .time_transf_NoNascent(tpts, log_shift, abs(min(.time_transf(tpts, log_shift))))
-			}else{x <- .time_transf(tpts, log_shift)}
+				x <- time_transf_NoNascent(tpts, log_shift, abs(min(time_transf(tpts, log_shift))))
+			}else{x <- time_transf(tpts, log_shift)}
 
 			par(mfrow=c(1,5))
 			matplot(x, total, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
@@ -104,7 +104,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			matplot(x, preMRNA, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
 				, col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
-			if(object@params$NoNascent)
+			if(object@NoNascent)
 			{
 				matplot(x, alpha, type='l', lty=c(1,1), lwd=c(1,3)
 					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
@@ -114,18 +114,18 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
 				axis(1, at=x, labels=signif(tpts, 2), las=3)
 			}
-			matplot(x, beta, type='l', lty=c(1,1), lwd=c(1,3), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
-			axis(1, at=x, labels=signif(tpts, 2), las=3)
 			matplot(x, gamma, type='l', lty=c(1,1), lwd=c(1,3), col=5
 				, main='processing', xaxt='n', xlab='time', ylab='', ylim=processingYlim)
 			axis(1, at=x, labels=signif(tpts, 2), las=3)		
+			matplot(x, beta, type='l', lty=c(1,1), lwd=c(1,3), col=4
+				, main='degradation', xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
+			axis(1, at=x, labels=signif(tpts, 2), las=3)
 		} else {
-			log_shift <- .find_tt_par(tpts)
-			if(object@params$NoNascent)
+			log_shift <- find_tt_par(tpts)
+			if(object@NoNascent)
 			{
-				x <- .time_transf_NoNascent(tpts, log_shift, abs(min(.time_transf(tpts, log_shift))))
-			}else{x <- .time_transf(tpts, log_shift)}
+				x <- time_transf_NoNascent(tpts, log_shift, abs(min(time_transf(tpts, log_shift))))
+			}else{x <- time_transf(tpts, log_shift)}
 			par(mfrow=c(1,5))
 			matplot(x, total, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
 				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
@@ -133,7 +133,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			matplot(x, preMRNA, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
 				, col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
-			if(object@params$NoNascent)
+			if(object@NoNascent)
 			{
 				matplot(x, alpha, type='l', lty=c(1,1), lwd=c(1,3)
 					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
@@ -143,12 +143,12 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
 				axis(1, at=x, labels=signif(tpts, 2), las=3)
 			}
-			matplot(x, beta, type='l', lty=c(1,1), lwd=c(1,3), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='')
-			axis(1, at=x, labels=signif(tpts, 2), las=3)
 			matplot(x, gamma, type='l', lty=c(1,1), lwd=c(1,3), col=5
 				, main='processing', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)		
+			matplot(x, beta, type='l', lty=c(1,1), lwd=c(1,3), col=4
+				, main='degradation', xaxt='n', xlab='time', ylab='')
+			axis(1, at=x, labels=signif(tpts, 2), las=3)
 		}
 
 
@@ -168,7 +168,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			, ratesFirstGuessPreTmp - 
 				sqrt(ratesFirstGuessPreVarTmp)
 			))
-		if(!object@params$NoNascent)
+		if(!object@NoNascent)
 		{
 			alpha <- t(rbind(
 				ratesFirstGuessSynthesisTmp
@@ -194,8 +194,8 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			degradationYlim <- quantile(ratesFirstGuess(object, 'degradation'), probs=c(.02, .98), na.rm=TRUE)
 			processingYlim <- quantile(ratesFirstGuess(object, 'processing'), probs=c(.02, .98), na.rm=TRUE)
 
-			log_shift <- .find_tt_par(tpts)
-			x <- .time_transf(tpts, log_shift)
+			log_shift <- find_tt_par(tpts)
+			x <- time_transf(tpts, log_shift)
 			par(mfrow=c(1,5))
 			matplot(x, total, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
@@ -205,16 +205,16 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 			matplot(x, alpha, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')
-			axis(1, at=x, labels=signif(tpts, 2), las=3)
-			matplot(x, beta, type='l', lty=c(1), lwd=c(1), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 			matplot(x, gamma, type='l', lty=c(1), lwd=c(1), col=5
 				, main='processing', xaxt='n', xlab='time', ylab='', ylim=processingYlim)
 			axis(1, at=x, labels=signif(tpts, 2), las=3)		
+			matplot(x, beta, type='l', lty=c(1), lwd=c(1), col=4
+				, main='degradation', xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
+			axis(1, at=x, labels=signif(tpts, 2), las=3)
 		} else {
-			log_shift <- .find_tt_par(tpts)
-			x <- .time_transf(tpts, log_shift)
+			log_shift <- find_tt_par(tpts)
+			x <- time_transf(tpts, log_shift)
 			par(mfrow=c(1,5))
 			matplot(x, total, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
@@ -225,16 +225,16 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			matplot(x, alpha, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
-			matplot(x, beta, type='l', lty=c(1), lwd=c(1), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='')
-			axis(1, at=x, labels=signif(tpts, 2), las=3)
 			matplot(x, gamma, type='l', lty=c(1), lwd=c(1), col=5
 				, main='processing', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)		
+			matplot(x, beta, type='l', lty=c(1), lwd=c(1), col=4
+				, main='degradation', xaxt='n', xlab='time', ylab='')
+			axis(1, at=x, labels=signif(tpts, 2), las=3)
 		}
 
 	}
 
-	out <- list(total, preMRNA, alpha, beta, gamma)
+	out <- list(total=total, premature=preMRNA, synthesis=alpha, processing=gamma, degradation=beta)
 
 	})

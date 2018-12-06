@@ -4,13 +4,11 @@
 \alias{quantifyExpressionsFromTrAbundance}
 \title{Given introns and exons abundances (for example RPKMs) this method returns their variances evaluated thorugh plgem.}
 \usage{
-quantifyExpressionsFromTrAbundance(exonsAbundances, intronsAbundances,
-  experimentalDesign, varSamplingCondition, simulatedData = FALSE)
+quantifyExpressionsFromTrAbundance(trAbundaces, experimentalDesign,
+  varSamplingCondition = NULL, simulatedData = FALSE)
 }
 \arguments{
-\item{exonsAbundances}{A matrix containing the exons abundances for each experimental condition.}
-
-\item{intronsAbundances}{A matrix containing the intorns abundances for each experimental condition.}
+\item{trAbundaces}{A a list with elements "exonsAbundances" and "intronsAbundances".}
 
 \item{experimentalDesign}{A numerical which reports the desing of the experiment in terms of time points and replicates. The time points must be ordered according
 to the columns of the count matrices submitted for the analysis; these labels define conditions and replicates.}

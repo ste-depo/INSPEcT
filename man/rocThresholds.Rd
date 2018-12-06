@@ -43,7 +43,7 @@ true positives (TP) and negatives (TN) are cases of correct classification of va
 Consequently, at increasing brown p-values different sensitivity and specificity can be achieved.
 }
 \examples{
-data('nascentInspObj', package='INSPEcT')	
+nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
 
 simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
  

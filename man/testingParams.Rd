@@ -111,14 +111,14 @@ The construction of a synthetic data-set can help in the choice of the correct
 parameters for the test (\code{\link{makeSimModel}}, \code{\link{makeSimDataset}}).
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 modelSelection(nascentInspObj10)
 modelSelection(nascentInspObj10) <- 'aic'
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 thresholds(nascentInspObj10)
 thresholds(nascentInspObj10)$chisquare <- 1e-3
 thresholds(nascentInspObj10)$brown['synthesis'] <- 1e-3
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 llrtests(nascentInspObj10)
 llrtests(nascentInspObj10)$synthesis <- list(c('0','a'), c('b','ab'))
 }

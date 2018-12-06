@@ -40,7 +40,7 @@ Among the many p-values that log likelihood ratio test calculate, a single p-val
 for combining dependent p-values.
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 ratePvals(nascentInspObj10)
 # calculate agin the p-values with Brown with a different threshold 
 # for considering a model valid for the log likelihood ratio test

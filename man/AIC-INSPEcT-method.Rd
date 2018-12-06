@@ -25,6 +25,6 @@ A matrix of AIC values
 This method is used to retrieve AIC values for all models tested for all genes.
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 AIC(nascentInspObj10)
 }

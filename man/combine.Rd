@@ -33,7 +33,7 @@ tries to combine, the information from one object will be used and a
 warning will be reported
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 nascentInspObj10_2genes <- nascentInspObj10[1:2]
 nascentInspObj10_5genes <- nascentInspObj10[6:10]
 nascentInspObj10_7genes <- combine(nascentInspObj10_2genes, nascentInspObj10_5genes)

@@ -36,9 +36,9 @@ be modeled and the performance of the modeling can be tested directly aginst the
 created by \code{\link{makeSimModel}}.
 }
 \examples{
-data('nascentInspObj', package='INSPEcT')
+nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
 simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
-tpts <- simRates@params$tpts
+tpts <- tpts(nascentInspObj)
 
 nascentInspObj_sim3 <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
 }

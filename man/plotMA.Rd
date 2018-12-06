@@ -21,7 +21,7 @@ profiled in steady-state conditions.
 Possible arguments to "plotMA":
 \itemize{
 \item "rate" - A character, which represent the rate to be visualized, either "synthesis", "processing" or "degradation". By default, "synthesis" is chosen.
-\item "alpha" - A numeric, The confidence interval for significance (FDR), by default 0.1
+\item "padj" - A numeric, The p-adjusted threshold for significance. Genes with p-adjusted lower than the threshold will be depicted as orange triangles. By default set to -Inf, meaning that no genes will be highlighted.
 \item "xlim" - A numeric vector of length 2, limits of x-axis, by default the range of the data.
 \item "xlab" - A character, the label of x-axis, by default "log2 geometric mean"
 \item "ylim" - A numeric vector of length 2, limits of y-axis, by default the range of the data.
@@ -30,26 +30,38 @@ Possible arguments to "plotMA":
 }
 }
 \examples{
-data('nascentInspObj', package='INSPEcT')	
-simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
-newTpts<-c(0, 16)
-nascentInspObj_sim3<-makeSimDataset(object=simRates
-                                   ,tpts=newTpts
-                                   ,nRep=3
-                                   ,NoNascent=FALSE
-                                   ,seed=1)
-newTpts<-c(0, 16)
-nascentInspObj_sim4<-makeSimDataset(object=simRates
-                                   ,tpts=newTpts
-                                   ,nRep=4
-                                   ,NoNascent=FALSE
-                                   ,seed=2)
+data('allcounts', package='INSPEcT')
+data('featureWidths', package='INSPEcT')
+data('libsizes', package='INSPEcT')
 
-diffrates<-compareSteady(inspectIds1=nascentInspObj_sim3
-                        ,inspectIds2=nascentInspObj_sim4
-                        ,nRep1=3
-                        ,nRep2=4)
-plotMA(diffrates, alpha=.95)
+nascentCounts<-allcounts$nascent
+matureCounts<-allcounts$mature
+conditions<-letters[1:11]
+expDes<-rep(conditions,3)
+tL<-1/6
+
+nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
+      allcounts=nascentCounts
+      ,libsize=nascentLS
+      ,exonsWidths=exWdths
+      ,intronsWidths=intWdths
+      ,experimentalDesign=expDes)
+
+matExp_DESeq2<-quantifyExpressionsFromTrCounts(
+      allcounts=matureCounts
+      ,libsize=totalLS
+      ,exonsWidths=exWdths
+      ,intronsWidths=intWdths
+      ,experimentalDesign=expDes)
+
+nasFullObj <- newINSPEcT(tpts=conditions
+      ,labeling_time=tL
+      ,nascentExpressions=nasExp_DESeq2
+      ,matureExpressions=matExp_DESeq2)
+
+diffrates = compareSteady(nasFullObj[,c(1,11)])
+
+plotMA(diffrates, padj=.01)
 }
 \seealso{
 \url{http://en.wikipedia.org/wiki/MA_plot}

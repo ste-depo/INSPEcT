@@ -6,7 +6,7 @@
 #' @param ... Additional arguments for the generic
 #' @return A matrix of chi-squared test results for all the tested models
 #' @examples
-#' data('nascentInspObj10', package='INSPEcT')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' chisqtest(nascentInspObj10)
 setMethod('chisqtest', 'INSPEcT_model', function(object, ...) {
 	exp(t(sapply(object@ratesSpecs, function(x) 
@@ -28,7 +28,7 @@ setMethod('chisqtest', 'INSPEcT', function(object, ...) {
 #' @param ... Additional arguments for the generic
 #' @return A vector of chi-squared test results
 #' @examples
-#' data('nascentInspObj10', package='INSPEcT')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' chisqmodel(nascentInspObj10)
 setMethod('chisqmodel', 'INSPEcT_model', function(object, ...) {
 	# chisqtest <- exp(t(sapply(object@ratesSpecs, function(x) sapply(x, '[[', 'test'))))
@@ -51,7 +51,7 @@ setMethod('chisqmodel', 'INSPEcT', function(object, ...) {
 #' @param k Additional parameter for the generic
 #' @return A matrix of AIC values
 #' @examples
-#' data('nascentInspObj10', package='INSPEcT')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' AIC(nascentInspObj10)
 NULL
 

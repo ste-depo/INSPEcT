@@ -24,6 +24,6 @@ Accessor to the slot labeledSF of an INSPEcT object
 Accessor to obtain the labeledSF slot associated with the object of class INSPEcT
 }
 \examples{
-data('nascentInspObj10',package="INSPEcT")
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 labeledSF(nascentInspObj10)
 }

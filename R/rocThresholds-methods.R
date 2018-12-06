@@ -17,7 +17,7 @@
 #' @return None
 #' @seealso \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}, \code{\link{rocCurve}}
 #' @examples
-#' data('nascentInspObj', package='INSPEcT')	
+#' nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
 #'
 #' simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
 #'  

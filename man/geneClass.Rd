@@ -32,7 +32,7 @@ thresholds, that can be both provided as arguments. If the user decides a differ
 the default, these new values can be permanently set within the object.
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 geneClass(nascentInspObj10)
 # see the classification with another threshold for chi-squared test 
 geneClass(nascentInspObj10, cTsh=.2)

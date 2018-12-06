@@ -18,7 +18,7 @@
 #' @return A list of objects of class pROC with summary of each roc curve
 #' @seealso \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}, \code{\link{rocThresholds}}
 #' @examples
-#' data('nascentInspObj', package='INSPEcT')	
+#' nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
 #'
 #' simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
 #'  

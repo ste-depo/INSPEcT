@@ -1,0 +1,512 @@
+which(mcols(ngm_slam_gr_m6a_1_CO)$counts < mcols(ngm_slam6a_gr_m6a_1_CO)$counts & mcols(ngm_slam6a_gr_m6a_1_CO)$counts > 100)
+best = which(mcols(ngm_slam_gr_m6a_1_CO)$counts < mcols(ngm_slam6a_gr_m6a_1_CO)$counts & mcols(ngm_slam6a_gr_m6a_1_CO)$counts > 100)
+par(mfrow=c(2,2))#
+plot(mcols(ngm_slam6a_gr_m6a_1_CO)$counts, mcols(ngm_slam6a_gr_m6a_2_CO)$counts, #
+	log='xy', xlab='slam6a rep1', ylab='slam rep2', xlim=allrange, ylim=allrange)#
+points(mcols(ngm_slam6a_gr_m6a_1_CO)$counts[best], mcols(ngm_slam6a_gr_m6a_2_CO)$counts[best], pch=19, col='red')#
+abline(0,1)#
+plot.new()#
+plot(mcols(ngm_slam_gr_m6a_1_CO)$counts, mcols(ngm_slam6a_gr_m6a_1_CO)$counts, #
+	log='xy', xlab='slam', ylab='slam6a rep1', xlim=allrange, ylim=allrange)#
+points(mcols(ngm_slam_gr_m6a_1_CO)$counts[best], mcols(ngm_slam6a_gr_m6a_1_CO)$counts[best], pch=19, col='red')#
+abline(0,1)#
+plot(mcols(ngm_slam_gr_m6a_1_CO)$counts, mcols(ngm_slam6a_gr_m6a_2_CO)$counts, #
+	log='xy', xlab='slam', ylab='slam6a rep2', xlim=allrange, ylim=allrange)#
+points(mcols(ngm_slam_gr_m6a_1_CO)$counts[best], mcols(ngm_slam6a_gr_m6a_2_CO)$counts[best], pch=19, col='red')#
+abline(0,1)
+ngm_slam_gr_m6a_1_CO[best]
+ls_slam6a1=233053#
+ls_slam6a1=237918#
+ls_slam=166158#
+#
+slam6a1_rpm=mcols(ngm_slam6a_gr_m6a_1_CO)$counts/ls_slam6a1#
+slam6a2_rpm=mcols(ngm_slam6a_gr_m6a_2_CO)$counts/ls_slam6a1#
+slam6_rpm=mcols(ngm_slam_gr_m6a_1_CO)$counts)/ls_slam
+slam6a1_rpm=mcols(ngm_slam6a_gr_m6a_1_CO)$counts/ls_slam6a1#
+slam6a2_rpm=mcols(ngm_slam6a_gr_m6a_2_CO)$counts/ls_slam6a1#
+slam6_rpm=mcols(ngm_slam_gr_m6a_1_CO)$counts/ls_slam
+dev.new()
+allrange = range(c(slam6a1_rpm, slam6a2_rpm, slam6_rpm))
+par(mfrow=c(2,2))#
+plot(slam6a1_rpm, slam6a2_rpm, xlim=allrange, ylim=allrange,#
+	log='xy', xlab='slam6a rep1', ylab='slam rep2')#
+abline(0,1)#
+plot.new()#
+plot(slam6_rpm, slam6a1_rpm, xlim=allrange, ylim=allrange,#
+	log='xy', xlab='slam', ylab='slam6a rep1')#
+abline(0,1)#
+plot(slam6_rpm, slam6a2_rpm, xlim=allrange, ylim=allrange,#
+	log='xy', xlab='slam', ylab='slam6a rep1')#
+abline(0,1)
+slam6a1_counts = mcols(ngm_slam6a_gr_m6a_1_CO)$counts#
+slam6a2_counts = mcols(ngm_slam6a_gr_m6a_2_CO)$counts#
+slam6_counts = mcols(ngm_slam_gr_m6a_1_CO)$counts#
+#
+slam6a1_rpm=slam6a1_counts/ls_slam6a1*10^6#
+slam6a2_rpm=slam6a2_counts/ls_slam6a1*10^6#
+slam6_rpm=slam6_counts/ls_slam*10^6
+slam6a1_counts = mcols(ngm_slam6a_gr_m6a_1_CO)$counts#
+slam6a2_counts = mcols(ngm_slam6a_gr_m6a_2_CO)$counts#
+slam6_counts = mcols(ngm_slam_gr_m6a_1_CO)$counts#
+#
+filter = slam6a1_counts > 5 & slam6a2_counts > 5#
+#
+slam6a1_rpm=slam6a1_counts[filter]/ls_slam6a1*10^6#
+slam6a2_rpm=slam6a2_counts[filter]/ls_slam6a1*10^6#
+slam6_rpm=slam6_counts[filter]/ls_slam*10^6#
+#
+allrange = range(c(slam6a1_rpm, slam6a2_rpm, slam6_rpm))#
+#
+par(mfrow=c(2,2))#
+plot(log2(slam6a1_rpm), log2(slam6a2_rpm), xlim=allrange, ylim=allrange,#
+	xlab='slam6a rep1', ylab='slam rep2')#
+abline(0,1); abline(1,1,lty=2); abline(-1,1,lty=2)#
+plot.new()#
+plot(log2(slam6_rpm), log2(slam6a1_rpm), xlim=allrange, ylim=allrange,#
+	xlab='slam', ylab='slam6a rep1')#
+abline(0,1); abline(1,1,lty=2); abline(-1,1,lty=2)#
+plot(log2(slam6_rpm), log2(slam6a2_rpm), xlim=allrange, ylim=allrange,#
+	xlab='slam', ylab='slam6a rep1')#
+abline(0,1); abline(1,1,lty=2); abline(-1,1,lty=2)
+slam6a1_counts = mcols(ngm_slam6a_gr_m6a_1_CO)$counts#
+slam6a2_counts = mcols(ngm_slam6a_gr_m6a_2_CO)$counts#
+slam6_counts = mcols(ngm_slam_gr_m6a_1_CO)$counts#
+#
+filter = slam6a1_counts > 5 & slam6a2_counts > 5#
+#
+slam6a1_rpm=slam6a1_counts[filter]/ls_slam6a1*10^6#
+slam6a2_rpm=slam6a2_counts[filter]/ls_slam6a1*10^6#
+slam6_rpm=slam6_counts[filter]/ls_slam*10^6#
+#
+allrange = range(c(slam6a1_rpm, slam6a2_rpm, slam6_rpm))#
+#
+par(mfrow=c(2,2))#
+plot(log2(slam6a1_rpm), log2(slam6a2_rpm), xlim=log2(allrange), ylim=log2(allrange),#
+	xlab='slam6a rep1', ylab='slam rep2')#
+abline(0,1); abline(1,1,lty=2); abline(-1,1,lty=2)#
+plot.new()#
+plot(log2(slam6_rpm), log2(slam6a1_rpm), xlim=log2(allrange), ylim=log2(allrange),#
+	xlab='slam', ylab='slam6a rep1')#
+abline(0,1); abline(1,1,lty=2); abline(-1,1,lty=2)#
+plot(log2(slam6_rpm), log2(slam6a2_rpm), xlim=log2(allrange), ylim=log2(allrange),#
+	xlab='slam', ylab='slam6a rep1')#
+abline(0,1); abline(1,1,lty=2); abline(-1,1,lty=2)
+log2(3)
+slam6a1_counts = mcols(ngm_slam6a_gr_m6a_1_CO)$counts#
+slam6a2_counts = mcols(ngm_slam6a_gr_m6a_2_CO)$counts#
+slam6_counts = mcols(ngm_slam_gr_m6a_1_CO)$counts#
+#
+filter = slam6a1_counts > 10 & slam6a2_counts > 10#
+#
+slam6a1_rpm=slam6a1_counts[filter]/ls_slam6a1*10^6#
+slam6a2_rpm=slam6a2_counts[filter]/ls_slam6a1*10^6#
+slam6_rpm=slam6_counts[filter]/ls_slam*10^6#
+#
+allrange = range(c(slam6a1_rpm, slam6a2_rpm, slam6_rpm))#
+#
+par(mfrow=c(2,2))#
+plot(log2(slam6a1_rpm), log2(slam6a2_rpm), xlim=log2(allrange), ylim=log2(allrange),#
+	xlab='slam6a rep1', ylab='slam rep2')#
+abline(0,1); abline(2,1,lty=2); abline(-2,1,lty=2)#
+plot.new()#
+plot(log2(slam6_rpm), log2(slam6a1_rpm), xlim=log2(allrange), ylim=log2(allrange),#
+	xlab='slam', ylab='slam6a rep1')#
+abline(0,1); abline(2,1,lty=2); abline(-2,1,lty=2)#
+plot(log2(slam6_rpm), log2(slam6a2_rpm), xlim=log2(allrange), ylim=log2(allrange),#
+	xlab='slam', ylab='slam6a rep1')#
+abline(0,1); abline(2,1,lty=2); abline(-2,1,lty=2)
+best = ( log2(slam6a1_rpm) > log2(slam6_rpm) + 2 ) | #
+	( log2(slam6a2_rpm) > log2(slam6_rpm) + 2 )#
+#
+par(mfrow=c(2,2))#
+plot(log2(slam6a1_rpm), log2(slam6a2_rpm), xlim=log2(allrange), ylim=log2(allrange),#
+	xlab='slam6a rep1', ylab='slam rep2')#
+points(log2(slam6a1_rpm)[best], log2(slam6a2_rpm)[best], pch=19, col='blue')#
+abline(0,1); abline(2,1,lty=2); abline(-2,1,lty=2)#
+plot.new()#
+plot(log2(slam6_rpm), log2(slam6a1_rpm), xlim=log2(allrange), ylim=log2(allrange),#
+	xlab='slam', ylab='slam6a rep1')#
+points(log2(slam6_rpm)[best], log2(slam6a1_rpm)[best], pch=19, col='blue')#
+abline(0,1); abline(2,1,lty=2); abline(-2,1,lty=2)#
+plot(log2(slam6_rpm), log2(slam6a2_rpm), xlim=log2(allrange), ylim=log2(allrange),#
+	xlab='slam', ylab='slam6a rep1')#
+points(log2(slam6_rpm)[best], log2(slam6a2_rpm)[best], pch=19, col='blue')#
+abline(0,1); abline(2,1,lty=2); abline(-2,1,lty=2)
+ngm_slam6a_gr_m6a_1_CO[best]
+table(best)
+ngm_slam6a_gr_m6a_1_CO[filter][best]
+as.character(ngm_slam6a_gr_m6a_1_CO[filter][best])
+load('~/Dropbox/k2impact_cellSystems/data/3T9_rates_concentrations_metrics.RData')
+ls()
+rm(list=ls())
+load('~/Dropbox/k2impact_cellSystems/data/3T9_rates_concentrations_metrics.RData')
+ls()
+str(rates3T9)
+with(rates3T9, plot(k1,k2,log='xy',pch=.))
+with(rates3T9, plot(k1,k2,log='xy',pch='.'))
+dev.new()
+with(rates3T9, plot(k1,k3,log='xy',pch='.'))
+with(rates3T9, cor(k1,k3,method='s'))
+with(rates3T9, cor(k1,k2,method='s'))
+head(conc3T9)
+head(conc3T9$m)
+quantile(conc3T9$m)
+table(findInterval(conc3T9$m, quantile(conc3T9$m)))
+table(findInterval(conc3T9$m, quantile(conc3T9$m), all.inside=T))
+expr_class = table(findInterval(conc3T9$m, quantile(conc3T9$m), all.inside=T))
+par(mfrow=c(2,2))
+for(i in 1:4) {with(subset(rates3T9,expr_class==i), plot(k1,k3,log='xy'))}
+str(subset(rates3T9,expr_class==1))
+table(expr_class==1)
+str(expr_class)
+head(expr_class)
+expr_class = findInterval(conc3T9$m, quantile(conc3T9$m), all.inside=T)
+head(expr_class)
+table(expr_class)
+par(mfrow=c(2,2))
+for(i in 1:4) {with(subset(rates3T9,expr_class==i), plot(k1,k3,log='xy'))}
+dev.new()
+with(rates3T9, plot(k1,k3,log='xy',pch='.',col=expr_class))
+sapply(1:4, function(i)  with(subset(rates3T9,expr_class==i), cor(k1,k3,method='s')))
+k1_class = findInterval(rates$k1, quantile(rates$k1), all.inside=T)
+k1_class = findInterval(rates$k1, quantile(rates3T9$k1), all.inside=T)
+k1_class = findInterval(rates3T9$k1, quantile(rates3T9$k1), all.inside=T)
+table(k1_class)
+sapply(1:4, function(i)  with(subset(rates3T9,k1_class==i), cor(k1,k3,method='s')))
+k3_class = findInterval(rates3T9$k3, quantile(rates3T9$k3), all.inside=T)
+sapply(1:4, function(i)  with(subset(rates3T9,k3_class==i), cor(k1,k3,method='s')))
+do.call('c', lapply(2:8, function(i) rep(i,i)))
+length(do.call('c', lapply(2:8, function(i) rep(i,i))))
+nchar('CTAAGNGATCTGCCGAAGCTGTGGGATGTCAAAATGCATCGGTAGGGGAGCGTTCCGCCTTAGGGGGAAGCAACCG')
+ls()
+condition = c("20C","20C","20C","38C_5_min","38C_5_min","38C_5_min","38C_15_min","38C_15_min","38C_15_min","38C_30_min","38C_30_min","38C_30_min","38C_60_min","38C_60_min","38C_60_min","38C_120_min","38C_120_min","38C_120_min","38C_180_min","38C_180_min","38C_180_min")#
+#
+seqdepth = c(7066212,7846964,7677416,6714579,7338376,7333290,6454250,5789497,6621560,4421461,5330115,5833146,5075653,4673551,5713148,4895224,5872340,5021579,7302119,7621594,5793480)
+split(seqdepth, condition)
+boxplot(split(seqdepth, condition))
+boxplot(split(seqdepth/1e6, condition))
+boxplot(split(seqdepth/1e6, condition), ylim=c(1,10))
+boxplot(split(seqdepth/1e6, condition), ylim=c(0,10))
+boxplot(split(seqdepth/1e6, condition), ylim=c(0,8))
+unique(condition)
+factor(condition)
+factor(condition, levels=unique(condition))
+as.numeric(factor(condition, levels=unique(condition)))
+plot(as.numeric(factor(condition, levels=unique(condition))), seqdepth)
+plot(as.numeric(factor(condition, levels=unique(condition))), seqdepth, pch=19)
+plot(as.numeric(factor(condition, levels=unique(condition))), seqdepth, pch=19, ylim=c(0,8))
+plot(as.numeric(factor(condition, levels=unique(condition))), seqdepth, pch=19, ylim=c(0,8e6))
+boxplot(split(seqdepth/1e6, condition), ylim=c(0,8))
+boxplot(split(seqdepth/1e6, condition), ylim=c(0,8), las=2)
+plot(as.numeric(factor(condition, levels=unique(condition))), seqdepth, pch=19, ylim=c(0,8e6))
+alnreads = c(7066212,7846964,7677416,6714579,7338376,7333290,6454250,5789497,6621560,4421461,5330115,5833146,5075653,4673551,5713148,4895224,5872340,5021579,7302119,7621594,5793480)#
+#
+seqdepth = c(67176284,73069790,60213332,72128550,79935954,65088516,61997602,66160898,80763250,68309904,65211538,78064772,72836514,70915534,77460870,61376410,72095796,62642320,68249398,72138512,64417374)#
+#
+par(mfrow=c(2,1))#
+plot(as.numeric(factor(condition, levels=unique(condition))), seqdepth, pch=19, ylim=c(0,8e7))#
+plot(as.numeric(factor(condition, levels=unique(condition))), alnreads, pch=19, ylim=c(0,8e6))
+par(mfrow=c(2,1))#
+plot(as.numeric(factor(condition, levels=unique(condition))), seqdepth, pch=19, ylim=c(0,max(seqdepth)))#
+plot(as.numeric(factor(condition, levels=unique(condition))), alnreads, pch=19, ylim=c(0,max(alnreads)))
+par(mfrow=c(2,1))#
+plot(as.numeric(factor(condition, levels=unique(condition))), seqdepth, pch=19, ylim=c(0,max(seqdepth)*1.1))#
+plot(as.numeric(factor(condition, levels=unique(condition))), alnreads, pch=19, ylim=c(0,max(alnreads)*1.1))
+par(mfrow=c(2,1))#
+plot(as.numeric(factor(condition, levels=unique(condition))), seqdepth, pch=19, ylim=c(0,max(seqdepth)*1.05))#
+plot(as.numeric(factor(condition, levels=unique(condition))), alnreads, pch=19, ylim=c(0,max(alnreads)*1.05))
+par(mfrow=c(3,1))#
+plot(as.numeric(factor(condition, levels=unique(condition))), seqdepth, pch=19, ylim=c(0,max(seqdepth)*1.05))#
+plot(as.numeric(factor(condition, levels=unique(condition))), alnreads, pch=19, ylim=c(0,max(alnreads)*1.05))#
+plot(as.numeric(factor(condition, levels=unique(condition))), alnreads/seqdepth, pch=19, ylim=c(0,max(alnreads/seqdepth)*1.05))
+condition = c("20C","20C","20C","38C_5_min","38C_5_min","38C_5_min","38C_15_min","38C_15_min","38C_15_min","38C_30_min","38C_30_min","38C_30_min","38C_60_min","38C_60_min","38C_60_min","38C_120_min","38C_120_min","38C_120_min","38C_180_min","38C_180_min","38C_180_min")#
+#
+seqdepth = c(67176284,73069790,60213332,72128550,79935954,65088516,61997602,66160898,80763250,68309904,65211538,78064772,72836514,70915534,77460870,61376410,72095796,62642320,68249398,72138512,64417374)#
+#
+alnreads = c(69256403,73753834,59629214,80806863,89586486,76471970,62086560,64019777,76244504,77826841,65613773,78587405,80203725,77756115,76414869,67353674,80142120,74919949,73996264,75559870,71163579)#
+#
+rmdupreads = c(7066212,7846964,7677416,6714579,7338376,7333290,6454250,5789497,6621560,4421461,5330115,5833146,5075653,4673551,5713148,4895224,5872340,5021579,7302119,7621594,5793480)#
+#
+par(mfrow=c(3,1))#
+plot(as.numeric(factor(condition, levels=unique(condition))), seqdepth, pch=19, ylim=c(0,max(seqdepth)*1.05))#
+plot(as.numeric(factor(condition, levels=unique(condition))), alnreads, pch=19, ylim=c(0,max(alnreads)*1.05))#
+plot(as.numeric(factor(condition, levels=unique(condition))), rmdupreads, pch=19, ylim=c(0,max(rmdupreads)*1.05))
+ann = readRDS("~/Documents/k2impact_cellSystems/annotation_row.rds")
+str(ann)
+table(ann$gene_type)
+library(genomiFeatures)
+library(genomicFeatures)
+library(GenomicFeatures)
+sessionInfo()
+version
+library(GenomicFeatures)#
+mmusculus_gene_ensembl <- makeTxDbFromBiomart(dataset="mmusculus_gene_ensembl")
+exonsDB <- reduce(exonsBy(txdb ,'gene'))#
+exonsDB <- exonsDB[elementNROWS(range(exonsDB))==1]#
+intronsDB <- psetdiff(unlist(range(exonsDB)),exonsDB)#
+intronsDB <- intronsDB[elementNROWS(intronsDB)>0]#
+save(exonsDB, intronsDB, file='mmusculus_ensembl_bygene.RData')
+## make annotation by gene#
+exonsDB <- reduce(exonsBy(mmusculus_gene_ensembl ,'gene'))#
+exonsDB <- exonsDB[elementNROWS(range(exonsDB))==1]#
+intronsDB <- psetdiff(unlist(range(exonsDB)),exonsDB)#
+intronsDB <- intronsDB[elementNROWS(intronsDB)>0]#
+save(exonsDB, intronsDB, file='mmusculus_ensembl_bygene.RData')
+## make annotation by transcript#
+exonsDB <- exonsBy(mmusculus_gene_ensembl ,'tx', use.names=TRUE)#
+intronsDB <- intronsByTranscript(mmusculus_gene_ensembl, use.names=TRUE)#
+intronsDB <- intronsDB[elementNROWS(intronsDB)>0]#
+save(exonsDB, intronsDB, file='mmusculus_ensembl_bytranscripts.RData')
+sessionInfo()
+date()
+str(readRDS("~/Documents/k2impact_cellSystems_old/recount/cell_disease_ribo0_annot_recount.rds"))
+str(readRDS("~/Documents/k2impact_cellSystems_old/recount/cell_term_name_old.rds"))
+str(readRDS("~/Documents/k2impact_cellSystems_old/recount/cell_term_name_new.rds"))
+str(readRDS("~/Documents/k2impact_cellSystems_old/recount/onassisAnnot.rds"))
+studyNames <- c("ERP001828","ERP002588","ERP003815","ERP004043","ERP004697",#
+"ERP005301","ERP006823","ERP009514","ERP010786","SRP000941",#
+"SRP007584","SRP015640","SRP017577","SRP019503","SRP021214",#
+"SRP021924","SRP026208","SRP028912","SRP029334","SRP029990",#
+"SRP030401","SRP031620","SRP033095","SRP033282","SRP035316",#
+"SRP035419","SRP036769","SRP036848","SRP037550","SRP037553",#
+"SRP037762","SRP037971","SRP040694","SRP040806","SRP041008",#
+"SRP041100","SRP041228","SRP041494","SRP041508","SRP041594",#
+"SRP042402","SRP042597","SRP042630","SRP042937","SRP043364",#
+"SRP044679","SRP044756","SRP044766","SRP044925","SRP045318",#
+"SRP045322","SRP045406","SRP045545","SRP045561","SRP045590",#
+"SRP045900","SRP045986","SRP047476","SRP048577","SRP048683",#
+"SRP048820","SRP049097","SRP049156","SRP049355","SRP049453",#
+"SRP049593","SRP049820","SRP049823","SRP050089","SRP050272",#
+"SRP051083","SRP051182","SRP051211","SRP051369","SRP052229",#
+"SRP052491","SRP053043","SRP054971","SRP055153","SRP055916",#
+"SRP056074","SRP056604","SRP056637","SRP057074","SRP057616",#
+"SRP058036","SRP058107","SRP058387","SRP058633","SRP058654",#
+"SRP058841","SRP059950","SRP059957","SRP059959","SRP060227",#
+"SRP061522","SRP061639","SRP061682","SRP061881","SRP062188",#
+"SRP062444","SRP063573","SRP064264","SRP065022","SRP066009",#
+"SRP066150","SRP066152","SRP066895","SRP066912","SRP067214",#
+"SRP068078","SRP068942")
+length(studyNames)
+library(shiny)
+runApp('~/Dropbox/source/INSPEcT-shinyApps/ProcessingRateDelay/')
+library(devtools)#
+setwd('~/Dropbox/source/git_repository/')#
+load_all('INSPEcT')
+runProcessingRateDelay()
+traceback()
+load_all('INSPEcT/')
+runProcessingRateDelay()
+(load('INSPEcT/data/nascentInspObj.RData'))
+nascentInspObj
+saveRDS(nascentInspObj, file='INSPEcT/data/nascentInspObj.rds')
+saveRDS(nascentInspObj, file='INSPEcT/data/nascentInspObj.rds', compress='xz')
+?data
+load_all('INSPEcT/')
+runProcessingRateDelay()
+load_all('INSPEcT/')
+runProcessingRateDelay()
+load_all('INSPEcT/')
+runProcessingRateDelay()
+load_all('INSPEcT/')
+runProcessingRateDelay()
+runProcessingRateDelay()
+ids
+geneClass(ids)
+Q
+load_all('INSPEcT/')
+runProcessingRateDelay()
+filename <- '~/Dropbox/source/git_repository/INSPEcT/inst/nascentInspObj.rds'
+ids <- readRDS(filename)
+ids
+ids@ratesFirstGuessVar
+fData(ids@ratesFirstGuess)
+str(fData(ids@ratesFirstGuess))
+fgVar[,grep('total', colnames(fgVar))]
+fgVar= fData(ids@ratesFirstGuess)
+fgVar[,grep('total', colnames(fgVar))]
+str(fgVar[,grep('total', colnames(fgVar))])
+str(fgVar)
+str(fgVar[,grep('total|preMRNA|synthesis', colnames(fgVar))])
+totVar= fgVar[,grep('total', colnames(fgVar))]#
+	preVar= fgVar[,grep('preMRNA', colnames(fgVar))]#
+	synVar= fgVar[,grep('synthesis', colnames(fgVar))]
+str(synVar)
+synVar[synVar]=1
+str(synVar)
+colnames(synVar)
+sub('synthesis','processing',colnames(synVar))
+fgVar= fData(ids@ratesFirstGuess)#
+	fgVar= fgVar[, grep('t0',colnames(fgVar),invert=TRUE)]#
+	totVar= fgVar[,grep('total', colnames(fgVar))]#
+	preVar= fgVar[,grep('preMRNA', colnames(fgVar))]#
+	synVar= fgVar[,grep('synthesis', colnames(fgVar))]
+sub('synthesis','processing',colnames(synVar))
+proVar <- degVar <- matrix(1, nrow(synVar), ncol(synVar)) #
+	colnames(proVar) <- sub('synthesis','processing',colnames(synVar))#
+	colnames(degVar) <- sub('synthesis','degradation',colnames(synVar))#
+	proVar = data.frame(proVar)#
+	degVar = data.frame(degVar)
+str(proVar)
+phenoData(ids@ratesFirstGuess)
+varData = cbind(totVar, preVar, synVar, proVar, degVar)#
+	pData = phenoData(ids@ratesFirstGuess)
+ratesFirstGuessVar <- ExpressionSet(assayData=varData, phenoData=phenoData)
+totVar= as.matrix(fgVar[,grep('total', colnames(fgVar))])#
+	preVar= as.matrix(fgVar[,grep('preMRNA', colnames(fgVar))])#
+	synVar= as.matrix(fgVar[,grep('synthesis', colnames(fgVar))])#
+#
+	proVar <- degVar <- matrix(1, nrow(synVar), ncol(synVar)) #
+	colnames(proVar) <- sub('synthesis','processing',colnames(synVar))#
+	colnames(degVar) <- sub('synthesis','degradation',colnames(synVar))#
+#
+	varData = cbind(totVar, preVar, synVar, proVar, degVar)#
+	pData = phenoData(ids@ratesFirstGuess)#
+#
+	ratesFirstGuessVar <- ExpressionSet(assayData=varData, phenoData=phenoData)
+proVar <- degVar <- matrix(1, nrow(synVar), ncol(synVar)) #
+	colnames(proVar) <- sub('synthesis','processing',colnames(synVar))#
+	colnames(degVar) <- sub('synthesis','degradation',colnames(synVar))#
+	rownames(pData) <- colnames(varData)#
+	phenoData <- new('AnnotatedDataFrame', data=pData)#
+#
+	varData = cbind(totVar, preVar, synVar, proVar, degVar)#
+	pData = phenoData(ids@ratesFirstGuess)#
+#
+	ratesFirstGuessVar <- ExpressionSet(assayData=varData, phenoData=phenoData)
+pData
+str(varData)
+ratesFirstGuessVar <- ExpressionSet(assayData=varData, phenoData=pData)
+pData
+varLabels(pData)
+varMetadata(pData)
+pData
+pData@data
+rownames(pData@data)
+pData <- phenoData(ratesFirstGuess)
+pData <- phenoData(ids@ratesFirstGuess)
+colnames(varData) = rownames(pData@data)
+ratesFirstGuessVar <- ExpressionSet(assayData=varData, phenoData=pData)
+ratesFirstGuessVar
+assayData(ratesFirstGuessVar)
+assayData(ratesFirstGuessVar)[[1]]
+assayData(ratesFirstGuessVar)
+assays(ratesFirstGuessVar)
+fData(ids@ratesFirstGuess)
+fData(ids@ratesFirstGuess) <- NULL
+fData(ids@ratesFirstGuess)
+?fData
+fData(ids@ratesFirstGuess) <- NULL
+ids@ratesFirstGuess
+str(ExpressionSet(ids@ratesFirstGuess))
+exprs(ids@ratesFirstGuess)
+ids@ratesFirstGuess <- ExpressionSet(assayData=exprs(ids@ratesFirstGuess), phenoData=pData)
+ids@ratesFirstGuessVar <- ExpressionSet(assayData=varData, phenoData=pData)
+filename <- '~/Dropbox/source/git_repository/INSPEcT/inst/nascentInspObj.rds'
+ids <- readRDS(filename)
+library(devtools)#
+setwd('~/Dropbox/source/git_repository/')#
+load_all('INSPEcT')#
+#
+data('allcounts', package='INSPEcT')#
+data('featureWidths', package='INSPEcT')#
+data('libsizes', package='INSPEcT')#
+#
+nascentCounts<-allcounts$nascent#
+matureCounts<-allcounts$mature#
+expDes<-rep(c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16),3)#
+# expDes<-rep(letters[1:11],3)#
+#
+nasExp_DESeq2<-quantifyExpressionsFromTrCounts(#
+      allcounts=nascentCounts#
+      ,libsize=nascentLS#
+      ,exonsWidths=exWdths#
+      ,intronsWidths=intWdths#
+      ,experimentalDesign=expDes)#
+#
+matExp_DESeq2<-quantifyExpressionsFromTrCounts(#
+      allcounts=matureCounts#
+      ,libsize=totalLS#
+      ,exonsWidths=exWdths#
+      ,intronsWidths=intWdths#
+      ,experimentalDesign=expDes)
+tpts<-c(0,1/6,1/3,1/2,1,1.5,2,4,8,12,16)
+tL<-1/6
+nasFullObj <- newINSPEcT(tpts=tpts,labeling_time=tL,nascentExpressions=nasExp_DESeq2,matureExpressions=matExp_DESeq2)
+new_ids = function(ids, NoNascent, degDuringPulse) {#
+#
+	## rearrange ratesFirstGuess and ratesFirstGuessVar#
+	fgVar= fData(ids@ratesFirstGuess)#
+	fgVar= fgVar[, grep('t0',colnames(fgVar),invert=TRUE)]#
+	totVar= as.matrix(fgVar[,grep('total', colnames(fgVar))])#
+	preVar= as.matrix(fgVar[,grep('preMRNA', colnames(fgVar))])#
+	synVar= as.matrix(fgVar[,grep('synthesis', colnames(fgVar))])#
+	proVar <- degVar <- matrix(1, nrow(synVar), ncol(synVar))#
+	varData = cbind(totVar, preVar, synVar, proVar, degVar)#
+	pData <- phenoData(ids@ratesFirstGuess)#
+	colnames(varData) = rownames(pData@data)#
+	ids@ratesFirstGuess <- ExpressionSet(assayData=exprs(ids@ratesFirstGuess), phenoData=pData)#
+	ids@ratesFirstGuessVar <- ExpressionSet(assayData=varData, phenoData=pData)#
+#
+	## add new slots#
+	ids@NoNascent <- NoNascent#
+	ids@degDuringPulse <- degDuringPulse#
+#
+	return(ids)#
+#
+}
+runProcessingRateDelay()
+load_all('INSPEcT/')
+runProcessingRateDelay()
+filename <- '~/Dropbox/source/git_repository/INSPEcT/inst/nascentInspObj.rds'
+ids <- readRDS(filename)
+new_ids(ids)
+ids
+new_ids(ids, FALSE, FALSE)
+ids=new_ids(ids, FALSE, FALSE)
+saveRDS(ids, filename)
+source('INSPEcT/')
+load_all('INSPEcT/')
+runProcessingRateDelay()
+runProcessingRateDelay()
+load_all('INSPEcT')
+runProcessingRateDelay()
+load_all('INSPEcT')
+runProcessingRateDelay()
+filename <- '~/Dropbox/source/git_repository/INSPEcT/inst/nascentInspObj.rds'
+ids <- readRDS(filename)
+saveRDS(ids, filename='~/Dropbox/source/git_repository/INSPEcT/data/nascentInspObj.rds', compress='xz')
+saveRDS(ids, file='~/Dropbox/source/git_repository/INSPEcT/data/nascentInspObj.rds', compress='xz')
+?^system.file
+?system.file
+system.file(package='INSPEcT', 'RNAdynamics')
+system.file(package='INSPEcT', 'data/RNAdynamics')
+system.file(package='INSPEcT', 'data')
+system.file(package='INSPEcT', 'data', 'nascentInspObj.rds')
+load_all('INSPEcT/')
+runProcessingRateDelay()
+load_all('INSPEcT/')
+runProcessingRateDelay()
+?runApp
+load_all('INSPEcT/')
+load_all('INSPEcT/')
+runProcessingRateDelay()
+load_all('INSPEcT/')
+runProcessingRateDelay()
+load_all('INSPEcT/')
+runProcessingRateDelay()
+ids <- readRDS('~/Dropbox/source/INSPEcT-shinyApps/ProcessingRateDelay/mycerIds_20genes.rds')
+ids <- new_ids(ids)
+ids <- new_ids(ids, FALSE, FALSE)
+debug(new_ids)
+ids <- new_ids(ids, FALSE, FALSE)
+ids <- new_ids(ids, FALSE, FALSE)
+str(varData)
+head(varData)
+str(totVar)
+Q
+source('convert_ids.R')
+ids <- new_ids(ids, FALSE, FALSE, TRUE)
+ids
+saveRDS(ids, 'mycerIds_20genes.rds')
+runProcessingRateDelay()
+runProcessingRateDelay()

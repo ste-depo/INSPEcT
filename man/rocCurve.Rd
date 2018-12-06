@@ -42,7 +42,7 @@ Consequently, sensitivity and specificity are computed using increasing threshol
 and the ability of correctly classifying a rate is measured through the area under the curve (AUC) for each rate.
 }
 \examples{
-data('nascentInspObj', package='INSPEcT')	
+nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
 
 simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
  

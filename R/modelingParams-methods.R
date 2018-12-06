@@ -25,7 +25,7 @@
 #' }
 #' @seealso \code{\link{modelRates}}
 #' @examples
-#' data('nascentInspObj10', package='INSPEcT')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' modelingParams(nascentInspObj10)
 setMethod('modelingParams', 'INSPEcT', function(object) {
 	return(object@params)
@@ -34,15 +34,13 @@ setMethod('modelingParams', 'INSPEcT', function(object) {
 #'
 #' @param value A list with new parameters
 #' @examples
-#' data('nascentInspObj10', package='INSPEcT')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' nascentInspObj10 <- removeModel(nascentInspObj10)
 #' modelingParams(nascentInspObj10)$useSigmoidFun <- FALSE
 setReplaceMethod('modelingParams', 'INSPEcT', function(object, value) {
 
 	if(!is.list(value))
 		stop('modelingParams: value argument must be a list')
-	if( !is.logical(value$NoNascent) )
-		stop('modelingParams: NoNascent element of value argument must be a logical')
 	if( !is.numeric(value$nInit) )
 		stop('modelingParams: nInit element of value argument must be a numeric')
 	if( !is.numeric(value$nIter) )

@@ -6,8 +6,8 @@
 \usage{
 quantifyExpressionsFromBAMs(txdb, BAMfiles, experimentalDesign, by = c("gene",
   "tx"), countMultiMappingReads = FALSE, allowMultiOverlap = FALSE,
-  strandSpecific = 0, isPairedEnd = FALSE, DESeq2 = TRUE,
-  varSamplingCondition = NULL)
+  libsize = c("assigned", "all"), strandSpecific = 0, isPairedEnd = FALSE,
+  DESeq2 = TRUE, varSamplingCondition = NULL)
 }
 \arguments{
 \item{txdb}{A TranscriptDB object}
@@ -18,12 +18,18 @@ quantifyExpressionsFromBAMs(txdb, BAMfiles, experimentalDesign, by = c("gene",
 Time points must be ordered according to the sequence of files submitted for the analysis, these labels characterize
 different files as replicates of a given condition.}
 
-\item{by}{A character, either "gene" or "tx", indicating if expressions and counts should be summarized at the levels of genes or transcripts. "gene" by default}
+\item{by}{A character, either "gene" or "tx", indicating if expressions and counts should be summarized at the levels of 
+genes or transcripts. "gene" by default.
+In case "tx" is selected, we suggest to set argument "allowMultiOverlap" to TRUE, otherwise the reads mapping to overlapping
+transcripts of the same gene will remain unassigned.}
 
 \item{countMultiMappingReads}{A logical, if multimapping reads should be counted, FALSE by default. Multimap reads are 
 identified using the tag "NH" in the bam/sam file.}
 
 \item{allowMultiOverlap}{A logical, indicating if a read is allowed to be assigned to more than one feature, FALSE by default}
+
+\item{libsize}{A character, either "assigned" or "all", indicating whether the libsize for expression normalization should include all 
+mapped reads or only the reads assigned to any of the features. By default, "assigned" is selected.}
 
 \item{strandSpecific}{Numeric, 0 if no strand-specific read counting should be performed, 1 stranded, 2 reversely-stranded. 0 by default}
 
@@ -31,7 +37,8 @@ identified using the tag "NH" in the bam/sam file.}
 
 \item{DESeq2}{A logical, if TRUE exons and introns variances are evaluated through the package DESeq2, if FALSE through plgem}
 
-\item{varSamplingCondition}{A character reporting which experimental condition should be used to sample the variance if DESeq2 = FALSE}
+\item{varSamplingCondition}{A character reporting which experimental condition should be used to sample the variance if DESeq2 = FALSE. 
+By default, the first element of "experimentalDesign" with replicates.}
 }
 \value{
 A list containing expressions and associated variances for exons and introns.
@@ -51,8 +58,8 @@ paths_total<-system.file('extdata/', c('bamRep1.bam'
                                       ,'bamRep3.bam'
                                       ,'bamRep4.bam')
                         ,package='INSPEcT')
+
 matExp<-quantifyExpressionsFromBAMs(txdb=txdb
                                    ,BAMfiles=paths_total
-                                   ,DESeq2=TRUE
                                    ,experimentalDesign=expDes)
 }

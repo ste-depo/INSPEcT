@@ -8,7 +8,7 @@
 #' @return An object of class INSPEcT model
 #' @seealso \code{\link{testingParams}}
 #' @examples
-#' data('nascentInspObj10', package='INSPEcT')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' getModel(nascentInspObj10)
 setMethod('getModel', 'INSPEcT', function(object) {
 	return(object@model)

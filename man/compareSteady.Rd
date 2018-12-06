@@ -3,22 +3,17 @@
 \docType{methods}
 \name{compareSteady}
 \alias{compareSteady}
-\alias{compareSteady,INSPEcT,INSPEcT,numeric,numeric-method}
-\title{Generate an object of class INSPEcT_diffsteady from two objects of class INSPEcT}
+\alias{compareSteady,INSPEcT-method}
+\title{Generate an object of class INSPEcT_diffsteady from an object of class INSPEcT}
 \usage{
-compareSteady(inspectIds1, inspectIds2, nRep1, nRep2)
+compareSteady(inspectIds, BPPARAM = bpparam())
 
-\S4method{compareSteady}{INSPEcT,INSPEcT,numeric,numeric}(inspectIds1,
-  inspectIds2, nRep1, nRep2)
+\S4method{compareSteady}{INSPEcT}(inspectIds, BPPARAM = bpparam())
 }
 \arguments{
-\item{inspectIds1}{An object of calss INSPEcT}
+\item{inspectIds}{An object of calss INSPEcT with two conditions}
 
-\item{inspectIds2}{A second object of calss INSPEcT}
-
-\item{nRep1}{number of replicates of the first object}
-
-\item{nRep2}{number of replicates of the second object}
+\item{BPPARAM}{Configuration for BiocParallel parallelization. By default is set to bpparam()}
 }
 \value{
 An object of class INSPEcT_diffsteady which contains both the absolute 
@@ -26,7 +21,7 @@ quantification of the rates as well as the comparison with the statistical signi
 associated for each gene and rate. (See \code{\link{INSPEcT_diffsteady-class}})
 }
 \description{
-Generate an object of class INSPEcT_diffsteady from two objects of class INSPEcT
+Generate an object of class INSPEcT_diffsteady from an object of class INSPEcT
 
 This method compares two object of class INSPEcT in order to identify differential usage
 of synthesis, processing or degradation rates in two different steady-state conditions. 
@@ -34,24 +29,35 @@ The two INSPEcT objects must have been profiled with replicates in order to prov
 a statistical significance to the differences between their rates.
 }
 \examples{
-data('nascentInspObj', package='INSPEcT')	
-simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
-newTpts<-c(0, 16)
-nascentInspObj_sim3<-makeSimDataset(object=simRates
-                                   ,tpts=newTpts
-                                   ,nRep=3
-                                   ,NoNascent=FALSE
-                                   ,seed=1)
-newTpts<-c(0, 16)
-nascentInspObj_sim4<-makeSimDataset(object=simRates
-                                   ,tpts=newTpts
-                                   ,nRep=4
-                                   ,NoNascent=FALSE
-                                   ,seed=2)
+data('allcounts', package='INSPEcT')
+data('featureWidths', package='INSPEcT')
+data('libsizes', package='INSPEcT')
 
-diffrates<-compareSteady(inspectIds1=nascentInspObj_sim3
-                        ,inspectIds2=nascentInspObj_sim4
-                        ,nRep1=3
-                        ,nRep2=4)
-diffrates
+nascentCounts<-allcounts$nascent
+matureCounts<-allcounts$mature
+conditions<-letters[1:11]
+expDes<-rep(conditions,3)
+tL<-1/6
+
+nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
+      allcounts=nascentCounts
+      ,libsize=nascentLS
+      ,exonsWidths=exWdths
+      ,intronsWidths=intWdths
+      ,experimentalDesign=expDes)
+
+matExp_DESeq2<-quantifyExpressionsFromTrCounts(
+      allcounts=matureCounts
+      ,libsize=totalLS
+      ,exonsWidths=exWdths
+      ,intronsWidths=intWdths
+      ,experimentalDesign=expDes)
+
+nasFullObj <- newINSPEcT(
+      tpts=conditions
+      ,labeling_time=tL
+      ,nascentExpressions=nasExp_DESeq2
+      ,matureExpressions=matExp_DESeq2)
+
+diffrates = compareSteady(nasFullObj[,c(1,11)])
 }

@@ -32,7 +32,7 @@ is particularly useful to get and set testing parameters of the INSPEcT_model ob
 within the INSPEcT object.
 }
 \examples{
-data('nascentInspObj10', package='INSPEcT')
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 getModel(nascentInspObj10)
 }
 \seealso{
