@@ -17,11 +17,7 @@
 #' @examples
 #' nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
 #' simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
-
-#' tpts <- simRates@params$tpts
-#' 
-#' simData2rep_Nascent <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
-#' simData2rep_Nascent <- modelRates(simData2rep_Nascent[1:10], seed=1)
+#' table(geneClass(simRates))
 setMethod('makeSimModel', 'INSPEcT', function(object
 											, nGenes
 											, probs=c(constant=.5
