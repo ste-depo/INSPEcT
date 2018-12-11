@@ -6,8 +6,9 @@
 \usage{
 quantifyExpressionsFromBAMs(txdb, BAMfiles, experimentalDesign, by = c("gene",
   "tx"), countMultiMappingReads = FALSE, allowMultiOverlap = FALSE,
-  libsize = c("assigned", "all"), strandSpecific = 0, isPairedEnd = FALSE,
-  DESeq2 = TRUE, varSamplingCondition = NULL)
+  prioritizeExons = TRUE, libsize = c("assigned", "all"),
+  strandSpecific = 0, isPairedEnd = FALSE, DESeq2 = TRUE,
+  varSamplingCondition = NULL)
 }
 \arguments{
 \item{txdb}{A TranscriptDB object}
@@ -27,6 +28,11 @@ transcripts of the same gene will remain unassigned.}
 identified using the tag "NH" in the bam/sam file.}
 
 \item{allowMultiOverlap}{A logical, indicating if a read is allowed to be assigned to more than one feature, FALSE by default}
+
+\item{prioritizeExons}{A logical, indicating whether reads assigned to exon shold not be accounted for intron counts.
+If set to FALSE, reads with shared overlap between an exon and the following intron will be assigned to the intron. This could improve
+intronic quantification in experimental settings (including polyA library preparation) or compact genomes were intronic reads are 
+sampled at a very low rate compared to exonic reads. By default, TRUE.}
 
 \item{libsize}{A character, either "assigned" or "all", indicating whether the libsize for expression normalization should include all 
 mapped reads or only the reads assigned to any of the features. By default, "assigned" is selected.}

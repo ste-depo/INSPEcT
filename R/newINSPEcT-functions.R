@@ -332,12 +332,15 @@ newINSPEcT <- function(tpts
 			}
 		}
 		message(paste('Number of genes with introns and exons: ', length(eiGenes)))
+		## sort according to time point ordering
+		ord <- order(tpts)
+		tpts <- tpts[ord]
 		## estimate RNA dynamics
 		totRpkmsIntEx <- list(
-				exons=rpkms_total_exons
-				, exons_var=rpkms_total_exons_variances
-				, introns=rpkms_total_introns
-				, introns_var=rpkms_total_introns_variances)
+				exons=rpkms_total_exons[,ord,drop=FALSE]
+				, exons_var=rpkms_total_exons_variances[,ord,drop=FALSE]
+				, introns=rpkms_total_introns[,ord,drop=FALSE]
+				, introns_var=rpkms_total_introns_variances[,ord,drop=FALSE])
 		if( is.numeric(tpts) ) {
 			out <- RNAdynamics_NoNascent(totRpkms = totRpkmsIntEx
 												   , tpts = tpts
@@ -384,16 +387,19 @@ newINSPEcT <- function(tpts
 		# rownames(rpkms_Nascent_introns) <- rownames(rpkms_Nascent_exons)
 		# end - to remove
 
+		## sort according to time point ordering
+		ord <- order(tpts)
+		tpts <- tpts[ord]
 		## estimate RNA dynamics
 		totRpkmsIntEx <- list(
-				exons=rpkms_total_exons
-				, exons_var=rpkms_total_exons_variances
-				, introns=rpkms_total_introns
-				, introns_var=rpkms_total_introns_variances
+				exons=rpkms_total_exons[,ord,drop=FALSE]
+				, exons_var=rpkms_total_exons_variances[,ord,drop=FALSE]
+				, introns=rpkms_total_introns[,ord,drop=FALSE]
+				, introns_var=rpkms_total_introns_variances[,ord,drop=FALSE]
 				)
 		labeledRpkmsIntEx <- list(
-				exons=rpkms_Nascent_exons
-				, exons_var=rpkms_Nascent_exons_variances
+				exons=rpkms_Nascent_exons[,ord,drop=FALSE]
+				, exons_var=rpkms_Nascent_exons_variances[,ord,drop=FALSE]
 			)
 		outSim <- RNAdynamics(totRpkms=totRpkmsIntEx
 							, labeledRpkms=labeledRpkmsIntEx
@@ -424,14 +430,17 @@ newINSPEcT <- function(tpts
 				rpkms_total_exons_variances <- rpkms_total_exons_variances[!rownames(rpkms_total_exons_variances) %in% filteroutGenes, ,drop=FALSE]
 			}
 		}
+		## sort according to time point ordering
+		ord <- order(tpts)
+		tpts <- tpts[ord]
 		## estimate RNA dynamics
 		totRpkmsIntEx <- list(
-			exons=rpkms_total_exons
-			, exons_var=rpkms_total_exons_variances
+			exons=rpkms_total_exons[,ord,drop=FALSE]
+			, exons_var=rpkms_total_exons_variances[,ord,drop=FALSE]
 			)
 		labeledRpkmsIntEx <- list(
-			  exons=rpkms_Nascent_exons
-			, exons_var=rpkms_Nascent_exons_variances
+			  exons=rpkms_Nascent_exons[,ord,drop=FALSE]
+			, exons_var=rpkms_Nascent_exons_variances[,ord,drop=FALSE]
 			)
 		if( degDuringPulse ) {
 			outSimple <- RNAdynamicsSimpleDDP(totRpkms=totRpkmsIntEx
@@ -512,19 +521,22 @@ newINSPEcT <- function(tpts
 			onlyExGenes <- setdiff(rownames(rpkms_Nascent_exons), rownames(rpkms_Nascent_introns))
 		}
 
+		## sort according to time point ordering
+		ord <- order(tpts)
+		tpts <- tpts[ord]
 		# RNA dynamics for genes to be analysed in the full mode:
 		message(paste('Number of genes with introns and exons: ', length(intExGenes)))
 		totRpkmsIntEx <- list(
-				exons=rpkms_total_exons[intExGenes, , drop=FALSE]
-				, exons_var=rpkms_total_exons_variances[intExGenes, , drop=FALSE]
-				, introns=rpkms_total_introns[intExGenes, , drop=FALSE]
-				, introns_var=rpkms_total_introns_variances[intExGenes, , drop=FALSE]
+				exons=rpkms_total_exons[intExGenes, ord, drop=FALSE]
+				, exons_var=rpkms_total_exons_variances[intExGenes, ord, drop=FALSE]
+				, introns=rpkms_total_introns[intExGenes, ord, drop=FALSE]
+				, introns_var=rpkms_total_introns_variances[intExGenes, ord, drop=FALSE]
 			)
 		labeledRpkmsIntEx <- list(
-				exons=rpkms_Nascent_exons[intExGenes, , drop=FALSE]
-				, exons_var=rpkms_Nascent_exons_variances[intExGenes, , drop=FALSE]
-				, introns=rpkms_Nascent_introns[intExGenes, , drop=FALSE]
-				, introns_var=rpkms_Nascent_introns_variances[intExGenes, , drop=FALSE]
+				exons=rpkms_Nascent_exons[intExGenes, ord, drop=FALSE]
+				, exons_var=rpkms_Nascent_exons_variances[intExGenes, ord, drop=FALSE]
+				, introns=rpkms_Nascent_introns[intExGenes, ord, drop=FALSE]
+				, introns_var=rpkms_Nascent_introns_variances[intExGenes, ord, drop=FALSE]
 			)
 		if( degDuringPulse ) {
 			outIntEx <- RNAdynamicsDDP(totRpkms=totRpkmsIntEx
@@ -547,12 +559,12 @@ newINSPEcT <- function(tpts
 			message(paste('Number of genes with only exons: ', length(onlyExGenes)))
 			labeledSF <- outIntEx$labeledSF
 			totRpkmsOnlyEx <- list(
-					  exons=rpkms_total_exons[onlyExGenes, , drop=FALSE]
-					, exons_var=rpkms_total_exons_variances[onlyExGenes, , drop=FALSE]
+					  exons=rpkms_total_exons[onlyExGenes, ord, drop=FALSE]
+					, exons_var=rpkms_total_exons_variances[onlyExGenes, ord, drop=FALSE]
 				)
 			labeledRpkmsOnlyEx <- list(
-					  exons=rpkms_Nascent_exons[onlyExGenes, , drop=FALSE]
-					, exons_var=rpkms_Nascent_exons_variances[onlyExGenes, , drop=FALSE]
+					  exons=rpkms_Nascent_exons[onlyExGenes, ord, drop=FALSE]
+					, exons_var=rpkms_Nascent_exons_variances[onlyExGenes, ord, drop=FALSE]
 				)
 			if( degDuringPulse ) {
 				outOnlyEx <- RNAdynamicsSimpleDDP(totRpkms=totRpkmsOnlyEx

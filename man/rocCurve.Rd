@@ -46,16 +46,19 @@ nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
 
 simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
  
-newTpts<-simRates@params$tpts
-nascentInspObj_sim3<-makeSimDataset(object=simRates
-                                   ,tpts=newTpts
-                                   ,nRep=3
-                                   ,NoNascent=FALSE
-                                   ,seed=1)
-nascentInspObj_sim3<-modelRates(nascentInspObj_sim3[1:10]
-                               ,seed=1)
+# newTpts<-simRates@params$tpts
+# nascentInspObj_sim3<-makeSimDataset(object=simRates
+#                                    ,tpts=newTpts
+#                                    ,nRep=3
+#                                    ,NoNascent=FALSE
+#                                    ,seed=1)
+# nascentInspObj_sim3<-modelRates(nascentInspObj_sim3[1:100]
+#                                ,seed=1)
+# (not evaluated to save computational time)
 
-rocCurve(simRates[1:10],nascentInspObj_sim3)
+data("nascentInspObj_sim3",package='INSPEcT')
+
+rocCurve(simRates[1:100],nascentInspObj_sim3)
 title("3rep. 11t.p. Total and nascent RNA", line=3)
 }
 \seealso{

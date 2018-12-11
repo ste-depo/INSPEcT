@@ -14,6 +14,10 @@
 #' @param countMultiMappingReads A logical, if multimapping reads should be counted, FALSE by default. Multimap reads are 
 #' identified using the tag "NH" in the bam/sam file.
 #' @param allowMultiOverlap A logical, indicating if a read is allowed to be assigned to more than one feature, FALSE by default
+#' @param prioritizeExons A logical, indicating whether reads assigned to exon shold not be accounted for intron counts.
+#' If set to FALSE, reads with shared overlap between an exon and the following intron will be assigned to the intron. This could improve
+#' intronic quantification in experimental settings (including polyA library preparation) or compact genomes were intronic reads are 
+#' sampled at a very low rate compared to exonic reads. By default, TRUE.
 #' @param libsize A character, either "assigned" or "all", indicating whether the libsize for expression normalization should include all 
 #' mapped reads or only the reads assigned to any of the features. By default, "assigned" is selected.
 #' @param strandSpecific Numeric, 0 if no strand-specific read counting should be performed, 1 stranded, 2 reversely-stranded. 0 by default
@@ -43,6 +47,7 @@ quantifyExpressionsFromBAMs <- function(txdb
 					, by = c('gene','tx')
 					, countMultiMappingReads = FALSE
 					, allowMultiOverlap = FALSE
+					, prioritizeExons = TRUE
 					, libsize = c('assigned','all')
 					, strandSpecific = 0
 					, isPairedEnd = FALSE
@@ -152,36 +157,36 @@ quantifyExpressionsFromBAMs <- function(txdb
 			if( strandSpecific == 2 ) samTab <- invertStrand(samTab)
 
 			message('Counting reads on exon features...')
-			foOut <- findOverlaps(exonsDB,samTab,ignore.strand=strandSpecific==0)
-			onfeature <- unique(subjectHits(foOut))
+			foOut <- findOverlaps(samTab,exonsDB,ignore.strand=strandSpecific==0)
+			onfeature <- unique(queryHits(foOut))
 
 			if( allowMultiOverlap ) {
 				Unassigned_Ambiguity <- 0
 				Assigned_Exons <- length(onfeature)
 			} else {
-				ambiguous_reads <- duplicated(subjectHits(foOut))|duplicated(subjectHits(foOut),fromLast=TRUE)
-				Unassigned_Ambiguity <- length(unique(subjectHits(foOut)[ambiguous_reads]))
+				ambiguous_reads <- duplicated(queryHits(foOut))|duplicated(queryHits(foOut),fromLast=TRUE)
+				Unassigned_Ambiguity <- length(unique(queryHits(foOut)[ambiguous_reads]))
 				Assigned_Exons <- length(which(!ambiguous_reads))
 				foOut <- foOut[!ambiguous_reads]
 			}
-			exonCounts <- table(factor(queryHits(foOut), levels=1:queryLength(foOut)))
+			exonCounts <- table(factor(subjectHits(foOut), levels=1:subjectLength(foOut)))
 			names(exonCounts) <- names(exonsDB)
 
 			message('Counting reads on intron features...')
-			if( length(onfeature)>0 ) samTab <- samTab[-onfeature] # remove reads falling on exons
-			foOut <- findOverlaps(intronsDB,samTab,ignore.strand=strandSpecific==0)
-			onfeature <- unique(subjectHits(foOut))
+			if( length(onfeature)>0 & prioritizeExons ) samTab <- samTab[-onfeature] # remove reads falling on exons
+			foOut <- findOverlaps(samTab,intronsDB,ignore.strand=strandSpecific==0)
+			onfeature <- unique(queryHits(foOut))
 
 			if( allowMultiOverlap ) {
 				Unassigned_Ambiguity <- 0
 				Assigned_Introns <- length(onfeature)
 			} else {
-				ambiguous_reads <- duplicated(subjectHits(foOut))|duplicated(subjectHits(foOut),fromLast=TRUE)
-				Unassigned_Ambiguity <- Unassigned_Ambiguity + length(unique(subjectHits(foOut)[ambiguous_reads]))
+				ambiguous_reads <- duplicated(queryHits(foOut))|duplicated(queryHits(foOut),fromLast=TRUE)
+				Unassigned_Ambiguity <- Unassigned_Ambiguity + length(unique(queryHits(foOut)[ambiguous_reads]))
 				Assigned_Introns <- length(which(!ambiguous_reads))
 				foOut <- foOut[!ambiguous_reads]
 			}
-			intronCounts <- table(factor(queryHits(foOut), levels=1:queryLength(foOut)))
+			intronCounts <- table(factor(subjectHits(foOut), levels=1:subjectLength(foOut)))
 			names(intronCounts) <- names(intronsDB)
 
 			Unassigned_NoFeatures <- length(samTab) - length(onfeature)
