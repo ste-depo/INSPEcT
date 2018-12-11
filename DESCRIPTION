@@ -7,7 +7,7 @@ Author: Stefano de Pretis
 Maintainer: Stefano de Pretis <ste.depo@gmail.com>
 Description: INSPEcT (INference of Synthesis, Processing and 
 	dEgradation rates from Transcriptomic data) RNA-seq data
-	in time-course experients or different conditions, with
+	in time-course experiments or different conditions, with
 	or without the support of nascent RNA data.
 License: GPL-2
 Depends: R (>= 3.2), methods, Biobase, BiocParallel
