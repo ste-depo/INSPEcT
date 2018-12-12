@@ -52,10 +52,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 	ddp <- inspectIds@degDuringPulse
 	cTsh <- thresholds(inspectIds)$chisquare
 	bTsh <- thresholds(inspectIds)$brown
-	labeledSF <- inspectIds@labeledSF
+	sf <- inspectIds@labeledSF
 	tL <- inspectIds@tL
-
-	if( ddp ) stop('compareSteady: degDuringPulse mode not implemented yet.')
 
 	## divide the dataset in 2: full (eiGenes) and simple (eGenes)
 
@@ -73,23 +71,13 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 	wt_preT <- ratesFirstGuess(inspectIds,'preMRNA')[eiGenes,1]
 	wt_matT <- ratesFirstGuess(inspectIds,'total')[eiGenes,1] - wt_preT
-	wt_k1 <- ratesFirstGuess(inspectIds,'synthesis')[eiGenes,1]
 	wt_preTvar <- ratesFirstGuessVar(inspectIds,'preMRNA')[eiGenes,1]
 	wt_matTvar <- ratesFirstGuessVar(inspectIds,'total')[eiGenes,1] + wt_preTvar
-	wt_k1var <- ratesFirstGuessVar(inspectIds,'synthesis')[eiGenes,1]
-
-	wt_data <- cbind(wt_matT, wt_preT, wt_k1)
-	wt_datavar <- cbind(wt_matTvar, wt_preTvar, wt_k1var)
 
 	sh_preT <- ratesFirstGuess(inspectIds,'preMRNA')[eiGenes,2]
 	sh_matT <- ratesFirstGuess(inspectIds,'total')[eiGenes,2] - sh_preT
-	sh_k1 <- ratesFirstGuess(inspectIds,'synthesis')[eiGenes,2]
 	sh_preTvar <- ratesFirstGuessVar(inspectIds,'preMRNA')[eiGenes,2]
 	sh_matTvar <- ratesFirstGuessVar(inspectIds,'total')[eiGenes,2] + sh_preTvar
-	sh_k1var <- ratesFirstGuessVar(inspectIds,'synthesis')[eiGenes,2]
-
-	sh_data <- cbind(sh_matT, sh_preT, sh_k1)
-	sh_datavar <- cbind(sh_matTvar, sh_preTvar, sh_k1var)
 
 	## rates
 
@@ -105,84 +93,199 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 	mean_rates <- apply(array(cbind(wt_rates[,1:3], sh_rates[,1:3]), dim=c(nrow(wt_rates), 3,2)), 1:2, mean, na.rm=TRUE)
 
-	message('Evaluating model KKK [1/8]...')
-	outKKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
-		tryCatch(
-			unlist(optim(mean_rates[i,], errorKKK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],
-				sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-			, error=function(e) rep(NaN, 7))
-		,BPPARAM=BPPARAM))
-	outKKK[apply(outKKK[,1:3]<0,1,any),] <- NaN
+	if( !ddp ) {
 
-	message('Evaluating model VKK [2/8]...')
-	outVKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
-		tryCatch(
-			unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], mean_rates[i,3] ), 
-				errorVKK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],  
-				sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-			, error=function(e) rep(NaN, 8))
-		,BPPARAM=BPPARAM))
-	outVKK[apply(outVKK[,1:4]<0,1,any),] <- NaN
+		wt_k1 <- ratesFirstGuess(inspectIds,'synthesis')[eiGenes,1]
+		wt_k1var <- ratesFirstGuessVar(inspectIds,'synthesis')[eiGenes,1]
 
-	message('Evaluating model KVK [3/8]...')
-	outKVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
-		tryCatch(
-			unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
-				errorKVK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
-				sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-			, error=function(e) rep(NaN, 8))
-		,BPPARAM=BPPARAM))
-	outKVK[apply(outKVK[,1:4]<0,1,any),] <- NaN
+		wt_data <- cbind(wt_matT, wt_preT, wt_k1)
+		wt_datavar <- cbind(wt_matTvar, wt_preTvar, wt_k1var)
 
-	message('Evaluating model KKV [4/8]...')
-	outKKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
-		tryCatch(
-			unlist(optim( c( mean_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
-				errorKKV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
-				sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-			, error=function(e) rep(NaN, 8))
-		,BPPARAM=BPPARAM))
-	outKKV[apply(outKKV[,1:4]<0,1,any),] <- NaN
+		sh_k1 <- ratesFirstGuess(inspectIds,'synthesis')[eiGenes,2]
+		sh_k1var <- ratesFirstGuessVar(inspectIds,'synthesis')[eiGenes,2]
 
-	message('Evaluating model VVK [5/8]...')
-	outVVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
-		tryCatch(
-			unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
-				errorVVK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
-				sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-			, error=function(e) rep(NaN, 9))
-		,BPPARAM=BPPARAM))
-	outVVK[apply(outVVK[,1:5]<0,1,any),] <- NaN
+		sh_data <- cbind(sh_matT, sh_preT, sh_k1)
+		sh_datavar <- cbind(sh_matTvar, sh_preTvar, sh_k1var)
 
-	message('Evaluating model VKV [6/8]...')
-	outVKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
-		tryCatch(
-			unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
-				errorVKV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
-				sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-			, error=function(e) rep(NaN, 9))
-		,BPPARAM=BPPARAM))
-	outVKV[apply(outVKV[,1:5]<0,1,any),] <- NaN
+		message('Evaluating model KKK [1/8]...')
+		outKKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim(mean_rates[i,], errorKKK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 7))
+			,BPPARAM=BPPARAM))
+		outKKK[apply(outKKK[,1:3]<0,1,any),] <- NaN
 
-	message('Evaluating model KVV [7/8]...')
-	outKVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
-		tryCatch(
-			unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
-				errorKVV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
-				sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-			, error=function(e) rep(NaN, 9))
-		,BPPARAM=BPPARAM))
-	outKVV[apply(outKVV[,1:5]<0,1,any),] <- NaN
+		message('Evaluating model VKK [2/8]...')
+		outVKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], mean_rates[i,3] ), 
+					errorVKK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],  
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 8))
+			,BPPARAM=BPPARAM))
+		outVKK[apply(outVKK[,1:4]<0,1,any),] <- NaN
 
-	message('Evaluating model VVV [8/8]...')
-	outVVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
-		tryCatch(
-			unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
-				errorVVV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],
-				sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-			, error=function(e) rep(NaN, 10))
-		,BPPARAM=BPPARAM))
-	outVVV[apply(outVVV[,1:6]<0,1,any),] <- NaN
+		message('Evaluating model KVK [3/8]...')
+		outKVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
+					errorKVK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 8))
+			,BPPARAM=BPPARAM))
+		outKVK[apply(outKVK[,1:4]<0,1,any),] <- NaN
+
+		message('Evaluating model KKV [4/8]...')
+		outKKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( mean_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorKKV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 8))
+			,BPPARAM=BPPARAM))
+		outKKV[apply(outKKV[,1:4]<0,1,any),] <- NaN
+
+		message('Evaluating model VVK [5/8]...')
+		outVVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
+					errorVVK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 9))
+			,BPPARAM=BPPARAM))
+		outVVK[apply(outVVK[,1:5]<0,1,any),] <- NaN
+
+		message('Evaluating model VKV [6/8]...')
+		outVKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorVKV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 9))
+			,BPPARAM=BPPARAM))
+		outVKV[apply(outVKV[,1:5]<0,1,any),] <- NaN
+
+		message('Evaluating model KVV [7/8]...')
+		outKVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorKVV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 9))
+			,BPPARAM=BPPARAM))
+		outKVV[apply(outKVV[,1:5]<0,1,any),] <- NaN
+
+		message('Evaluating model VVV [8/8]...')
+		outVVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorVVV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 10))
+			,BPPARAM=BPPARAM))
+		outVVV[apply(outVVV[,1:6]<0,1,any),] <- NaN
+
+	} else { ## ddp
+
+		datader <- c(0,0)
+
+		wt_preL <- sf[1] * ratesFirstGuess(inspectIds,'labeled_preMRNA')[eiGenes,1]
+		wt_matL <- sf[1] * ratesFirstGuess(inspectIds,'labeled_total')[eiGenes,1] - wt_preL
+		wt_preLvar <- sf[1]^2 * ratesFirstGuessVar(inspectIds,'labeled_preMRNA')[eiGenes,1]
+		wt_matLvar <- sf[1]^2 * ratesFirstGuessVar(inspectIds,'labeled_total')[eiGenes,1] + wt_preLvar
+
+		wt_data <- cbind(wt_matT, wt_preT, wt_matL)
+		wt_datavar <- cbind(wt_matTvar, wt_preTvar, wt_matLvar)
+
+		sh_preL <- sf[2] * ratesFirstGuess(inspectIds,'labeled_preMRNA')[eiGenes,2]
+		sh_matL <- sf[2] * ratesFirstGuess(inspectIds,'labeled_total')[eiGenes,2] - sh_preL
+		sh_preLvar <- sf[2]^2 * ratesFirstGuessVar(inspectIds,'labeled_preMRNA')[eiGenes,2]
+		sh_matLvar <- sf[2]^2 * ratesFirstGuessVar(inspectIds,'labeled_total')[eiGenes,2] + sh_preLvar
+
+		sh_data <- cbind(sh_matT, sh_preT, sh_matL)
+		sh_datavar <- cbind(sh_matTvar, sh_preTvar, sh_matLvar)
+
+		print('Evaluating model KKK [1/8]...')
+		outKKK <- do.call('rbind', mclapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim(mean_rates[i,], errorKKK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader,
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 7))
+			,mc.cores=detectCores()))
+		outKKK[apply(outKKK[,1:3]<0,1,any),] <- NaN
+
+		print('Evaluating model VKK [2/8]...')
+		outVKK <- do.call('rbind', mclapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], mean_rates[i,3] ), 
+					errorVKK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 8))
+			,mc.cores=detectCores()))
+		outVKK[apply(outVKK[,1:4]<0,1,any),] <- NaN
+
+		print('Evaluating model KVK [3/8]...')
+		outKVK <- do.call('rbind', mclapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
+					errorKVK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 8))
+			,mc.cores=detectCores()))
+		outKVK[apply(outKVK[,1:4]<0,1,any),] <- NaN
+
+		print('Evaluating model KKV [4/8]...')
+		outKKV <- do.call('rbind', mclapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( mean_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorKKV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 8))
+			,mc.cores=detectCores()))
+		outKKV[apply(outKKV[,1:4]<0,1,any),] <- NaN
+
+		print('Evaluating model VVK [5/8]...')
+		outVVK <- do.call('rbind', mclapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
+					errorVVK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 9))
+			,mc.cores=detectCores()))
+		outVVK[apply(outVVK[,1:5]<0,1,any),] <- NaN
+
+		print('Evaluating model VKV [6/8]...')
+		outVKV <- do.call('rbind', mclapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorVKV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 9))
+			,mc.cores=detectCores()))
+		outVKV[apply(outVKV[,1:5]<0,1,any),] <- NaN
+
+		print('Evaluating model KVV [7/8]...')
+		outKVV <- do.call('rbind', mclapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorKVV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 9))
+			,mc.cores=detectCores()))
+		outKVV[apply(outKVV[,1:5]<0,1,any),] <- NaN
+
+		print('Evaluating model VVV [8/8]...')
+		outVVV <- do.call('rbind', mclapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorVVV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 10))
+			,mc.cores=detectCores()))
+		outVVV[apply(outVVV[,1:6]<0,1,any),] <- NaN
+
+	}
 
 	models <- list(
 		KKK=outKKK,
@@ -207,24 +310,45 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 		)
 	p_vals[is.na(p_vals)] <- 1
 
-	log_liks <- cbind(
-		KKK=sapply(seq_along(eiGenes), function(i) logLikKKK_ddpFALSE(models[['KKK']][i,1:3], 
-			wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
-		VKK=sapply(seq_along(eiGenes), function(i) logLikVKK_ddpFALSE(models[['VKK']][i,1:4], 
-			wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
-		KVK=sapply(seq_along(eiGenes), function(i) logLikKVK_ddpFALSE(models[['KVK']][i,1:4], 
-			wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
-		KKV=sapply(seq_along(eiGenes), function(i) logLikKKV_ddpFALSE(models[['KKV']][i,1:4], 
-			wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
-		VVK=sapply(seq_along(eiGenes), function(i) logLikVVK_ddpFALSE(models[['VVK']][i,1:5], 
-			wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
-		VKV=sapply(seq_along(eiGenes), function(i) logLikVKV_ddpFALSE(models[['VKV']][i,1:5], 
-			wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
-		KVV=sapply(seq_along(eiGenes), function(i) logLikKVV_ddpFALSE(models[['KVV']][i,1:5], 
-			wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
-		VVV=sapply(seq_along(eiGenes), function(i) logLikVVV_ddpFALSE(models[['VVV']][i,1:6], 
-			wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,]))
-		)
+	if( !ddp ) {
+		log_liks <- cbind(
+			KKK=sapply(seq_along(eiGenes), function(i) logLikKKK_ddpFALSE(models[['KKK']][i,1:3], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			VKK=sapply(seq_along(eiGenes), function(i) logLikVKK_ddpFALSE(models[['VKK']][i,1:4], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			KVK=sapply(seq_along(eiGenes), function(i) logLikKVK_ddpFALSE(models[['KVK']][i,1:4], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			KKV=sapply(seq_along(eiGenes), function(i) logLikKKV_ddpFALSE(models[['KKV']][i,1:4], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			VVK=sapply(seq_along(eiGenes), function(i) logLikVVK_ddpFALSE(models[['VVK']][i,1:5], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			VKV=sapply(seq_along(eiGenes), function(i) logLikVKV_ddpFALSE(models[['VKV']][i,1:5], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			KVV=sapply(seq_along(eiGenes), function(i) logLikKVV_ddpFALSE(models[['KVV']][i,1:5], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			VVV=sapply(seq_along(eiGenes), function(i) logLikVVV_ddpFALSE(models[['VVV']][i,1:6], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,]))
+			)		
+	} else { ## ddp
+		log_liks <- cbind(
+			KKK=sapply(seq_along(eiGenes), function(i) logLikKKK_ddpTRUE(models[['KKK']][i,1:3], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			VKK=sapply(seq_along(eiGenes), function(i) logLikVKK_ddpTRUE(models[['VKK']][i,1:4], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			KVK=sapply(seq_along(eiGenes), function(i) logLikKVK_ddpTRUE(models[['KVK']][i,1:4], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			KKV=sapply(seq_along(eiGenes), function(i) logLikKKV_ddpTRUE(models[['KKV']][i,1:4], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			VVK=sapply(seq_along(eiGenes), function(i) logLikVVK_ddpTRUE(models[['VVK']][i,1:5], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			VKV=sapply(seq_along(eiGenes), function(i) logLikVKV_ddpTRUE(models[['VKV']][i,1:5], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			KVV=sapply(seq_along(eiGenes), function(i) logLikKVV_ddpTRUE(models[['KVV']][i,1:5], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			VVV=sapply(seq_along(eiGenes), function(i) logLikVVV_ddpTRUE(models[['VVV']][i,1:6], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL))
+			)		
+	}
 
 	eiOut <- list(
 		eiGenes=eiGenes,
@@ -239,21 +363,9 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 		wt_matT <- ratesFirstGuess(inspectIds,'total')[eGenes,1]
 		wt_matTvar <- ratesFirstGuessVar(inspectIds,'total')[eGenes,1]
-		wt_k1 <- ratesFirstGuess(inspectIds,'synthesis')[eGenes,1]
-		wt_k1var <- ratesFirstGuessVar(inspectIds,'synthesis')[eGenes,1]
-
-		wt_data <- cbind(wt_matT, wt_k1)
-		wt_datavar <- cbind(wt_matTvar, wt_k1var)
 
 		sh_matT <- ratesFirstGuess(inspectIds,'total')[eGenes,2]
 		sh_matTvar <- ratesFirstGuessVar(inspectIds,'total')[eGenes,2]
-		sh_k1 <- ratesFirstGuess(inspectIds,'synthesis')[eGenes,2]
-		sh_k1var <- ratesFirstGuessVar(inspectIds,'synthesis')[eGenes,2]
-
-		sh_data <- cbind(sh_matT, sh_k1)
-		sh_datavar <- cbind(sh_matTvar, sh_k1var)
-
-		rownames(wt_datavar) <- rownames(sh_datavar) <- eGenes
 
 		wt_rates <- cbind(
 			k1=ratesFirstGuess(inspectIds,'synthesis')[eGenes,1],
@@ -265,44 +377,113 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 		mean_rates <- apply(array(cbind(wt_rates[,1:2], sh_rates[,1:2]), dim=c(nrow(wt_rates),2,2)), 1:2, mean, na.rm=TRUE)
 
-		message('Evaluating model K_K [1/4]...')
-		outK_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
-			tryCatch(
-				unlist(optim(mean_rates[i,], errorK_K_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],
-					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-				, error=function(e) c(mean_rates[i,], NA, NA, NA, e[1]))
-			,BPPARAM=BPPARAM))
-		outK_K[apply(outK_K[,1:2]<0,1,any),] <- NaN
+		if( !ddp ) {
 
-		message('Evaluating model V_K [2/4]...')
-		outV_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
-			tryCatch(
-				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2] ), 
-					errorV_K_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],  
-					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-				, error=function(e) c(wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], NA, NA, NA, e[1]))
-			,BPPARAM=BPPARAM))
-		outV_K[apply(outV_K[,1:3]<0,1,any),] <- NaN
+			wt_k1 <- ratesFirstGuess(inspectIds,'synthesis')[eGenes,1]
+			wt_k1var <- ratesFirstGuessVar(inspectIds,'synthesis')[eGenes,1]
 
-		message('Evaluating model K_V [3/4]...')
-		outK_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
-			tryCatch(
-				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
-					errorK_V_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
-					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-				, error=function(e) c(mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], NA, NA, NA, e[1]))
-			,BPPARAM=BPPARAM))
-		outK_V[apply(outK_V[,1:3]<0,1,any),] <- NaN
+			wt_data <- cbind(wt_matT, wt_k1)
+			wt_datavar <- cbind(wt_matTvar, wt_k1var)
 
-		message('Evaluating model V_V [4/4]...')
-		outV_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
-			tryCatch(
-				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
-					errorV_V_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
-					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-				, error=function(e) c(wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], NA, NA, NA, e[1]))
-			,BPPARAM=BPPARAM))
-		outV_V[apply(outV_V[,1:4]<0,1,any),] <- NaN
+			sh_k1 <- ratesFirstGuess(inspectIds,'synthesis')[eGenes,2]
+			sh_k1var <- ratesFirstGuessVar(inspectIds,'synthesis')[eGenes,2]
+
+			sh_data <- cbind(sh_matT, sh_k1)
+			sh_datavar <- cbind(sh_matTvar, sh_k1var)
+
+			rownames(wt_datavar) <- rownames(sh_datavar) <- eGenes
+
+			message('Evaluating model K_K [1/4]...')
+			outK_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim(mean_rates[i,], errorK_K_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+					, error=function(e) c(mean_rates[i,], NA, NA, NA, e[1]))
+				,BPPARAM=BPPARAM))
+			outK_K[apply(outK_K[,1:2]<0,1,any),] <- NaN
+
+			message('Evaluating model V_K [2/4]...')
+			outV_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2] ), 
+						errorV_K_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],  
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+					, error=function(e) c(wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], NA, NA, NA, e[1]))
+				,BPPARAM=BPPARAM))
+			outV_K[apply(outV_K[,1:3]<0,1,any),] <- NaN
+
+			message('Evaluating model K_V [3/4]...')
+			outK_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
+						errorK_V_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+					, error=function(e) c(mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], NA, NA, NA, e[1]))
+				,BPPARAM=BPPARAM))
+			outK_V[apply(outK_V[,1:3]<0,1,any),] <- NaN
+
+			message('Evaluating model V_V [4/4]...')
+			outV_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
+						errorV_V_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+					, error=function(e) c(wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], NA, NA, NA, e[1]))
+				,BPPARAM=BPPARAM))
+			outV_V[apply(outV_V[,1:4]<0,1,any),] <- NaN
+
+		} else { ## ddp
+
+			wt_matL <- sf[1] * ratesFirstGuess(inspectIds,'labeled_total')[eGenes,1]
+			wt_matLvar <- sf[1]^2 * ratesFirstGuessVar(inspectIds,'labeled_total')[eGenes,1]
+
+			wt_data <- cbind(wt_matT, wt_matL)
+			wt_datavar <- cbind(wt_matTvar, wt_matLvar)
+
+			sh_matL <- sf[2] * ratesFirstGuess(inspectIds,'labeled_total')[eGenes,1]
+			sh_matLvar <- sf[2]^2 * ratesFirstGuessVar(inspectIds,'labeled_total')[eGenes,1]
+
+			sh_data <- cbind(sh_matT, sh_matL)
+			sh_datavar <- cbind(sh_matTvar, sh_matLvar)
+
+			datader <- c(0)
+
+			print('Evaluating model KK [1/4]...')
+			outK_K <- do.call('rbind', mclapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim(mean_rates[i,], errorKK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader,
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+					, error=function(e) rep(NaN, 6))
+				,mc.cores=detectCores()))
+
+			print('Evaluating model VK [2/4]...')
+			outV_K <- do.call('rbind', mclapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2] ), 
+						errorVK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+					, error=function(e) rep(NaN, 7))
+				,mc.cores=detectCores()))
+
+			print('Evaluating model KV [3/4]...')
+			outK_V <- do.call('rbind', mclapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
+						errorKV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+					, error=function(e) rep(NaN, 7))
+				,mc.cores=detectCores()))
+
+			print('Evaluating model VV [4/4]...')
+			outV_V <- do.call('rbind', mclapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
+						errorVV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+					, error=function(e) rep(NaN, 8))
+				,mc.cores=detectCores()))
+
+		}
 
 		models <- list(
 			'K_K'=outK_K,
@@ -319,16 +500,29 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			)
 		p_vals[is.na(p_vals)] <- 1
 
-		log_liks <- cbind(
-			K_K=sapply(seq_along(eGenes), function(i) logLikK_K_ddpFALSE(models[['K_K']][i,1:3], 
-				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
-			V_K=sapply(seq_along(eGenes), function(i) logLikV_K_ddpFALSE(models[['V_K']][i,1:5], 
-				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
-			K_V=sapply(seq_along(eGenes), function(i) logLikK_V_ddpFALSE(models[['K_V']][i,1:5], 
-				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
-			V_V=sapply(seq_along(eGenes), function(i) logLikV_V_ddpFALSE(models[['V_V']][i,1:6], 
-				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,]))
-			)
+		if( !ddp ) {
+			log_liks <- cbind(
+				K_K=sapply(seq_along(eGenes), function(i) logLikK_K_ddpFALSE(models[['K_K']][i,1:3], 
+					wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+				V_K=sapply(seq_along(eGenes), function(i) logLikV_K_ddpFALSE(models[['V_K']][i,1:5], 
+					wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+				K_V=sapply(seq_along(eGenes), function(i) logLikK_V_ddpFALSE(models[['K_V']][i,1:5], 
+					wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+				V_V=sapply(seq_along(eGenes), function(i) logLikV_V_ddpFALSE(models[['V_V']][i,1:6], 
+					wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,]))
+				)
+		} else {
+			log_liks <- cbind(
+				K_K=sapply(seq_along(eGenes), function(i) logLikKK_ddpTRUE(models[['K_K']][i,1:3], 
+					wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+				V_K=sapply(seq_along(eGenes), function(i) logLikVK_ddpTRUE(models[['V_K']][i,1:5], 
+					wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+				K_V=sapply(seq_along(eGenes), function(i) logLikKV_ddpTRUE(models[['K_V']][i,1:5], 
+					wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+				V_V=sapply(seq_along(eGenes), function(i) logLikVV_ddpTRUE(models[['V_V']][i,1:6], 
+					wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL))
+				)			
+		}
 
 		eOut <- list(
 			eGenes=eGenes,
@@ -1017,6 +1211,21 @@ logLikRatioTest <- function(null, alt, deltadf)
 ### DDP ##############
 ###############
 
+sysScaleChisq_ddpTRUE <- function(par, data, datavar, datader, tL)
+{
+	k1 <- par[1]; k2 <- par[2]; k3 <- par[3]; sf <- par[4]
+	matTder <- datader[1]; preTder <- datader[1]
+
+	preTmod <- ( k1 - preTder ) / k2
+	matTmod <- ( k2 * preTmod - matTder ) / k3
+	preLmod <- sf * k1 / k2 * ( 1 - exp( -k2 * tL ) )
+	matLmod <- sf * k1 / k3 * ( k2 * ( 1 - exp( -k3 * tL ) ) - k3 * ( 1 - exp( -k2 * tL ) ) ) / ( k2 - k3 )
+
+	model <- c(matTmod, preTmod, matLmod, preLmod)
+	sum( ( model - data )^2 / datavar )
+
+}
+
 sys4suModel_ddpTRUE <- function(par, datader, tL)
 {
 	k1 <- par[1]; k2 <- par[2]; k3 <- par[3]
@@ -1024,11 +1233,134 @@ sys4suModel_ddpTRUE <- function(par, datader, tL)
 
 	preTmod <- ( k1 - preTder ) / k2
 	matTmod <- ( k2 * preTmod - matTder ) / k3
-	preLmod <- k1 / k2 * ( 1 - exp( -k2 * tL ) )
+	# preLmod <- k1 / k2 * ( 1 - exp( -k2 * tL ) )
 	matLmod <- k1 / k3 * ( k2 * ( 1 - exp( -k3 * tL ) ) - k3 * ( 1 - exp( -k2 * tL ) ) ) / ( k2 - k3 )
 
-	return(c(matTmod, preTmod, matLmod, preLmod))
+	return(c(matTmod, preTmod, matLmod))
 
+}
+
+sys4suChisq_ddpTRUE <- function(par, data, datavar, datader, tL)
+{
+
+	model <- sys4suModel_ddpTRUE(par, datader, tL)
+	sum( ( model - data )^2 / datavar )
+		
+}
+
+sys4suLoglik_ddpTRUE <- function(par, data, datavar, datader, tL)
+{
+
+	model <- sys4suModel_ddpTRUE(par, datader, tL)
+	sum(log(2*pnorm(-abs(data-model),mean=0,sd=sqrt(datavar))))
+
+}
+
+priorRates_ddpTRUE <- function(data, datader, tL)
+{
+	data <- unname(data)
+	matT <- data[1]; preT <- data[2]; matL <- data[3]; preL <- data[4]
+	matTder <- datader[1]; preTder <- datader[1]
+	k1 <- ( matL + preL ) / tL
+	k2 <- ( k1 - preTder ) / preT
+	k3 <- ( k2 * preT - matTder ) / matT
+	c( k1 , k2 , k3 )
+}
+
+errorKKK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( par , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( par , sh_data, sh_datavar, sh_datader, tL)
+}
+
+errorVKK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c(par[1], par[3], par[4]) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c(par[2], par[3], par[4]) , sh_data, sh_datavar, sh_datader, tL)
+}
+
+errorKVK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c( par[1], par[2], par[4] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c( par[1], par[3], par[4] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+errorKKV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c( par[1], par[2], par[3] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c( par[1], par[2], par[4] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+errorVVK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c( par[1], par[3], par[5] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c( par[2], par[4], par[5] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+errorVKV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c( par[1], par[3], par[4] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c( par[2], par[3], par[5] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+errorKVV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c( par[1], par[2], par[4] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c( par[1], par[3], par[5] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+errorVVV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c( par[1], par[3], par[5] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c( par[2], par[4], par[6] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikKKK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( par , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( par , sh_data, sh_datavar, sh_datader, tL)
+}
+
+logLikVKK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c(par[1], par[3], par[4]) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c(par[2], par[3], par[4]) , sh_data, sh_datavar, sh_datader, tL)
+}
+
+logLikKVK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c( par[1], par[2], par[4] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c( par[1], par[3], par[4] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikKKV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c( par[1], par[2], par[3] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c( par[1], par[2], par[4] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikVVK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c( par[1], par[3], par[5] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c( par[2], par[4], par[5] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikVKV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c( par[1], par[3], par[4] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c( par[2], par[3], par[5] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikKVV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c( par[1], par[2], par[4] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c( par[1], par[3], par[5] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikVVV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c( par[1], par[3], par[5] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c( par[2], par[4], par[6] ) , sh_data, sh_datavar, sh_datader, tL )
 }
 
 simplesys4suModel_ddpTRUE <- function(par, datader, tL)
@@ -1042,3 +1374,79 @@ simplesys4suModel_ddpTRUE <- function(par, datader, tL)
 	return(c(matTmod, matLmod))
 
 }
+
+simplesys4suChisq_ddpTRUE <- function(par, data, datavar, datader, tL)
+{
+
+	model <- simplesys4suModel_ddpTRUE(par, datader, tL)
+	sum( ( model - data )^2 / datavar )
+		
+}
+
+simplesys4suLoglik_ddpTRUE <- function(par, data, datavar, datader, tL)
+{
+
+	model <- simplesys4suModel_ddpTRUE(par, datader, tL)
+	sum(log(2*pnorm(-abs(data-model),mean=0,sd=sqrt(datavar))))
+
+}
+
+simplepriorRates_ddpTRUE <- function(data, datader, tL)
+{
+	data <- unname(data)
+	matT <- data[1]; matL <- data[2]
+	matTder <- datader
+	k1 <- matL / tL
+	k3 <- ( k1 - matTder ) / matT
+	c( k1 , k3 )
+}
+
+errorKK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suChisq_ddpTRUE( par , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suChisq_ddpTRUE( par , sh_data, sh_datavar, sh_datader, tL)
+}
+
+errorVK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suChisq_ddpTRUE( c( par[1], par[3] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suChisq_ddpTRUE( c( par[2], par[3] ) , sh_data, sh_datavar, sh_datader, tL)
+}
+
+errorKV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suChisq_ddpTRUE( c( par[1], par[2] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suChisq_ddpTRUE( c( par[1], par[3] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+errorVV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suChisq_ddpTRUE( c( par[1], par[3] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suChisq_ddpTRUE( c( par[2], par[4] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikKK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suLoglik_ddpTRUE( par , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suLoglik_ddpTRUE( par , sh_data, sh_datavar, sh_datader, tL)
+}
+
+logLikVK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suLoglik_ddpTRUE( c( par[1], par[3] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suLoglik_ddpTRUE( c( par[2], par[3] ) , sh_data, sh_datavar, sh_datader, tL)
+}
+
+logLikKV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suLoglik_ddpTRUE( c( par[1], par[2] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suLoglik_ddpTRUE( c( par[1], par[3] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikVV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suLoglik_ddpTRUE( c( par[1], par[3] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suLoglik_ddpTRUE( c( par[2], par[4] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+

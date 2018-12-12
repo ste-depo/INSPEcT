@@ -13,7 +13,7 @@ BiocStyle::latex()
 \newcommand{\Rmethod}[1]{{\Rfunction{#1}}}
 
 \title{INSPEcT - INference of Synthesis, Processing and dEgradation rates from Transcriptomic data}
-\author{Furlan M. - de Pretis S. - Pelizzola M.}
+\author{de Pretis S. - Furlan M. - Pelizzola M.}
 
 \begin{document}
 

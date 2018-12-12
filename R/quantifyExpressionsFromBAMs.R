@@ -82,6 +82,9 @@ quantifyExpressionsFromBAMs <- function(txdb
 	# allowMultiOverlap
 	if( !is.logical(allowMultiOverlap) )
 		stop('quantifyExpressionsFromBAMs: "allowMultiOverlap" must be a logical.')
+	# prioritizeExons
+	if( !is.logical(prioritizeExons) )
+		stop('quantifyExpressionsFromBAMs: "prioritizeExons" must be a logical.')
 	# strandSpecific
 	if( !( strandSpecific %in% c(0,1,2) ) )
 		stop('quantifyExpressionsFromBAMs: "strandSpecific" must be either a numeric between 0 and 2.')

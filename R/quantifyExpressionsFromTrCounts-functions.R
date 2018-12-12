@@ -122,12 +122,27 @@ quantifyExpressionsFromTrCounts <- function(allcounts
 		colData <- data.frame(tpts=sampleTptsNames)
 		countsTemp <- list(exonsCounts,intronsCounts)
 
-		ddsList <- lapply(countsTemp,function(countData){
-			ori <- DESeqDataSetFromMatrix(countData = countData
-										,colData = colData
-										,design = ~ tpts)
-			suppressMessages(ori <- DESeq(ori))
-			return(ori)})
+		singleConditionAnalysis <- length(levels(sampleTptsNames)) == 1
+
+		if( singleConditionAnalysis ) {
+
+			ddsList <- lapply(countsTemp,function(countData){
+				ori <- DESeqDataSetFromMatrix(countData = countData
+											,colData = colData
+											,design = ~ 1)
+				suppressWarnings(suppressMessages(ori <- DESeq(ori)))
+				return(ori)})
+
+		} else {
+
+			ddsList <- lapply(countsTemp,function(countData){
+				ori <- DESeqDataSetFromMatrix(countData = countData
+											,colData = colData
+											,design = ~ tpts)
+				suppressMessages(ori <- DESeq(ori))
+				return(ori)})
+
+		}
 
 		muExons<-assays(ddsList[[1]])[['mu']]
 		alphaExons<-dispersions(ddsList[[1]])
@@ -151,11 +166,23 @@ quantifyExpressionsFromTrCounts <- function(allcounts
   		varianceExpressionsExons<-countVar2expressions(varCountsExons,exonsWidths,libsize)
   		varianceExpressionsIntrons<-countVar2expressions(varCountsIntrons,intronsWidths,libsize)
 
-		expressionsExons <- t(apply(expressionExonsDESeq,1,function(x)tapply(x, experimentalDesign, mean)))
-		expressionsIntrons <- t(apply(expressionIntronsDESeq,1,function(x)tapply(x, experimentalDesign, mean)))
+  		if( singleConditionAnalysis ) {
 
-		varianceExpressionsExons <- t(apply(varianceExpressionsExons,1,function(x)tapply(x, experimentalDesign, mean)))
-		varianceExpressionsIntrons <- t(apply(varianceExpressionsIntrons,1,function(x)tapply(x, experimentalDesign, mean)))
+			expressionsExons <- as.matrix(rowMeans(expressionExonsDESeq))
+			expressionsIntrons <- as.matrix(rowMeans(expressionIntronsDESeq))
+
+			varianceExpressionsExons <- as.matrix(rowMeans(varianceExpressionsExons))
+			varianceExpressionsIntrons <- as.matrix(rowMeans(varianceExpressionsIntrons))
+
+		} else {
+
+			expressionsExons <- t(apply(expressionExonsDESeq,1,function(x)tapply(x, experimentalDesign, mean)))
+			expressionsIntrons <- t(apply(expressionIntronsDESeq,1,function(x)tapply(x, experimentalDesign, mean)))
+
+			varianceExpressionsExons <- t(apply(varianceExpressionsExons,1,function(x)tapply(x, experimentalDesign, mean)))
+			varianceExpressionsIntrons <- t(apply(varianceExpressionsIntrons,1,function(x)tapply(x, experimentalDesign, mean)))
+
+		}
 
 		rownames(expressionsExons) <- rownames(varianceExpressionsExons) <- rownames(muExons)
 		rownames(expressionsIntrons) <- rownames(varianceExpressionsIntrons) <- rownames(muIntrons)
