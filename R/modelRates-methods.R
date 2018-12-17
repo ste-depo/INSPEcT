@@ -25,16 +25,16 @@
 #' with the same processor (or core). To avoid this, the computation could be splitted in chunks
 #' and the whole data set can be obtaied by combining the chunks (see Examples).
 #' @examples
-#' 
-#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
-#' ## models removal
-#' nascentInspObjThreeGenes <- removeModel(nascentInspObj10[1:3])
-#' nascentInspObjThreeGenes <- modelRates(nascentInspObjThreeGenes, seed=1, BPPARAM=SerialParam())
-#' ## view modeled synthesis rates
-#' viewModelRates(nascentInspObjThreeGenes, 'synthesis')
-#' ## view gene classes
-#' geneClass(nascentInspObjThreeGenes)
-#'
+#' if( Sys.info()["sysname"] ) {
+#' 	nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+#' 	## models removal
+#' 	nascentInspObjThreeGenes <- removeModel(nascentInspObj10[1:3])
+#' 	nascentInspObjThreeGenes <- modelRates(nascentInspObjThreeGenes, seed=1, BPPARAM=SerialParam())
+#' 	## view modeled synthesis rates
+#' 	viewModelRates(nascentInspObjThreeGenes, 'synthesis')
+#' 	## view gene classes
+#' 	geneClass(nascentInspObjThreeGenes)
+#' }
 setMethod('modelRates', 'INSPEcT', function(object
 										  , seed=NULL
 										  , BPPARAM=bpparam()
