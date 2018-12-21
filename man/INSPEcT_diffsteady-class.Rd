@@ -65,36 +65,44 @@ processing rates}
 }}
 
 \examples{
-data('allcounts', package='INSPEcT')
-data('featureWidths', package='INSPEcT')
-data('libsizes', package='INSPEcT')
-
-nascentCounts<-allcounts$nascent
-matureCounts<-allcounts$mature
-conditions<-letters[1:11]
-expDes<-rep(conditions,3)
-tL<-1/6
-
-nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
-      allcounts=nascentCounts
-      ,libsize=nascentLS
-      ,exonsWidths=exWdths
-      ,intronsWidths=intWdths
-      ,experimentalDesign=expDes)
-
-matExp_DESeq2<-quantifyExpressionsFromTrCounts(
-      allcounts=matureCounts
-      ,libsize=totalLS
-      ,exonsWidths=exWdths
-      ,intronsWidths=intWdths
-      ,experimentalDesign=expDes)
-
-nasFullObj <- newINSPEcT(tpts=conditions,labeling_time=tL
-      ,nascentExpressions=nasExp_DESeq2,matureExpressions=matExp_DESeq2)
-
-diffrates = compareSteady(nasFullObj[,c(1,11)])
-head(synthesis(diffrates))
-head(processing(diffrates))
-head(degradation(diffrates))
-featureNames(diffrates)
+if( Sys.info()["sysname"] != "Windows" ) {
+  data('allcounts', package='INSPEcT')
+  data('featureWidths', package='INSPEcT')
+  data('libsizes', package='INSPEcT')
+  
+  nascentCounts<-allcounts$nascent
+  matureCounts<-allcounts$mature
+  conditions<-letters[1:11]
+  expDes<-rep(conditions,3)
+  tL<-1/6
+  
+  nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
+        allcounts=nascentCounts
+        ,libsize=nascentLS
+        ,exonsWidths=exWdths
+        ,intronsWidths=intWdths
+        ,experimentalDesign=expDes)
+  
+  matExp_DESeq2<-quantifyExpressionsFromTrCounts(
+        allcounts=matureCounts
+        ,libsize=totalLS
+        ,exonsWidths=exWdths
+        ,intronsWidths=intWdths
+        ,experimentalDesign=expDes)
+ 
+  nasFullObj <- newINSPEcT(tpts=conditions,labeling_time=tL
+        ,nascentExpressions=nasExp_DESeq2,matureExpressions=matExp_DESeq2)
+  
+  diffrates = compareSteady(nasFullObj[,c(1,11)])
+  head(synthesis(diffrates))
+}
+if( Sys.info()["sysname"] != "Windows" ) {
+  head(processing(diffrates))
+}
+if( Sys.info()["sysname"] != "Windows" ) {
+  head(degradation(diffrates))
+}
+if( Sys.info()["sysname"] != "Windows" ) {
+  featureNames(diffrates)
+}
 }

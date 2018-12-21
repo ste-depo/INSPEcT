@@ -27,20 +27,21 @@
 #' By default, the first element of "experimentalDesign" with replicates.
 #' @return A list containing expressions and associated variances for exons and introns.
 #' @examples
-#' require(TxDb.Mmusculus.UCSC.mm9.knownGene)
-#' txdb<-TxDb.Mmusculus.UCSC.mm9.knownGene
-#' expDes<-c(0,0,1,1)
-#' 
-#' paths_total<-system.file('extdata/', c('bamRep1.bam'
-#'                                       ,'bamRep2.bam'
-#'                                       ,'bamRep3.bam'
-#'                                       ,'bamRep4.bam')
-#'                         ,package='INSPEcT')
-#'
-#' matExp<-quantifyExpressionsFromBAMs(txdb=txdb
-#'                                    ,BAMfiles=paths_total
-#'                                    ,experimentalDesign=expDes)
-
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   require(TxDb.Mmusculus.UCSC.mm9.knownGene)
+#'   txdb<-TxDb.Mmusculus.UCSC.mm9.knownGene
+#'   expDes<-c(0,0,1,1)
+#'   
+#'   paths_total<-system.file('extdata/', c('bamRep1.bam'
+#'                                         ,'bamRep2.bam'
+#'                                         ,'bamRep3.bam'
+#'                                         ,'bamRep4.bam')
+#'                           ,package='INSPEcT')
+#'  
+#'   matExp<-quantifyExpressionsFromBAMs(txdb=txdb
+#'                                      ,BAMfiles=paths_total
+#'                                      ,experimentalDesign=expDes)
+#' }
 quantifyExpressionsFromBAMs <- function(txdb
 					, BAMfiles
 					, experimentalDesign

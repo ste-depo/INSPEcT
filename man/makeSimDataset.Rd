@@ -36,11 +36,12 @@ be modeled and the performance of the modeling can be tested directly aginst the
 created by \code{\link{makeSimModel}}.
 }
 \examples{
-nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
-simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
-tpts <- tpts(nascentInspObj)
-
-nascentInspObj_sim3 <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
+if( Sys.info()["sysname"] != "Windows" ) {
+  nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
+  simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+  tpts <- tpts(nascentInspObj)
+  nascentInspObj_sim3 <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
+}
 }
 \seealso{
 \code{\link{makeSimModel}}

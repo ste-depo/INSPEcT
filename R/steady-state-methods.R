@@ -11,37 +11,39 @@
 #' quantification of the rates as well as the comparison with the statistical significance
 #' associated for each gene and rate. (See \code{\link{INSPEcT_diffsteady-class}})
 #' @examples
-#' data('allcounts', package='INSPEcT')
-#' data('featureWidths', package='INSPEcT')
-#' data('libsizes', package='INSPEcT')
-#' 
-#' nascentCounts<-allcounts$nascent
-#' matureCounts<-allcounts$mature
-#' conditions<-letters[1:11]
-#' expDes<-rep(conditions,3)
-#' tL<-1/6
-#' 
-#' nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
-#'       allcounts=nascentCounts
-#'       ,libsize=nascentLS
-#'       ,exonsWidths=exWdths
-#'       ,intronsWidths=intWdths
-#'       ,experimentalDesign=expDes)
-#' 
-#' matExp_DESeq2<-quantifyExpressionsFromTrCounts(
-#'       allcounts=matureCounts
-#'       ,libsize=totalLS
-#'       ,exonsWidths=exWdths
-#'       ,intronsWidths=intWdths
-#'       ,experimentalDesign=expDes)
-#'
-#' nasFullObj <- newINSPEcT(
-#'       tpts=conditions
-#'       ,labeling_time=tL
-#'       ,nascentExpressions=nasExp_DESeq2
-#'       ,matureExpressions=matExp_DESeq2)
-#' 
-#' diffrates = compareSteady(nasFullObj[,c(1,11)])
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   data('allcounts', package='INSPEcT')
+#'   data('featureWidths', package='INSPEcT')
+#'   data('libsizes', package='INSPEcT')
+#'   
+#'   nascentCounts<-allcounts$nascent
+#'   matureCounts<-allcounts$mature
+#'   conditions<-letters[1:11]
+#'   expDes<-rep(conditions,3)
+#'   tL<-1/6
+#'   
+#'   nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
+#'         allcounts=nascentCounts
+#'         ,libsize=nascentLS
+#'         ,exonsWidths=exWdths
+#'         ,intronsWidths=intWdths
+#'         ,experimentalDesign=expDes)
+#'   
+#'   matExp_DESeq2<-quantifyExpressionsFromTrCounts(
+#'         allcounts=matureCounts
+#'         ,libsize=totalLS
+#'         ,exonsWidths=exWdths
+#'         ,intronsWidths=intWdths
+#'         ,experimentalDesign=expDes)
+#'  
+#'   nasFullObj <- newINSPEcT(
+#'         tpts=conditions
+#'         ,labeling_time=tL
+#'         ,nascentExpressions=nasExp_DESeq2
+#'         ,matureExpressions=matExp_DESeq2)
+#'   
+#'   diffrates = compareSteady(nasFullObj[,c(1,11)])
+#' }
 setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bpparam()) 
 {
 
@@ -821,47 +823,55 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 #' @rdname INSPEcT_diffsteady-class
 #' @examples
-#' data('allcounts', package='INSPEcT')
-#' data('featureWidths', package='INSPEcT')
-#' data('libsizes', package='INSPEcT')
-#' 
-#' nascentCounts<-allcounts$nascent
-#' matureCounts<-allcounts$mature
-#' conditions<-letters[1:11]
-#' expDes<-rep(conditions,3)
-#' tL<-1/6
-#' 
-#' nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
-#'       allcounts=nascentCounts
-#'       ,libsize=nascentLS
-#'       ,exonsWidths=exWdths
-#'       ,intronsWidths=intWdths
-#'       ,experimentalDesign=expDes)
-#' 
-#' matExp_DESeq2<-quantifyExpressionsFromTrCounts(
-#'       allcounts=matureCounts
-#'       ,libsize=totalLS
-#'       ,exonsWidths=exWdths
-#'       ,intronsWidths=intWdths
-#'       ,experimentalDesign=expDes)
-#'
-#' nasFullObj <- newINSPEcT(tpts=conditions,labeling_time=tL
-#'       ,nascentExpressions=nasExp_DESeq2,matureExpressions=matExp_DESeq2)
-#' 
-#' diffrates = compareSteady(nasFullObj[,c(1,11)])
-#' head(synthesis(diffrates))
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   data('allcounts', package='INSPEcT')
+#'   data('featureWidths', package='INSPEcT')
+#'   data('libsizes', package='INSPEcT')
+#'   
+#'   nascentCounts<-allcounts$nascent
+#'   matureCounts<-allcounts$mature
+#'   conditions<-letters[1:11]
+#'   expDes<-rep(conditions,3)
+#'   tL<-1/6
+#'   
+#'   nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
+#'         allcounts=nascentCounts
+#'         ,libsize=nascentLS
+#'         ,exonsWidths=exWdths
+#'         ,intronsWidths=intWdths
+#'         ,experimentalDesign=expDes)
+#'   
+#'   matExp_DESeq2<-quantifyExpressionsFromTrCounts(
+#'         allcounts=matureCounts
+#'         ,libsize=totalLS
+#'         ,exonsWidths=exWdths
+#'         ,intronsWidths=intWdths
+#'         ,experimentalDesign=expDes)
+#'  
+#'   nasFullObj <- newINSPEcT(tpts=conditions,labeling_time=tL
+#'         ,nascentExpressions=nasExp_DESeq2,matureExpressions=matExp_DESeq2)
+#'   
+#'   diffrates = compareSteady(nasFullObj[,c(1,11)])
+#'   head(synthesis(diffrates))
+#' }
 setMethod('synthesis', 'INSPEcT_diffsteady', function(object) slot(object, 'synthesis'))
 #' @rdname INSPEcT_diffsteady-class
 #' @examples
-#' head(processing(diffrates))
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   head(processing(diffrates))
+#' }
 setMethod('processing', 'INSPEcT_diffsteady', function(object) slot(object, 'processing'))
 #' @rdname INSPEcT_diffsteady-class
 #' @examples
-#' head(degradation(diffrates))
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   head(degradation(diffrates))
+#' }
 setMethod('degradation', 'INSPEcT_diffsteady', function(object) slot(object, 'degradation'))
 #' @rdname INSPEcT_diffsteady-class
 #' @examples
-#' featureNames(diffrates)
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   featureNames(diffrates)
+#' }
 setMethod('featureNames', 'INSPEcT_diffsteady', function(object) rownames(slot(object, 'synthesis')))
 
 #' @name plotMA
@@ -887,38 +897,40 @@ NULL
 #' @seealso \url{http://en.wikipedia.org/wiki/MA_plot}
 #' @rdname INSPEcT_diffsteady-class
 #' @examples
-#' data('allcounts', package='INSPEcT')
-#' data('featureWidths', package='INSPEcT')
-#' data('libsizes', package='INSPEcT')
-#' 
-#' nascentCounts<-allcounts$nascent
-#' matureCounts<-allcounts$mature
-#' conditions<-letters[1:11]
-#' expDes<-rep(conditions,3)
-#' tL<-1/6
-#' 
-#' nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
-#'       allcounts=nascentCounts
-#'       ,libsize=nascentLS
-#'       ,exonsWidths=exWdths
-#'       ,intronsWidths=intWdths
-#'       ,experimentalDesign=expDes)
-#' 
-#' matExp_DESeq2<-quantifyExpressionsFromTrCounts(
-#'       allcounts=matureCounts
-#'       ,libsize=totalLS
-#'       ,exonsWidths=exWdths
-#'       ,intronsWidths=intWdths
-#'       ,experimentalDesign=expDes)
-#'
-#' nasFullObj <- newINSPEcT(tpts=conditions
-#'       ,labeling_time=tL
-#'       ,nascentExpressions=nasExp_DESeq2
-#'       ,matureExpressions=matExp_DESeq2)
-#' 
-#' diffrates = compareSteady(nasFullObj[,c(1,11)])
-#'
-#' plotMA(diffrates, padj=.01)
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   data('allcounts', package='INSPEcT')
+#'   data('featureWidths', package='INSPEcT')
+#'   data('libsizes', package='INSPEcT')
+#'   
+#'   nascentCounts<-allcounts$nascent
+#'   matureCounts<-allcounts$mature
+#'   conditions<-letters[1:11]
+#'   expDes<-rep(conditions,3)
+#'   tL<-1/6
+#'   
+#'   nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
+#'         allcounts=nascentCounts
+#'         ,libsize=nascentLS
+#'         ,exonsWidths=exWdths
+#'         ,intronsWidths=intWdths
+#'         ,experimentalDesign=expDes)
+#'   
+#'   matExp_DESeq2<-quantifyExpressionsFromTrCounts(
+#'         allcounts=matureCounts
+#'         ,libsize=totalLS
+#'         ,exonsWidths=exWdths
+#'         ,intronsWidths=intWdths
+#'         ,experimentalDesign=expDes)
+#'  
+#'   nasFullObj <- newINSPEcT(tpts=conditions
+#'         ,labeling_time=tL
+#'         ,nascentExpressions=nasExp_DESeq2
+#'         ,matureExpressions=matExp_DESeq2)
+#'   
+#'   diffrates = compareSteady(nasFullObj[,c(1,11)])
+#'  
+#'   plotMA(diffrates, padj=.01)
+#' }
 setMethod('plotMA', 'INSPEcT_diffsteady', function(object, ...) {
 	addargs <- list(...)
 

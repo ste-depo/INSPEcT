@@ -25,7 +25,7 @@
 #' with the same processor (or core). To avoid this, the computation could be splitted in chunks
 #' and the whole data set can be obtaied by combining the chunks (see Examples).
 #' @examples
-#' if( Sys.info()["sysname"] ) {
+#' if( Sys.info()["sysname"] != "Windows" ) {
 #' 	nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' 	## models removal
 #' 	nascentInspObjThreeGenes <- removeModel(nascentInspObj10[1:3])

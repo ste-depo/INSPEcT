@@ -17,23 +17,25 @@
 #' @return None
 #' @seealso \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}, \code{\link{rocCurve}}
 #' @examples
-#' nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
-#'
-#' simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
 #'  
-#' # newTpts<-simRates@params$tpts
-#' # nascentInspObj_sim3<-makeSimDataset(object=simRates
-#' #                                    ,tpts=newTpts
-#' #                                    ,nRep=3
-#' #                                    ,NoNascent=FALSE
-#' #                                    ,seed=1)
-#' # nascentInspObj_sim3<-modelRates(nascentInspObj_sim3[1:100]
-#' #                                ,seed=1)
-#' # (not evaluated to save computational time)
-#'
-#' data("nascentInspObj_sim3",package='INSPEcT')
-#'
-#' rocThresholds(simRates[1:100],nascentInspObj_sim3,bTsh=c(.01,.01,.05),cTsh=.1)
+#'   simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+#'    
+#'   # newTpts<-simRates@params$tpts
+#'   # nascentInspObj_sim3<-makeSimDataset(object=simRates
+#'   #                                    ,tpts=newTpts
+#'   #                                    ,nRep=3
+#'   #                                    ,NoNascent=FALSE
+#'   #                                    ,seed=1)
+#'   # nascentInspObj_sim3<-modelRates(nascentInspObj_sim3[1:100]
+#'   #                                ,seed=1)
+#'   # (not evaluated to save computational time)
+#'  
+#'   data("nascentInspObj_sim3",package='INSPEcT')
+#'  
+#'   rocThresholds(simRates[1:100],nascentInspObj_sim3,bTsh=c(.01,.01,.05),cTsh=.1)
+#' }
 
 setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT_model'), 
 	function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1)) {
