@@ -24,23 +24,23 @@ an INSPEcT object per time points because when removing time points
 the modeling is not valid anymore.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-mycerIds_5genes <- mycerIds10[1:5]
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+nascentInspObj10_5genes <- nascentInspObj10[1:5]
 
 ## This will turn out into an error:
-\dontrun{mycerIds_5genes_5tpts <- mycerIds10[1:5, 1:5]
+\dontrun{nascentInspObj10_5genes_5tpts <- nascentInspObj10[1:5, 1:5]
 }
 
 ## Before subsetting time points, the model should be removed:
-mycerIds_5genes_5tpts <- removeModel(mycerIds10)[1:5, 1:5]
+nascentInspObj10_5genes_5tpts <- removeModel(nascentInspObj10)[1:5, 1:5]
 
 ## Also this will turn out into an error:
-\dontrun{mycerIds10 <- modelRates(mycerIds10)}
+\dontrun{nascentInspObj10 <- modelRates(nascentInspObj10)}
 
 ## Before running the model again, or changing modeling parameters,
 ## the previous model should be removed:
-mycerIds10_old <- mycerIds10
-mycerIds10_new <- removeModel(mycerIds10)
-modelingParams(mycerIds10_new)$useSigmoidFun <- FALSE
-\dontrun{mycerIds10_new <- modelRates(mycerIds10_new)}
+nascentInspObj10_old <- nascentInspObj10
+nascentInspObj10_new <- removeModel(nascentInspObj10)
+modelingParams(nascentInspObj10_new)$useSigmoidFun <- FALSE
+\dontrun{nascentInspObj10_new <- modelRates(nascentInspObj10_new)}
 }

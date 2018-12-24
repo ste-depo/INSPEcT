@@ -21,7 +21,7 @@ profiled in steady-state conditions.
 Possible arguments to "plotMA":
 \itemize{
 \item "rate" - A character, which represent the rate to be visualized, either "synthesis", "processing" or "degradation". By default, "synthesis" is chosen.
-\item "alpha" - A numeric, The confidence interval for significance (FDR), by default 0.1
+\item "padj" - A numeric, The p-adjusted threshold for significance. Genes with p-adjusted lower than the threshold will be depicted as orange triangles. By default set to -Inf, meaning that no genes will be highlighted.
 \item "xlim" - A numeric vector of length 2, limits of x-axis, by default the range of the data.
 \item "xlab" - A character, the label of x-axis, by default "log2 geometric mean"
 \item "ylim" - A numeric vector of length 2, limits of y-axis, by default the range of the data.
@@ -30,10 +30,40 @@ Possible arguments to "plotMA":
 }
 }
 \examples{
-data('simData3rep', package='INSPEcT')
-data('simData3rep_2', package='INSPEcT')
-diffrates <- compareSteady(simData3rep, simData3rep_2)
-plotMA(diffrates, alpha=.5)
+if( Sys.info()["sysname"] != "Windows" ) {
+  data('allcounts', package='INSPEcT')
+  data('featureWidths', package='INSPEcT')
+  data('libsizes', package='INSPEcT')
+  
+  nascentCounts<-allcounts$nascent
+  matureCounts<-allcounts$mature
+  conditions<-letters[1:11]
+  expDes<-rep(conditions,3)
+  tL<-1/6
+  
+  nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
+        allcounts=nascentCounts
+        ,libsize=nascentLS
+        ,exonsWidths=exWdths
+        ,intronsWidths=intWdths
+        ,experimentalDesign=expDes)
+  
+  matExp_DESeq2<-quantifyExpressionsFromTrCounts(
+        allcounts=matureCounts
+        ,libsize=totalLS
+        ,exonsWidths=exWdths
+        ,intronsWidths=intWdths
+        ,experimentalDesign=expDes)
+ 
+  nasFullObj <- newINSPEcT(tpts=conditions
+        ,labeling_time=tL
+        ,nascentExpressions=nasExp_DESeq2
+        ,matureExpressions=matExp_DESeq2)
+  
+  diffrates = compareSteady(nasFullObj[,c(1,11)])
+ 
+  plotMA(diffrates, padj=.01)
+}
 }
 \seealso{
 \url{http://en.wikipedia.org/wiki/MA_plot}

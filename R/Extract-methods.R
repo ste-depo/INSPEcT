@@ -1,7 +1,7 @@
 #' Extract Parts of an INSPEcT or an INSPEcT_model Object
 #'
 #' @description
-#' Operators acting on INSPEcT or INSPEcT_model objects 
+#' Operators acting on INSPEcT, INSPEcT_model or INSPEcT_diffsteady objects 
 #' to extract parts. INSPEcT_model objects can be subsetted only by gene.
 #' INSPEcT objects can be subsetted either by gene id or time point. In case
 #' of subsetting an INSPEcT object by time point, the model should be empty.
@@ -32,19 +32,20 @@ setMethod('[', 'INSPEcT_model', function(x, i) {
 #' @param j A numeric, a vector of logicals indicating the 
 #' time points to be extracted
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' mycerIds_5genes <- mycerIds10[1:5]
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+#' nascentInspObj10_5genes <- nascentInspObj10[1:5]
 #' \dontrun{
 #' ## This will turn out into an error:
-#' mycerIds_5genes_5tpts <- mycerIds10[1:5, 1:5]
+#' nascentInspObj10_5genes_5tpts <- nascentInspObj10[1:5, 1:5]
 #' }
 #' ## Before subsetting time points, the model should be removed:
-#' mycerIds_5genes_5tpts <- removeModel(mycerIds10)[1:5, 1:5]
+#' nascentInspObj10_5genes_5tpts <- removeModel(nascentInspObj10)[1:5, 1:5]
 setMethod('[', 'INSPEcT', function(x, i, j) {
 	# subset the expressionSet slots (if populated)
 	if( !missing(i) ) {
 		if( is.logical(i) ) i <- which(i)
 		if( nrow(x@ratesFirstGuess)>0 ) x@ratesFirstGuess <- x@ratesFirstGuess[i]
+		if( nrow(x@ratesFirstGuessVar)>0 ) x@ratesFirstGuessVar <- x@ratesFirstGuessVar[i]
 		if( nrow(x@modelRates)>0 ) x@modelRates <- x@modelRates[i]
 		# subset the INSPEcT_model slot
 		x@model <- x@model[i]		
@@ -57,15 +58,32 @@ setMethod('[', 'INSPEcT', function(x, i, j) {
 			if( ncol(x@ratesFirstGuess)>0 ) {
 				x@tpts <- x@tpts[j]
 				x@labeledSF <- x@labeledSF[j]
-				x@totalSF <- x@totalSF[j]
 				ix <- pData(x@ratesFirstGuess)$time %in% x@tpts
 				x@ratesFirstGuess <- x@ratesFirstGuess[,ix]
+				ix <- pData(x@ratesFirstGuessVar)$time %in% x@tpts
+				x@ratesFirstGuessVar <- x@ratesFirstGuessVar[,ix]
 			}
 		}
 	}
 	# return
 	return( x )
 	})
+
+#' @rdname Extract
+setMethod('[', 'INSPEcT_diffsteady', function(x, i, j) {
+	if( !missing(i) ) {
+		x@synthesis <- x@synthesis[i,]
+		x@degradation <- x@degradation[i,]
+		x@processing <- x@processing[i,]
+	}
+	if( !missing(j) ) {
+		x@synthesis <- x@synthesis[,j]
+		x@degradation <- x@degradation[,j]
+		x@processing <- x@processing[,j]
+	}
+	return( x )
+	})
+
 
 #' @rdname removeModel
 #' 
@@ -76,25 +94,25 @@ setMethod('[', 'INSPEcT', function(x, i, j) {
 #' @param object An Object of class INSPEcT
 #' @return An Object of class INSPEcT
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' mycerIds_5genes <- mycerIds10[1:5]
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+#' nascentInspObj10_5genes <- nascentInspObj10[1:5]
 #'
 #' ## This will turn out into an error:
-#' \dontrun{mycerIds_5genes_5tpts <- mycerIds10[1:5, 1:5]
+#' \dontrun{nascentInspObj10_5genes_5tpts <- nascentInspObj10[1:5, 1:5]
 #' }
 #' 
 #' ## Before subsetting time points, the model should be removed:
-#' mycerIds_5genes_5tpts <- removeModel(mycerIds10)[1:5, 1:5]
+#' nascentInspObj10_5genes_5tpts <- removeModel(nascentInspObj10)[1:5, 1:5]
 #'
 #' ## Also this will turn out into an error:
-#' \dontrun{mycerIds10 <- modelRates(mycerIds10)}
+#' \dontrun{nascentInspObj10 <- modelRates(nascentInspObj10)}
 #' 
 #' ## Before running the model again, or changing modeling parameters,
 #' ## the previous model should be removed:
-#' mycerIds10_old <- mycerIds10
-#' mycerIds10_new <- removeModel(mycerIds10)
-#' modelingParams(mycerIds10_new)$useSigmoidFun <- FALSE
-#' \dontrun{mycerIds10_new <- modelRates(mycerIds10_new)}
+#' nascentInspObj10_old <- nascentInspObj10
+#' nascentInspObj10_new <- removeModel(nascentInspObj10)
+#' modelingParams(nascentInspObj10_new)$useSigmoidFun <- FALSE
+#' \dontrun{nascentInspObj10_new <- modelRates(nascentInspObj10_new)}
 setMethod('removeModel', 'INSPEcT', function(object) {
 	object@model@ratesSpecs <- list()
 	return(object)
@@ -117,10 +135,10 @@ setMethod('removeModel', 'INSPEcT', function(object) {
 #' @return An Object of class INSPEcT
 #'
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' mycerIds_2genes <- mycerIds10[1:2]
-#' mycerIds_5genes <- mycerIds10[6:10]
-#' mycerIds_7genes <- combine(mycerIds_2genes, mycerIds_5genes)
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+#' nascentInspObj10_2genes <- nascentInspObj10[1:2]
+#' nascentInspObj10_5genes <- nascentInspObj10[6:10]
+#' nascentInspObj10_7genes <- combine(nascentInspObj10_2genes, nascentInspObj10_5genes)
 #'
 #' @details
 #' In case the same gene is contained in more than one object that the user
@@ -157,10 +175,6 @@ setMethod('combine', signature(x='INSPEcT', y='INSPEcT'), function(x, y, ...) {
 		newObject@labeledSF <- dots[[1]]@labeledSF
 	else
 		newObject@labeledSF <- rep(NA, length(dots[[1]]@tpts))
-	if( all(sapply(dots[-1], function(x) identical(x@totalSF, dots[[1]]@totalSF))) )
-		newObject@totalSF <- dots[[1]]@totalSF
-	else
-		newObject@totalSF <- rep(NA, length(dots[[1]]@tpts))
 	if( all(sapply(dots[-1], function(x) identical(x@tL, dots[[1]]@tL))) )
 		newObject@tL <- dots[[1]]@tL
 	else
@@ -185,9 +199,9 @@ setMethod('combine', signature(x='INSPEcT', y='INSPEcT'), function(x, y, ...) {
 #' @param ... Additional arguments to match the generic function
 #' @return A list containing objects of class INSPEcT
 #' @examples
-#' data('mycerIds10')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' splitIdx <- c(1,1,1,2,2,2,3,3,3,4)
-#' mycerIds10Split <- split(mycerIds10, splitIdx)
+#' nascentInspObj10Split <- split(nascentInspObj10, splitIdx)
 #' @docType methods
 #' @name split
 NULL

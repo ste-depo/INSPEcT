@@ -5,134 +5,811 @@
 #' of synthesis, processing or degradation rates in two different steady-state conditions. 
 #' The two INSPEcT objects must have been profiled with replicates in order to provide
 #' a statistical significance to the differences between their rates.
-#' @param inspectIds1 An object of calss INSPEcT
-#' @param inspectIds2 A second object of calss INSPEcT
+#' @param inspectIds An object of calss INSPEcT with two conditions
+#' @param BPPARAM Configuration for BiocParallel parallelization. By default is set to bpparam()
 #' @return An object of class INSPEcT_diffsteady which contains both the absolute 
-#' quantification of the rates as well as the comparison with the statistcal significance
+#' quantification of the rates as well as the comparison with the statistical significance
 #' associated for each gene and rate. (See \code{\link{INSPEcT_diffsteady-class}})
 #' @examples
-#' ## load data
-#' data('simRates', package='INSPEcT')
-#' data('simData3rep', package='INSPEcT')
-#' ## generate a new data set with 3 replicate to make the comparison
-#' newTpts <- c(0, 1/6)
-#' simData3rep_2 <- makeSimDataset(simRates, newTpts, 3, seed=2)
-#' ## compare
-#' diffrates <- compareSteady(simData3rep, simData3rep_2)
-#' ## visualize results
-#' diffrates
-setMethod('compareSteady', signature('INSPEcT','INSPEcT'), 
-	function(inspectIds1, inspectIds2) 
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   data('allcounts', package='INSPEcT')
+#'   data('featureWidths', package='INSPEcT')
+#'   data('libsizes', package='INSPEcT')
+#'   
+#'   nascentCounts<-allcounts$nascent
+#'   matureCounts<-allcounts$mature
+#'   conditions<-letters[1:11]
+#'   expDes<-rep(conditions,3)
+#'   tL<-1/6
+#'   
+#'   nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
+#'         allcounts=nascentCounts
+#'         ,libsize=nascentLS
+#'         ,exonsWidths=exWdths
+#'         ,intronsWidths=intWdths
+#'         ,experimentalDesign=expDes)
+#'   
+#'   matExp_DESeq2<-quantifyExpressionsFromTrCounts(
+#'         allcounts=matureCounts
+#'         ,libsize=totalLS
+#'         ,exonsWidths=exWdths
+#'         ,intronsWidths=intWdths
+#'         ,experimentalDesign=expDes)
+#'  
+#'   nasFullObj <- newINSPEcT(
+#'         tpts=conditions
+#'         ,labeling_time=tL
+#'         ,nascentExpressions=nasExp_DESeq2
+#'         ,matureExpressions=matExp_DESeq2)
+#'   
+#'   diffrates = compareSteady(nasFullObj[,c(1,11)])
+#' }
+setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bpparam()) 
 {
 
-	if( all(is.na(fData(inspectIds1@ratesFirstGuess)$nRepT0)) |
-		all(fData(inspectIds1@ratesFirstGuess)$nRepT0<2) )
-		stop('Object "inspectIds1" has less than two replicates at steady state.')
+	if( length(tpts(inspectIds))!=2 ) stop('compareSteady: two conditions at the time can be compared.')
 
-	if( all(is.na(fData(inspectIds2@ratesFirstGuess)$nRepT0)) |
-		all(fData(inspectIds2@ratesFirstGuess)$nRepT0<2) )
-		stop('Object "inspectIds2" has less than two replicates at steady state.')
+	## get parameters for the analysis from the INSPEcT object
 
-	cGenes <- intersect(featureNames(inspectIds1), featureNames(inspectIds2))
-	if( length(cGenes)==0 ) {
-		stop('compareSteady: The two datasets do not share any gene.')
+	ddp <- inspectIds@degDuringPulse
+	cTsh <- thresholds(inspectIds)$chisquare
+	bTsh <- thresholds(inspectIds)$brown
+	sf <- inspectIds@labeledSF
+	tL <- inspectIds@tL
+
+	## divide the dataset in 2: full (eiGenes) and simple (eGenes)
+
+	allGenes <- featureNames(inspectIds)
+	eGenes <- allGenes[apply(is.na(ratesFirstGuess(inspectIds, 'processing')),1,all)]
+	eiGenes <- setdiff(allGenes, eGenes)
+
+	#########
+	## FULL #####
+	##############
+
+	message(paste('Comparative analysis of the',length(eiGenes),'with both intronic and exonic signals.'))
+
+	## concentrations
+
+	wt_preT <- ratesFirstGuess(inspectIds,'preMRNA')[eiGenes,1]
+	wt_matT <- ratesFirstGuess(inspectIds,'total')[eiGenes,1] - wt_preT
+	wt_preTvar <- ratesFirstGuessVar(inspectIds,'preMRNA')[eiGenes,1]
+	wt_matTvar <- ratesFirstGuessVar(inspectIds,'total')[eiGenes,1] + wt_preTvar
+
+	sh_preT <- ratesFirstGuess(inspectIds,'preMRNA')[eiGenes,2]
+	sh_matT <- ratesFirstGuess(inspectIds,'total')[eiGenes,2] - sh_preT
+	sh_preTvar <- ratesFirstGuessVar(inspectIds,'preMRNA')[eiGenes,2]
+	sh_matTvar <- ratesFirstGuessVar(inspectIds,'total')[eiGenes,2] + sh_preTvar
+
+	## rates
+
+	wt_rates <- cbind(
+		k1=ratesFirstGuess(inspectIds,'synthesis')[eiGenes,1],
+		k2=ratesFirstGuess(inspectIds,'processing')[eiGenes,1],
+		k3=ratesFirstGuess(inspectIds,'degradation')[eiGenes,1])
+
+	sh_rates <- cbind(
+		k1=ratesFirstGuess(inspectIds,'synthesis')[eiGenes,2],
+		k2=ratesFirstGuess(inspectIds,'processing')[eiGenes,2],
+		k3=ratesFirstGuess(inspectIds,'degradation')[eiGenes,2])
+
+	mean_rates <- apply(array(cbind(wt_rates[,1:3], sh_rates[,1:3]), dim=c(nrow(wt_rates), 3,2)), 1:2, mean, na.rm=TRUE)
+
+	if( !ddp ) {
+
+		wt_k1 <- ratesFirstGuess(inspectIds,'synthesis')[eiGenes,1]
+		wt_k1var <- ratesFirstGuessVar(inspectIds,'synthesis')[eiGenes,1]
+
+		wt_data <- cbind(wt_matT, wt_preT, wt_k1)
+		wt_datavar <- cbind(wt_matTvar, wt_preTvar, wt_k1var)
+
+		sh_k1 <- ratesFirstGuess(inspectIds,'synthesis')[eiGenes,2]
+		sh_k1var <- ratesFirstGuessVar(inspectIds,'synthesis')[eiGenes,2]
+
+		sh_data <- cbind(sh_matT, sh_preT, sh_k1)
+		sh_datavar <- cbind(sh_matTvar, sh_preTvar, sh_k1var)
+
+		message('Evaluating model KKK [1/8]...')
+		outKKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim(mean_rates[i,], errorKKK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 7))
+			,BPPARAM=BPPARAM))
+		outKKK[apply(outKKK[,1:3]<0,1,any),] <- NaN
+
+		message('Evaluating model VKK [2/8]...')
+		outVKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], mean_rates[i,3] ), 
+					errorVKK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],  
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 8))
+			,BPPARAM=BPPARAM))
+		outVKK[apply(outVKK[,1:4]<0,1,any),] <- NaN
+
+		message('Evaluating model KVK [3/8]...')
+		outKVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
+					errorKVK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 8))
+			,BPPARAM=BPPARAM))
+		outKVK[apply(outKVK[,1:4]<0,1,any),] <- NaN
+
+		message('Evaluating model KKV [4/8]...')
+		outKKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( mean_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorKKV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 8))
+			,BPPARAM=BPPARAM))
+		outKKV[apply(outKKV[,1:4]<0,1,any),] <- NaN
+
+		message('Evaluating model VVK [5/8]...')
+		outVVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
+					errorVVK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 9))
+			,BPPARAM=BPPARAM))
+		outVVK[apply(outVVK[,1:5]<0,1,any),] <- NaN
+
+		message('Evaluating model VKV [6/8]...')
+		outVKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorVKV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 9))
+			,BPPARAM=BPPARAM))
+		outVKV[apply(outVKV[,1:5]<0,1,any),] <- NaN
+
+		message('Evaluating model KVV [7/8]...')
+		outKVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorKVV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 9))
+			,BPPARAM=BPPARAM))
+		outKVV[apply(outKVV[,1:5]<0,1,any),] <- NaN
+
+		message('Evaluating model VVV [8/8]...')
+		outVVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorVVV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+				, error=function(e) rep(NaN, 10))
+			,BPPARAM=BPPARAM))
+		outVVV[apply(outVVV[,1:6]<0,1,any),] <- NaN
+
+	} else { ## ddp
+
+		datader <- c(0,0)
+
+		wt_preL <- sf[1] * ratesFirstGuess(inspectIds,'labeled_preMRNA')[eiGenes,1]
+		wt_matL <- sf[1] * ratesFirstGuess(inspectIds,'labeled_total')[eiGenes,1] - wt_preL
+		wt_preLvar <- sf[1]^2 * ratesFirstGuessVar(inspectIds,'labeled_preMRNA')[eiGenes,1]
+		wt_matLvar <- sf[1]^2 * ratesFirstGuessVar(inspectIds,'labeled_total')[eiGenes,1] + wt_preLvar
+
+		wt_data <- cbind(wt_matT, wt_preT, wt_matL)
+		wt_datavar <- cbind(wt_matTvar, wt_preTvar, wt_matLvar)
+
+		sh_preL <- sf[2] * ratesFirstGuess(inspectIds,'labeled_preMRNA')[eiGenes,2]
+		sh_matL <- sf[2] * ratesFirstGuess(inspectIds,'labeled_total')[eiGenes,2] - sh_preL
+		sh_preLvar <- sf[2]^2 * ratesFirstGuessVar(inspectIds,'labeled_preMRNA')[eiGenes,2]
+		sh_matLvar <- sf[2]^2 * ratesFirstGuessVar(inspectIds,'labeled_total')[eiGenes,2] + sh_preLvar
+
+		sh_data <- cbind(sh_matT, sh_preT, sh_matL)
+		sh_datavar <- cbind(sh_matTvar, sh_preTvar, sh_matLvar)
+
+		print('Evaluating model KKK [1/8]...')
+		outKKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim(mean_rates[i,], errorKKK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader,
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 7))
+			,BPPARAM=BPPARAM))
+		outKKK[apply(outKKK[,1:3]<0,1,any),] <- NaN
+
+		print('Evaluating model VKK [2/8]...')
+		outVKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], mean_rates[i,3] ), 
+					errorVKK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 8))
+			,BPPARAM=BPPARAM))
+		outVKK[apply(outVKK[,1:4]<0,1,any),] <- NaN
+
+		print('Evaluating model KVK [3/8]...')
+		outKVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
+					errorKVK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 8))
+			,BPPARAM=BPPARAM))
+		outKVK[apply(outKVK[,1:4]<0,1,any),] <- NaN
+
+		print('Evaluating model KKV [4/8]...')
+		outKKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( mean_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorKKV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 8))
+			,BPPARAM=BPPARAM))
+		outKKV[apply(outKKV[,1:4]<0,1,any),] <- NaN
+
+		print('Evaluating model VVK [5/8]...')
+		outVVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
+					errorVVK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 9))
+			,BPPARAM=BPPARAM))
+		outVVK[apply(outVVK[,1:5]<0,1,any),] <- NaN
+
+		print('Evaluating model VKV [6/8]...')
+		outVKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorVKV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 9))
+			,BPPARAM=BPPARAM))
+		outVKV[apply(outVKV[,1:5]<0,1,any),] <- NaN
+
+		print('Evaluating model KVV [7/8]...')
+		outKVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorKVV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 9))
+			,BPPARAM=BPPARAM))
+		outKVV[apply(outKVV[,1:5]<0,1,any),] <- NaN
+
+		print('Evaluating model VVV [8/8]...')
+		outVVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
+			tryCatch(
+				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
+					errorVVV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+				, error=function(e) rep(NaN, 10))
+			,BPPARAM=BPPARAM))
+		outVVV[apply(outVVV[,1:6]<0,1,any),] <- NaN
+
+	}
+
+	models <- list(
+		KKK=outKKK,
+		VKK=outVKK,
+		KVK=outKVK,
+		KKV=outKKV,
+		VVK=outVVK,
+		VKV=outVKV,
+		KVV=outKVV,
+		VVV=outVVV
+		)
+
+	p_vals <- cbind(
+		KKK=pchisq(models[['KKK']][,'value'], 5),
+		VKK=pchisq(models[['VKK']][,'value'], 4),
+		KVK=pchisq(models[['KVK']][,'value'], 4),
+		KKV=pchisq(models[['KKV']][,'value'], 4),
+		VVK=pchisq(models[['VVK']][,'value'], 3),
+		VKV=pchisq(models[['VKV']][,'value'], 3),
+		KVV=pchisq(models[['KVV']][,'value'], 3),
+		VVV=pchisq(models[['VVV']][,'value'], 2)
+		)
+	p_vals[is.na(p_vals)] <- 1
+
+	if( !ddp ) {
+		log_liks <- cbind(
+			KKK=sapply(seq_along(eiGenes), function(i) logLikKKK_ddpFALSE(models[['KKK']][i,1:3], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			VKK=sapply(seq_along(eiGenes), function(i) logLikVKK_ddpFALSE(models[['VKK']][i,1:4], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			KVK=sapply(seq_along(eiGenes), function(i) logLikKVK_ddpFALSE(models[['KVK']][i,1:4], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			KKV=sapply(seq_along(eiGenes), function(i) logLikKKV_ddpFALSE(models[['KKV']][i,1:4], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			VVK=sapply(seq_along(eiGenes), function(i) logLikVVK_ddpFALSE(models[['VVK']][i,1:5], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			VKV=sapply(seq_along(eiGenes), function(i) logLikVKV_ddpFALSE(models[['VKV']][i,1:5], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			KVV=sapply(seq_along(eiGenes), function(i) logLikKVV_ddpFALSE(models[['KVV']][i,1:5], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+			VVV=sapply(seq_along(eiGenes), function(i) logLikVVV_ddpFALSE(models[['VVV']][i,1:6], 
+				wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,]))
+			)		
+	} else { ## ddp
+		log_liks <- cbind(
+			KKK=sapply(seq_along(eiGenes), function(i) logLikKKK_ddpTRUE(models[['KKK']][i,1:3], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			VKK=sapply(seq_along(eiGenes), function(i) logLikVKK_ddpTRUE(models[['VKK']][i,1:4], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			KVK=sapply(seq_along(eiGenes), function(i) logLikKVK_ddpTRUE(models[['KVK']][i,1:4], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			KKV=sapply(seq_along(eiGenes), function(i) logLikKKV_ddpTRUE(models[['KKV']][i,1:4], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			VVK=sapply(seq_along(eiGenes), function(i) logLikVVK_ddpTRUE(models[['VVK']][i,1:5], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			VKV=sapply(seq_along(eiGenes), function(i) logLikVKV_ddpTRUE(models[['VKV']][i,1:5], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			KVV=sapply(seq_along(eiGenes), function(i) logLikKVV_ddpTRUE(models[['KVV']][i,1:5], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+			VVV=sapply(seq_along(eiGenes), function(i) logLikVVV_ddpTRUE(models[['VVV']][i,1:6], 
+				wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL))
+			)		
+	}
+
+	eiOut <- list(
+		eiGenes=eiGenes,
+		models=models,
+		p_vals=p_vals,
+		log_liks=log_liks
+		)
+
+	if( length( eGenes ) > 0 ) 
+	{
+		message(paste('Comparative analysis of the',length(eGenes),'without intronic signals.'))
+
+		wt_matT <- ratesFirstGuess(inspectIds,'total')[eGenes,1]
+		wt_matTvar <- ratesFirstGuessVar(inspectIds,'total')[eGenes,1]
+
+		sh_matT <- ratesFirstGuess(inspectIds,'total')[eGenes,2]
+		sh_matTvar <- ratesFirstGuessVar(inspectIds,'total')[eGenes,2]
+
+		wt_rates <- cbind(
+			k1=ratesFirstGuess(inspectIds,'synthesis')[eGenes,1],
+			k3=ratesFirstGuess(inspectIds,'degradation')[eGenes,1])
+
+		sh_rates <- cbind(
+			k1=ratesFirstGuess(inspectIds,'synthesis')[eGenes,2],
+			k3=ratesFirstGuess(inspectIds,'degradation')[eGenes,2])
+
+		mean_rates <- apply(array(cbind(wt_rates[,1:2], sh_rates[,1:2]), dim=c(nrow(wt_rates),2,2)), 1:2, mean, na.rm=TRUE)
+
+		if( !ddp ) {
+
+			wt_k1 <- ratesFirstGuess(inspectIds,'synthesis')[eGenes,1]
+			wt_k1var <- ratesFirstGuessVar(inspectIds,'synthesis')[eGenes,1]
+
+			wt_data <- cbind(wt_matT, wt_k1)
+			wt_datavar <- cbind(wt_matTvar, wt_k1var)
+
+			sh_k1 <- ratesFirstGuess(inspectIds,'synthesis')[eGenes,2]
+			sh_k1var <- ratesFirstGuessVar(inspectIds,'synthesis')[eGenes,2]
+
+			sh_data <- cbind(sh_matT, sh_k1)
+			sh_datavar <- cbind(sh_matTvar, sh_k1var)
+
+			rownames(wt_datavar) <- rownames(sh_datavar) <- eGenes
+
+			message('Evaluating model K_K [1/4]...')
+			outK_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim(mean_rates[i,], errorK_K_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+					, error=function(e) c(mean_rates[i,], NA, NA, NA, e[1]))
+				,BPPARAM=BPPARAM))
+			outK_K[apply(outK_K[,1:2]<0,1,any),] <- NaN
+
+			message('Evaluating model V_K [2/4]...')
+			outV_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2] ), 
+						errorV_K_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],  
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+					, error=function(e) c(wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], NA, NA, NA, e[1]))
+				,BPPARAM=BPPARAM))
+			outV_K[apply(outV_K[,1:3]<0,1,any),] <- NaN
+
+			message('Evaluating model K_V [3/4]...')
+			outK_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
+						errorK_V_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+					, error=function(e) c(mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], NA, NA, NA, e[1]))
+				,BPPARAM=BPPARAM))
+			outK_V[apply(outK_V[,1:3]<0,1,any),] <- NaN
+
+			message('Evaluating model V_V [4/4]...')
+			outV_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
+						errorV_V_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
+					, error=function(e) c(wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], NA, NA, NA, e[1]))
+				,BPPARAM=BPPARAM))
+			outV_V[apply(outV_V[,1:4]<0,1,any),] <- NaN
+
+		} else { ## ddp
+
+			wt_matL <- sf[1] * ratesFirstGuess(inspectIds,'labeled_total')[eGenes,1]
+			wt_matLvar <- sf[1]^2 * ratesFirstGuessVar(inspectIds,'labeled_total')[eGenes,1]
+
+			wt_data <- cbind(wt_matT, wt_matL)
+			wt_datavar <- cbind(wt_matTvar, wt_matLvar)
+
+			sh_matL <- sf[2] * ratesFirstGuess(inspectIds,'labeled_total')[eGenes,1]
+			sh_matLvar <- sf[2]^2 * ratesFirstGuessVar(inspectIds,'labeled_total')[eGenes,1]
+
+			sh_data <- cbind(sh_matT, sh_matL)
+			sh_datavar <- cbind(sh_matTvar, sh_matLvar)
+
+			datader <- c(0)
+
+			print('Evaluating model KK [1/4]...')
+			outK_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim(mean_rates[i,], errorKK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader,
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+					, error=function(e) rep(NaN, 6))
+				,BPPARAM=BPPARAM))
+
+			print('Evaluating model VK [2/4]...')
+			outV_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2] ), 
+						errorVK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+					, error=function(e) rep(NaN, 7))
+				,BPPARAM=BPPARAM))
+
+			print('Evaluating model KV [3/4]...')
+			outK_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
+						errorKV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+					, error=function(e) rep(NaN, 7))
+				,BPPARAM=BPPARAM))
+
+			print('Evaluating model VV [4/4]...')
+			outV_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
+				tryCatch(
+					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
+						errorVV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
+						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
+					, error=function(e) rep(NaN, 8))
+				,BPPARAM=BPPARAM))
+
+		}
+
+		models <- list(
+			'K_K'=outK_K,
+			'V_K'=outV_K,
+			'K_V'=outK_V,
+			'V_V'=outV_V
+			)
+
+		p_vals <- cbind(
+			K_K=pchisq(models[['K_K']][,'value'], 3),
+			V_K=pchisq(models[['V_K']][,'value'], 2),
+			K_V=pchisq(models[['K_V']][,'value'], 2),
+			V_V=pchisq(models[['V_V']][,'value'], 1)
+			)
+		p_vals[is.na(p_vals)] <- 1
+
+		if( !ddp ) {
+			log_liks <- cbind(
+				K_K=sapply(seq_along(eGenes), function(i) logLikK_K_ddpFALSE(models[['K_K']][i,1:3], 
+					wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+				V_K=sapply(seq_along(eGenes), function(i) logLikV_K_ddpFALSE(models[['V_K']][i,1:5], 
+					wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+				K_V=sapply(seq_along(eGenes), function(i) logLikK_V_ddpFALSE(models[['K_V']][i,1:5], 
+					wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,])),
+				V_V=sapply(seq_along(eGenes), function(i) logLikV_V_ddpFALSE(models[['V_V']][i,1:6], 
+					wt_data[i,] , wt_datavar[i,], sh_data[i,], sh_datavar[i,]))
+				)
+		} else {
+			log_liks <- cbind(
+				K_K=sapply(seq_along(eGenes), function(i) logLikKK_ddpTRUE(models[['K_K']][i,1:3], 
+					wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+				V_K=sapply(seq_along(eGenes), function(i) logLikVK_ddpTRUE(models[['V_K']][i,1:5], 
+					wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+				K_V=sapply(seq_along(eGenes), function(i) logLikKV_ddpTRUE(models[['K_V']][i,1:5], 
+					wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL)),
+				V_V=sapply(seq_along(eGenes), function(i) logLikVV_ddpTRUE(models[['V_V']][i,1:6], 
+					wt_data[i,] , wt_datavar[i,], datader, sh_data[i,], sh_datavar[i,], datader, tL))
+				)			
+		}
+
+		eOut <- list(
+			eGenes=eGenes,
+			models=models,
+			p_vals=p_vals,
+			log_liks=log_liks
+			)
+
+
 	} else {
-		inspectIds1 <- inspectIds1[cGenes]
-		inspectIds2 <- inspectIds2[cGenes]
+		message('No intronless genes found.')
+		eOut <- NULL
+	}
+
+	model_steady_states_out= list(eiOut, eOut)
+
+	##################
+	### make the differential analysis based on the 
+	### chi squared and brown test (and the respective thresholds cTsh and bTsh)
+	##############################
+
+	ie_model_steady_states_out <- model_steady_states_out[[1]]
+
+	if( ddp ) tL <- ie_model_steady_states_out$tL
+	eiGenes <- ie_model_steady_states_out$eiGenes
+	models <- ie_model_steady_states_out$models
+	p_vals <- ie_model_steady_states_out$p_vals
+	log_liks <- ie_model_steady_states_out$log_liks
+	
+	synthesis_tests <- cbind(
+		logLikRatioTest( log_liks[,1], log_liks[,2], 1 ),
+		logLikRatioTest( log_liks[,3], log_liks[,5], 1 ),
+		logLikRatioTest( log_liks[,4], log_liks[,6], 1 ),
+		logLikRatioTest( log_liks[,7], log_liks[,8], 1 )
+		)
+
+	synthesis_mask <- cbind(
+		p_vals[,1] <= cTsh | p_vals[,2] <= cTsh,
+		p_vals[,3] <= cTsh | p_vals[,5] <= cTsh,
+		p_vals[,4] <= cTsh | p_vals[,6] <= cTsh,
+		p_vals[,7] <= cTsh | p_vals[,8] <= cTsh
+		)
+
+	processing_tests <- cbind(
+		logLikRatioTest( log_liks[,1], log_liks[,3], 1 ),
+		logLikRatioTest( log_liks[,2], log_liks[,5], 1 ),
+		logLikRatioTest( log_liks[,4], log_liks[,7], 1 ),
+		logLikRatioTest( log_liks[,6], log_liks[,8], 1 )
+		)
+
+	processing_mask <- cbind(
+		p_vals[,1] <= cTsh | p_vals[,3] <= cTsh,
+		p_vals[,2] <= cTsh | p_vals[,5] <= cTsh,
+		p_vals[,4] <= cTsh | p_vals[,7] <= cTsh,
+		p_vals[,6] <= cTsh | p_vals[,8] <= cTsh
+		)
+
+	degradation_tests <- cbind(
+		logLikRatioTest( log_liks[,1], log_liks[,4], 1 ),
+		logLikRatioTest( log_liks[,2], log_liks[,6], 1 ),
+		logLikRatioTest( log_liks[,3], log_liks[,7], 1 ),
+		logLikRatioTest( log_liks[,5], log_liks[,8], 1 )
+		)
+
+	degradation_mask <- cbind(
+		p_vals[,1] <= cTsh | p_vals[,4] <= cTsh,
+		p_vals[,2] <= cTsh | p_vals[,6] <= cTsh,
+		p_vals[,3] <= cTsh | p_vals[,7] <= cTsh,
+		p_vals[,5] <= cTsh | p_vals[,8] <= cTsh
+		)
+
+	brown_pvals <- cbind(
+		k1=brown_method_mask(synthesis_tests, synthesis_mask),
+		k2=brown_method_mask(processing_tests, processing_mask),
+		k3=brown_method_mask(degradation_tests, degradation_mask)
+		)
+	brown_pvals[is.na(brown_pvals)] <- 1
+
+	gene_class <- apply( brown_pvals , 1 , function(x) {vec <- x <= bTsh; paste(ifelse(vec, 'V', 'K'), collapse='')} )
+
+	diz <- c('KKK'=1, 'VKK'=2, 'KVK'=3, 'KKV'=4, 'VVK'=5, 'VKV'=6, 'KVV'=7, 'VVV'=8) 
+	numeric_gene_class <- diz[gene_class]
+	p_vals_geneclass <- p_vals[cbind(seq_along(eiGenes),numeric_gene_class)]
+
+	rates_c <- t(sapply( seq_along(gene_class) , function(i) {
+
+		switch(
+			gene_class[i],
+			'KKK'=models[['KKK']][i, c(1,2,3)],
+			'VKK'=models[['VKK']][i, c(1,3,4)],
+			'KVK'=models[['KVK']][i, c(1,2,4)],
+			'KKV'=models[['KKV']][i, c(1,2,3)],
+			'VVK'=models[['VVK']][i, c(1,3,5)],
+			'VKV'=models[['VKV']][i, c(1,3,4)],
+			'KVV'=models[['KVV']][i, c(1,2,4)],
+			'VVV'=models[['VVV']][i, c(1,3,5)]
+			)
+
+		}))
+
+	if( ddp ) {
+		concentrations_c <- t(apply(rates_c, 1, sys4suModel_ddpTRUE, datader=c(0,0), tL=tL))[,1:2]	
+	} else {
+		concentrations_c <- t(apply(rates_c, 1, sys4suModel_ddpFALSE))[,1:2]
 	}
 	
-	## synthesis
-	s1var <- fData(inspectIds1@ratesFirstGuess)$synthesis_t0
-	s1mean <- ratesFirstGuess(inspectIds1, 'synthesis')[,1]
-	s2var <- fData(inspectIds2@ratesFirstGuess)$synthesis_t0
-	s2mean <- ratesFirstGuess(inspectIds2, 'synthesis')[,1]
-	## degradation
-	d1var <- fData(inspectIds1@ratesFirstGuess)$degradation_t0
-	d1mean <- ratesFirstGuess(inspectIds1, 'degradation')[,1]
-	d2var <- fData(inspectIds2@ratesFirstGuess)$degradation_t0
-	d2mean <- ratesFirstGuess(inspectIds2, 'degradation')[,1]
-	## processing
-	p1var <- fData(inspectIds1@ratesFirstGuess)$processing_t0
-	p1mean <- ratesFirstGuess(inspectIds1, 'processing')[,1]
-	p2var <- fData(inspectIds2@ratesFirstGuess)$processing_t0
-	p2mean <- ratesFirstGuess(inspectIds2, 'processing')[,1]
+	rates_t <- t(sapply( seq_along(gene_class) , function(i) {
 
-	# transform into log scale
-	## synthesis
-	s1logvar <- sapply(1:length(s1var), function(i) (1/(log(2)*s1mean[i]))^2*s1var[i])
-	s1logmean <- log2(s1mean)
-	s2logvar <- sapply(1:length(s2var), function(i) (1/(log(2)*s2mean[i]))^2*s2var[i])
-	s2logmean <- log2(s2mean)
-	## degradation
-	d1logvar <- sapply(1:length(d1var), function(i) (1/(log(2)*d1mean[i]))^2*d1var[i])
-	d1logmean <- log2(d1mean)
-	d2logvar <- sapply(1:length(d2var), function(i) (1/(log(2)*d2mean[i]))^2*d2var[i])
-	d2logmean <- log2(d2mean)
-	## processing
-	p1logvar <- sapply(1:length(p1var), function(i) (1/(log(2)*p1mean[i]))^2*p1var[i])
-	p1logmean <- log2(p1mean)
-	p2logvar <- sapply(1:length(p2var), function(i) (1/(log(2)*p2mean[i]))^2*p2var[i])
-	p2logmean <- log2(p2mean)
+		switch(
+			gene_class[i],
+			'KKK'=models[['KKK']][i, c(1,2,3)],
+			'VKK'=models[['VKK']][i, c(2,3,4)],
+			'KVK'=models[['KVK']][i, c(1,3,4)],
+			'KKV'=models[['KKV']][i, c(1,2,4)],
+			'VVK'=models[['VVK']][i, c(2,4,5)],
+			'VKV'=models[['VKV']][i, c(2,3,5)],
+			'KVV'=models[['KVV']][i, c(1,3,5)],
+			'VVV'=models[['VVV']][i, c(2,4,6)]
+			)
 
-	## sample size
-	s1n <- d1n <- p1n <- fData(inspectIds1@ratesFirstGuess)$nRepT0[1]
-	s2n <- d2n <- p2n <- fData(inspectIds2@ratesFirstGuess)$nRepT0[1]
+		}))
 
-	rate.t.test <- function(m1, m2, s1, s2, n1, n2) {
-		sx1x2 <- sqrt( ( (n1-1)*s1^2 + (n2-1)*s2^2 ) / (n1+n2-2) )
-		t <- (m1 - m2) / ( sx1x2 * sqrt(1/n1+1/n2) )
-		df <- n1+n2-2
-		## two tailed test
-		pt(-abs(t), df)*2
+	if( ddp ) {
+		concentrations_t <- t(apply(rates_t, 1, sys4suModel_ddpTRUE, datader=c(0,0), tL=tL))[,1:2]
+	} else {
+		concentrations_t <- t(apply(rates_t, 1, sys4suModel_ddpFALSE))[,1:2]
 	}
 
-	s.test <- sapply(1:length(s1mean), function(i) 
-		rate.t.test(s1logmean[i], s2logmean[i], sqrt(s1logvar[i]), sqrt(s2logvar[i]), s1n, s2n)
-		)
-	d.test <- sapply(1:length(d1mean), function(i) 
-		rate.t.test(d1logmean[i], d2logmean[i], sqrt(d1logvar[i]), sqrt(d2logvar[i]), d1n, d2n)
-		)
-	p.test <- sapply(1:length(p1mean), function(i) 
-		rate.t.test(p1logmean[i], p2logmean[i], sqrt(p1logvar[i]), sqrt(p2logvar[i]), p1n, p2n)
-		)
+	ei_mat <- data.frame(concentrations_c, rates_c, concentrations_t, rates_t, 
+		brown_pvals, p_vals_geneclass, gene_class)
+	colnames(ei_mat) <- c('mat_c','pre_c','k1_c','k2_c','k3_c',
+		'mat_t','pre_t','k1_t','k2_t','k3_t',
+		'p_k1','p_k2','p_k3','p','class')
+	rownames(ei_mat) <- eiGenes
+
+	e_model_steady_states_out <- model_steady_states_out[[2]]
+
+	if( !is.null(e_model_steady_states_out) )
+	{
+
+		models <- e_model_steady_states_out$models
+		p_vals <- e_model_steady_states_out$p_vals
+		log_liks <- e_model_steady_states_out$log_liks
+		
+		synthesis_tests <- cbind(
+			logLikRatioTest( log_liks[,1], log_liks[,2], 1 ),
+			logLikRatioTest( log_liks[,3], log_liks[,4], 1 )
+			)
+
+		synthesis_mask <- cbind(
+			p_vals[,1] <= cTsh | p_vals[,2] <= cTsh,
+			p_vals[,3] <= cTsh | p_vals[,4] <= cTsh
+			)
+
+		degradation_tests <- cbind(
+			logLikRatioTest( log_liks[,1], log_liks[,3], 1 ),
+			logLikRatioTest( log_liks[,2], log_liks[,4], 1 )
+			)
+
+		degradation_mask <- cbind(
+			p_vals[,1] <= cTsh | p_vals[,3] <= cTsh,
+			p_vals[,2] <= cTsh | p_vals[,4] <= cTsh
+			)
+
+		brown_pvals <- cbind(
+			k1=brown_method_mask(synthesis_tests, synthesis_mask),
+			k3=brown_method_mask(degradation_tests, degradation_mask)
+			)
+		brown_pvals[is.na(brown_pvals)] <- 1
+
+		gene_class <- apply( brown_pvals, 1, function(x) {vec <- x <= bTsh[1:2]; paste(ifelse(vec, 'V', 'K'), collapse='_')} )
+
+		diz <- c('K_K'=1, 'V_K'=2, 'K_V'=3, 'V_V'=4) 
+		numeric_gene_class <- diz[gene_class]
+		p_vals_geneclass <- p_vals[cbind(seq_along(eGenes),numeric_gene_class)]
+
+		rates_c <- t(sapply( seq_along(gene_class) , function(i) {
+
+			switch(
+				gene_class[i],
+				'K_K'=models[['K_K']][i, c(1,2)],
+				'V_K'=models[['V_K']][i, c(1,3)],
+				'K_V'=models[['K_V']][i, c(1,2)],
+				'V_V'=models[['V_V']][i, c(1,3)]
+				)
+
+			}))
+
+		if( ddp ) {
+			concentrations_c <- t(apply(rates_c, 1, simplesys4suModel_ddpTRUE, datader=c(0), tL=tL))[,1]
+		} else {
+			concentrations_c <- t(apply(rates_c, 1, sys4suSimpleModel_ddpFALSE))[,1]
+		}
+
+		rates_t <- t(sapply( seq_along(gene_class) , function(i) {
+
+			switch(
+				gene_class[i],
+				'K_K'=models[['K_K']][i, c(1,2)],
+				'V_K'=models[['V_K']][i, c(2,3)],
+				'K_V'=models[['K_V']][i, c(1,3)],
+				'V_V'=models[['V_V']][i, c(2,4)]
+				)
+
+			}))
+
+		if( ddp ) {
+			concentrations_t <- t(apply(rates_t, 1, simplesys4suModel_ddpTRUE, datader=c(0), tL=tL))[,1]
+		} else {
+			concentrations_t <- t(apply(rates_t, 1, sys4suSimpleModel_ddpFALSE))[,1]
+		}
+
+		e_mat <- data.frame(concentrations_c, rates_c, concentrations_t, rates_t, 
+			brown_pvals, p_vals_geneclass, gene_class)
+		colnames(e_mat) <- c('mat_c','k1_c','k3_c',
+			'mat_t','k1_t','k3_t',
+			'p_k1','p_k3','p','class')
+		rownames(e_mat) <- eGenes
+
+		new_e_class <- as.character(e_mat$class)
+		new_e_class <- paste(substr(new_e_class,1,1), '-', substr(new_e_class,2,2), sep='')
+		e_mat <- data.frame(
+			mat_c = e_mat$mat_c,
+			pre_c = NA,
+			k1_c = e_mat$k1_c,
+			k2_c = NA,
+			k3_c = e_mat$k3_c,
+			mat_t = e_mat$mat_t,
+			pre_t = NA,
+			k1_t = e_mat$k1_t,
+			k2_t = NA,
+			k3_t = e_mat$k3_t,
+			p_k1 = e_mat$p_k1,
+			p_k2 = NA,
+			p_k3 = e_mat$p_k3,
+			p = e_mat$p,
+			class = new_e_class,
+			row.names = rownames(e_mat)
+			)
+	} else {
+		e_mat <- NULL
+	}
+
+	mat <- rbind(ei_mat, e_mat)
 
 	synthesis_res <- data.frame(
-		condition1=s1logmean,
-		variance1=s1logvar,
-		condition2=s2logmean,
-		variance2=s2logvar,
-		samplesize1=s1n,
-		samplesize2=s2n,
-		log2mean=log2(sqrt(s1mean*s2mean)),
-		log2fc=log2(s2mean/s1mean),
-		pval=s.test,
-		padj=p.adjust(s.test, method='BH')
-		)
-
-	degradation_res <- data.frame(
-		condition1=d1mean,
-		variance1=d1var,
-		condition2=d2mean,
-		variance2=d2var,
-		samplesize1=d1n,
-		samplesize2=d2n,
-		log2mean=log2(sqrt(d1mean*d2mean)),
-		log2fc=log2(d2mean/d1mean),
-		pval=d.test,
-		padj=p.adjust(d.test, method='BH')
+		condition1=mat[,'k1_c'],
+		# variance1=s1logvar,
+		condition2=mat[,'k1_t'],
+		# variance2=s2logvar,
+		# samplesize1=s1n,
+		# samplesize2=s2n,
+		log2mean=log2(sqrt(mat[,'k1_c']*mat[,'k1_t'])),
+		log2fc=log2(mat[,'k1_t']/mat[,'k1_c']),
+		pval=mat[,'p_k1'],
+		padj=p.adjust(mat[,'p_k1'], method='BH'),
+		row.names=c(eiGenes, eGenes)
 		)
 
 	processing_res <- data.frame(
-		condition1=p1mean,
-		variance1=p1var,
-		condition2=p2mean,
-		variance2=p2var,
-		samplesize1=p1n,
-		samplesize2=p2n,
-		log2mean=log2(sqrt(p1mean*p2mean)),
-		log2fc=log2(p2mean/p1mean),
-		pval=p.test,
-		padj=p.adjust(p.test, method='BH')
+		condition1=mat[,'k2_c'],
+		# variance1=s1logvar,
+		condition2=mat[,'k2_t'],
+		# variance2=s2logvar,
+		# samplesize1=s1n,
+		# samplesize2=s2n,
+		log2mean=log2(sqrt(mat[,'k2_c']*mat[,'k2_t'])),
+		log2fc=log2(mat[,'k2_t']/mat[,'k2_c']),
+		pval=mat[,'p_k2'],
+		padj=p.adjust(mat[,'p_k2'], method='BH'),
+		row.names=c(eiGenes, eGenes)
+		)
+
+	degradation_res <- data.frame(
+		condition1=mat[,'k3_c'],
+		# variance1=s1logvar,
+		condition2=mat[,'k3_t'],
+		# variance2=s2logvar,
+		# samplesize1=s1n,
+		# samplesize2=s2n,
+		log2mean=log2(sqrt(mat[,'k3_c']*mat[,'k3_t'])),
+		log2fc=log2(mat[,'k3_t']/mat[,'k3_c']),
+		pval=mat[,'p_k3'],
+		padj=p.adjust(mat[,'p_k3'], method='BH'),
+		row.names=c(eiGenes, eGenes)
 		)
 
 	new_object <- new('INSPEcT_diffsteady')
@@ -146,19 +823,56 @@ setMethod('compareSteady', signature('INSPEcT','INSPEcT'),
 
 #' @rdname INSPEcT_diffsteady-class
 #' @examples
-#' data('simData3rep', package='INSPEcT')
-#' data('simData3rep_2', package='INSPEcT')
-#' diffrates <- compareSteady(simData3rep, simData3rep_2)
-#' head(synthesis(diffrates))
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   data('allcounts', package='INSPEcT')
+#'   data('featureWidths', package='INSPEcT')
+#'   data('libsizes', package='INSPEcT')
+#'   
+#'   nascentCounts<-allcounts$nascent
+#'   matureCounts<-allcounts$mature
+#'   conditions<-letters[1:11]
+#'   expDes<-rep(conditions,3)
+#'   tL<-1/6
+#'   
+#'   nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
+#'         allcounts=nascentCounts
+#'         ,libsize=nascentLS
+#'         ,exonsWidths=exWdths
+#'         ,intronsWidths=intWdths
+#'         ,experimentalDesign=expDes)
+#'   
+#'   matExp_DESeq2<-quantifyExpressionsFromTrCounts(
+#'         allcounts=matureCounts
+#'         ,libsize=totalLS
+#'         ,exonsWidths=exWdths
+#'         ,intronsWidths=intWdths
+#'         ,experimentalDesign=expDes)
+#'  
+#'   nasFullObj <- newINSPEcT(tpts=conditions,labeling_time=tL
+#'         ,nascentExpressions=nasExp_DESeq2,matureExpressions=matExp_DESeq2)
+#'   
+#'   diffrates = compareSteady(nasFullObj[,c(1,11)])
+#'   head(synthesis(diffrates))
+#' }
 setMethod('synthesis', 'INSPEcT_diffsteady', function(object) slot(object, 'synthesis'))
 #' @rdname INSPEcT_diffsteady-class
 #' @examples
-#' head(processing(diffrates))
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   head(processing(diffrates))
+#' }
 setMethod('processing', 'INSPEcT_diffsteady', function(object) slot(object, 'processing'))
 #' @rdname INSPEcT_diffsteady-class
 #' @examples
-#' head(degradation(diffrates))
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   head(degradation(diffrates))
+#' }
 setMethod('degradation', 'INSPEcT_diffsteady', function(object) slot(object, 'degradation'))
+#' @rdname INSPEcT_diffsteady-class
+#' @examples
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   featureNames(diffrates)
+#' }
+setMethod('featureNames', 'INSPEcT_diffsteady', function(object) rownames(slot(object, 'synthesis')))
 
 #' @name plotMA
 #' @title MA-plot from base means and log fold changes
@@ -173,7 +887,7 @@ NULL
 #' Possible arguments to "plotMA":
 #' \itemize{
 #' \item "rate" - A character, which represent the rate to be visualized, either "synthesis", "processing" or "degradation". By default, "synthesis" is chosen.
-#' \item "alpha" - A numeric, The confidence interval for significance (FDR), by default 0.1
+#' \item "padj" - A numeric, The p-adjusted threshold for significance. Genes with p-adjusted lower than the threshold will be depicted as orange triangles. By default set to -Inf, meaning that no genes will be highlighted.
 #' \item "xlim" - A numeric vector of length 2, limits of x-axis, by default the range of the data.
 #' \item "xlab" - A character, the label of x-axis, by default "log2 geometric mean"
 #' \item "ylim" - A numeric vector of length 2, limits of y-axis, by default the range of the data.
@@ -181,11 +895,42 @@ NULL
 #' \item "main" - A character, the title of the plot, by default the name of the visualized rate.
 #' }
 #' @seealso \url{http://en.wikipedia.org/wiki/MA_plot}
+#' @rdname INSPEcT_diffsteady-class
 #' @examples
-#' data('simData3rep', package='INSPEcT')
-#' data('simData3rep_2', package='INSPEcT')
-#' diffrates <- compareSteady(simData3rep, simData3rep_2)
-#' plotMA(diffrates, alpha=.5)
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#'   data('allcounts', package='INSPEcT')
+#'   data('featureWidths', package='INSPEcT')
+#'   data('libsizes', package='INSPEcT')
+#'   
+#'   nascentCounts<-allcounts$nascent
+#'   matureCounts<-allcounts$mature
+#'   conditions<-letters[1:11]
+#'   expDes<-rep(conditions,3)
+#'   tL<-1/6
+#'   
+#'   nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
+#'         allcounts=nascentCounts
+#'         ,libsize=nascentLS
+#'         ,exonsWidths=exWdths
+#'         ,intronsWidths=intWdths
+#'         ,experimentalDesign=expDes)
+#'   
+#'   matExp_DESeq2<-quantifyExpressionsFromTrCounts(
+#'         allcounts=matureCounts
+#'         ,libsize=totalLS
+#'         ,exonsWidths=exWdths
+#'         ,intronsWidths=intWdths
+#'         ,experimentalDesign=expDes)
+#'  
+#'   nasFullObj <- newINSPEcT(tpts=conditions
+#'         ,labeling_time=tL
+#'         ,nascentExpressions=nasExp_DESeq2
+#'         ,matureExpressions=matExp_DESeq2)
+#'   
+#'   diffrates = compareSteady(nasFullObj[,c(1,11)])
+#'  
+#'   plotMA(diffrates, padj=.01)
+#' }
 setMethod('plotMA', 'INSPEcT_diffsteady', function(object, ...) {
 	addargs <- list(...)
 
@@ -197,17 +942,17 @@ setMethod('plotMA', 'INSPEcT_diffsteady', function(object, ...) {
 			stop('plotMA: Unrecognized "rate" argument.')
 	} else rate <- "synthesis"
 	
-	## argument "alpha"
-	if( any(names(addargs) == 'alpha') ) {
-		alpha <- addargs[['alpha']]
-		if( !is.numeric(alpha) | alpha<0 | alpha>1 )
-			stop('plotMA: "alpha" must be numeric and between 0 and 1.')
-	} else alpha <- .1
+	## argument "padj"
+	if( any(names(addargs) == 'padj') ) {
+		padj <- addargs[['padj']]
+		if( !is.numeric(padj) | padj<0 | padj>1 )
+			stop('plotMA: "padj" must be numeric and between 0 and 1.')
+	} else padj <- -Inf
 
 	data <- slot(object, rate)
 	x <- data$log2mean
 	y <- data$log2fc
-	signif_genes <- data$padj<alpha
+	signif_genes <- data$padj<padj
 	ix <- is.na(x) | is.na(y)
 	if( any(ix) ) {
 		x <- x[!ix]
@@ -256,6 +1001,464 @@ setMethod('plotMA', 'INSPEcT_diffsteady', function(object, ...) {
 
 	smoothScatter(x, y, xlim=xlim, ylim=ylim, xlab=xlab, ylab=ylab, main=main)
 	points(x[signif_genes], y[signif_genes], col='orange', pch=2)
+	abline(h=0, lty=3)
 
 	})
+
+
+##############################
+### LOW-LEVEL FUNCTIONS #########
+############################
+
+## complete model error function
+
+sys4suModel_ddpFALSE <- function(par)
+{
+	k1 <- par[1]; k2 <- par[2]; k3 <- par[3]
+
+	preTmod <- k1 / k2
+	matTmod <- k1 / k3
+	k1mod <- k1
+
+	return(c(matTmod, preTmod, k1mod))
+
+}
+
+sys4suChisq_ddpFALSE <- function(par, data, datavar)
+{
+
+	model <- sys4suModel_ddpFALSE(par)
+	sum( ( model - data )^2 / datavar )
+		
+}
+
+sys4suLoglik_ddpFALSE <- function(par, data, datavar)
+{
+
+	model <- sys4suModel_ddpFALSE(par)
+	sum(log(2*pnorm(-abs(data-model),mean=0,sd=sqrt(datavar))))
+
+}
+
+errorKKK_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suChisq_ddpFALSE( par , wt_data, wt_datavar) + 
+		sys4suChisq_ddpFALSE( par , sh_data, sh_datavar)
+}
+
+errorVKK_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suChisq_ddpFALSE( c(par[1], par[3], par[4]) , wt_data, wt_datavar ) + 
+		sys4suChisq_ddpFALSE( c(par[2], par[3], par[4]) , sh_data, sh_datavar)
+}
+
+errorKVK_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suChisq_ddpFALSE( c( par[1], par[2], par[4] ) , wt_data, wt_datavar ) + 
+		sys4suChisq_ddpFALSE( c( par[1], par[3], par[4] ) , sh_data, sh_datavar )
+}
+
+errorKKV_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suChisq_ddpFALSE( c( par[1], par[2], par[3] ) , wt_data, wt_datavar ) + 
+		sys4suChisq_ddpFALSE( c( par[1], par[2], par[4] ) , sh_data, sh_datavar )
+}
+
+errorVVK_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suChisq_ddpFALSE( c( par[1], par[3], par[5] ) , wt_data, wt_datavar ) + 
+		sys4suChisq_ddpFALSE( c( par[2], par[4], par[5] ) , sh_data, sh_datavar )
+}
+
+errorVKV_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suChisq_ddpFALSE( c( par[1], par[3], par[4] ) , wt_data, wt_datavar ) + 
+		sys4suChisq_ddpFALSE( c( par[2], par[3], par[5] ) , sh_data, sh_datavar )
+}
+
+errorKVV_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suChisq_ddpFALSE( c( par[1], par[2], par[4] ) , wt_data, wt_datavar ) + 
+		sys4suChisq_ddpFALSE( c( par[1], par[3], par[5] ) , sh_data, sh_datavar )
+}
+
+errorVVV_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suChisq_ddpFALSE( c( par[1], par[3], par[5] ) , wt_data, wt_datavar ) + 
+		sys4suChisq_ddpFALSE( c( par[2], par[4], par[6] ) , sh_data, sh_datavar )
+}
+
+logLikKKK_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suLoglik_ddpFALSE( par , wt_data, wt_datavar ) + 
+		sys4suLoglik_ddpFALSE( par , sh_data, sh_datavar)
+}
+
+logLikVKK_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suLoglik_ddpFALSE( c(par[1], par[3], par[4]) , wt_data, wt_datavar ) + 
+		sys4suLoglik_ddpFALSE( c(par[2], par[3], par[4]) , sh_data, sh_datavar)
+}
+
+logLikKVK_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suLoglik_ddpFALSE( c( par[1], par[2], par[4] ) , wt_data, wt_datavar ) + 
+		sys4suLoglik_ddpFALSE( c( par[1], par[3], par[4] ) , sh_data, sh_datavar )
+}
+
+logLikKKV_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suLoglik_ddpFALSE( c( par[1], par[2], par[3] ) , wt_data, wt_datavar ) + 
+		sys4suLoglik_ddpFALSE( c( par[1], par[2], par[4] ) , sh_data, sh_datavar )
+}
+
+logLikVVK_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suLoglik_ddpFALSE( c( par[1], par[3], par[5] ) , wt_data, wt_datavar ) + 
+		sys4suLoglik_ddpFALSE( c( par[2], par[4], par[5] ) , sh_data, sh_datavar )
+}
+
+logLikVKV_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suLoglik_ddpFALSE( c( par[1], par[3], par[4] ) , wt_data, wt_datavar ) + 
+		sys4suLoglik_ddpFALSE( c( par[2], par[3], par[5] ) , sh_data, sh_datavar )
+}
+
+logLikKVV_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suLoglik_ddpFALSE( c( par[1], par[2], par[4] ) , wt_data, wt_datavar ) + 
+		sys4suLoglik_ddpFALSE( c( par[1], par[3], par[5] ) , sh_data, sh_datavar )
+}
+
+logLikVVV_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suLoglik_ddpFALSE( c( par[1], par[3], par[5] ) , wt_data, wt_datavar ) + 
+		sys4suLoglik_ddpFALSE( c( par[2], par[4], par[6] ) , sh_data, sh_datavar )
+}
+
+## simple model error function
+
+sys4suSimpleModel_ddpFALSE <- function(par)
+{
+	k1 <- par[1]; k3 <- par[2]
+	matTmod <- k1 / k3
+	k1mod <- k1
+
+	return(c(matTmod, k1mod))
+
+}
+
+sys4suSimpleChisq_ddpFALSE <- function(par, data, datavar)
+{
+
+	model <- sys4suSimpleModel_ddpFALSE(par)
+	sum( ( model - data )^2 / datavar )
+		
+}
+
+sys4suSimpleLoglik_ddpFALSE <- function(par, data, datavar)
+{
+
+	model <- sys4suSimpleModel_ddpFALSE(par)
+	sum(log(2*pnorm(-abs(data-model),mean=0,sd=sqrt(datavar))))
+
+}
+
+errorK_K_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suSimpleChisq_ddpFALSE( par , wt_data, wt_datavar) + 
+		sys4suSimpleChisq_ddpFALSE( par , sh_data, sh_datavar)
+}
+
+errorV_K_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suSimpleChisq_ddpFALSE( c(par[1], par[3]) , wt_data, wt_datavar ) + 
+		sys4suSimpleChisq_ddpFALSE( c(par[2], par[3]) , sh_data, sh_datavar)
+}
+
+errorK_V_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suSimpleChisq_ddpFALSE( c( par[1], par[2] ) , wt_data, wt_datavar ) + 
+		sys4suSimpleChisq_ddpFALSE( c( par[1], par[3] ) , sh_data, sh_datavar )
+}
+
+errorV_V_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suSimpleChisq_ddpFALSE( c( par[1], par[3] ) , wt_data, wt_datavar ) + 
+		sys4suSimpleChisq_ddpFALSE( c( par[2], par[4] ) , sh_data, sh_datavar )
+}
+
+logLikK_K_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suSimpleLoglik_ddpFALSE( par , wt_data, wt_datavar) + 
+		sys4suSimpleLoglik_ddpFALSE( par , sh_data, sh_datavar)
+}
+
+logLikV_K_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suSimpleLoglik_ddpFALSE( c(par[1], par[3]) , wt_data, wt_datavar ) + 
+		sys4suSimpleLoglik_ddpFALSE( c(par[2], par[3]) , sh_data, sh_datavar)
+}
+
+logLikK_V_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suSimpleLoglik_ddpFALSE( c( par[1], par[2] ) , wt_data, wt_datavar ) + 
+		sys4suSimpleLoglik_ddpFALSE( c( par[1], par[3] ) , sh_data, sh_datavar )
+}
+
+logLikV_V_ddpFALSE <- function( par , wt_data , wt_datavar, sh_data, sh_datavar )
+{ 
+	sys4suSimpleLoglik_ddpFALSE( c( par[1], par[3] ) , wt_data, wt_datavar ) + 
+		sys4suSimpleLoglik_ddpFALSE( c( par[2], par[4] ) , sh_data, sh_datavar )
+}
+
+logLikRatioTest <- function(null, alt, deltadf)
+{
+	D <- - 2*null + 2*alt
+	pchisq(D, deltadf, lower.tail=FALSE)
+}
+
+
+#################
+### DDP ##############
+###############
+
+sysScaleChisq_ddpTRUE <- function(par, data, datavar, datader, tL)
+{
+	k1 <- par[1]; k2 <- par[2]; k3 <- par[3]; sf <- par[4]
+	matTder <- datader[1]; preTder <- datader[1]
+
+	preTmod <- ( k1 - preTder ) / k2
+	matTmod <- ( k2 * preTmod - matTder ) / k3
+	preLmod <- sf * k1 / k2 * ( 1 - exp( -k2 * tL ) )
+	matLmod <- sf * k1 / k3 * ( k2 * ( 1 - exp( -k3 * tL ) ) - k3 * ( 1 - exp( -k2 * tL ) ) ) / ( k2 - k3 )
+
+	model <- c(matTmod, preTmod, matLmod, preLmod)
+	sum( ( model - data )^2 / datavar )
+
+}
+
+sys4suModel_ddpTRUE <- function(par, datader, tL)
+{
+	k1 <- par[1]; k2 <- par[2]; k3 <- par[3]
+	matTder <- datader[1]; preTder <- datader[1]
+
+	preTmod <- ( k1 - preTder ) / k2
+	matTmod <- ( k2 * preTmod - matTder ) / k3
+	# preLmod <- k1 / k2 * ( 1 - exp( -k2 * tL ) )
+	matLmod <- k1 / k3 * ( k2 * ( 1 - exp( -k3 * tL ) ) - k3 * ( 1 - exp( -k2 * tL ) ) ) / ( k2 - k3 )
+
+	return(c(matTmod, preTmod, matLmod))
+
+}
+
+sys4suChisq_ddpTRUE <- function(par, data, datavar, datader, tL)
+{
+
+	model <- sys4suModel_ddpTRUE(par, datader, tL)
+	sum( ( model - data )^2 / datavar )
+		
+}
+
+sys4suLoglik_ddpTRUE <- function(par, data, datavar, datader, tL)
+{
+
+	model <- sys4suModel_ddpTRUE(par, datader, tL)
+	sum(log(2*pnorm(-abs(data-model),mean=0,sd=sqrt(datavar))))
+
+}
+
+priorRates_ddpTRUE <- function(data, datader, tL)
+{
+	data <- unname(data)
+	matT <- data[1]; preT <- data[2]; matL <- data[3]; preL <- data[4]
+	matTder <- datader[1]; preTder <- datader[1]
+	k1 <- ( matL + preL ) / tL
+	k2 <- ( k1 - preTder ) / preT
+	k3 <- ( k2 * preT - matTder ) / matT
+	c( k1 , k2 , k3 )
+}
+
+errorKKK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( par , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( par , sh_data, sh_datavar, sh_datader, tL)
+}
+
+errorVKK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c(par[1], par[3], par[4]) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c(par[2], par[3], par[4]) , sh_data, sh_datavar, sh_datader, tL)
+}
+
+errorKVK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c( par[1], par[2], par[4] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c( par[1], par[3], par[4] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+errorKKV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c( par[1], par[2], par[3] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c( par[1], par[2], par[4] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+errorVVK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c( par[1], par[3], par[5] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c( par[2], par[4], par[5] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+errorVKV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c( par[1], par[3], par[4] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c( par[2], par[3], par[5] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+errorKVV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c( par[1], par[2], par[4] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c( par[1], par[3], par[5] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+errorVVV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suChisq_ddpTRUE( c( par[1], par[3], par[5] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suChisq_ddpTRUE( c( par[2], par[4], par[6] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikKKK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( par , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( par , sh_data, sh_datavar, sh_datader, tL)
+}
+
+logLikVKK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c(par[1], par[3], par[4]) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c(par[2], par[3], par[4]) , sh_data, sh_datavar, sh_datader, tL)
+}
+
+logLikKVK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c( par[1], par[2], par[4] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c( par[1], par[3], par[4] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikKKV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c( par[1], par[2], par[3] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c( par[1], par[2], par[4] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikVVK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c( par[1], par[3], par[5] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c( par[2], par[4], par[5] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikVKV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c( par[1], par[3], par[4] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c( par[2], par[3], par[5] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikKVV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c( par[1], par[2], par[4] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c( par[1], par[3], par[5] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikVVV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	sys4suLoglik_ddpTRUE( c( par[1], par[3], par[5] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		sys4suLoglik_ddpTRUE( c( par[2], par[4], par[6] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+simplesys4suModel_ddpTRUE <- function(par, datader, tL)
+{
+	k1 <- par[1]; k3 <- par[2]
+	matTder <- datader[1]
+
+	matTmod <- ( k1 - matTder ) / k3
+	matLmod <- k1 / k3 * ( 1 - exp( -k3 * tL ) )
+
+	return(c(matTmod, matLmod))
+
+}
+
+simplesys4suChisq_ddpTRUE <- function(par, data, datavar, datader, tL)
+{
+
+	model <- simplesys4suModel_ddpTRUE(par, datader, tL)
+	sum( ( model - data )^2 / datavar )
+		
+}
+
+simplesys4suLoglik_ddpTRUE <- function(par, data, datavar, datader, tL)
+{
+
+	model <- simplesys4suModel_ddpTRUE(par, datader, tL)
+	sum(log(2*pnorm(-abs(data-model),mean=0,sd=sqrt(datavar))))
+
+}
+
+simplepriorRates_ddpTRUE <- function(data, datader, tL)
+{
+	data <- unname(data)
+	matT <- data[1]; matL <- data[2]
+	matTder <- datader
+	k1 <- matL / tL
+	k3 <- ( k1 - matTder ) / matT
+	c( k1 , k3 )
+}
+
+errorKK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suChisq_ddpTRUE( par , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suChisq_ddpTRUE( par , sh_data, sh_datavar, sh_datader, tL)
+}
+
+errorVK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suChisq_ddpTRUE( c( par[1], par[3] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suChisq_ddpTRUE( c( par[2], par[3] ) , sh_data, sh_datavar, sh_datader, tL)
+}
+
+errorKV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suChisq_ddpTRUE( c( par[1], par[2] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suChisq_ddpTRUE( c( par[1], par[3] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+errorVV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suChisq_ddpTRUE( c( par[1], par[3] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suChisq_ddpTRUE( c( par[2], par[4] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikKK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suLoglik_ddpTRUE( par , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suLoglik_ddpTRUE( par , sh_data, sh_datavar, sh_datader, tL)
+}
+
+logLikVK_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suLoglik_ddpTRUE( c( par[1], par[3] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suLoglik_ddpTRUE( c( par[2], par[3] ) , sh_data, sh_datavar, sh_datader, tL)
+}
+
+logLikKV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suLoglik_ddpTRUE( c( par[1], par[2] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suLoglik_ddpTRUE( c( par[1], par[3] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
+logLikVV_ddpTRUE <- function( par , wt_data , wt_datavar, wt_datader, sh_data, sh_datavar, sh_datader, tL )
+{ 
+	simplesys4suLoglik_ddpTRUE( c( par[1], par[3] ) , wt_data, wt_datavar, wt_datader, tL) + 
+		simplesys4suLoglik_ddpTRUE( c( par[2], par[4] ) , sh_data, sh_datavar, sh_datader, tL )
+}
+
 

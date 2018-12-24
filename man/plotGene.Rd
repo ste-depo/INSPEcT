@@ -6,9 +6,9 @@
 \alias{plotGene,INSPEcT-method}
 \title{Plot the pre-modeled and modeled profiles for one gene}
 \usage{
-plotGene(object, ix, fix.yaxis = FALSE)
+plotGene(object, ix, fix.yaxis = FALSE, priors = TRUE)
 
-\S4method{plotGene}{INSPEcT}(object, ix, fix.yaxis = FALSE)
+\S4method{plotGene}{INSPEcT}(object, ix, fix.yaxis = FALSE, priors = TRUE)
 }
 \arguments{
 \item{object}{An object of class INSPEcT}
@@ -17,20 +17,22 @@ plotGene(object, ix, fix.yaxis = FALSE)
 
 \item{fix.yaxis}{A logical, indicating whether the limits for y-axis of degradation and processing rates should be fixed
 relative to their distributions}
+
+\item{priors}{A logical, if true the priors of the rates are plotted}
 }
 \value{
-A list containing total mRNA levels and their confidence interval (levels plus and minus
-one standard deviation), pre-mRNA lelevs and their confidence intervals, synthsis rates and 
+A list containing total RNA levels and their confidence interval (levels plus and minus
+one standard deviation), pre-RNA lelevs and their confidence intervals, synthsis rates and 
 their confidence intervals, degradation rates and processing rates of the selected gene.
 }
 \description{
 Plot the pre-modeled and modeled profiles for one gene
 
-A method to see the shapes of the estimated synthesis, degradation and processing rates, pre-mRNA and total mRNA 
+A method to see the shapes of the estimated synthesis, degradation and processing rates, pre-RNA and total RNA 
 concentrations (solid thin lines) their variances (dashed lines) and the modeled rates and concentrations 
 (ticker solid line) of a single gene.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-plotGene(mycerIds10, 1)
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+plotGene(nascentInspObj10, 1)
 }

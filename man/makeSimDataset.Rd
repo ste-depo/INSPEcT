@@ -6,9 +6,10 @@
 \alias{makeSimDataset,INSPEcT_model-method}
 \title{Generate synthetic rates and concentrations}
 \usage{
-makeSimDataset(object, tpts, nRep, seed = NULL)
+makeSimDataset(object, tpts, nRep, NoNascent = FALSE, seed = NULL)
 
-\S4method{makeSimDataset}{INSPEcT_model}(object, tpts, nRep, seed = NULL)
+\S4method{makeSimDataset}{INSPEcT_model}(object, tpts, nRep,
+  NoNascent = FALSE, seed = NULL)
 }
 \arguments{
 \item{object}{An object of class INSPEcT_model, usually the output of \code{\link{makeSimModel}}}
@@ -16,6 +17,8 @@ makeSimDataset(object, tpts, nRep, seed = NULL)
 \item{tpts}{A numeric vector of time points where rates and concentrations have to be evaluated}
 
 \item{nRep}{Number of replicates to simulate}
+
+\item{NoNascent}{A logical which, if true, makes the output of the method suitable for an analysis wothout Nascent}
 
 \item{seed}{A numeric to obtain reproducible results}
 }
@@ -28,28 +31,17 @@ Generate synthetic rates and concentrations
 This method generates rates and concentrations where noise is added according to the desired number of 
 replicates that the user set as an arguments from the INSPEcT_model object that has been created by the 
 method of the class INSPEcT \code{\link{makeSimModel}}. Rates and concentrations can be generated at the 
-time-points of interest. This method generates an INSPEcT object that can be modeled and the performance of
-the modeling can be tested directly aginst the INSPEcT_model object created by \code{\link{makeSimModel}}.
+time-points of interest within the original time window. This method generates an INSPEcT object that can
+be modeled and the performance of the modeling can be tested directly aginst the INSPEcT_model object
+created by \code{\link{makeSimModel}}.
 }
 \examples{
-## generate a synthtic data-set of 10 genes based on the real data-set
-data('rpkms', package='INSPEcT')
-tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
-tL <- 1/6
-mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
-simRates <- makeSimModel(mycerIds, 10)
-simData <- makeSimDataset(simRates, tpts, 1)
-## load simulated datasets
-data('simRates', package='INSPEcT')
-data('simData3rep', package='INSPEcT')
-## measure sensitivity/sensibility of synthesis, degradation and processing
-## rates identification
-dev.new()
-rocCurve(simRates, simData3rep)
-## measure classification with a different threshold for the chi-squared 
-## test acceptance of models
-rocCurve(simRates, simData3rep, cTsh=.2)
+if( Sys.info()["sysname"] != "Windows" ) {
+  nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
+  simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+  tpts <- tpts(nascentInspObj)
+  nascentInspObj_sim3 <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
+}
 }
 \seealso{
 \code{\link{makeSimModel}}

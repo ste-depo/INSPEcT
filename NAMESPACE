@@ -1,34 +1,29 @@
-import("methods","Biobase","BiocParallel","pROC")
+import("methods","Biobase","BiocParallel","pROC", "DESeq2","plgem","SummarizedExperiment","TxDb.Mmusculus.UCSC.mm9.knownGene")
 
+importFrom("stats", "median")
 importFrom("BiocGenerics", "unlist", "plotMA", "invertStrand")
 importFrom("compiler", "cmpfun")
 importFrom("deSolve", "ode")
 importFrom("GenomicAlignments", "readGAlignmentPairs", "readGAlignments")
 importFrom("GenomicFeatures","exonsBy","transcriptsBy","intronsByTranscript")
 importFrom("GenomicRanges","reduce","seqnames","start","end","strand","width","findOverlaps")
-importFrom("graphics", "abline", "axis", "image", "layout", "legend","matplot", "par", "points", "smoothScatter")
+importFrom("graphics", "abline", "axis", "image", "layout", "legend","matplot", "par", "points", "smoothScatter", "plot", "segments", "text", "title")
 importFrom("grDevices", "colorRampPalette")
 importFrom("IRanges", "IRanges", "psetdiff")
 importFrom("preprocessCore", "normalize.quantiles")
 importFrom("rootSolve", "multiroot")
 importFrom("Rsamtools", "ScanBamParam")
-importFrom("S4Vectors","subjectHits","queryHits","queryLength","elementNROWS")
-importFrom("stats", "approx", "dist", "ecdf", "hclust", "lm","na.omit", "optim", "optimize", "pchisq", "pnorm","quantile", "rnorm", "runif", "splinefun", "uniroot", "p.adjust", "pt")
+importFrom("S4Vectors","subjectHits","queryHits","subjectLength","elementNROWS")
+importFrom("stats", "approx", "dist", "ecdf", "hclust", "lm","na.omit", "optim", "optimize", "pchisq", "pnorm", "predict", "quantile", "rnorm", "runif", "splinefun", "uniroot", "p.adjust", "pt")
 importFrom("utils", "capture.output", "read.table", "write.table", "head")
 
-export("newINSPEcT", "makeRPKMs")
-exportMethods( "[", "chisqmodel", "chisqtest", "combine", "compareSteady", "degradation", "dim", 
-    "featureNames", "featureNames<-", "geneClass", "getModel", "getModel<-", "inHeatmap", "labeledSF", 
-    "llrtests", "llrtests<-", "logLik", "makeModelRates", "makeSimDataset", 
-    "makeSimModel", "modelingParams", "modelingParams<-", "modelRates", 
-    "modelSelection", "modelSelection<-", "nGenes", "nTpts", "processing", "plotGene", "plotMA",
-    "ratePvals", "ratesFirstGuess", "ratesFirstGuessVar", "removeModel", 
-    "rocCurve", "rocThresholds", "sfPlot", "show", "synthesis", "thresholds", "thresholds<-", 
-    "totalSF", "tpts", "viewModelRates")
-exportClasses("INSPEcT", "INSPEcT_model", "INSPEcT_diffsteady" )
-
-
-
-
-
-
+export("newINSPEcT", "runProcessingRateDelay", "runRNAdynamics", "compareSteadyNoNascent", 
+	"quantifyExpressionsFromBAMs", "quantifyExpressionsFromTrCounts", "quantifyExpressionsFromTrAbundance")
+exportMethods( "[", "AIC", "calculateDelta", "calculateTau", "chisqmodel", "chisqtest", "combine", 
+    "compareSteady", "degradation", "dim", "featureNames", "featureNames<-", "geneClass", "getModel", 
+    "getModel<-", "inHeatmap", "labeledSF", "llrtests", "llrtests<-", "logLik", "makeModelRates", "makeSimDataset", 
+    "makeSimModel", "modelingParams", "modelingParams<-", "modelRates", "modelSelection", "modelSelection<-", 
+    "nGenes", "nTpts", "plotGene", "plotMA", "processing", "processingDelay", "ratePvals", "ratesFirstGuess",
+    "ratesFirstGuessVar", "removeModel", "rocCurve", "rocThresholds", "sfPlot", "show", "split", "synthesis", 
+    "thresholds", "thresholds<-", "tpts", "viewModelRates")
+exportClasses("INSPEcT", "INSPEcT_model", "INSPEcT_diffsteady")

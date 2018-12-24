@@ -28,6 +28,6 @@ This method is used to retrieve the chi-squared test results for the models
 that have been selected to better represent the behavior of each gene.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-chisqmodel(mycerIds10)
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+chisqmodel(nascentInspObj10)
 }

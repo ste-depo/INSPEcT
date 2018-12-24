@@ -32,12 +32,12 @@ thresholds, that can be both provided as arguments. If the user decides a differ
 the default, these new values can be permanently set within the object.
 }
 \examples{
-data('mycerIds10', package='INSPEcT')
-geneClass(mycerIds10)
+nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+geneClass(nascentInspObj10)
 # see the classification with another threshold for chi-squared test 
-geneClass(mycerIds10, cTsh=.2)
+geneClass(nascentInspObj10, cTsh=.2)
 # set the new threshold permanently within the object
-thresholds(mycerIds10)$chisquare <- .2
+thresholds(nascentInspObj10)$chisquare <- .2
 }
 \seealso{
 \code{\link{ratePvals}}

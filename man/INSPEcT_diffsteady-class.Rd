@@ -11,6 +11,7 @@
 \alias{synthesis,INSPEcT_diffsteady-method}
 \alias{processing,INSPEcT_diffsteady-method}
 \alias{degradation,INSPEcT_diffsteady-method}
+\alias{featureNames,INSPEcT_diffsteady-method}
 \title{An S4 class to represent comparisons between two steady-state conditions}
 \usage{
 synthesis(object)
@@ -26,6 +27,8 @@ degradation(object)
 \S4method{processing}{INSPEcT_diffsteady}(object)
 
 \S4method{degradation}{INSPEcT_diffsteady}(object)
+
+\S4method{featureNames}{INSPEcT_diffsteady}(object)
 }
 \arguments{
 \item{object}{An object of class INSPEcT_model}
@@ -62,10 +65,44 @@ processing rates}
 }}
 
 \examples{
-data('simData3rep', package='INSPEcT')
-data('simData3rep_2', package='INSPEcT')
-diffrates <- compareSteady(simData3rep, simData3rep_2)
-head(synthesis(diffrates))
-head(processing(diffrates))
-head(degradation(diffrates))
+if( Sys.info()["sysname"] != "Windows" ) {
+  data('allcounts', package='INSPEcT')
+  data('featureWidths', package='INSPEcT')
+  data('libsizes', package='INSPEcT')
+  
+  nascentCounts<-allcounts$nascent
+  matureCounts<-allcounts$mature
+  conditions<-letters[1:11]
+  expDes<-rep(conditions,3)
+  tL<-1/6
+  
+  nasExp_DESeq2<-quantifyExpressionsFromTrCounts(
+        allcounts=nascentCounts
+        ,libsize=nascentLS
+        ,exonsWidths=exWdths
+        ,intronsWidths=intWdths
+        ,experimentalDesign=expDes)
+  
+  matExp_DESeq2<-quantifyExpressionsFromTrCounts(
+        allcounts=matureCounts
+        ,libsize=totalLS
+        ,exonsWidths=exWdths
+        ,intronsWidths=intWdths
+        ,experimentalDesign=expDes)
+ 
+  nasFullObj <- newINSPEcT(tpts=conditions,labeling_time=tL
+        ,nascentExpressions=nasExp_DESeq2,matureExpressions=matExp_DESeq2)
+  
+  diffrates = compareSteady(nasFullObj[,c(1,11)])
+  head(synthesis(diffrates))
+}
+if( Sys.info()["sysname"] != "Windows" ) {
+  head(processing(diffrates))
+}
+if( Sys.info()["sysname"] != "Windows" ) {
+  head(degradation(diffrates))
+}
+if( Sys.info()["sysname"] != "Windows" ) {
+  featureNames(diffrates)
+}
 }

@@ -8,13 +8,12 @@
 #' @return A numeric matrix containing the values for the selected feature
 #' @seealso \code{\link{newINSPEcT}}, \code{\link{ratesFirstGuessVar}}
 #' @examples
-#' data('rpkms', package='INSPEcT')
-#' tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
-#' tL <- 1/6
-#' mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-#' 	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
-#' # get estimated synthesis rates
-#' ratesFirstGuess(mycerIds, 'synthesis')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+#' 
+#' ratesFirstGuess(nascentInspObj10, 'total')
+#' ratesFirstGuess(nascentInspObj10, 'preMRNA')
+#' ratesFirstGuess(nascentInspObj10, 'synthesis')
+
 setMethod('ratesFirstGuess', 'INSPEcT', function(object, feature) {
 	ix <- pData(object@ratesFirstGuess)$feature == feature
 	exprs(object@ratesFirstGuess)[,ix, drop=FALSE]
@@ -30,12 +29,12 @@ setMethod('ratesFirstGuess', 'INSPEcT', function(object, feature) {
 #' @return A numeric vector containing the values for the selected feature
 #' @seealso \code{\link{newINSPEcT}}, \code{\link{ratesFirstGuess}}
 #' @examples
-#' data('rpkms', package='INSPEcT')
-#' tpts <- c(0, 1/6, 1/3, 1/2, 1, 2, 4, 8, 16)
-#' tL <- 1/6
-#' mycerIds <- newINSPEcT(tpts, tL, rpkms$foursu_exons, rpkms$total_exons, 
-#' 	rpkms$foursu_introns, rpkms$total_introns, BPPARAM=SerialParam())
-#' ratesFirstGuessVar(mycerIds, 'synthesis')
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+#' 
+#' ratesFirstGuessVar(nascentInspObj10, 'total')
+#' ratesFirstGuessVar(nascentInspObj10, 'preMRNA')
+#' ratesFirstGuessVar(nascentInspObj10, 'synthesis')
 setMethod('ratesFirstGuessVar', 'INSPEcT', function(object, feature) {
-	fData(object@ratesFirstGuess)[[feature]]
+	ix <- pData(object@ratesFirstGuessVar)$feature == feature
+	exprs(object@ratesFirstGuessVar)[,ix, drop=FALSE]
 	})

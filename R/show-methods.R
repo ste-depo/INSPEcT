@@ -71,8 +71,8 @@ setReplaceMethod('featureNames', signature(object='INSPEcT', value='ANY')
 #' @param object An object of class INSPEcT
 #' @return A numeric that indicates the number of genes within the object
 #' @examples
-#' data('mycerIds10')
-#' nGenes(mycerIds10)
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+#' nGenes(nascentInspObj10)
 setMethod('nGenes', 'INSPEcT', function(object) {
 	length(featureNames(object@ratesFirstGuess))
 	})
@@ -83,8 +83,8 @@ setMethod('nGenes', 'INSPEcT', function(object) {
 #' @param object An object of class INSPEcT
 #' @return A numeric that indicates the number of time points contained the object
 #' @examples
-#' data('mycerIds10')
-#' nTpts(mycerIds10)
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+#' nTpts(nascentInspObj10)
 setMethod('nTpts', 'INSPEcT', function(object) {
 	length(object@tpts)
 	})
@@ -110,24 +110,10 @@ setMethod('dim', 'INSPEcT', function(x) {
 #' @param object An object of class INSPEcT
 #' @return A numeric that indicates time points contained the object
 #' @examples
-#' data('mycerIds10')
-#' tpts(mycerIds10)
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+#' tpts(nascentInspObj10)
 setMethod('tpts', 'INSPEcT', function(object) {
 	object@tpts
-	})
-
-#' @rdname totalSF
-#' @description
-#' Accessor to obtain the totalSF slot associated with the object of class INSPEcT
-#' @param object An object of class INSPEcT
-#' @return A numeric that indicates the scaling factors applied between time points
-#' of the data coming from RNA-seq library (applies to total-mRNAs
-#' and pre-mRNAs concentrations)
-#' @examples
-#' data('mycerIds10')
-#' totalSF(mycerIds10)
-setMethod('totalSF', 'INSPEcT', function(object) {
-	object@totalSF
 	})
 
 #' @rdname labeledSF
@@ -135,11 +121,11 @@ setMethod('totalSF', 'INSPEcT', function(object) {
 #' Accessor to obtain the labeledSF slot associated with the object of class INSPEcT
 #' @param object An object of class INSPEcT
 #' @return A numeric that indicates the scaling factors applied between time points
-#' of the data coming from 4sU-seq library (applies directly to synthesis
+#' of the data coming from Nascent-seq library (applies directly to synthesis
 #' rates and indirectly to degradation rates)
 #' @examples
-#' data('mycerIds10')
-#' labeledSF(mycerIds10)
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+#' labeledSF(nascentInspObj10)
 setMethod('labeledSF', 'INSPEcT', function(object) {
 	object@labeledSF
 	})

@@ -11,12 +11,12 @@
 #' @return A character containing the regulatory class for each gene
 #' @seealso \code{\link{ratePvals}}
 #' @examples
-#' data('mycerIds10', package='INSPEcT')
-#' geneClass(mycerIds10)
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+#' geneClass(nascentInspObj10)
 #' # see the classification with another threshold for chi-squared test 
-#' geneClass(mycerIds10, cTsh=.2)
+#' geneClass(nascentInspObj10, cTsh=.2)
 #' # set the new threshold permanently within the object
-#' thresholds(mycerIds10)$chisquare <- .2
+#' thresholds(nascentInspObj10)$chisquare <- .2
 setMethod('geneClass', 'INSPEcT_model', 
 	function(object, bTsh=NULL, cTsh=NULL) {
 		## get ratesSpec field
@@ -45,3 +45,83 @@ setMethod('geneClass', 'INSPEcT',
 	function(object, bTsh=NULL, cTsh=NULL) {
 		return(geneClass(object@model, bTsh=bTsh, cTsh=cTsh))
 	})
+
+.bestModel <- function(object, bTsh=NULL, cTsh=NULL) {
+
+	preferPValue <- object@params$preferPValue
+	
+	## in case bTsh or bTsh are provided set them as
+	# permanent for the object
+	if( is.null(bTsh) )
+		bTsh <- object@params$thresholds$brown
+	if( is.null(cTsh) )
+		cTsh <- object@params$thresholds$chisquare
+	## calculate ratePvals
+	ratePvals <- ratePvals(object, cTsh)
+	ratePvals <- replace(ratePvals,is.na(ratePvals),1)
+
+	if(preferPValue)
+	{
+		pValues <- chisqtest(object)
+		rownames(pValues) <- rownames(ratePvals)
+
+		geneClass <- sapply(rownames(ratePvals),function(i)
+		{
+
+			acceptableModelsTemp <- which(pValues[i,] <= cTsh)
+			if(length(acceptableModelsTemp)==0){return("0")}
+			if(length(acceptableModelsTemp)==1){return(colnames(pValues)[acceptableModelsTemp])}    
+
+			nameTemp <- rep("K",3)
+			if(ratePvals[i,"synthesis"] <= bTsh["synthesis"]){nameTemp[[1]] <- "V"}
+			if(ratePvals[i,"processing"] <= bTsh["processing"]){nameTemp[[2]] <- "V"}
+			if(ratePvals[i,"degradation"] <= bTsh["degradation"]){nameTemp[[3]] <- "V"}
+
+			nameTemp <- paste0(nameTemp[[1]],nameTemp[[2]],nameTemp[[3]])
+			nameTemp <- c("KKK" = "0"
+						 ,"VKK" = "a"
+						 ,"KVK" = "c"
+						 ,"KKV" = "b"
+						 ,"VVK" = "ac"
+						 ,"VKV" = "ab"
+						 ,"KVV" = "bc"
+						 ,"VVV" = "abc")[nameTemp]
+
+			if(pValues[i,nameTemp]<=cTsh|!is.finite(pValues[i,nameTemp])){return(nameTemp)}else{
+				return(names(which.min(pValues[i,])))}
+    	})
+
+		ratesSpecs <- object@ratesSpecs
+		## select the best model (according to geneClass) per gene
+		nGenes <- length(ratesSpecs)
+		object@ratesSpecs <- lapply(1:nGenes, 
+			function(i) ratesSpecs[[i]][geneClass[i]])
+		return(object)
+
+	}else{
+
+		## give a discrete classification per each rate per each gene
+		# according to the brown's threshold for the pvalues
+		acceptedVarModels <- sapply(1:3, function(i) ratePvals[,i]<bTsh[i])
+		if( !is.matrix(acceptedVarModels) )
+			acceptedVarModels <- t(as.matrix(acceptedVarModels))
+		# nonResolvedGenes <- apply(acceptedVarModels, 1, 
+		# 	function(x) all(is.na(x)))
+		acceptedVarModels[is.na(acceptedVarModels)] <- FALSE
+		rownames(acceptedVarModels) <- rownames(ratePvals)
+		colnames(acceptedVarModels) <- colnames(ratePvals)
+		geneClass <- apply(acceptedVarModels, 1, 
+			function(accepted) paste(c('a','b','c')[accepted],collapse=''))
+		geneClass[geneClass==''] <- '0'
+		# geneClass[nonResolvedGenes] <- NA
+		## retrive all the models
+		ratesSpecs <- object@ratesSpecs
+		## select the best model (according to geneClass) per gene
+		nGenes <- length(ratesSpecs)
+		object@ratesSpecs <- lapply(1:nGenes, 
+			function(i) ratesSpecs[[i]][geneClass[i]])
+		return(object)
+
+	}
+}
+
