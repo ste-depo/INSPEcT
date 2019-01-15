@@ -11,7 +11,7 @@
 #'  \item nIter number of max iteration during optimization (default is 300)
 #'  \item na.rm A logical wheter missing values should be removed from estimated rates 
 #'    (default is TRUE)
-# #'  \item nCores The number of cores to be used during parallelization (default is 2)
+# #'  \item nCores The number of cores to be used during parallelization (default is 2)
 #'  \item verbose A logical wheter to be verbose or not (default is TRUE)
 #'  \item estimateRatesWith Either "int" or "der". With "int" the degradation and processing
 #'    rates are estimated integrating the system between one time point and the following. 

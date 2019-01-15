@@ -20,7 +20,7 @@ shinyServer(function(input, output, session) {
 	contentsrea <- reactive({
 
 		filename <- input$file1$datapath 
-		if( is.null(filename) ) filename <- system.file(package='INSPEcT', 'data', 'nascentInspObj10.rds')
+		if( is.null(filename) ) filename <- system.file(package='INSPEcT', 'nascentInspObj10.rds')
 
 		## load file
 		if( file.exists(filename) ) {

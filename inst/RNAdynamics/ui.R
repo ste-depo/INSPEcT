@@ -44,8 +44,8 @@ shinyUI(fluidPage(
 	fluidRow(
 		column(4,
 
-			fileInput("file1", "Choose INSPEcT File", accept = "Rfiles/rds", width = NULL,
-				buttonLabel = "Browse...", placeholder = "mycerIds_20genes.rds"),
+			fileInput("file1", "Choose INSPEcT File", accept = ".rds", width = NULL,
+				buttonLabel = "Browse...", placeholder = "nascentInspObj10.rds"),
 			selectInput("select_class", label = "Select class", 
 				choices = NULL, selected = NULL),
 			selectInput("select", label = "Select gene", 

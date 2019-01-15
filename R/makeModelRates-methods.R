@@ -18,7 +18,7 @@ setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
 	tpts <- args$tpts
 	if( is.null(tpts) )
 		stop('makeModelRates: missing "tpts" argument with no default.')
-	## get ratesSpec field
+	## get ratesSpec field
 	ratesSpecs <- object@ratesSpecs
 	## in case some elements of ratesSpecs are longer than one,
 	# meaning that a unique choiche for a model has not been done yet,
@@ -85,7 +85,7 @@ setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
 #' viewModelRates(nascentInspObj10, 'degradation')
 
 setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
-	## get ratesSpec field
+	## get ratesSpec field
 	ratesSpecs <- object@model@ratesSpecs
 	tpts <- object@tpts
 	log_shift <- find_tt_par(tpts)

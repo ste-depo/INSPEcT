@@ -177,7 +177,7 @@ setReplaceMethod('llrtests', 'INSPEcT', function(object, value) {
 		stop('llrtests: all elements of degradation element of value contains not valid characters. Valid characters are: "0", "a", "b", "c"')
 	if( !all(unlist(sapply(value$processing, strsplit, split='')) %in% c('0','a','b','c')) )
 		stop('llrtests: all elements of processing element of value contains not valid characters. Valid characters are: "0", "a", "b", "c"')
-	# update the object
+	# update the object
 	if( !identical(value, object@model@params$llrtests) ) {
 		object@model@params$llrtests <- value
 		# if modeled rates already exist, update them

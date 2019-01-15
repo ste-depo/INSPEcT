@@ -57,7 +57,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 	sf <- inspectIds@labeledSF
 	tL <- inspectIds@tL
 
-	## divide the dataset in 2: full (eiGenes) and simple (eGenes)
+	## divide the dataset in 2: full (eiGenes) and simple (eGenes)
 
 	allGenes <- featureNames(inspectIds)
 	eGenes <- allGenes[apply(is.na(ratesFirstGuess(inspectIds, 'processing')),1,all)]
@@ -69,7 +69,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 	message(paste('Comparative analysis of the',length(eiGenes),'with both intronic and exonic signals.'))
 
-	## concentrations
+	## concentrations
 
 	wt_preT <- ratesFirstGuess(inspectIds,'preMRNA')[eiGenes,1]
 	wt_matT <- ratesFirstGuess(inspectIds,'total')[eiGenes,1] - wt_preT
@@ -188,7 +188,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			,BPPARAM=BPPARAM))
 		outVVV[apply(outVVV[,1:6]<0,1,any),] <- NaN
 
-	} else { ## ddp
+	} else { ## ddp
 
 		datader <- c(0,0)
 
@@ -772,7 +772,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 	synthesis_res <- data.frame(
 		condition1=mat[,'k1_c'],
-		# variance1=s1logvar,
+		# variance1=s1logvar,
 		condition2=mat[,'k1_t'],
 		# variance2=s2logvar,
 		# samplesize1=s1n,
@@ -786,7 +786,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 	processing_res <- data.frame(
 		condition1=mat[,'k2_c'],
-		# variance1=s1logvar,
+		# variance1=s1logvar,
 		condition2=mat[,'k2_t'],
 		# variance2=s2logvar,
 		# samplesize1=s1n,
@@ -800,7 +800,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 	degradation_res <- data.frame(
 		condition1=mat[,'k3_c'],
-		# variance1=s1logvar,
+		# variance1=s1logvar,
 		condition2=mat[,'k3_t'],
 		# variance2=s2logvar,
 		# samplesize1=s1n,

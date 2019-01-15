@@ -642,7 +642,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 			else message(paste('Gene "', 
 				rownames(concentrations$total)[i],'" completed.', sep=''))
 			}
-		## choose the best model for each test, out of the many attempts
+		## choose the best model for each test, out of the many attempts
 		chisqPvals <- sapply(1:nAttempts, function(i) 
 			sapply(paramAttempts[,i], '[[', 'test'))
 

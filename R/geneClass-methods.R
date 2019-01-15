@@ -19,7 +19,7 @@
 #' thresholds(nascentInspObj10)$chisquare <- .2
 setMethod('geneClass', 'INSPEcT_model', 
 	function(object, bTsh=NULL, cTsh=NULL) {
-		## get ratesSpec field
+		## get ratesSpec field
 		ratesSpecs <- object@ratesSpecs
 		## in case some elements of ratesSpecs are longer than one,
 		# meaning that a unique choiche for a model has not been done yet,
