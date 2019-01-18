@@ -93,6 +93,14 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 		k2=ratesFirstGuess(inspectIds,'processing')[eiGenes,2],
 		k3=ratesFirstGuess(inspectIds,'degradation')[eiGenes,2])
 
+	# give the rates corresponding to the other condition in case of NA
+
+	wt_rates[is.na(wt_rates)] <- sh_rates[is.na(wt_rates)]
+	sh_rates[is.na(sh_rates)] <- wt_rates[is.na(sh_rates)]
+
+	wt_rates[wt_rates==0] <- sh_rates[wt_rates==0]
+	sh_rates[sh_rates==0] <- wt_rates[sh_rates==0]
+
 	mean_rates <- apply(array(cbind(wt_rates[,1:3], sh_rates[,1:3]), dim=c(nrow(wt_rates), 3,2)), 1:2, mean, na.rm=TRUE)
 
 	if( !ddp ) {
@@ -108,6 +116,13 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 		sh_data <- cbind(sh_matT, sh_preT, sh_k1)
 		sh_datavar <- cbind(sh_matTvar, sh_preTvar, sh_k1var)
+
+		# give the variance corresponding to the other condition in case of Zeros
+
+		wt_datavar[wt_datavar==0] <- sh_datavar[wt_datavar==0]
+		sh_datavar[sh_datavar==0] <- wt_datavar[sh_datavar==0]
+
+		# model!
 
 		message('Evaluating model KKK [1/8]...')
 		outKKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -207,6 +222,13 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 		sh_data <- cbind(sh_matT, sh_preT, sh_matL)
 		sh_datavar <- cbind(sh_matTvar, sh_preTvar, sh_matLvar)
+
+		# give the variance corresponding to the other condition in case of Zeros
+
+		wt_datavar[wt_datavar==0] <- sh_datavar[wt_datavar==0]
+		sh_datavar[sh_datavar==0] <- wt_datavar[sh_datavar==0]
+
+		# model!
 
 		print('Evaluating model KKK [1/8]...')
 		outKKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -377,6 +399,14 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			k1=ratesFirstGuess(inspectIds,'synthesis')[eGenes,2],
 			k3=ratesFirstGuess(inspectIds,'degradation')[eGenes,2])
 
+		# give the rates corresponding to the other condition in case of NA or zeros
+
+		wt_rates[is.na(wt_rates)] <- sh_rates[is.na(wt_rates)]
+		sh_rates[is.na(sh_rates)] <- wt_rates[is.na(sh_rates)]
+
+		wt_rates[wt_rates==0] <- sh_rates[wt_rates==0]
+		sh_rates[sh_rates==0] <- wt_rates[sh_rates==0]
+
 		mean_rates <- apply(array(cbind(wt_rates[,1:2], sh_rates[,1:2]), dim=c(nrow(wt_rates),2,2)), 1:2, mean, na.rm=TRUE)
 
 		if( !ddp ) {
@@ -394,6 +424,13 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			sh_datavar <- cbind(sh_matTvar, sh_k1var)
 
 			rownames(wt_datavar) <- rownames(sh_datavar) <- eGenes
+
+			# give the variance corresponding to the other condition in case of Zeros
+
+			wt_datavar[wt_datavar==0] <- sh_datavar[wt_datavar==0]
+			sh_datavar[sh_datavar==0] <- wt_datavar[sh_datavar==0]
+
+			# model!
 
 			message('Evaluating model K_K [1/4]...')
 			outK_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
@@ -449,6 +486,13 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			sh_datavar <- cbind(sh_matTvar, sh_matLvar)
 
 			datader <- c(0)
+
+			# give the variance corresponding to the other condition in case of zeros
+
+			wt_datavar[wt_datavar==0] <- sh_datavar[wt_datavar==0]
+			sh_datavar[sh_datavar==0] <- wt_datavar[sh_datavar==0]
+
+			# model!
 
 			print('Evaluating model KK [1/4]...')
 			outK_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)

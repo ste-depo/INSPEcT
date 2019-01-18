@@ -104,7 +104,7 @@ shinyServer(function(input, output, session) {
 			experiment$preMRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select], 'preMRNA'))
 
 			out <- define_parameter_ranges( ids, isolate(inspect$logshift) )
-			
+
 			gene_model <- ids@model@ratesSpecs[[input$select]][[1]]
 			
 			modeling$counts <- gene_model$counts[1]
@@ -213,7 +213,7 @@ shinyServer(function(input, output, session) {
 				values$k3_beta = round(gene_model[["beta"]][["params"]][6],2)
 			}
 
-			out <- define_parameter_ranges( ids, isolate(inspect$logshift) )
+			# out <- define_parameter_ranges( ids, isolate(inspect$logshift) )
 
 			gene_h_vals <- c(isolate(values$k1_h0),isolate(values$k1_h1),isolate(values$k1_h2),
 				isolate(values$k2_h0),isolate(values$k2_h1),isolate(values$k2_h2),
@@ -756,19 +756,19 @@ shinyServer(function(input, output, session) {
 		k1_rate <- switch(input$k1_function, 
 			"Constant" = list(
 				type='constant',
-				fun=newPointer(constantModel),
+				fun=newPointer(constantModelRNApp),
 				params=input$k1_h0,
 				df=1
 				),
 			"Sigmoidal" = list(
 				type='sigmoid',
-				fun=newPointer(sigmoidModel),
+				fun=newPointer(sigmoidModelRNApp),
 				params=c(input$k1_h0, input$k1_h1, input$k1_t1, input$k1_beta),
 				df=4
 				),
 			"Impulsive" = list(
 				type='constant',
-				fun=newPointer(impulseModel),
+				fun=newPointer(impulseModelRNApp),
 				params=c(input$k1_h0, input$k1_h1, 
 						input$k1_h2, input$k1_t1, input$k1_t2, input$k1_beta),
 				df=6
@@ -778,19 +778,19 @@ shinyServer(function(input, output, session) {
 		k2_rate <- switch(input$k2_function, 
 			"Constant" = list(
 				type='constant',
-				fun=newPointer(constantModel),
+				fun=newPointer(constantModelRNApp),
 				params=input$k2_h0,
 				df=1
 				),
 			"Sigmoidal" = list(
 				type='sigmoid',
-				fun=newPointer(sigmoidModel),
+				fun=newPointer(sigmoidModelRNApp),
 				params=c(input$k2_h0, input$k2_h1, input$k2_t1, input$k2_beta),
 				df=4
 				),
 			"Impulsive" = list(
 				type='constant',
-				fun=newPointer(impulseModel),
+				fun=newPointer(impulseModelRNApp),
 				params=c(input$k2_h0, input$k2_h1, 
 						input$k2_h2, input$k2_t1, input$k2_t2, input$k2_beta),
 				df=6
@@ -800,19 +800,19 @@ shinyServer(function(input, output, session) {
 		k3_rate <- switch(input$k3_function, 
 			"Constant" = list(
 				type='constant',
-				fun=newPointer(constantModel),
+				fun=newPointer(constantModelRNApp),
 				params=input$k3_h0,
 				df=1
 				),
 			"Sigmoidal" = list(
 				type='sigmoid',
-				fun=newPointer(sigmoidModel),
+				fun=newPointer(sigmoidModelRNApp),
 				params=c(input$k3_h0, input$k3_h1, input$k3_t1, input$k3_beta),
 				df=4
 				),
 			"Impulsive" = list(
 				type='constant',
-				fun=newPointer(impulseModel),
+				fun=newPointer(impulseModelRNApp),
 				params=c(input$k3_h0, input$k3_h1, 
 						input$k3_h2, input$k3_t1, input$k3_t2, input$k3_beta),
 				df=6
