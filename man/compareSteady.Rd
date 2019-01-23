@@ -21,8 +21,6 @@ quantification of the rates as well as the comparison with the statistical signi
 associated for each gene and rate. (See \code{\link{INSPEcT_diffsteady-class}})
 }
 \description{
-Generate an object of class INSPEcT_diffsteady from an object of class INSPEcT
-
 This method compares two object of class INSPEcT in order to identify differential usage
 of synthesis, processing or degradation rates in two different steady-state conditions. 
 The two INSPEcT objects must have been profiled with replicates in order to provide
@@ -62,4 +60,6 @@ if( Sys.info()["sysname"] != "Windows" ) {
   
   diffrates = compareSteady(nasFullObj[,c(1,11)])
 }
+mat_t','pre_t',
+mat_t',
 }

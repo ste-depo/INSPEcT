@@ -9,8 +9,8 @@
 \usage{
 rocCurve(object, object2, cTsh = NULL, plot = TRUE)
 
-\S4method{rocCurve}{INSPEcT_model,INSPEcT_model}(object, object2, cTsh = NULL,
-  plot = TRUE)
+\S4method{rocCurve}{INSPEcT_model,INSPEcT_model}(object, object2,
+  cTsh = NULL, plot = TRUE)
 
 \S4method{rocCurve}{INSPEcT_model,INSPEcT}(object, object2, cTsh = NULL,
   plot = TRUE)
@@ -29,8 +29,6 @@ if NULL the value is taken from the INSPEcT_model object}
 A list of objects of class pROC with summary of each roc curve
 }
 \description{
-Display rate classification performance
-
 A method to visualize the performance in the classification of synthesis, degradation
 and processing rates based on the comparison of the original simulated rates and the one
 obtained by the function \code{\link{modelRates}}. For each rate, classification performance is measured 

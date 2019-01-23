@@ -26,8 +26,6 @@ makeSimDataset(object, tpts, nRep, NoNascent = FALSE, seed = NULL)
 An object of the class ExpressionSet containing rates and concentrations
 }
 \description{
-Generate synthetic rates and concentrations
-
 This method generates rates and concentrations where noise is added according to the desired number of 
 replicates that the user set as an arguments from the INSPEcT_model object that has been created by the 
 method of the class INSPEcT \code{\link{makeSimModel}}. Rates and concentrations can be generated at the 

@@ -17,8 +17,6 @@ removeModel(object)
 An Object of class INSPEcT
 }
 \description{
-remove modelling information from INSPEcT object
-
 Remove the model from an INSPEcT object. It is required when subsetting
 an INSPEcT object per time points because when removing time points
 the modeling is not valid anymore.

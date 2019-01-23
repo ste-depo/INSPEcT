@@ -9,8 +9,8 @@
 makeSimModel(object, nGenes, newTpts = NULL, probs = c(constant = 0.5,
   sigmoid = 0.3, impulse = 0.2), na.rm = TRUE, seed = NULL)
 
-\S4method{makeSimModel}{INSPEcT}(object, nGenes, probs = c(constant = 0.5,
-  sigmoid = 0.3, impulse = 0.2), na.rm = TRUE, seed = NULL)
+\S4method{makeSimModel}{INSPEcT}(object, nGenes, probs = c(constant =
+  0.5, sigmoid = 0.3, impulse = 0.2), na.rm = TRUE, seed = NULL)
 }
 \arguments{
 \item{object}{An object of class INSPEcT}
@@ -29,8 +29,6 @@ makeSimModel(object, nGenes, newTpts = NULL, probs = c(constant = 0.5,
 An object of class INSPEcT_model with synthetic rates
 }
 \description{
-Build the synthetic rates shaped on a dataset
-
 This method allow the creation of synthesis, degradation and processing rates for a certain number of genes.
 The rates are created according to the distributions of the real data-set which is given as an input of the
 method. Different proportions of constant varying rates can be set and a new vector of time points can be

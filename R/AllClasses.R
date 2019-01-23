@@ -185,6 +185,7 @@ setClass('INSPEcT',
 #' degradation rates
 #' @slot processing A data.frame which contains both input data and comparisons results regarding
 #' processing rates
+#' @slot modeling_res A data.frame which contains modeling results
 #' @details
 #' Methods associated to the class INSPEcT_diffsteady are:
 #' \itemize{
@@ -198,5 +199,6 @@ setClass('INSPEcT_diffsteady',
 		synthesis='data.frame'
 		, degradation='data.frame'
 		, processing='data.frame'
+		, modeling_res='data.frame'
 		)
 	)

@@ -7,14 +7,14 @@
 \alias{rocThresholds,INSPEcT_model,INSPEcT-method}
 \title{Display rate classification performance with thresholds visible at x-axis}
 \usage{
-rocThresholds(object, object2, cTsh = NULL, bTsh = NULL, xlim = c(1e-05,
-  1))
+rocThresholds(object, object2, cTsh = NULL, bTsh = NULL,
+  xlim = c(1e-05, 1))
 
 \S4method{rocThresholds}{INSPEcT_model,INSPEcT_model}(object, object2,
   cTsh = NULL, bTsh = NULL, xlim = c(1e-05, 1))
 
-\S4method{rocThresholds}{INSPEcT_model,INSPEcT}(object, object2, cTsh = NULL,
-  bTsh = NULL, xlim = c(1e-05, 1))
+\S4method{rocThresholds}{INSPEcT_model,INSPEcT}(object, object2,
+  cTsh = NULL, bTsh = NULL, xlim = c(1e-05, 1))
 }
 \arguments{
 \item{object}{An object of class INSPEcT_model, with true rates}
@@ -31,8 +31,6 @@ rocThresholds(object, object2, cTsh = NULL, bTsh = NULL, xlim = c(1e-05,
 None
 }
 \description{
-Display rate classification performance with thresholds visible at x-axis
-
 A method to visualize the performance in the classification of synthesis, degradation
 and processing rates based on the comparison of the original simulated rates and the one
 obtained by the function \code{\link{modelRates}}. For each rate, classification performance is measured 
