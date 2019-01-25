@@ -345,7 +345,8 @@ newINSPEcT <- function(tpts
 				rpkms_total_exons <- rpkms_total_exons[eiGenes, ,drop=FALSE]
 				rpkms_total_exons_variances <- rpkms_total_exons_variances[eiGenes, ,drop=FALSE]
 				rpkms_total_introns <- rpkms_total_introns[eiGenes, ,drop=FALSE]
-				rpkms_total_introns_variances <- rpkms_total_introns_variances[eiGenes, ,drop=FALSE]			
+				rpkms_total_introns_variances <- rpkms_total_introns_variances[eiGenes, ,drop=FALSE]
+			}		
 		}
 		message(paste('Number of genes with introns and exons: ', length(eiGenes)))
 		## sort according to time point ordering
@@ -519,9 +520,10 @@ newINSPEcT <- function(tpts
 		# (it can only apply to genes with both exons and introns)
 		eiGenes <- intersect(rownames(rpkms_total_exons), rownames(rpkms_total_introns))
 		negativeMature <- apply(rpkms_total_exons[eiGenes,,drop=FALSE]<rpkms_total_introns[eiGenes,,drop=FALSE],1,any)
-		toRemove <- eiGenes[negativeMature]
+		negativeNascent <- apply(rpkms_Nascent_exons[eiGenes,,drop=FALSE]<rpkms_Nascent_introns[eiGenes,,drop=FALSE],1,any)
+		toRemove <- eiGenes[negativeMature|negativeNascent]
 		if( length(toRemove)>0 ) {
-			message(paste('Removing', length(toRemove), 'gene(s) with intronic quantifications greater than the exonic in the total fraction..'))
+			message(paste('Removing', length(toRemove), 'gene(s) with intronic quantifications greater than the exonic..'))
 			rpkms_Nascent_exons <- rpkms_Nascent_exons[!rownames(rpkms_Nascent_exons) %in% toRemove, ,drop=FALSE]
 			rpkms_total_exons <- rpkms_total_exons[!rownames(rpkms_total_exons) %in% toRemove, ,drop=FALSE]
 			rpkms_Nascent_introns <- rpkms_Nascent_introns[!rownames(rpkms_Nascent_introns) %in% toRemove, ,drop=FALSE]

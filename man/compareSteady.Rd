@@ -60,6 +60,4 @@ if( Sys.info()["sysname"] != "Windows" ) {
   
   diffrates = compareSteady(nasFullObj[,c(1,11)])
 }
-mat_t','pre_t',
-mat_t',
 }

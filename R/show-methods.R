@@ -29,7 +29,7 @@ setMethod('show', 'INSPEcT', function(object) {
 setMethod('show', 'INSPEcT_diffsteady', function(object) {
 	message('Object of class INSPEcT_diffsteady')
 
-	for(sn in slotNames(object) ) {
+	for(sn in c('synthesis','processing','degradation') ) {
 		data <- slot(object, sn)
 		if(nrow(data)>6) {
 			message('Head of slot ',sn,':')
