@@ -46,12 +46,13 @@ shinyUI(fluidPage(
 
 			fileInput("file1", "Choose INSPEcT File", accept = ".rds", width = NULL,
 				buttonLabel = "Browse...", placeholder = "nascentInspObj10.rds"),
-			selectInput("select_class", label = "Select class", 
-				choices = NULL, selected = NULL),
+			uiOutput('select_condition'),
+			uiOutput('select_class'),
 			selectInput("select", label = "Select gene", 
 				choices = NULL, selected = NULL),
-			radioButtons('data_selection', 'Select reference:',
-				choices = c('User defined','Experimental data','Smooth data'), 
+			radioButtons('data_selection', 'Select input:',
+				choiceValues = c('Smooth data', 'Experimental data','User defined'), 
+				choiceNames = c('Smooth data', 'Experimental data','User defined (No input)'), 
 				selected = 'Smooth data'),
 			uiOutput('modeling_box')
 			),

@@ -33,26 +33,54 @@ shinyServer(function(input, output, session) {
 
 				## store inspect global values
 				experiment$tpts <- tpts(ids)
-				inspect$classes <- geneClass(ids)
-				inspect$logshift <- find_tt_par(experiment$tpts)
+				experiment$no_nascent <- ids@NoNascent
+				experiment$steady_state <- is.character(experiment$tpts)
 
-				## remove models from other classes
-				ids@model@ratesSpecs <- 
-					lapply(seq_along(inspect$classes), function(i) 
-						list(ids@model@ratesSpecs[[i]][[inspect$classes[i]]]))
-				names(ids@model@ratesSpecs) <- featureNames(ids)
+				# select only genes with exons and introns
+				ids <- ids[apply(is.finite(ratesFirstGuess(ids,'preMRNA')),1,all)]
 
-				## update (converted) gene classes in the select input box
-				classes_table <- table(isolate(inspect$classes))
-				names(classes_table) <- convert_gene_classes( names(classes_table) )
-				classes_table_string <- paste( names(classes_table) , '(', classes_table, ')' )
-				updateSelectInput(session, "select_class", 
-					choices = classes_table_string, selected = classes_table_string[1])
+				if( !experiment$steady_state ) {
 
-				## define ranges
+					inspect$classes <- geneClass(ids)
+					inspect$logshift <- find_tt_par(experiment$tpts)
+					inspect$linshift <- ifelse( experiment$no_nascent,
+						abs(min(time_transf(experiment$tpts,inspect$logshift))),0)
 
-				ranges$time_min <- min(experiment$tpts)
-				ranges$time_max <- max(experiment$tpts)
+					## remove models from other classes
+					ids@model@ratesSpecs <- 
+						lapply(seq_along(inspect$classes), function(i) 
+							list(ids@model@ratesSpecs[[i]][[inspect$classes[i]]]))
+					names(ids@model@ratesSpecs) <- featureNames(ids)
+
+					## update (converted) gene classes in the select input box
+					classes_table <- table(isolate(inspect$classes))
+					names(classes_table) <- convert_gene_classes( names(classes_table) )
+					classes_table_string <- paste( names(classes_table) , '(', classes_table, ')' )
+					updateSelectInput(session, "select_class", 
+						choices = classes_table_string, selected = classes_table_string[1])
+
+					## define ranges
+
+					ranges$time_min <- min(experiment$tpts)
+					ranges$time_max <- max(experiment$tpts)
+
+				} else {
+
+					inspect$logshift <- 1
+					inspect$linshift <- 0
+
+					updateSelectInput(session, "select_condition", 
+						choices = experiment$tpts, 
+						selected = experiment$tpts[1])
+
+					updateSelectInput(session, "select", 
+						choices = sort(featureNames(ids)), 
+						selected = sort(featureNames(ids))[1])
+
+					ranges$time_min <- 0
+					ranges$time_max <- 16
+
+				}
 
 				## predifined logtime 
 
@@ -73,9 +101,13 @@ shinyServer(function(input, output, session) {
 	################################################
 	
 	observe({
-		selected_class <- reconvert_gene_classes(strsplit( input$select_class , ' ')[[1]][1])
-		updateSelectInput(session, "select", selected = NULL,
-			choices = sort(featureNames(contentsrea()[inspect$classes == selected_class])))
+		if( !is.null(input$select_class) ) {
+			if( !experiment$steady_state ) {
+				selected_class <- reconvert_gene_classes(strsplit( input$select_class , ' ')[[1]][1])
+				updateSelectInput(session, "select", selected = NULL,
+					choices = sort(featureNames(contentsrea()[inspect$classes == selected_class])))
+			}
+		}
 	})
 	
 	############################################################################
@@ -88,27 +120,73 @@ shinyServer(function(input, output, session) {
 		ids <- contentsrea()
 				
 		if( input$select != "" & !is.null(ids) &
-			input$select %in% featureNames(ids) ) {
+			input$select %in% featureNames(ids) & 
+			!(is.null(input$select_condition) & experiment$steady_state ) ) {
 
-			experiment$synthesis <- ratesFirstGuess(ids[input$select], 'synthesis')
-			experiment$mRNA <- ratesFirstGuess(ids[input$select], 'total') - ratesFirstGuess(ids[input$select], 'preMRNA')
-			experiment$preMRNA <- ratesFirstGuess(ids[input$select], 'preMRNA')
-			
-			## test on smooth experiment data???
-			experiment$synthesis_smooth <- smoothModel(ids@tpts, ratesFirstGuess(ids[input$select], 'synthesis'))
-			experiment$mRNA_smooth <- smoothModel(ids@tpts, ratesFirstGuess(ids[input$select], 'total') - ratesFirstGuess(ids[input$select], 'preMRNA'))
-			experiment$preMRNA_smooth <- smoothModel(ids@tpts, ratesFirstGuess(ids[input$select], 'preMRNA'))
-			
-			experiment$synthesissd <- sqrt(ratesFirstGuessVar(ids[input$select], 'synthesis'))
-			experiment$mRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select], 'total') + ratesFirstGuessVar(ids[input$select], 'preMRNA'))
-			experiment$preMRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select], 'preMRNA'))
+			if( !experiment$steady_state ) {
 
-			out <- define_parameter_ranges( ids, isolate(inspect$logshift) )
+				experiment$synthesis <- ratesFirstGuess(ids[input$select], 'synthesis')
+				experiment$mRNA <- ratesFirstGuess(ids[input$select], 'total') - ratesFirstGuess(ids[input$select], 'preMRNA')
+				experiment$preMRNA <- ratesFirstGuess(ids[input$select], 'preMRNA')
+				
+				## test on smooth experiment data???
+				experiment$synthesis_smooth <- smoothModel(ids@tpts, ratesFirstGuess(ids[input$select], 'synthesis'))
+				experiment$mRNA_smooth <- smoothModel(ids@tpts, ratesFirstGuess(ids[input$select], 'total') - ratesFirstGuess(ids[input$select], 'preMRNA'))
+				experiment$preMRNA_smooth <- smoothModel(ids@tpts, ratesFirstGuess(ids[input$select], 'preMRNA'))
 
-			gene_model <- ids@model@ratesSpecs[[input$select]][[1]]
-			
-			modeling$counts <- gene_model$counts[1]
-			modeling$convergence <- gene_model$convergence
+				experiment$synthesissd <- sqrt(ratesFirstGuessVar(ids[input$select], 'synthesis'))
+				experiment$mRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select], 'total') + ratesFirstGuessVar(ids[input$select], 'preMRNA'))
+				experiment$preMRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select], 'preMRNA'))
+
+				out <- define_parameter_ranges( ids, isolate(inspect$logshift), isolate(inspect$linshift) )	
+				gene_model <- ids@model@ratesSpecs[[input$select]][[1]]
+				modeling$counts <- gene_model$counts[1]
+				modeling$convergence <- gene_model$convergence
+
+			} else {
+
+				condition_id <- which(experiment$tpts == input$select_condition)
+
+				experiment$synthesis_smooth <- experiment$synthesis <- 
+					ratesFirstGuess(ids[input$select,condition_id], 'synthesis')
+				experiment$mRNA_smooth      <- experiment$mRNA <- 
+					ratesFirstGuess(ids[input$select,condition_id], 'total') - 
+						ratesFirstGuess(ids[input$select,condition_id], 'preMRNA')
+				experiment$preMRNA_smooth   <- experiment$preMRNA <-   
+					ratesFirstGuess(ids[input$select,condition_id], 'preMRNA')
+				
+				experiment$synthesissd <- sqrt(ratesFirstGuessVar(ids[input$select,condition_id], 'synthesis'))
+				experiment$mRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select,condition_id], 'total') + 
+					ratesFirstGuessVar(ids[input$select,condition_id], 'preMRNA'))
+				experiment$preMRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select,condition_id], 'preMRNA'))
+
+				rateRange <- function(rate) {
+					rate_vals = ratesFirstGuess(ids, rate)
+					rate_range = range(rate_vals[is.finite(rate_vals)])
+					return(c(floor(rate_range[1]), ceiling(rate_range[2])))
+				}
+
+				out <- list(
+					k1_h_pars=rateRange('synthesis'),
+					k2_h_pars=rateRange('processing'),
+					k3_h_pars=rateRange('degradation'),
+					t_pars=c(0,16),
+					beta_pars=c(0,10)
+					)
+
+				gene_model <- list(
+					alpha=list(type='constant',
+						params=ratesFirstGuess(ids[input$select,condition_id], 'synthesis')),
+					beta=list(type='constant',
+						params=ratesFirstGuess(ids[input$select,condition_id], 'degradation')),
+					gamma=list(type='constant',
+						params=ratesFirstGuess(ids[input$select,condition_id], 'processing'))
+					)
+
+				modeling$counts <- NA
+				modeling$convergence <- NA
+
+			}
 
 			function_types$k1 <- switch(
 				gene_model[['alpha']][['type']],
@@ -150,16 +228,16 @@ shinyServer(function(input, output, session) {
 				values$k1_h0 = round(gene_model[["alpha"]][["params"]][1],2)
 				values$k1_h1 = round(gene_model[["alpha"]][["params"]][2],2)
 				values$k1_h2 = round(gene_model[["alpha"]][["params"]][2],2)
-				values$k1_t1 = round(time_transf_inv(gene_model[["alpha"]][["params"]][3], inspect$logshift),2)
-				values$k1_t2 = round(time_transf_inv(gene_model[["alpha"]][["params"]][3], inspect$logshift),2)
+				values$k1_t1 = round(time_transf_inv(gene_model[["alpha"]][["params"]][3], inspect$logshift, inspect$linshift),2)
+				values$k1_t2 = round(time_transf_inv(gene_model[["alpha"]][["params"]][3], inspect$logshift, inspect$linshift),2)
 				values$k1_beta = round(gene_model[["alpha"]][["params"]][4],2)
 			}
 			if( function_types$k1 == "Impulsive" ) {
 				values$k1_h0 = round(gene_model[["alpha"]][["params"]][1],2)
 				values$k1_h1 = round(gene_model[["alpha"]][["params"]][2],2)
 				values$k1_h2 = round(gene_model[["alpha"]][["params"]][3],2)
-				values$k1_t1 = round(time_transf_inv(gene_model[["alpha"]][["params"]][4], inspect$logshift),2)
-				values$k1_t2 = round(time_transf_inv(gene_model[["alpha"]][["params"]][5], inspect$logshift),2)
+				values$k1_t1 = round(time_transf_inv(gene_model[["alpha"]][["params"]][4], inspect$logshift, inspect$linshift),2)
+				values$k1_t2 = round(time_transf_inv(gene_model[["alpha"]][["params"]][5], inspect$logshift, inspect$linshift),2)
 				values$k1_beta = round(gene_model[["alpha"]][["params"]][6],2)
 			}
 			
@@ -175,16 +253,16 @@ shinyServer(function(input, output, session) {
 				values$k2_h0 = round(gene_model[["gamma"]][["params"]][1],2)
 				values$k2_h1 = round(gene_model[["gamma"]][["params"]][2],2)
 				values$k2_h2 = round(gene_model[["gamma"]][["params"]][2],2)
-				values$k2_t1 = round(time_transf_inv(gene_model[["gamma"]][["params"]][3], inspect$logshift),2)
-				values$k2_t2 = round(time_transf_inv(gene_model[["gamma"]][["params"]][3], inspect$logshift),2)
+				values$k2_t1 = round(time_transf_inv(gene_model[["gamma"]][["params"]][3], inspect$logshift, inspect$linshift),2)
+				values$k2_t2 = round(time_transf_inv(gene_model[["gamma"]][["params"]][3], inspect$logshift, inspect$linshift),2)
 				values$k2_beta = round(gene_model[["gamma"]][["params"]][4],2)
 			}
 			if( function_types$k2 == "Impulsive" ) {
 				values$k2_h0 = round(gene_model[["gamma"]][["params"]][1],2)
 				values$k2_h1 = round(gene_model[["gamma"]][["params"]][2],2)
 				values$k2_h2 = round(gene_model[["gamma"]][["params"]][3],2)
-				values$k2_t1 = round(time_transf_inv(gene_model[["gamma"]][["params"]][4], inspect$logshift),2)
-				values$k2_t2 = round(time_transf_inv(gene_model[["gamma"]][["params"]][5], inspect$logshift),2)
+				values$k2_t1 = round(time_transf_inv(gene_model[["gamma"]][["params"]][4], inspect$logshift, inspect$linshift),2)
+				values$k2_t2 = round(time_transf_inv(gene_model[["gamma"]][["params"]][5], inspect$logshift, inspect$linshift),2)
 				values$k2_beta = round(gene_model[["gamma"]][["params"]][6],2)
 			}
 			
@@ -200,20 +278,18 @@ shinyServer(function(input, output, session) {
 				values$k3_h0 = round(gene_model[["beta"]][["params"]][1],2)
 				values$k3_h1 = round(gene_model[["beta"]][["params"]][2],2)
 				values$k3_h2 = round(gene_model[["beta"]][["params"]][2],2)
-				values$k3_t1 = round(time_transf_inv(gene_model[["beta"]][["params"]][3], inspect$logshift),2)
-				values$k3_t2 = round(time_transf_inv(gene_model[["beta"]][["params"]][3], inspect$logshift),2)
+				values$k3_t1 = round(time_transf_inv(gene_model[["beta"]][["params"]][3], inspect$logshift, inspect$linshift),2)
+				values$k3_t2 = round(time_transf_inv(gene_model[["beta"]][["params"]][3], inspect$logshift, inspect$linshift),2)
 				values$k3_beta = round(gene_model[["beta"]][["params"]][4],2)
 			}
 			if( function_types$k3 == "Impulsive" ) {
 				values$k3_h0 = round(gene_model[["beta"]][["params"]][1],2)
 				values$k3_h1 = round(gene_model[["beta"]][["params"]][2],2)
 				values$k3_h2 = round(gene_model[["beta"]][["params"]][3],2)
-				values$k3_t1 = round(time_transf_inv(gene_model[["beta"]][["params"]][4], inspect$logshift),2)
-				values$k3_t2 = round(time_transf_inv(gene_model[["beta"]][["params"]][5], inspect$logshift),2)
+				values$k3_t1 = round(time_transf_inv(gene_model[["beta"]][["params"]][4], inspect$logshift, inspect$linshift),2)
+				values$k3_t2 = round(time_transf_inv(gene_model[["beta"]][["params"]][5], inspect$logshift, inspect$linshift),2)
 				values$k3_beta = round(gene_model[["beta"]][["params"]][6],2)
 			}
-
-			# out <- define_parameter_ranges( ids, isolate(inspect$logshift) )
 
 			gene_h_vals <- c(isolate(values$k1_h0),isolate(values$k1_h1),isolate(values$k1_h2),
 				isolate(values$k2_h0),isolate(values$k2_h1),isolate(values$k2_h2),
@@ -252,7 +328,7 @@ shinyServer(function(input, output, session) {
 	## modeling checkbox
 
 	output$modeling_box <- renderUI({
-		if( input$data_selection != 'User defined' ) {
+		if( input$data_selection != 'User defined' & !experiment$steady_state ) {
 			list(
 				h5("pvalue of the chi-squared statistic:"),
 				verbatimTextOutput("pchisq", TRUE),
@@ -261,15 +337,28 @@ shinyServer(function(input, output, session) {
 				h5("minimization status:"),
 				verbatimTextOutput("convergence", TRUE),
 				fluidRow(
-					column(4,h5('Refine model'), actionButton("optimize", "Optimize")),
-					column(4,numericInput("nIter", label = h5("n iter"), value = 100)),
 					column(4,radioButtons("opt_method", "method", 
-						choices = c('NM','BFGS'), selected = 'NM'))
+						choices = c('NM','BFGS'), selected = 'NM')),
+					column(4,numericInput("nIter", label = h5("iterations"), value = 100)),
+					column(4,h5('Optimization'), actionButton("optimize", "Run"))
 					)
 				)
 		}
 		})
 
+	output$select_condition <- renderUI({
+		if( experiment$steady_state ) {
+			selectInput("select_condition", label = "Select condition", 
+				choices = NULL, selected = NULL)
+		}
+		})
+
+	output$select_class <- renderUI({
+		if( !experiment$steady_state ) {
+			selectInput("select_class", label = "Select class", 
+				choices = NULL, selected = NULL)
+		}
+		})
 
 	######################################################################
 	######################################################################
@@ -280,7 +369,7 @@ shinyServer(function(input, output, session) {
 	######################################################################
 	
 	output$logtime_checkbox_ui <- renderUI({
-		if( input$data_selection != 'User defined' ) {
+		if( input$data_selection != 'User defined' & !experiment$steady_state ) {
 			checkboxInput("logtime_checkbox", 
 					label = "Space time logarithmically", 
 					value = values$logtime)
@@ -675,7 +764,7 @@ shinyServer(function(input, output, session) {
 		
 		ids <- contentsrea()
 		if( input$select != "" & !is.null(ids) & !is.null(input$k1_function) &
-			!is.null(input$k2_function) & !is.null(input$k3_function))
+			!is.null(input$k2_function) & !is.null(input$k3_function) )
 
 			try({
 
@@ -710,10 +799,12 @@ shinyServer(function(input, output, session) {
 					length(k2_params) == expected_length_k2_params &
 					length(k3_params) == expected_length_k3_params )
 				{
+
 					scores <- RNAdynamicsAppPlot(
 						data_selection = input$data_selection,
 						show_logtime = input$logtime_checkbox,
 						logshift = inspect$logshift,
+						linshift = inspect$linshift,
 						time_min = ranges$time_min,
 						time_max = ranges$time_max,
 						experiment = experiment,
@@ -742,6 +833,8 @@ shinyServer(function(input, output, session) {
 		# print('optimization started')
 
 		log_shift <- inspect$logshift
+		lin_shift <- inspect$linshift
+		no_nascent <- experiment$no_nascent
 		tpts_exp <- experiment$tpts
 		alpha_exp <- if( input$data_selection == 'Experimental data' ) 
 			experiment$synthesis else experiment$synthesis_smooth
@@ -822,7 +915,7 @@ shinyServer(function(input, output, session) {
 		params <- list(alpha=k1_rate, beta=k3_rate, gamma=k2_rate)
 		gene_model <- optimParamsMatureRNA(params, tpts_exp, alpha_exp, alpha_var, mature_exp
 		 	, mature_var, preMRNA_exp, preMRNA_var, maxit=input$nIter
-		 	, method=input$opt_method, log_shift)
+		 	, method=input$opt_method, log_shift, lin_shift, no_nascent)
 
 		modeling$counts <- modeling$counts + gene_model$counts[1]
 		modeling$convergence <- gene_model$convergence

@@ -660,7 +660,7 @@ BiocStyle::latex()
 
   <<steadyStateNascent1, message=FALSE, warnings=FALSE, eval=TRUE>>=
   conditions <- letters[1:11]
-  nasFullObj <- newINSPEcT(tpts=conditions
+  nasSteadyObj <- newINSPEcT(tpts=conditions
                           ,labeling_time=tL
                           ,nascentExpressions=nasExp_DESeq2
                           ,matureExpressions=matExp_DESeq2)
@@ -679,7 +679,7 @@ BiocStyle::latex()
 
   <<steadyStateNascent2, message=FALSE, warnings=FALSE, eval=TRUE>>=
 
-  diffrates <- compareSteady(nasFullObj[,c(1,11)])
+  diffrates <- compareSteady(nasSteadyObj[,c(1,11)])
 
   head(round(synthesis(diffrates),2))
   head(round(processing(diffrates),2))
@@ -756,9 +756,9 @@ BiocStyle::latex()
 
   <<processingDelay1, message=FALSE, warnings=FALSE, eval=TRUE>>=
 
-  tau <- calculateTau(nascentInspObj)
+  tau <- calculateTau(nasSteadyObj)
 
-  procDelay<- processingDelay(inspectIds=matureInspObj
+  procDelay<- processingDelay(inspectIds=nasSteadyObj
                              ,tauThreshold=1.2
                              ,deltaThreshold=1.0)
   table(procDelay, useNA='always')
@@ -771,7 +771,8 @@ BiocStyle::latex()
   <<processingDelay2, message=FALSE, warnings=FALSE, eval=TRUE, fig.width=4, fig.height=4, fig.cap="">>=
 
   tau_approx <- calculateTau(matureInspObj)
-  plot(tau, tau_approx, log='xy'
+  cg <- intersect(featureNames(nasSteadyObj), featureNames(matureInspObj))
+  plot(tau[cg,], tau_approx[cg,], log='xy'
       , main=expression(paste(tau,' metric'))
       , xlab='with nascent RNA'
       , ylab='approximation without nascent RNA')

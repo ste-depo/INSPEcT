@@ -28,6 +28,7 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 {
 
 	tpts <- object@tpts
+	if( !is.numeric(tpts) ) stop('makeSimModel: simulated data can be created only from time-course.')
 
 	#I remove genes without intronic signal
 	genesTmp <- which(apply(ratesFirstGuess(object, 'preMRNA'),1,function(r)all(is.finite(r))&all(r>0)))		

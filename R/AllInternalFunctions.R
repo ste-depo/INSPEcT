@@ -9,14 +9,14 @@ find_tt_par <- function(tpts)
   else{return(1)}
 }
 
-time_transf <- function(t, log_shift, c = NaN) 
+time_transf <- function(t, log_shift, lin_shift = 0) 
 {
 	t[ t <= (-log_shift) ] <- NaN
-	newtime <- log2(t+log_shift)
+	newtime <- log2(t+log_shift) + lin_shift
 	return(newtime)
 } 
 
-time_transf_inv <- function(t, log_shift) 2^t - log_shift
+time_transf_inv <- function(t, log_shift, lin_shift=0) 2^(t - lin_shift) - log_shift
 
 time_transf_NoNascent <- function(t, log_shift, c) 
 {
@@ -51,7 +51,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 	as.data.frame(model)
 }
 
-.makeModel <- function(tpts, hyp, log_shift, time_transf, ode, .rxnrate, c= NaN)
+.makeModel <- function(tpts, hyp, log_shift, time_transf, ode, .rxnrate, c=0)
 {
 	params <- list()
 	params$alpha <- function(x) 

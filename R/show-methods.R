@@ -58,6 +58,7 @@ setMethod('featureNames', 'INSPEcT', function(object) {
 setReplaceMethod('featureNames', signature(object='INSPEcT', value='ANY')
 	, function(object, value) {
 	featureNames(object@ratesFirstGuess) <- value
+	featureNames(object@ratesFirstGuessVar) <- value
 	if( nrow(object@modelRates) > 0 ) {
 		featureNames(object@modelRates) <- value
 		names(object@model@ratesSpecs) <- value
