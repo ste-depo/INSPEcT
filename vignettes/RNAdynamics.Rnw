@@ -1,4 +1,4 @@
-%\VignetteIndexEntry{INSPEcT}
+%\VignetteIndexEntry{RNAdynamics}
 %\VignettePackage{INSPEcT}
 %\VignetteDepends{INSPEcT}
 %\VignetteEngine{knitr::knitr}

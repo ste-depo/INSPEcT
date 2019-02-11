@@ -1,7 +1,7 @@
 Package: INSPEcT
 Type: Package
 Title: Analysis of 4sU-seq and RNA-seq time-course data
-Version: 1.13.12
+Version: 1.13.13
 Date: 2018-12-06
 Author: Stefano de Pretis
 Maintainer: Stefano de Pretis <ste.depo@gmail.com>
@@ -21,5 +21,3 @@ VignetteBuilder: knitr
 biocViews: Sequencing, RNASeq, GeneRegulation, TimeCourse,
         SystemsBiology
 NeedsCompilation: no
-RoxygenNote: 6.1.1
-Packaged: 2016-03-21 14:24:31 UTC; sdepreti
