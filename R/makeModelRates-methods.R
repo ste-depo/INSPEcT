@@ -10,7 +10,7 @@
 #' @return An object of class ExpressionSet containing the modeled rates and concentrations
 #' @examples
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
-#' tpts <- nascentInspObj10@tpts
+#' tpts <- tpts(nascentInspObj10)
 #' eSet <- makeModelRates(getModel(nascentInspObj10), tpts=tpts)
 #' exprs(eSet)
 setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
@@ -80,7 +80,7 @@ setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' viewModelRates(nascentInspObj10, 'degradation')
 #' ## force every degradation rate to be accepted as variable
-#' thresholds(getModel(nascentInspObj10))$brown <- c(synthesis=.01, degradation=1, processing=.01)
+#' modelSelection(getModel(nascentInspObj10))$thresholds$brown <- c(synthesis=.01, degradation=1, processing=.01)
 #' nascentInspObj10 <- makeModelRates(nascentInspObj10)
 #' viewModelRates(nascentInspObj10, 'degradation')
 

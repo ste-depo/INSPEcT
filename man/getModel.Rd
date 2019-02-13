@@ -33,6 +33,3 @@ within the INSPEcT object.
 nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 getModel(nascentInspObj10)
 }
-\seealso{
-\code{\link{testingParams}}
-}

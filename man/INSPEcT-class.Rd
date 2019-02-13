@@ -40,7 +40,6 @@ Methods that apply to INSPEcT class are
 \code{\link{getModel}} \cr
 \code{\link{inHeatmap}} \cr
 \code{\link{labeledSF}}
-\code{\link{llrtests}} \cr
 \code{\link{logLik}} \cr
 \code{\link{makeModelRates}} \cr
 \code{\link{makeSimModel}} \cr
@@ -56,7 +55,6 @@ Methods that apply to INSPEcT class are
 \code{\link{ratesFirstGuess}} \cr
 \code{\link{removeModel}} \cr
 \code{\link{sfPlot}} \cr
-\code{\link{thresholds}} \cr
 \code{\link{tpts}} \cr
 \code{\link{viewModelRates}} \cr
 }

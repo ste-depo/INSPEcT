@@ -2207,14 +2207,14 @@ errorVVV_Der_NoNascent <- function(parameters
 			,VVV = 18)
 
 	# P values
-	pvaluesdata <- cbind(KKK=pchisq(chi2data[,'KKK'], min(c(0,2*length(tptsOriginal)-dof['KKK'])))
-						,VKK=pchisq(chi2data[,'VKK'], min(c(0,2*length(tptsOriginal)-dof['VKK'])))
-						,KVK=pchisq(chi2data[,'KVK'], min(c(0,2*length(tptsOriginal)-dof['KVK'])))
-						,KKV=pchisq(chi2data[,'KKV'], min(c(0,2*length(tptsOriginal)-dof['KKV'])))
-						,VVK=pchisq(chi2data[,'VVK'], min(c(0,2*length(tptsOriginal)-dof['VVK'])))
-						,VKV=pchisq(chi2data[,'VKV'], min(c(0,2*length(tptsOriginal)-dof['VKV'])))
-						,KVV=pchisq(chi2data[,'KVV'], min(c(0,2*length(tptsOriginal)-dof['KVV'])))
-						,VVV=pchisq(chi2data[,'VVV'], min(c(0,2*length(tptsOriginal)-dof['VVV']))))
+	pvaluesdata <- cbind(KKK=pchisq(chi2data[,'KKK'], max(c(0,2*length(tptsOriginal)-dof['KKK'])))
+						,VKK=pchisq(chi2data[,'VKK'], max(c(0,2*length(tptsOriginal)-dof['VKK'])))
+						,KVK=pchisq(chi2data[,'KVK'], max(c(0,2*length(tptsOriginal)-dof['KVK'])))
+						,KKV=pchisq(chi2data[,'KKV'], max(c(0,2*length(tptsOriginal)-dof['KKV'])))
+						,VVK=pchisq(chi2data[,'VVK'], max(c(0,2*length(tptsOriginal)-dof['VVK'])))
+						,VKV=pchisq(chi2data[,'VKV'], max(c(0,2*length(tptsOriginal)-dof['VKV'])))
+						,KVV=pchisq(chi2data[,'KVV'], max(c(0,2*length(tptsOriginal)-dof['KVV'])))
+						,VVV=pchisq(chi2data[,'VVV'], max(c(0,2*length(tptsOriginal)-dof['VVV']))))
 
 	
 

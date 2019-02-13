@@ -53,8 +53,6 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 	ddp <- inspectIds@degDuringPulse
 	cTsh <- 1 # accept all models
-	# cTsh <- thresholds(inspectIds)$chisquare
-	# bTsh <- thresholds(inspectIds)$brown
 	sf <- inspectIds@labeledSF
 	tL <- inspectIds@tL
 

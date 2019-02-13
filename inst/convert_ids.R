@@ -17,8 +17,12 @@ convert_ids = function(ids, degDuringPulse=FALSE) {
 	## add new slots
 	ids@NoNascent <- FALSE
 	ids@degDuringPulse <- degDuringPulse[1]
-	ids@model@params$preferPValue <- TRUE
-	ids@model@params$padjG <- TRUE
+	ids@model@params$preferPValue <- FALSE
+	ids@model@params$padj <- FALSE
+
+	## re-order brown thresholds
+	ids@model@params$thresholds$brown <- 
+		ids@model@params$thresholds$brown[c('synthesis','processing','degradation')]
 
 	return(ids)
 
