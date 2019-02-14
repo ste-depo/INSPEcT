@@ -191,7 +191,7 @@ calculate_rates_pvalues <- function(object, bTsh, cTsh, dfmax=Inf) {
 		if( length(rates_to_aviod)>0 )
 			aictest = aictest[,grep(rates_to_aviod, colnames(aictest), invert=TRUE)]
 		gene_class <- colnames(aictest)[apply(aictest, 1, which.min)]
-		ratePvals <- t(sapply(seq_along(ratesSpecs), function(i) {
+		ratePvals <- data.frame(t(sapply(seq_along(ratesSpecs), function(i) {
 			switch(gene_class[i],
 				'0' = c(
 					synthesis=logLikRatioTestInscpectModels(ratesSpecs[[i]][['0']] ,ratesSpecs[[i]][['a']], dfmax),
@@ -234,7 +234,7 @@ calculate_rates_pvalues <- function(object, bTsh, cTsh, dfmax=Inf) {
 					degradation=logLikRatioTestInscpectModels(ratesSpecs[[i]][['ac']],ratesSpecs[[i]][['abc']], dfmax)
 					)
 				)
-			}))
+			})))
 		rownames(ratePvals) <- rownames(aictest)
 		if( length(rates_to_aviod)>0 ) {
 			ratePvals[,c('a'='synthesis','b'='degradation','c'='processing')[rates_to_aviod]] <- 1

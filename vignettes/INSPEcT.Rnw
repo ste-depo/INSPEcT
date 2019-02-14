@@ -570,16 +570,16 @@ BiocStyle::latex()
 
   par(mfrow=c(2,2))
   rocCurve(simRates[1:100],nascentInspObj_sim3)
-  title("2rep. 10t.p. Total and nascent RNA", line=3)
+  title("3rep. 10t.p. Total and nascent RNA", line=3)
   
   rocCurve(simRates[1:100],nascentInspObj_sim4)
-  title("3rep. 12t.p. Total and nascent RNA", line=3)
+  title("4rep. 12t.p. Total and nascent RNA", line=3)
   
   rocCurve(simRates[1:100],matureInspObj_sim3)
-  title("2rep. 10t.p. Total RNA", line=3)
+  title("3rep. 10t.p. Total RNA", line=3)
   
   rocCurve(simRates[1:100],matureInspObj_sim4)
-  title("3rep. 12t.p. Total RNA", line=3)
+  title("4rep. 12t.p. Total RNA", line=3)
 
   @
   
