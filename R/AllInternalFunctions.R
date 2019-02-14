@@ -273,9 +273,10 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 			D <- chisqFunction(alpha_exp, alpha_model, alpha_var) +
 				chisqFunction(total_exp, total_model, total_var) +
 				chisqFunction(preMRNA_exp, preMRNA_model, preMRNA_var)
-			df <- length(alpha_exp) + length(total_exp) + length(preMRNA_exp) - sum(df)
-			testValue <- chisq.test.inspect(D, df)
-			return(testValue)
+			return(D)
+			# df <- length(alpha_exp) + length(total_exp) + length(preMRNA_exp) - sum(df)
+			# testValue <- chisq.test.inspect(D, df)
+			# return(testValue)
 		}
 		optOut <- tryCatch(
 			#
@@ -324,10 +325,6 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 		interpRates$alpha$params <- splitpar$alpha
 		interpRates$beta$params  <- splitpar$beta
 		interpRates$gamma$params <- splitpar$gamma
-		# even if the minimization used the linear pvalue
-		# give back the log one
-		# if( pval=='lin' ) 
-		optOut$value <- log(optOut$value)
 		#
 		# return parameter functions and other output
 		# from the optimization procedure
@@ -342,7 +339,8 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 
 		k <- interpRates$alpha$df + interpRates$beta$df + interpRates$gamma$df
 		n <- length(alpha_exp) + length(total_exp) + length(preMRNA_exp)
-		chisqTest <- optOut$value
+		# chisqTest <- log(optOut$value)
+		chisqTest <- log(pchisq(optOut$value, n-k, lower.tail=TRUE))
 		AIC <- 2*k - 2*logLik
 		AICc <- AIC + 2*k*(k+1)/(n-k-1)
 		return(list(

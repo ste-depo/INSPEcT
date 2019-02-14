@@ -19,6 +19,7 @@ convert_ids = function(ids, degDuringPulse=FALSE) {
 	ids@degDuringPulse <- degDuringPulse[1]
 	ids@model@params$preferPValue <- FALSE
 	ids@model@params$padj <- FALSE
+	ids@model@params$limitModelComplexity <- FALSE
 
 	## re-order brown thresholds
 	ids@model@params$thresholds$brown <- 

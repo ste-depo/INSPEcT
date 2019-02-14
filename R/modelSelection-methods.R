@@ -63,10 +63,10 @@ setReplaceMethod('modelSelection', 'INSPEcT', function(object, value) {
 	modelSelection(object@model) <- value
 	if( (!identical(value, pre_val)) & length(object@model@ratesSpecs)>1 ) {
 		message('Updating modeled rates...')
-		bTsh <- value$model$thresholds$brown
+		bTsh <- value$thresholds$brown
 		if( any(bTsh == 0) ) {
 			rates_to_aviod <- names(bTsh)[bTsh == 0]
-			message(paste('-- Rate(s)',paste(rates_to_aviod, collapse=', and '),'excluded from hypotheses of variability --'))
+			message(paste('--',paste(rates_to_aviod, collapse=', and '),'rate(s) excluded from hypothesis of variability --'))
 		}
 		object <- makeModelRates(object)
 	}
@@ -82,7 +82,7 @@ setMethod('modelSelection', 'INSPEcT_model', function(object) {
 setReplaceMethod('modelSelection', 'INSPEcT_model', function(object, value) {
 	if(!is.list(value))
 		stop('modelSelection: value argument must be a list')
-	for( arg in c('modelSelection','preferPValue','padj','thresholds') ) {
+	for( arg in c('modelSelection','preferPValue','padj','thresholds','limitModelComplexity') ) {
 		if( !any(grepl(paste0('^',arg), names(value))) )
 			stop(paste('modelSelection: value must contain an element named "', arg, '"'))
 	}
@@ -96,6 +96,8 @@ setReplaceMethod('modelSelection', 'INSPEcT_model', function(object, value) {
 		stop('modelSelection: preferPValue element of value argument must be a logical')
 	if( !is.logical(value$padj) )
 		stop('modelSelection: padj element of value argument must be a logical')
+	if( !is.logical(value$limitModelComplexity) )
+		stop('modelSelection: limitModelComplexity element of value argument must be a logical')
 	if( !is.list(value$thresholds) )
 		stop('modelSelection: thresholds element of value argument must be a list')
 	if( !identical(names(value$thresholds),c('chisquare', 'brown')) )

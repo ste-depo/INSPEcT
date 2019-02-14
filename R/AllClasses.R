@@ -69,6 +69,7 @@ setClass('INSPEcT_model',
                     	processing=.05, 
                     	degradation=.05)
                     )
+            , limitModelComplexity = FALSE
 				)
 			)
 		)

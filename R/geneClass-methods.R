@@ -100,28 +100,45 @@ setMethod('geneClass', 'INSPEcT',
 
 	}else{
 
-		## give a discrete classification per each rate per each gene
-		# according to the brown's threshold for the pvalues
-		acceptedVarModels <- sapply(c('synthesis','processing','degradation'), 
-			function(i) ratePvals[,i]<bTsh[i])
-		if( !is.matrix(acceptedVarModels) )
-			acceptedVarModels <- t(as.matrix(acceptedVarModels))
-		# nonResolvedGenes <- apply(acceptedVarModels, 1, 
-		# 	function(x) all(is.na(x)))
-		acceptedVarModels[is.na(acceptedVarModels)] <- FALSE
-		rownames(acceptedVarModels) <- rownames(ratePvals)
-		colnames(acceptedVarModels) <- colnames(ratePvals)
-		geneClass <- apply(acceptedVarModels, 1, 
-			function(accepted) paste(sort(c('a','c','b')[accepted]),collapse=''))
-		geneClass[geneClass==''] <- '0'
-		# geneClass[nonResolvedGenes] <- NA
-		## retrive all the models
-		ratesSpecs <- object@ratesSpecs
-		## select the best model (according to geneClass) per gene
-		nGenes <- length(ratesSpecs)
-		object@ratesSpecs <- lapply(1:nGenes, 
-			function(i) ratesSpecs[[i]][geneClass[i]])
-		return(object)
+		if( modelSelection(object)$modelSelection == 'llr' ) {
+
+			## give a discrete classification per each rate per each gene
+			# according to the brown's threshold for the pvalues
+			acceptedVarModels <- sapply(c('synthesis','processing','degradation'), 
+				function(i) ratePvals[,i]<bTsh[i])
+			if( !is.matrix(acceptedVarModels) )
+				acceptedVarModels <- t(as.matrix(acceptedVarModels))
+			acceptedVarModels[is.na(acceptedVarModels)] <- FALSE
+			rownames(acceptedVarModels) <- rownames(ratePvals)
+			colnames(acceptedVarModels) <- colnames(ratePvals)
+			geneClass <- apply(acceptedVarModels, 1, 
+				function(accepted) paste(sort(c('a','c','b')[accepted]),collapse=''))
+			geneClass[geneClass==''] <- '0'
+			## retrive all the models
+			ratesSpecs <- object@ratesSpecs
+			## select the best model (according to geneClass) per gene
+			nGenes <- length(ratesSpecs)
+			object@ratesSpecs <- lapply(1:nGenes, 
+				function(i) ratesSpecs[[i]][geneClass[i]])
+			return(object)
+
+		} else if( modelSelection(object)$modelSelection == 'aic' ) {
+
+			aictest = AIC(object)
+			# any rate not to consider?
+			rates_to_aviod <- names(bTsh)[bTsh == 0]
+			rates_to_aviod <- c('synthesis'='a','degradation'='b','processing'='c')[rates_to_aviod]
+			if( length(rates_to_aviod)>0 )
+				aictest = aictest[,grep(rates_to_aviod, colnames(aictest), invert=TRUE)]
+			geneClass <- colnames(aictest)[apply(aictest, 1, which.min)]
+			ratesSpecs <- object@ratesSpecs
+			## select the best model (according to geneClass) per gene
+			nGenes <- length(ratesSpecs)
+			object@ratesSpecs <- lapply(1:nGenes, 
+				function(i) ratesSpecs[[i]][geneClass[i]])
+			return(object)
+
+		}
 
 	}
 }
