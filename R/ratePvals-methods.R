@@ -240,7 +240,7 @@ calculate_rates_pvalues <- function(object, bTsh, cTsh, dfmax=Inf) {
 			ratePvals[,c('a'='synthesis','b'='degradation','c'='processing')[rates_to_aviod]] <- 1
 		}
  		if(object@params$padj) {
-			ratePvals <- apply(ratePvals, 2, p.adjust, method="BH")
+			ratePvals <- data.frame(apply(ratePvals, 2, p.adjust, method="BH"))
 		}
 	}
 	# return
