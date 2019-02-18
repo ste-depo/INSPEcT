@@ -20,17 +20,19 @@
 #'     defines the stringency of the call for the variability of each rate (0 the most
 #'     stringent, 1 the most permissive). When set to 0, the specific rate is 
 #'     excluded from the hypothesis of variability.
-#'   \preferPValue: when model selection is "llr", preferPValue means that 
+#'   \item preferPValue: when model selection is "llr", preferPValue means that 
 #'     if the selected model has a goodness of fit below threshold the model with
 #'     the best goodness of fit is returned in place of it. When the model selection
 #'     is "aic", with preferPValue the best model is tested against the closest 
 #'     nested models to test the hypothesis of variability and only when this 
 #'     pvalue is below threshold the rate is considered as varible. Otherwise the 
 #'     model selection is just based on the lowest AIC (Default: TRUE).
-#'   \padj: whether to correct pvalues with the Benjamini-Hochberg procedure 
+#'   \item padj: whether to correct pvalues with the Benjamini-Hochberg procedure 
 #'     or not. (Default: TRUE).
-#' 
-#'   \limitModelComplexity:
+#'   \item limitModelComplexity: limit the complexity of the models associated to
+#'     variable rates to the length of the time courses. Particularly helpful
+#'     for short time series. (Default:FALSE)
+#'     
 #' }
 #'
 #' @return See "value"

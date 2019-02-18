@@ -245,9 +245,8 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 	}
 
 	optimParams <- function(interpRates, tpts_exp, alpha_exp, alpha_var, total_exp
-		, total_var, preMRNA_exp, preMRNA_var
-		# , test=c('merged', 'combined'), pval=c('lin', 'log')
-		, maxit=500, log_shift, time_transf, .rxnrate, ode, .makeModel, logLikelihoodFunction)
+		, total_var, preMRNA_exp, preMRNA_var, maxit=500, log_shift, time_transf, 
+		.rxnrate, ode, .makeModel, logLikelihoodFunction, limitModelComplexity)
 	{
 		modelChisq <- function(par, tpts, fun, df, alpha_exp, alpha_var #, pval
 			, total_exp, total_var, preMRNA_exp, preMRNA_var)
@@ -1580,7 +1579,8 @@ errorVVV_Der_NoNascent <- function(parameters
 										   , testOnSmooth=TRUE
 										   , seed=NULL
 										   , nInit = nInit
-										   , nIter = nIter)
+										   , nIter = nIter
+										   , limitModelComplexity = FALSE)
 {
 
 	total <- concentrations$total
@@ -2563,7 +2563,8 @@ errorVVV_Der_NoNascent <- function(parameters
 										    , testOnSmooth=TRUE
 										    , seed = NULL
 										    , nInit = nInit
-										    , nIter = nIter)
+										    , nIter = nIter
+										    , limitModelComplexity = FALSE)
 {
 
 	total <- concentrations$total
