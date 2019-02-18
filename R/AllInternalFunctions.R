@@ -139,7 +139,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 
 .inspect.engine <- function(tpts, log_shift, concentrations, rates
 	, nInit=10, nIter=300, na.rm=TRUE, BPPARAM=bpparam() #nCores=2L
-	, verbose=TRUE, estimateRatesWith=c('der', 'int'), nAttempts=1
+	, verbose=TRUE, limitModelComplexity=FALSE, estimateRatesWith=c('der', 'int'), nAttempts=1
 	, sigmoidDegradation=FALSE, sigmoidSynthesis=FALSE, sigmoidTotal=FALSE
 	, sigmoidProcessing=FALSE, sigmoidPre=FALSE
 	, testOnSmooth=TRUE, seed=NULL)
@@ -154,7 +154,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 	optimParamsSimple <- function(interpRates, tpts_exp, alpha_exp, alpha_var
 		, total_exp, total_var, maxit=500
 		, log_shift, time_transf, .rxnrateSimple, ode, .makeSimpleModel, logLikelihoodFunction
-		, .emptyGene)
+		, .emptyGene, limitModelComplexity)
 	{
 
 		if( is.null(interpRates) ) return(.emptyGene())
@@ -220,7 +220,11 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 			, log_shift, time_transf, ode, .rxnrateSimple)
 		logLik <- logLikelihoodFunction(alpha_exp, model$alpha, alpha_var) + 
 			logLikelihoodFunction(total_exp, model$total, total_var)
-		k <- interpRates$alpha$df + interpRates$beta$df
+		if( limitModelComplexity ) {
+			k <- min(interpRates$alpha$df, length(tpts_exp)) + min(interpRates$beta$df, length(tpts_exp))
+		} else {
+			k <- interpRates$alpha$df + interpRates$beta$df
+		}
 		n <- length(alpha_exp) + length(total_exp)
 		chisqTest <- log(pchisq(optOut$value, n-k, lower.tail=TRUE))
 		AIC <- 2*k - 2*logLik
@@ -337,7 +341,12 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 			logLikelihoodFunction(total_exp, model$total, total_var) +
 			logLikelihoodFunction(preMRNA_exp, model$preMRNA, preMRNA_var)
 
-		k <- interpRates$alpha$df + interpRates$beta$df + interpRates$gamma$df
+		if( limitModelComplexity ) {
+			k <- min(interpRates$alpha$df, length(tpts_exp)) + min(interpRates$beta$df, length(tpts_exp)) + 
+				min(interpRates$gamma$df, length(tpts_exp))
+		} else {
+			k <- interpRates$alpha$df + interpRates$beta$df + interpRates$gamma$df
+		}
 		n <- length(alpha_exp) + length(total_exp) + length(preMRNA_exp)
 		# chisqTest <- log(optOut$value)
 		chisqTest <- log(pchisq(optOut$value, n-k, lower.tail=TRUE))
@@ -363,7 +372,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 			.polynomialModelP, .makeModel, .makeSimpleModel, logLikelihoodFunction, .rxnrate,
 			.rxnrateSimple, optimParams, optimParamsSimple, verbose, nAttempts,
 			concentrations, rates, tpts, log_shift, na.rm, sigmoidTotal,
-			sigmoidSynthesis, nInit, nIter, testOnSmooth, estimateRatesWith) 
+			sigmoidSynthesis, nInit, nIter, testOnSmooth, estimateRatesWith, limitModelComplexity) 
 	{
 		## set the mode of the gene, "only exons gene" or 
 		## "introns exons gene"
@@ -589,6 +598,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 								, .rxnrate=.rxnrate
 								, .makeModel=.makeModel
 								, logLikelihoodFunction=logLikelihoodFunction
+								, limitModelComplexity=limitModelComplexity
 								)
 							, error=function(e) .emptyGene(e)
 							)
@@ -610,6 +620,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 								, .makeSimpleModel=.makeSimpleModel
 								, logLikelihoodFunction=logLikelihoodFunction
 								, .emptyGene=.emptyGene
+								, limitModelComplexity=limitModelComplexity
 								)
 							, error=function(e) .emptyGene(e)
 							)
@@ -695,6 +706,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 		.makeModel=.makeModel,
 		.makeSimpleModel=.makeSimpleModel,
 		logLikelihoodFunction=logLikelihoodFunction,
+		limitModelComplexity=limitModelComplexity,
 		BPPARAM=BPPARAM
 		)
 	return(paramSpecs)
@@ -2195,14 +2207,26 @@ errorVVV_Der_NoNascent <- function(parameters
 	
 	}, BPPARAM=BPPARAM))
 
-	dof <- c(KKK = 3
-			,VKK = 8
-			,KVK = 8
-			,KKV = 8
-			,VVK = 13
-			,VKV = 13
-			,KVV = 13
-			,VVV = 18)
+	if( limitModelComplexity ) {
+		dof <- c(KKK = 3
+				,VKK = min(8, length(tptsOriginal)+2)
+				,KVK = min(8, length(tptsOriginal)+2)
+				,KKV = min(8, length(tptsOriginal)+2)
+				,VVK = min(13, 2*length(tptsOriginal)+1)
+				,VKV = min(13, 2*length(tptsOriginal)+1)
+				,KVV = min(13, 2*length(tptsOriginal)+1)
+				,VVV = min(18, 2*length(tptsOriginal))
+				)
+	} else {
+		dof <- c(KKK = 3
+				,VKK = 8
+				,KVK = 8
+				,KKV = 8
+				,VVK = 13
+				,VKV = 13
+				,KVV = 13
+				,VVV = 18)
+	}
 
 	# P values
 	pvaluesdata <- cbind(KKK=pchisq(chi2data[,'KKK'], max(c(0,2*length(tptsOriginal)-dof['KKK'])))
@@ -3000,14 +3024,38 @@ errorVVV_Der_NoNascent <- function(parameters
 	
 	}, BPPARAM = BPPARAM))
 
-	dof <- c(KKK = 3
-			,VKK = 8
-			,KVK = 8
-			,KKV = 8
-			,VVK = 13
-			,VKV = 13
-			,KVV = 13
-			,VVV = 18)
+	if( limitModelComplexity ) {
+		dof <- c(KKK = 3
+				,VKK = min(8, length(tptsOriginal)+2)
+				,KVK = min(8, length(tptsOriginal)+2)
+				,KKV = min(8, length(tptsOriginal)+2)
+				,VVK = min(13, 2*length(tptsOriginal)+1)
+				,VKV = min(13, 2*length(tptsOriginal)+1)
+				,KVV = min(13, 2*length(tptsOriginal)+1)
+				,VVV = min(18, 2*length(tptsOriginal))
+				)
+	} else {
+	if( limitModelComplexity ) {
+		dof <- c(KKK = 3
+				,VKK = min(8, length(tptsOriginal)+2)
+				,KVK = min(8, length(tptsOriginal)+2)
+				,KKV = min(8, length(tptsOriginal)+2)
+				,VVK = min(13, 2*length(tptsOriginal)+1)
+				,VKV = min(13, 2*length(tptsOriginal)+1)
+				,KVV = min(13, 2*length(tptsOriginal)+1)
+				,VVV = min(18, 2*length(tptsOriginal))
+				)
+	} else {
+		dof <- c(KKK = 3
+				,VKK = 8
+				,KVK = 8
+				,KKV = 8
+				,VVK = 13
+				,VKV = 13
+				,KVV = 13
+				,VVV = 18)
+	}
+	}
 
 	# P values
 	pvaluesdata <- cbind(KKK=pchisq(chi2data[,'KKK'], max(c(0,2*length(tptsOriginal)-dof['KKK'])))

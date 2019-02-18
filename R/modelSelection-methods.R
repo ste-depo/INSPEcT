@@ -4,7 +4,7 @@
 #' With this methods the user can personalize the criteria by which INSPEcT
 #' selects a rate to be variable or constant. In particular, the model selection
 #' criteria can be selected between log-likelihood ratio test and Akaike's information
-#' criterion. In case log-likelihood ratio test is selected, the thresholds of 
+#' criterion (AIC). In case log-likelihood ratio test is selected, the thresholds of 
 #' chi-squared and Brown's method can be set (see Details section).
 #'
 #' @param object An object of class INSPEcT or INSPEcT_model
@@ -13,10 +13,24 @@
 #'   \item modelSelection: A character, either "llr" to test whether a rate is 
 #'     varying using log-likelihood testing framework or "aic" to choose
 #'     the best model via Akaike Information Criterion (Default: "llr").
-#'   \item thresholds: A named list containing the threshold that is used to 
-#'     consider a model as accepted in terms of the chi-squared test and three 
-#'     thresholds (one per each rate) that are used to consider a rate as variable
-#'     using the Brown's method on the log-likelihood ratio tests
+#'   \item thresholds: A named list containing the thresholds for the goodness of fit 
+#'     (chisquare) and variability (brown) tests. Both must be comprised from 0 to 1.
+#'     The goodness of fit threshold defines which models are considered valid or not
+#'     (0 most stringent, 1 most permissive). The variability threshold (one per each rate)
+#'     defines the stringency of the call for the variability of each rate (0 the most
+#'     stringent, 1 the most permissive). When set to 0, the specific rate is 
+#'     excluded from the hypothesis of variability.
+#'   \preferPValue: when model selection is "llr", preferPValue means that 
+#'     if the selected model has a goodness of fit below threshold the model with
+#'     the best goodness of fit is returned in place of it. When the model selection
+#'     is "aic", with preferPValue the best model is tested against the closest 
+#'     nested models to test the hypothesis of variability and only when this 
+#'     pvalue is below threshold the rate is considered as varible. Otherwise the 
+#'     model selection is just based on the lowest AIC (Default: TRUE).
+#'   \padj: whether to correct pvalues with the Benjamini-Hochberg procedure 
+#'     or not. (Default: TRUE).
+#' 
+#'   \limitModelComplexity:
 #' }
 #'
 #' @return See "value"
@@ -61,6 +75,62 @@ setMethod('modelSelection', 'INSPEcT', function(object) {
 setReplaceMethod('modelSelection', 'INSPEcT', function(object, value) {
 	pre_val <- modelSelection(object@model)
 	modelSelection(object@model) <- value
+	if( value$limitModelComplexity != pre_val$limitModelComplexity ) {
+		message('Updating models accoring to the new complexity...')
+		tclength <- length(tpts(object))
+		nGenes <- length(object@model@ratesSpecs)
+		gene_classes <- names(object@model@ratesSpecs[[1]])
+
+		if( object@model@params$limitModelComplexity ) {
+			k <- t(sapply(1:nGenes, function(i) 
+				sapply(object@model@ratesSpecs[[1]], function(x) {
+					sum(sapply(x[1:3], function(y) min(y$df, tclength)))
+				})))
+		} else {
+			k <- t(sapply(1:nGenes, function(i) 
+				sapply(object@model@ratesSpecs[[1]], function(x) {
+					sum(sapply(x[1:3], '[[', 'df'))
+				})))
+		}
+
+		tot_exp = ratesFirstGuess(object, 'total')
+		pre_exp = ratesFirstGuess(object, 'preMRNA')
+		syn_exp = ratesFirstGuess(object, 'synthesis')
+
+		tot_var = ratesFirstGuessVar(object, 'total')
+		pre_var = ratesFirstGuessVar(object, 'preMRNA')
+		syn_var = ratesFirstGuessVar(object, 'synthesis')
+
+		D <- sapply(gene_classes, function(gc) {
+			objectTmp <- object
+			objectTmp@model@ratesSpecs <- lapply(1:nGenes, 
+				function(i) objectTmp@model@ratesSpecs[[i]][gc])
+			objectTmp <- makeModelRates(objectTmp)
+			tot_mod = viewModelRates(objectTmp, 'total')
+			pre_mod = viewModelRates(objectTmp, 'preMRNA')
+			syn_mod = viewModelRates(objectTmp, 'synthesis')
+			apply((tot_mod - tot_exp)^2/tot_var +
+				(pre_mod - pre_exp)^2/pre_var +
+				if( objectTmp@NoNascent ) 0 else (syn_mod - syn_exp)^2/syn_var
+				, 1, sum)
+		})
+		n <- if( object@NoNascent ) 2*tclength else 3*tclength
+		df <- n - k
+		chisqtest = sapply(seq_along(gene_classes), function(i) {
+			if(df[i]>0) pchisq(D[,i], df[i], lower.tail=TRUE) else rep(1, nGenes)
+		})
+		colnames(chisqtest) = gene_classes
+		AIC <- - 2*logLik(object) + 2*k
+		AICc <- AIC + 2*k*(k+1)/(n-k-1)
+		## replace in the object
+		for( i in 1:nGenes ) {
+			for( gc in gene_classes ) {
+				object@model@ratesSpecs[[i]][[gc]]$test <- log(chisqtest[i,gc])
+				object@model@ratesSpecs[[i]][[gc]]$AIC <- AIC[i,gc]
+				object@model@ratesSpecs[[i]][[gc]]$AICc <- AICc[i,gc]
+			}
+		}
+	}
 	if( (!identical(value, pre_val)) & length(object@model@ratesSpecs)>1 ) {
 		message('Updating modeled rates...')
 		bTsh <- value$thresholds$brown

@@ -11,7 +11,7 @@ ratePvals(object, bTsh = NULL, cTsh = NULL)
 
 \S4method{ratePvals}{INSPEcT_model}(object, bTsh = NULL, cTsh = NULL)
 
-\S4method{ratePvals}{INSPEcT}(object, cTsh = NULL)
+\S4method{ratePvals}{INSPEcT}(object, bTsh = NULL, cTsh = NULL)
 }
 \arguments{
 \item{object}{An object of class INSPEcT or INSPEcT_model}

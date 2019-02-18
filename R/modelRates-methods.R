@@ -64,6 +64,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 		na.rm <- object@params$na.rm
 		verbose <- object@params$verbose
 		testOnSmooth <- object@params$testOnSmooth
+		limitModelComplexity <- object@model@params$limitModelComplexity
 	
 		if( !is.null(seed) && !is.numeric(seed) )
 			stop('Seed argument must be either NULL or numeric.')
@@ -103,7 +104,8 @@ setMethod('modelRates', 'INSPEcT', function(object
 															,testOnSmooth = testOnSmooth
 															,seed = seed
 															,nInit = nInit
-															,nIter = nIter)
+															,nIter = nIter
+															,limitModelComplexity=limitModelComplexity)
 		}else{
 			ratesSpecs <- .inspect.engine_Derivative_NoNascent(tptsOriginal = tptsOriginal
 														  ,tptsLinear = tptsLinear
@@ -117,7 +119,8 @@ setMethod('modelRates', 'INSPEcT', function(object
 														  ,testOnSmooth = testOnSmooth
 														  ,seed = seed
 														  ,nInit = nInit
-														  ,nIter = nIter)
+														  ,nIter = nIter
+														  ,limitModelComplexity=limitModelComplexity)
 		}
 
 		## update and return the object
@@ -155,6 +158,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 			, na.rm=object@params$na.rm
 			, BPPARAM=BPPARAM
 			, verbose=if(is.null(verbose)) object@params$verbose else verbose
+			, limitModelComplexity=object@model@params$limitModelComplexity
 			, estimateRatesWith=object@params$estimateRatesWith
 			, sigmoidDegradation=object@params$useSigmoidFun
 			, sigmoidSynthesis=object@params$useSigmoidFun

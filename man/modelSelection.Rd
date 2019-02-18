@@ -30,10 +30,24 @@ modelSelection(object) <- value
   \item modelSelection: A character, either "llr" to test whether a rate is 
     varying using log-likelihood testing framework or "aic" to choose
     the best model via Akaike Information Criterion (Default: "llr").
-  \item thresholds: A named list containing the threshold that is used to 
-    consider a model as accepted in terms of the chi-squared test and three 
-    thresholds (one per each rate) that are used to consider a rate as variable
-    using the Brown's method on the log-likelihood ratio tests
+  \item thresholds: A named list containing the thresholds for the goodness of fit 
+    (chisquare) and variability (brown) tests. Both must be comprised from 0 to 1.
+    The goodness of fit threshold defines which models are considered valid or not
+    (0 most stringent, 1 most permissive). The variability threshold (one per each rate)
+    defines the stringency of the call for the variability of each rate (0 the most
+    stringent, 1 the most permissive). When set to 0, the specific rate is 
+    excluded from the hypothesis of variability.
+  \preferPValue: when model selection is "llr", preferPValue means that 
+    if the selected model has a goodness of fit below threshold the model with
+    the best goodness of fit is returned in place of it. When the model selection
+    is "aic", with preferPValue the best model is tested against the closest 
+    nested models to test the hypothesis of variability and only when this 
+    pvalue is below threshold the rate is considered as varible. Otherwise the 
+    model selection is just based on the lowest AIC (Default: TRUE).
+  \padj: whether to correct pvalues with the Benjamini-Hochberg procedure 
+    or not. (Default: TRUE).
+
+  \limitModelComplexity:
 }}
 }
 \value{
@@ -43,7 +57,7 @@ See "value"
 With this methods the user can personalize the criteria by which INSPEcT
 selects a rate to be variable or constant. In particular, the model selection
 criteria can be selected between log-likelihood ratio test and Akaike's information
-criterion. In case log-likelihood ratio test is selected, the thresholds of 
+criterion (AIC). In case log-likelihood ratio test is selected, the thresholds of 
 chi-squared and Brown's method can be set (see Details section).
 }
 \details{

@@ -38,7 +38,7 @@ if( Sys.info()["sysname"] != "Windows" ) {
   nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
   simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
   tpts <- tpts(nascentInspObj)
-  nascentInspObj_sim3 <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
+  nascentSim2replicates <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
 }
 }
 \seealso{
