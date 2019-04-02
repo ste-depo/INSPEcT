@@ -27,13 +27,13 @@ setGeneric('geneClass', function(object, bTsh=NULL, cTsh=NULL)
 setGeneric('makeModelRates', function(object, ...) 
 	standardGeneric('makeModelRates'))
 #' Generate synthetic rates and concentrations
-setGeneric('makeSimDataset', function(object, tpts, nRep, NoNascent = FALSE, seed=NULL)
+setGeneric('makeSimDataset', function(object, tpts, nRep, NoNascent = FALSE, seed=NULL, a = NULL, b = NULL, tL = NULL)
 	standardGeneric('makeSimDataset'))
 #' Display rate classification performance
 setGeneric('rocCurve', function(object, object2, cTsh=NULL, plot=TRUE) 
 	standardGeneric('rocCurve'))
 #' Display rate classification performance with thresholds visible at x-axis
-setGeneric('rocThresholds', function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1)) 
+setGeneric('rocThresholds', function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1), plot=TRUE) 
 	standardGeneric('rocThresholds'))
 
 #############################

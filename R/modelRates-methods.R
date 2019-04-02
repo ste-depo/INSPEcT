@@ -65,6 +65,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 		verbose <- object@params$verbose
 		testOnSmooth <- object@params$testOnSmooth
 		limitModelComplexity <- object@model@params$limitModelComplexity
+		sigmoid <- object@params$useSigmoidFun
 	
 		if( !is.null(seed) && !is.numeric(seed) )
 			stop('Seed argument must be either NULL or numeric.')
@@ -90,6 +91,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 			, gamma=ratesFirstGuess(object, 'processing')
 			)
 
+
 		if(object@params$estimateRatesWith=="int")
 		{
 			ratesSpecs <- .inspect.engine_Integrative_NoNascent(tptsOriginal = tptsOriginal
@@ -105,7 +107,8 @@ setMethod('modelRates', 'INSPEcT', function(object
 															,seed = seed
 															,nInit = nInit
 															,nIter = nIter
-															,limitModelComplexity=limitModelComplexity)
+															,limitModelComplexity=limitModelComplexity
+															,sigmoid=sigmoid)
 		}else{
 			ratesSpecs <- .inspect.engine_Derivative_NoNascent(tptsOriginal = tptsOriginal
 														  ,tptsLinear = tptsLinear
@@ -125,7 +128,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 
 		## update and return the object
 		names(ratesSpecs) <- featureNames(object@ratesFirstGuess)[seq_along(ratesSpecs)]
-		object@model@ratesSpecs <- ratesSpecs		
+		object@model@ratesSpecs <- ratesSpecs
 		object <- makeModelRates(object)
 		return(object)
 

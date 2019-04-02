@@ -38,7 +38,7 @@
 #' }
 
 setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT_model'), 
-	function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1)) {
+	function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1), plot=TRUE) {
 	if( is.null(bTsh) ) {
 		bTsh <- object2@params$thresholds$brown
 	} else {
@@ -74,30 +74,56 @@ setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT_mo
 		, predictor=ratePvals$degradation)
 	rGamma <- roc(response=grepl('c', allResponses)
 		, predictor=ratePvals$processing)
-	par(mfrow=c(1,3))
+
+	outTmp <- list()
+
 	ix <- is.finite(rAlpha$thresholds)
-	matplot(rAlpha$thresholds[ix], cbind(rAlpha$sensitivities[ix], rAlpha$specificities[ix])
-		, type='l', lty=1, lwd=4, main='synthesis rate', log='x', xlab='Brown threshold'
-		, ylab='', xlim=xlim)
-	abline(v=bTsh[1], lwd=3, lty=2, col='blue')
-	ix <- is.finite(rBeta$thresholds)
-	matplot(rBeta$thresholds[ix], cbind(rBeta$sensitivities[ix], rBeta$specificities[ix])
-		, type='l', lty=1, lwd=4, main='degradation rate', log='x', xlab='Brown threshold'
-		, ylab='', xlim=xlim)
-	abline(v=bTsh[2], lwd=3, lty=2, col='blue')
+	ths <- rAlpha$thresholds[ix]
+	outTmp$synthesis <- ths[which.min(sqrt((rAlpha$sensitivities[ix]-rAlpha$specificities[ix])^2))]
+
 	ix <- is.finite(rGamma$thresholds)
-	matplot(rGamma$thresholds[ix], cbind(rGamma$sensitivities[ix], rGamma$specificities[ix])
-		, type='l', lty=1, lwd=4, main='processing rate', log='x', xlab='Brown threshold'
-		, ylab='', xlim=xlim)
-	abline(v=bTsh[3], lwd=3, lty=2, col='blue')
-	legend('left', col=c('blue','black','red'), lty=c(2,1,1), lwd=c(2,4,4)
-		, legend=c('selected Brown\nthreshold', 'sensitivities', 'specificities'))
+	ths <- rGamma$thresholds[ix]
+	outTmp$processing <- ths[which.min(sqrt((rGamma$sensitivities[ix]-rGamma$specificities[ix])^2))]
+
+	ix <- is.finite(rBeta$thresholds)
+	ths <- rBeta$thresholds[ix]
+	outTmp$degradation <- ths[which.min(sqrt((rBeta$sensitivities[ix]-rBeta$specificities[ix])^2))]
+
+	if(plot)
+	{
+		par(mfrow=c(1,3))
+		ix <- is.finite(rAlpha$thresholds)
+		matplot(rAlpha$thresholds[ix], cbind(rAlpha$sensitivities[ix], rAlpha$specificities[ix])
+			, type='l', lty=1, lwd=4, main='synthesis rate', log='x', xlab='Brown threshold'
+			, ylab='', xlim=xlim)
+		abline(v=bTsh[1], lwd=3, lty=2, col='blue')
+		abline(v=outTmp$synthesis, lwd=3, lty=3, col="blue")
+
+		ix <- is.finite(rBeta$thresholds)
+		matplot(rBeta$thresholds[ix], cbind(rBeta$sensitivities[ix], rBeta$specificities[ix])
+			, type='l', lty=1, lwd=4, main='degradation rate', log='x', xlab='Brown threshold'
+			, ylab='', xlim=xlim)
+		abline(v=bTsh[2], lwd=3, lty=2, col='blue')
+		abline(v=outTmp$degradation, lwd=3, lty=3, col="blue")
+
+		ix <- is.finite(rGamma$thresholds)
+		matplot(rGamma$thresholds[ix], cbind(rGamma$sensitivities[ix], rGamma$specificities[ix])
+			, type='l', lty=1, lwd=4, main='processing rate', log='x', xlab='Brown threshold'
+			, ylab='', xlim=xlim)
+		abline(v=bTsh[3], lwd=3, lty=2, col='blue')
+		abline(v=outTmp$processing, lwd=3, lty=3, col="blue")
+
+		legend('left', col=c('blue','blue','black','red'), lty=c(3,2,1,1), lwd=c(2,2,4,4)
+			, legend=c('optimal Brown\nthreshold','selected Brown\nthreshold', 'sensitivities', 'specificities'))
+		}
+
+		return(unlist(outTmp))
 	})
 
 #' @rdname rocThresholds
 setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT'),
-	function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1)) {
-		rocThresholds(object, object2@model, cTsh, bTsh, xlim)
+	function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1), plot=TRUE) {
+		rocThresholds(object, object2@model, cTsh, bTsh, xlim, plot=plot)
 	# if( is.null(bTsh) ) {
 	# 	bTsh <- object2@model@params$thresholds$brown
 	# } else {
