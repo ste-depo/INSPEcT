@@ -52,12 +52,11 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 	## get parameters for the analysis from the INSPEcT object
 
 	ddp <- inspectIds@degDuringPulse
-	cTsh <- thresholds(inspectIds)$chisquare
-	bTsh <- thresholds(inspectIds)$brown
+	cTsh <- 1 # accept all models
 	sf <- inspectIds@labeledSF
 	tL <- inspectIds@tL
 
-	## divide the dataset in 2: full (eiGenes) and simple (eGenes)
+	## divide the dataset in 2: full (eiGenes) and simple (eGenes)
 
 	allGenes <- featureNames(inspectIds)
 	eGenes <- allGenes[apply(is.na(ratesFirstGuess(inspectIds, 'processing')),1,all)]
@@ -69,7 +68,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 	message(paste('Comparative analysis of the',length(eiGenes),'with both intronic and exonic signals.'))
 
-	## concentrations
+	## concentrations
 
 	wt_preT <- ratesFirstGuess(inspectIds,'preMRNA')[eiGenes,1]
 	wt_matT <- ratesFirstGuess(inspectIds,'total')[eiGenes,1] - wt_preT
@@ -93,6 +92,28 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 		k2=ratesFirstGuess(inspectIds,'processing')[eiGenes,2],
 		k3=ratesFirstGuess(inspectIds,'degradation')[eiGenes,2])
 
+	# give the rates corresponding to the other condition in case of NA
+
+	# wt_rates[!is.finite(wt_rates)] <- sh_rates[!is.finite(wt_rates)]
+	# sh_rates[!is.finite(sh_rates)] <- wt_rates[!is.finite(sh_rates)]
+
+	# wt_rates[wt_rates==0] <- sh_rates[wt_rates==0]
+	# sh_rates[sh_rates==0] <- wt_rates[sh_rates==0]
+
+	wt_rates[wt_rates[,1]==0|is.na(wt_rates[,1]),1] <- min(wt_rates[wt_rates[,1]!=0 & !is.na(wt_rates[,1]),1])
+	wt_rates[wt_rates[,2]==0|is.na(wt_rates[,2]),2] <- min(wt_rates[wt_rates[,2]!=0 & !is.na(wt_rates[,2]),2])
+	wt_rates[wt_rates[,3]==0|is.na(wt_rates[,3]),3] <- min(wt_rates[wt_rates[,3]!=0 & !is.na(wt_rates[,3]),3])
+	wt_rates[wt_rates[,1]==Inf,1] <- max(wt_rates[wt_rates[,1]!=Inf,1])
+	wt_rates[wt_rates[,2]==Inf,2] <- max(wt_rates[wt_rates[,2]!=Inf,2])
+	wt_rates[wt_rates[,3]==Inf,3] <- max(wt_rates[wt_rates[,3]!=Inf,3])
+
+	sh_rates[sh_rates[,1]==0|is.na(sh_rates[,1]),1] <- min(sh_rates[sh_rates[,1]!=0 & !is.na(sh_rates[,1]),1])
+	sh_rates[sh_rates[,2]==0|is.na(sh_rates[,2]),2] <- min(sh_rates[sh_rates[,2]!=0 & !is.na(sh_rates[,2]),2])
+	sh_rates[sh_rates[,3]==0|is.na(sh_rates[,3]),3] <- min(sh_rates[sh_rates[,3]!=0 & !is.na(sh_rates[,3]),3])
+	sh_rates[sh_rates[,1]==Inf,1] <- max(sh_rates[sh_rates[,1]!=Inf,1])
+	sh_rates[sh_rates[,2]==Inf,2] <- max(sh_rates[sh_rates[,2]!=Inf,2])
+	sh_rates[sh_rates[,3]==Inf,3] <- max(sh_rates[sh_rates[,3]!=Inf,3])
+
 	mean_rates <- apply(array(cbind(wt_rates[,1:3], sh_rates[,1:3]), dim=c(nrow(wt_rates), 3,2)), 1:2, mean, na.rm=TRUE)
 
 	if( !ddp ) {
@@ -108,6 +129,16 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 		sh_data <- cbind(sh_matT, sh_preT, sh_k1)
 		sh_datavar <- cbind(sh_matTvar, sh_preTvar, sh_k1var)
+
+		# give the variance corresponding to the other condition in case of Zeros
+
+		wt_datavar[wt_datavar==0] <- sh_datavar[wt_datavar==0]
+		sh_datavar[sh_datavar==0] <- wt_datavar[sh_datavar==0]
+
+		wt_datavar[wt_datavar==0] <- min(wt_datavar[wt_datavar!=0])
+		sh_datavar[sh_datavar==0] <- min(sh_datavar[sh_datavar!=0])
+
+		# model!
 
 		message('Evaluating model KKK [1/8]...')
 		outKKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -188,7 +219,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			,BPPARAM=BPPARAM))
 		outVVV[apply(outVVV[,1:6]<0,1,any),] <- NaN
 
-	} else { ## ddp
+	} else { ## ddp
 
 		datader <- c(0,0)
 
@@ -207,6 +238,16 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 		sh_data <- cbind(sh_matT, sh_preT, sh_matL)
 		sh_datavar <- cbind(sh_matTvar, sh_preTvar, sh_matLvar)
+
+		# give the variance corresponding to the other condition in case of Zeros
+
+		wt_datavar[wt_datavar==0] <- sh_datavar[wt_datavar==0]
+		sh_datavar[sh_datavar==0] <- wt_datavar[sh_datavar==0]
+
+		wt_datavar[wt_datavar==0] <- min(wt_datavar[wt_datavar!=0])
+		sh_datavar[sh_datavar==0] <- min(sh_datavar[sh_datavar!=0])
+
+		# model!
 
 		print('Evaluating model KKK [1/8]...')
 		outKKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -301,14 +342,14 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 		)
 
 	p_vals <- cbind(
-		KKK=pchisq(models[['KKK']][,'value'], 5),
-		VKK=pchisq(models[['VKK']][,'value'], 4),
-		KVK=pchisq(models[['KVK']][,'value'], 4),
-		KKV=pchisq(models[['KKV']][,'value'], 4),
-		VVK=pchisq(models[['VVK']][,'value'], 3),
-		VKV=pchisq(models[['VKV']][,'value'], 3),
-		KVV=pchisq(models[['KVV']][,'value'], 3),
-		VVV=pchisq(models[['VVV']][,'value'], 2)
+		KKK=pchisq(models[['KKK']][,'value'], 3),
+		VKK=pchisq(models[['VKK']][,'value'], 2),
+		KVK=pchisq(models[['KVK']][,'value'], 2),
+		KKV=pchisq(models[['KKV']][,'value'], 2),
+		VVK=pchisq(models[['VVK']][,'value'], 1),
+		VKV=pchisq(models[['VKV']][,'value'], 1),
+		KVV=pchisq(models[['KVV']][,'value'], 1),
+		VVV=pchisq(models[['VVV']][,'value'], 0)
 		)
 	p_vals[is.na(p_vals)] <- 1
 
@@ -377,6 +418,29 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			k1=ratesFirstGuess(inspectIds,'synthesis')[eGenes,2],
 			k3=ratesFirstGuess(inspectIds,'degradation')[eGenes,2])
 
+		# give the rates corresponding to the other condition in case of NA or zeros
+
+		# wt_rates[!is.finite(wt_rates)] <- sh_rates[!is.finite(wt_rates)]
+		# sh_rates[!is.finite(sh_rates)] <- wt_rates[!is.finite(sh_rates)]
+
+		# wt_rates[wt_rates==0] <- sh_rates[wt_rates==0]
+		# sh_rates[sh_rates==0] <- wt_rates[sh_rates==0]
+
+		# wt_rates[wt_rates[,1]==0,1] <- median(wt_rates[,1])
+		# wt_rates[wt_rates[,2]==0,2] <- median(wt_rates[,2])
+		# sh_rates[sh_rates[,1]==0,1] <- median(sh_rates[,1])
+		# sh_rates[sh_rates[,2]==0,2] <- median(sh_rates[,2])
+
+		wt_rates[wt_rates[,1]==0|is.na(wt_rates[,1]),1] <- min(wt_rates[wt_rates[,1]!=0 & !is.na(wt_rates[,1]),1])
+		wt_rates[wt_rates[,2]==0|is.na(wt_rates[,2]),2] <- min(wt_rates[wt_rates[,2]!=0 & !is.na(wt_rates[,2]),2])
+		wt_rates[wt_rates[,1]==Inf,1] <- max(wt_rates[wt_rates[,1]!=Inf,1])
+		wt_rates[wt_rates[,2]==Inf,2] <- max(wt_rates[wt_rates[,2]!=Inf,2])
+
+		sh_rates[sh_rates[,1]==0|is.na(sh_rates[,1]),1] <- min(sh_rates[sh_rates[,1]!=0 & !is.na(sh_rates[,1]),1])
+		sh_rates[sh_rates[,2]==0|is.na(sh_rates[,2]),2] <- min(sh_rates[sh_rates[,2]!=0 & !is.na(sh_rates[,2]),2])
+		sh_rates[sh_rates[,1]==Inf,1] <- max(sh_rates[sh_rates[,1]!=Inf,1])
+		sh_rates[sh_rates[,2]==Inf,2] <- max(sh_rates[sh_rates[,2]!=Inf,2])
+
 		mean_rates <- apply(array(cbind(wt_rates[,1:2], sh_rates[,1:2]), dim=c(nrow(wt_rates),2,2)), 1:2, mean, na.rm=TRUE)
 
 		if( !ddp ) {
@@ -394,6 +458,16 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			sh_datavar <- cbind(sh_matTvar, sh_k1var)
 
 			rownames(wt_datavar) <- rownames(sh_datavar) <- eGenes
+
+			# give the variance corresponding to the other condition in case of Zeros
+
+			wt_datavar[wt_datavar==0] <- sh_datavar[wt_datavar==0]
+			sh_datavar[sh_datavar==0] <- wt_datavar[sh_datavar==0]
+
+			wt_datavar[wt_datavar==0] <- min(wt_datavar[wt_datavar!=0])
+			sh_datavar[sh_datavar==0] <- min(sh_datavar[sh_datavar!=0])
+
+			# model!
 
 			message('Evaluating model K_K [1/4]...')
 			outK_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
@@ -450,6 +524,16 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 			datader <- c(0)
 
+			# give the variance corresponding to the other condition in case of zeros
+
+			wt_datavar[wt_datavar==0] <- sh_datavar[wt_datavar==0]
+			sh_datavar[sh_datavar==0] <- wt_datavar[sh_datavar==0]
+
+			wt_datavar[wt_datavar==0] <- min(wt_datavar[wt_datavar!=0])
+			sh_datavar[sh_datavar==0] <- min(sh_datavar[sh_datavar!=0])
+
+			# model!
+
 			print('Evaluating model KK [1/4]...')
 			outK_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
 				tryCatch(
@@ -495,10 +579,10 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			)
 
 		p_vals <- cbind(
-			K_K=pchisq(models[['K_K']][,'value'], 3),
-			V_K=pchisq(models[['V_K']][,'value'], 2),
-			K_V=pchisq(models[['K_V']][,'value'], 2),
-			V_V=pchisq(models[['V_V']][,'value'], 1)
+			K_K=pchisq(models[['K_K']][,'value'], 2),
+			V_K=pchisq(models[['V_K']][,'value'], 1),
+			K_V=pchisq(models[['K_V']][,'value'], 1),
+			V_V=pchisq(models[['V_V']][,'value'], 0)
 			)
 		p_vals[is.na(p_vals)] <- 1
 
@@ -551,113 +635,175 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 	if( ddp ) tL <- ie_model_steady_states_out$tL
 	eiGenes <- ie_model_steady_states_out$eiGenes
 	models <- ie_model_steady_states_out$models
-	p_vals <- ie_model_steady_states_out$p_vals
 	log_liks <- ie_model_steady_states_out$log_liks
-	
-	synthesis_tests <- cbind(
-		logLikRatioTest( log_liks[,1], log_liks[,2], 1 ),
-		logLikRatioTest( log_liks[,3], log_liks[,5], 1 ),
-		logLikRatioTest( log_liks[,4], log_liks[,6], 1 ),
-		logLikRatioTest( log_liks[,7], log_liks[,8], 1 )
-		)
 
-	synthesis_mask <- cbind(
-		p_vals[,1] <= cTsh | p_vals[,2] <= cTsh,
-		p_vals[,3] <= cTsh | p_vals[,5] <= cTsh,
-		p_vals[,4] <= cTsh | p_vals[,6] <= cTsh,
-		p_vals[,7] <= cTsh | p_vals[,8] <= cTsh
-		)
-
-	processing_tests <- cbind(
-		logLikRatioTest( log_liks[,1], log_liks[,3], 1 ),
-		logLikRatioTest( log_liks[,2], log_liks[,5], 1 ),
-		logLikRatioTest( log_liks[,4], log_liks[,7], 1 ),
-		logLikRatioTest( log_liks[,6], log_liks[,8], 1 )
-		)
-
-	processing_mask <- cbind(
-		p_vals[,1] <= cTsh | p_vals[,3] <= cTsh,
-		p_vals[,2] <= cTsh | p_vals[,5] <= cTsh,
-		p_vals[,4] <= cTsh | p_vals[,7] <= cTsh,
-		p_vals[,6] <= cTsh | p_vals[,8] <= cTsh
-		)
-
-	degradation_tests <- cbind(
-		logLikRatioTest( log_liks[,1], log_liks[,4], 1 ),
-		logLikRatioTest( log_liks[,2], log_liks[,6], 1 ),
-		logLikRatioTest( log_liks[,3], log_liks[,7], 1 ),
-		logLikRatioTest( log_liks[,5], log_liks[,8], 1 )
-		)
-
-	degradation_mask <- cbind(
-		p_vals[,1] <= cTsh | p_vals[,4] <= cTsh,
-		p_vals[,2] <= cTsh | p_vals[,6] <= cTsh,
-		p_vals[,3] <= cTsh | p_vals[,7] <= cTsh,
-		p_vals[,5] <= cTsh | p_vals[,8] <= cTsh
-		)
-
-	brown_pvals <- cbind(
-		k1=brown_method_mask(synthesis_tests, synthesis_mask),
-		k2=brown_method_mask(processing_tests, processing_mask),
-		k3=brown_method_mask(degradation_tests, degradation_mask)
-		)
-	brown_pvals[is.na(brown_pvals)] <- 1
-
-	gene_class <- apply( brown_pvals , 1 , function(x) {vec <- x <= bTsh; paste(ifelse(vec, 'V', 'K'), collapse='')} )
-
-	diz <- c('KKK'=1, 'VKK'=2, 'KVK'=3, 'KKV'=4, 'VVK'=5, 'VKV'=6, 'KVV'=7, 'VVV'=8) 
-	numeric_gene_class <- diz[gene_class]
-	p_vals_geneclass <- p_vals[cbind(seq_along(eiGenes),numeric_gene_class)]
-
-	rates_c <- t(sapply( seq_along(gene_class) , function(i) {
-
-		switch(
-			gene_class[i],
-			'KKK'=models[['KKK']][i, c(1,2,3)],
-			'VKK'=models[['VKK']][i, c(1,3,4)],
-			'KVK'=models[['KVK']][i, c(1,2,4)],
-			'KKV'=models[['KKV']][i, c(1,2,3)],
-			'VVK'=models[['VVK']][i, c(1,3,5)],
-			'VKV'=models[['VKV']][i, c(1,3,4)],
-			'KVV'=models[['KVV']][i, c(1,2,4)],
-			'VVV'=models[['VVV']][i, c(1,3,5)]
+	k_pars <- c(3,4,4,4,5,5,5,6)
+	AIC <- t(2*k_pars - 2*t(log_liks))
+	diz <- c('KKK', 'VKK', 'KVK', 'KKV', 'VVK', 'VKV', 'KVV', 'VVV') 
+	gene_class <- diz[apply(AIC, 1, which.min)]
+	rates_pvals <- t(sapply(seq_along(gene_class), function(i) {
+		switch(gene_class[i],
+			'KKK' = c(
+				k1=pchisq(- 2*log_liks[i,'KKK'] + 2*log_liks[i,'VKK'], 1, lower.tail=FALSE),
+				k2=pchisq(- 2*log_liks[i,'KKK'] + 2*log_liks[i,'KVK'], 1, lower.tail=FALSE),
+				k3=pchisq(- 2*log_liks[i,'KKK'] + 2*log_liks[i,'KKV'], 1, lower.tail=FALSE)
+				),
+			'VKK' = c(
+				k1=pchisq(- 2*log_liks[i,'KKK'] + 2*log_liks[i,'VKK'], 1, lower.tail=FALSE),
+				k2=pchisq(- 2*log_liks[i,'VKK'] + 2*log_liks[i,'VVK'], 1, lower.tail=FALSE),
+				k3=pchisq(- 2*log_liks[i,'VKK'] + 2*log_liks[i,'VKV'], 1, lower.tail=FALSE)
+				),
+			'KVK' = c(
+				k1=pchisq(- 2*log_liks[i,'KVK'] + 2*log_liks[i,'VVK'], 1, lower.tail=FALSE),
+				k2=pchisq(- 2*log_liks[i,'KKK'] + 2*log_liks[i,'KVK'], 1, lower.tail=FALSE),
+				k3=pchisq(- 2*log_liks[i,'KVK'] + 2*log_liks[i,'KVV'], 1, lower.tail=FALSE)
+				),
+			'KKV' = c(
+				k1=pchisq(- 2*log_liks[i,'KKV'] + 2*log_liks[i,'VKV'], 1, lower.tail=FALSE),
+				k2=pchisq(- 2*log_liks[i,'KKV'] + 2*log_liks[i,'KVV'], 1, lower.tail=FALSE),
+				k3=pchisq(- 2*log_liks[i,'KKK'] + 2*log_liks[i,'KKV'], 1, lower.tail=FALSE)
+				),
+			'VVK' = c(
+				k1=pchisq(- 2*log_liks[i,'KVK'] + 2*log_liks[i,'VVK'], 1, lower.tail=FALSE),
+				k2=pchisq(- 2*log_liks[i,'VKK'] + 2*log_liks[i,'VVK'], 1, lower.tail=FALSE),
+				k3=pchisq(- 2*log_liks[i,'VVK'] + 2*log_liks[i,'VVV'], 1, lower.tail=FALSE)
+				),
+			'VKV' = c(
+				k1=pchisq(- 2*log_liks[i,'KKV'] + 2*log_liks[i,'VKV'], 1, lower.tail=FALSE),
+				k2=pchisq(- 2*log_liks[i,'VKV'] + 2*log_liks[i,'VVV'], 1, lower.tail=FALSE),
+				k3=pchisq(- 2*log_liks[i,'VKK'] + 2*log_liks[i,'VKV'], 1, lower.tail=FALSE)
+				),
+			'KVV' = c(
+				k1=pchisq(- 2*log_liks[i,'KVV'] + 2*log_liks[i,'VVV'], 1, lower.tail=FALSE),
+				k2=pchisq(- 2*log_liks[i,'KKV'] + 2*log_liks[i,'KVV'], 1, lower.tail=FALSE),
+				k3=pchisq(- 2*log_liks[i,'KVK'] + 2*log_liks[i,'KVV'], 1, lower.tail=FALSE)
+				),
+			'VVV' = c(
+				k1=pchisq(- 2*log_liks[i,'KVV'] + 2*log_liks[i,'VVV'], 1, lower.tail=FALSE),
+				k2=pchisq(- 2*log_liks[i,'VKV'] + 2*log_liks[i,'VVV'], 1, lower.tail=FALSE),
+				k3=pchisq(- 2*log_liks[i,'VVK'] + 2*log_liks[i,'VVV'], 1, lower.tail=FALSE)
+				)
 			)
-
 		}))
-
-	if( ddp ) {
-		concentrations_c <- t(apply(rates_c, 1, sys4suModel_ddpTRUE, datader=c(0,0), tL=tL))[,1:2]	
-	} else {
-		concentrations_c <- t(apply(rates_c, 1, sys4suModel_ddpFALSE))[,1:2]
-	}
 	
-	rates_t <- t(sapply( seq_along(gene_class) , function(i) {
+	# ei_p_vals <- p_vals <- ie_model_steady_states_out$p_vals
 
-		switch(
-			gene_class[i],
-			'KKK'=models[['KKK']][i, c(1,2,3)],
-			'VKK'=models[['VKK']][i, c(2,3,4)],
-			'KVK'=models[['KVK']][i, c(1,3,4)],
-			'KKV'=models[['KKV']][i, c(1,2,4)],
-			'VVK'=models[['VVK']][i, c(2,4,5)],
-			'VKV'=models[['VKV']][i, c(2,3,5)],
-			'KVV'=models[['KVV']][i, c(1,3,5)],
-			'VVV'=models[['VVV']][i, c(2,4,6)]
-			)
+	# synthesis_tests <- cbind(
+	# 	logLikRatioTest( log_liks[,1], log_liks[,2], 1 ),
+	# 	logLikRatioTest( log_liks[,3], log_liks[,5], 1 ),
+	# 	logLikRatioTest( log_liks[,4], log_liks[,6], 1 ),
+	# 	logLikRatioTest( log_liks[,7], log_liks[,8], 1 )
+	# 	)
 
-		}))
+	# synthesis_mask <- cbind(
+	# 	p_vals[,1] <= cTsh | p_vals[,2] <= cTsh,
+	# 	p_vals[,3] <= cTsh | p_vals[,5] <= cTsh,
+	# 	p_vals[,4] <= cTsh | p_vals[,6] <= cTsh,
+	# 	p_vals[,7] <= cTsh | p_vals[,8] <= cTsh
+	# 	)
 
-	if( ddp ) {
-		concentrations_t <- t(apply(rates_t, 1, sys4suModel_ddpTRUE, datader=c(0,0), tL=tL))[,1:2]
-	} else {
-		concentrations_t <- t(apply(rates_t, 1, sys4suModel_ddpFALSE))[,1:2]
-	}
+	# processing_tests <- cbind(
+	# 	logLikRatioTest( log_liks[,1], log_liks[,3], 1 ),
+	# 	logLikRatioTest( log_liks[,2], log_liks[,5], 1 ),
+	# 	logLikRatioTest( log_liks[,4], log_liks[,7], 1 ),
+	# 	logLikRatioTest( log_liks[,6], log_liks[,8], 1 )
+	# 	)
 
-	ei_mat <- data.frame(concentrations_c, rates_c, concentrations_t, rates_t, 
-		brown_pvals, p_vals_geneclass, gene_class)
-	colnames(ei_mat) <- c('mat_c','pre_c','k1_c','k2_c','k3_c',
-		'mat_t','pre_t','k1_t','k2_t','k3_t',
-		'p_k1','p_k2','p_k3','p','class')
+	# processing_mask <- cbind(
+	# 	p_vals[,1] <= cTsh | p_vals[,3] <= cTsh,
+	# 	p_vals[,2] <= cTsh | p_vals[,5] <= cTsh,
+	# 	p_vals[,4] <= cTsh | p_vals[,7] <= cTsh,
+	# 	p_vals[,6] <= cTsh | p_vals[,8] <= cTsh
+	# 	)
+
+	# degradation_tests <- cbind(
+	# 	logLikRatioTest( log_liks[,1], log_liks[,4], 1 ),
+	# 	logLikRatioTest( log_liks[,2], log_liks[,6], 1 ),
+	# 	logLikRatioTest( log_liks[,3], log_liks[,7], 1 ),
+	# 	logLikRatioTest( log_liks[,5], log_liks[,8], 1 )
+	# 	)
+
+	# degradation_mask <- cbind(
+	# 	p_vals[,1] <= cTsh | p_vals[,4] <= cTsh,
+	# 	p_vals[,2] <= cTsh | p_vals[,6] <= cTsh,
+	# 	p_vals[,3] <= cTsh | p_vals[,7] <= cTsh,
+	# 	p_vals[,5] <= cTsh | p_vals[,8] <= cTsh
+	# 	)
+
+	# rates_pvals <- cbind(
+	# 	k1=brown_method_mask(synthesis_tests, synthesis_mask),
+	# 	k2=brown_method_mask(processing_tests, processing_mask),
+	# 	k3=brown_method_mask(degradation_tests, degradation_mask)
+	# 	)
+	# rates_pvals[is.na(rates_pvals)] <- 1
+
+	# gene_class <- apply( rates_pvals , 1 , function(x) {vec <- x <= bTsh; paste(ifelse(vec, 'V', 'K'), collapse='')} )
+
+	# diz <- c('KKK'=1, 'VKK'=2, 'KVK'=3, 'KKV'=4, 'VVK'=5, 'VKV'=6, 'KVV'=7, 'VVV'=8) 
+	# numeric_gene_class <- diz[gene_class]
+	# p_vals_geneclass <- p_vals[cbind(seq_along(eiGenes),numeric_gene_class)]
+
+	# rates_c <- t(sapply( seq_along(gene_class) , function(i) {
+
+	# 	switch(
+	# 		gene_class[i],
+	# 		'KKK'=models[['KKK']][i, c(1,2,3)],
+	# 		'VKK'=models[['VKK']][i, c(1,3,4)],
+	# 		'KVK'=models[['KVK']][i, c(1,2,4)],
+	# 		'KKV'=models[['KKV']][i, c(1,2,3)],
+	# 		'VVK'=models[['VVK']][i, c(1,3,5)],
+	# 		'VKV'=models[['VKV']][i, c(1,3,4)],
+	# 		'KVV'=models[['KVV']][i, c(1,2,4)],
+	# 		'VVV'=models[['VVV']][i, c(1,3,5)]
+	# 		)
+
+	# 	}))
+
+	# if( ddp ) {
+	# 	concentrations_c <- t(apply(rates_c, 1, sys4suModel_ddpTRUE, datader=c(0,0), tL=tL))[,1:2]	
+	# } else {
+	# 	concentrations_c <- t(apply(rates_c, 1, sys4suModel_ddpFALSE))[,1:2]
+	# }
+	
+	# rates_t <- t(sapply( seq_along(gene_class) , function(i) {
+
+	# 	switch(
+	# 		gene_class[i],
+	# 		'KKK'=models[['KKK']][i, c(1,2,3)],
+	# 		'VKK'=models[['VKK']][i, c(2,3,4)],
+	# 		'KVK'=models[['KVK']][i, c(1,3,4)],
+	# 		'KKV'=models[['KKV']][i, c(1,2,4)],
+	# 		'VVK'=models[['VVK']][i, c(2,4,5)],
+	# 		'VKV'=models[['VKV']][i, c(2,3,5)],
+	# 		'KVV'=models[['KVV']][i, c(1,3,5)],
+	# 		'VVV'=models[['VVV']][i, c(2,4,6)]
+	# 		)
+
+	# 	}))
+
+	# if( ddp ) {
+	# 	concentrations_t <- t(apply(rates_t, 1, sys4suModel_ddpTRUE, datader=c(0,0), tL=tL))[,1:2]
+	# } else {
+	# 	concentrations_t <- t(apply(rates_t, 1, sys4suModel_ddpFALSE))[,1:2]
+	# }
+
+	rates_c <- models[['VVV']][, c(1,3,5)]
+	rates_t <- models[['VVV']][, c(2,4,6)]
+
+	ei_mat <- data.frame(#concentrations_c, 
+		rates_c, 
+		#concentrations_t, 
+		rates_t, 
+		rates_pvals#, FAL#SE 
+		#, p_vals_geneclass, gene_class
+		)
+	colnames(ei_mat) <- c(#'mat_c','pre_c',
+		'k1_c','k2_c','k3_c',
+		# 'mat_t','pre_t',
+		'k1_t','k2_t','k3_t',
+		'p_k1','p_k2','p_k3'##, 'intronless'
+		# ,'p','class'
+		)
 	rownames(ei_mat) <- eiGenes
 
 	e_model_steady_states_out <- model_steady_states_out[[2]]
@@ -666,104 +812,153 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 	{
 
 		models <- e_model_steady_states_out$models
-		p_vals <- e_model_steady_states_out$p_vals
 		log_liks <- e_model_steady_states_out$log_liks
+
+		k_pars <- c(2,3,3,4)
+		AIC <- t(2*k_pars - 2*t(log_liks))
+		diz <- c('K_K', 'V_K', 'K_V', 'V_V')
+		gene_class <- diz[apply(AIC, 1, which.min)]
+		rates_pvals <- t(sapply(seq_along(gene_class), function(i) {
+			switch(gene_class[i],
+				'K_K' = c(
+					k1=pchisq(- 2*log_liks[i,'K_K'] + 2*log_liks[i,'V_K'], 1, lower.tail=FALSE),
+					k3=pchisq(- 2*log_liks[i,'K_K'] + 2*log_liks[i,'K_V'], 1, lower.tail=FALSE)
+					),
+				'V_K' = c(
+					k1=pchisq(- 2*log_liks[i,'K_K'] + 2*log_liks[i,'V_K'], 1, lower.tail=FALSE),
+					k3=pchisq(- 2*log_liks[i,'V_K'] + 2*log_liks[i,'V_V'], 1, lower.tail=FALSE)
+					),
+				'K_V' = c(
+					k1=pchisq(- 2*log_liks[i,'K_V'] + 2*log_liks[i,'V_V'], 1, lower.tail=FALSE),
+					k3=pchisq(- 2*log_liks[i,'K_K'] + 2*log_liks[i,'K_V'], 1, lower.tail=FALSE)
+					),
+				'V_V' = c(
+					k1=pchisq(- 2*log_liks[i,'K_V'] + 2*log_liks[i,'V_V'], 1, lower.tail=FALSE),
+					k3=pchisq(- 2*log_liks[i,'V_K'] + 2*log_liks[i,'V_V'], 1, lower.tail=FALSE)
+					)
+				)
+			}))
+
+		# e_pvals <- p_vals <- e_model_steady_states_out$p_vals
 		
-		synthesis_tests <- cbind(
-			logLikRatioTest( log_liks[,1], log_liks[,2], 1 ),
-			logLikRatioTest( log_liks[,3], log_liks[,4], 1 )
+		# synthesis_tests <- cbind(
+		# 	logLikRatioTest( log_liks[,1], log_liks[,2], 1 ),
+		# 	logLikRatioTest( log_liks[,3], log_liks[,4], 1 )
+		# 	)
+
+		# synthesis_mask <- cbind(
+		# 	p_vals[,1] <= cTsh | p_vals[,2] <= cTsh,
+		# 	p_vals[,3] <= cTsh | p_vals[,4] <= cTsh
+		# 	)
+
+		# degradation_tests <- cbind(
+		# 	logLikRatioTest( log_liks[,1], log_liks[,3], 1 ),
+		# 	logLikRatioTest( log_liks[,2], log_liks[,4], 1 )
+		# 	)
+
+		# degradation_mask <- cbind(
+		# 	p_vals[,1] <= cTsh | p_vals[,3] <= cTsh,
+		# 	p_vals[,2] <= cTsh | p_vals[,4] <= cTsh
+		# 	)
+
+		# rates_pvals <- cbind(
+		# 	k1=brown_method_mask(synthesis_tests, synthesis_mask),
+		# 	k3=brown_method_mask(degradation_tests, degradation_mask)
+		# 	)
+		# rates_pvals[is.na(rates_pvals)] <- 1
+
+		# gene_class <- apply( rates_pvals, 1, function(x) {vec <- x <= bTsh[1:2]; paste(ifelse(vec, 'V', 'K'), collapse='_')} )
+
+		# diz <- c('K_K'=1, 'V_K'=2, 'K_V'=3, 'V_V'=4) 
+		# numeric_gene_class <- diz[gene_class]
+		# p_vals_geneclass <- p_vals[cbind(seq_along(eGenes),numeric_gene_class)]
+
+		# rates_c <- t(sapply( seq_along(gene_class) , function(i) {
+
+		# 	switch(
+		# 		gene_class[i],
+		# 		'K_K'=models[['K_K']][i, c(1,2)],
+		# 		'V_K'=models[['V_K']][i, c(1,3)],
+		# 		'K_V'=models[['K_V']][i, c(1,2)],
+		# 		'V_V'=models[['V_V']][i, c(1,3)]
+		# 		)
+
+		# 	}))
+
+		# if( ddp ) {
+		# 	concentrations_c <- t(apply(rates_c, 1, simplesys4suModel_ddpTRUE, datader=c(0), tL=tL))[,1]
+		# } else {
+		# 	concentrations_c <- t(apply(rates_c, 1, sys4suSimpleModel_ddpFALSE))[,1]
+		# }
+
+		# rates_t <- t(sapply( seq_along(gene_class) , function(i) {
+
+		# 	switch(
+		# 		gene_class[i],
+		# 		'K_K'=models[['K_K']][i, c(1,2)],
+		# 		'V_K'=models[['V_K']][i, c(2,3)],
+		# 		'K_V'=models[['K_V']][i, c(1,3)],
+		# 		'V_V'=models[['V_V']][i, c(2,4)]
+		# 		)
+
+		# 	}))
+
+		# if( ddp ) {
+		# 	concentrations_t <- t(apply(rates_t, 1, simplesys4suModel_ddpTRUE, datader=c(0), tL=tL))[,1]
+		# } else {
+		# 	concentrations_t <- t(apply(rates_t, 1, sys4suSimpleModel_ddpFALSE))[,1]
+		# }
+
+		rates_c <- models[['V_V']][, c(1,3)]
+		rates_t <- models[['V_V']][, c(2,4)]
+
+		e_mat <- data.frame(#concentrations_c, 
+			rates_c, 
+			#concentrations_t, 
+			rates_t, 
+			rates_pvals#, TRUE
+			#, p_vals_geneclass, gene_class
 			)
-
-		synthesis_mask <- cbind(
-			p_vals[,1] <= cTsh | p_vals[,2] <= cTsh,
-			p_vals[,3] <= cTsh | p_vals[,4] <= cTsh
+		colnames(e_mat) <- c(#'mat_c',
+			'k1_c','k3_c',
+			# 'mat_t',
+			'k1_t','k3_t',
+			'p_k1','p_k3'#, 'intronless'
+			# ,'p','class'
 			)
-
-		degradation_tests <- cbind(
-			logLikRatioTest( log_liks[,1], log_liks[,3], 1 ),
-			logLikRatioTest( log_liks[,2], log_liks[,4], 1 )
-			)
-
-		degradation_mask <- cbind(
-			p_vals[,1] <= cTsh | p_vals[,3] <= cTsh,
-			p_vals[,2] <= cTsh | p_vals[,4] <= cTsh
-			)
-
-		brown_pvals <- cbind(
-			k1=brown_method_mask(synthesis_tests, synthesis_mask),
-			k3=brown_method_mask(degradation_tests, degradation_mask)
-			)
-		brown_pvals[is.na(brown_pvals)] <- 1
-
-		gene_class <- apply( brown_pvals, 1, function(x) {vec <- x <= bTsh[1:2]; paste(ifelse(vec, 'V', 'K'), collapse='_')} )
-
-		diz <- c('K_K'=1, 'V_K'=2, 'K_V'=3, 'V_V'=4) 
-		numeric_gene_class <- diz[gene_class]
-		p_vals_geneclass <- p_vals[cbind(seq_along(eGenes),numeric_gene_class)]
-
-		rates_c <- t(sapply( seq_along(gene_class) , function(i) {
-
-			switch(
-				gene_class[i],
-				'K_K'=models[['K_K']][i, c(1,2)],
-				'V_K'=models[['V_K']][i, c(1,3)],
-				'K_V'=models[['K_V']][i, c(1,2)],
-				'V_V'=models[['V_V']][i, c(1,3)]
-				)
-
-			}))
-
-		if( ddp ) {
-			concentrations_c <- t(apply(rates_c, 1, simplesys4suModel_ddpTRUE, datader=c(0), tL=tL))[,1]
-		} else {
-			concentrations_c <- t(apply(rates_c, 1, sys4suSimpleModel_ddpFALSE))[,1]
-		}
-
-		rates_t <- t(sapply( seq_along(gene_class) , function(i) {
-
-			switch(
-				gene_class[i],
-				'K_K'=models[['K_K']][i, c(1,2)],
-				'V_K'=models[['V_K']][i, c(2,3)],
-				'K_V'=models[['K_V']][i, c(1,3)],
-				'V_V'=models[['V_V']][i, c(2,4)]
-				)
-
-			}))
-
-		if( ddp ) {
-			concentrations_t <- t(apply(rates_t, 1, simplesys4suModel_ddpTRUE, datader=c(0), tL=tL))[,1]
-		} else {
-			concentrations_t <- t(apply(rates_t, 1, sys4suSimpleModel_ddpFALSE))[,1]
-		}
-
-		e_mat <- data.frame(concentrations_c, rates_c, concentrations_t, rates_t, 
-			brown_pvals, p_vals_geneclass, gene_class)
-		colnames(e_mat) <- c('mat_c','k1_c','k3_c',
-			'mat_t','k1_t','k3_t',
-			'p_k1','p_k3','p','class')
 		rownames(e_mat) <- eGenes
 
 		new_e_class <- as.character(e_mat$class)
 		new_e_class <- paste(substr(new_e_class,1,1), '-', substr(new_e_class,2,2), sep='')
 		e_mat <- data.frame(
-			mat_c = e_mat$mat_c,
-			pre_c = NA,
+			# mat_c = e_mat$mat_c,
+			# pre_c = NA,
 			k1_c = e_mat$k1_c,
 			k2_c = NA,
 			k3_c = e_mat$k3_c,
-			mat_t = e_mat$mat_t,
-			pre_t = NA,
+			# mat_t = e_mat$mat_t,
+			# pre_t = NA,
 			k1_t = e_mat$k1_t,
 			k2_t = NA,
 			k3_t = e_mat$k3_t,
 			p_k1 = e_mat$p_k1,
 			p_k2 = NA,
 			p_k3 = e_mat$p_k3,
-			p = e_mat$p,
-			class = new_e_class,
+			# intronless = e_mat$intronless,
+			# p = e_mat$p,
+			# class = new_e_class,
 			row.names = rownames(e_mat)
 			)
+		# e_pvals <- cbind(
+		# 	KKK=e_pvals[,'K_K'],
+		# 	VKK=e_pvals[,'V_K'],
+		# 	KVK=NaN,
+		# 	KKV=e_pvals[,'K_V'],
+		# 	VVK=NaN,
+		# 	VKV=e_pvals[,'V_V'],
+		# 	KVV=NaN,
+		# 	VVV=NaN
+		# 	)
 	} else {
 		e_mat <- NULL
 	}
@@ -772,7 +967,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 	synthesis_res <- data.frame(
 		condition1=mat[,'k1_c'],
-		# variance1=s1logvar,
+		# variance1=s1logvar,
 		condition2=mat[,'k1_t'],
 		# variance2=s2logvar,
 		# samplesize1=s1n,
@@ -781,12 +976,13 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 		log2fc=log2(mat[,'k1_t']/mat[,'k1_c']),
 		pval=mat[,'p_k1'],
 		padj=p.adjust(mat[,'p_k1'], method='BH'),
+		# intronless=mat[,'intronless'],
 		row.names=c(eiGenes, eGenes)
 		)
 
 	processing_res <- data.frame(
 		condition1=mat[,'k2_c'],
-		# variance1=s1logvar,
+		# variance1=s1logvar,
 		condition2=mat[,'k2_t'],
 		# variance2=s2logvar,
 		# samplesize1=s1n,
@@ -795,12 +991,13 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 		log2fc=log2(mat[,'k2_t']/mat[,'k2_c']),
 		pval=mat[,'p_k2'],
 		padj=p.adjust(mat[,'p_k2'], method='BH'),
+		# intronless=mat[,'intronless'],
 		row.names=c(eiGenes, eGenes)
 		)
 
 	degradation_res <- data.frame(
 		condition1=mat[,'k3_c'],
-		# variance1=s1logvar,
+		# variance1=s1logvar,
 		condition2=mat[,'k3_t'],
 		# variance2=s2logvar,
 		# samplesize1=s1n,
@@ -809,13 +1006,23 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 		log2fc=log2(mat[,'k3_t']/mat[,'k3_c']),
 		pval=mat[,'p_k3'],
 		padj=p.adjust(mat[,'p_k3'], method='BH'),
+		# intronless=mat[,'intronless'],
 		row.names=c(eiGenes, eGenes)
 		)
+
+	colnames(synthesis_res)[1:2] <- colnames(processing_res)[1:2] <- 
+		colnames(degradation_res)[1:2] <- tpts(inspectIds)
+
+	# modeling_res <- data.frame(
+	# 	cbind(rbind(ei_p_vals, e_pvals)), # intronless=mat[,'intronless']),
+	# 	row.names=c(eiGenes, eGenes)
+	# 	)
 
 	new_object <- new('INSPEcT_diffsteady')
 	new_object@synthesis <- synthesis_res
 	new_object@degradation <- degradation_res
 	new_object@processing <- processing_res
+	# new_object@modeling_res <- modeling_res
 
 	return(new_object)
 
@@ -873,6 +1080,23 @@ setMethod('degradation', 'INSPEcT_diffsteady', function(object) slot(object, 'de
 #'   featureNames(diffrates)
 #' }
 setMethod('featureNames', 'INSPEcT_diffsteady', function(object) rownames(slot(object, 'synthesis')))
+#' @rdname geneClass
+setMethod('geneClass', 'INSPEcT_diffsteady', function(object, bTsh=NULL, cTsh=NULL) {
+	if( is.null(bTsh) ) bTsh = .1
+	padj_Vals = cbind(
+		synthesis(object)$padj,
+		processing(object)$padj,
+		degradation(object)$padj
+		)
+	gc = apply(padj_Vals, 1, function(x) {
+		classNum = 1+1*(x<bTsh)
+		classNum[is.na(classNum)] = 1
+		classLetter = c('K','V')[classNum]
+		paste(classLetter, collapse='')
+		})
+	return(factor(gc))
+	})
+
 
 #' @name plotMA
 #' @title MA-plot from base means and log fold changes
@@ -990,7 +1214,11 @@ setMethod('plotMA', 'INSPEcT_diffsteady', function(object, ...) {
 		ylab <- addargs[['ylab']]
 		if( !is.character(ylab) )
 			stop('plotMA: "ylab" must be a character.')	 		
-	} else ylab <- 'log2 fold change'
+	} else {
+		condition1 <- colnames(data)[1]
+		condition2 <- colnames(data)[2]
+		ylab <- paste('log2 fold change',condition2,'vs',condition1)
+	}
 
 	## argument "main"
 	if( any(names(addargs) == 'main') ) {

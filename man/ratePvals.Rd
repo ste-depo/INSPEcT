@@ -7,14 +7,16 @@
 \alias{ratePvals,INSPEcT-method}
 \title{Retrieve a single p-value for each rate}
 \usage{
-ratePvals(object, cTsh = NULL)
+ratePvals(object, bTsh = NULL, cTsh = NULL)
 
-\S4method{ratePvals}{INSPEcT_model}(object, cTsh = NULL)
+\S4method{ratePvals}{INSPEcT_model}(object, bTsh = NULL, cTsh = NULL)
 
-\S4method{ratePvals}{INSPEcT}(object, cTsh = NULL)
+\S4method{ratePvals}{INSPEcT}(object, bTsh = NULL, cTsh = NULL)
 }
 \arguments{
 \item{object}{An object of class INSPEcT or INSPEcT_model}
+
+\item{bTsh}{A numeric representing the p-value threshold for considering a rate as variable. P-values are calculated through \code{\link{ratePvals}}}
 
 \item{cTsh}{A numeric representing the threshold for the chi-squared test to consider a model as valid}
 }
@@ -22,8 +24,6 @@ ratePvals(object, cTsh = NULL)
 A matrix containing p-values calculated for each rate
 }
 \description{
-Retrieve a single p-value for each rate
-
 This method is used to retrieve all the p-values combined with Brown's method that combines the results of the 
 log likelihood ratio test results for all pairs tested for each rate and all genes. P-values will change 
 according to the threshold set for the chi-squared test because it influences the model that will be taken into 
@@ -46,7 +46,7 @@ ratePvals(nascentInspObj10)
 # for considering a model valid for the log likelihood ratio test
 ratePvals(nascentInspObj10, cTsh=.2)
 # Set permaenently the chi-squared threshold at .2 for nascentInspObj10 object
-thresholds(nascentInspObj10)$chisquare <- .2
+modelSelection(nascentInspObj10)$thresholds$chisquare <- .2
 }
 \seealso{
 \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}

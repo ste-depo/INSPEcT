@@ -9,8 +9,6 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' viewModelRates(nascentInspObj10, 'synthesis')
 setMethod('viewModelRates', 'INSPEcT', function(object, feature) {
-
 	ix <- grep(feature,pData(object@modelRates)$feature)
 	exprs(object@modelRates)[,ix, drop=FALSE]
-
-	})
+})

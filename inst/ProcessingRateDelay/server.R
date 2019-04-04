@@ -11,7 +11,7 @@ shinyServer(function(input, output, session) {
 	readInspectObject <- reactive({
 
 		filename <- input$file1$datapath 
-		if( is.null(filename) ) filename <- system.file(package='INSPEcT', 'data', 'nascentInspObj.rds')
+		if( is.null(filename) ) filename <- system.file(package='INSPEcT', 'nascentInspObj.rds')
 
 		## load file
 		if( file.exists(filename) ) {

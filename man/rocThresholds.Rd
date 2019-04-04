@@ -7,14 +7,14 @@
 \alias{rocThresholds,INSPEcT_model,INSPEcT-method}
 \title{Display rate classification performance with thresholds visible at x-axis}
 \usage{
-rocThresholds(object, object2, cTsh = NULL, bTsh = NULL, xlim = c(1e-05,
-  1))
+rocThresholds(object, object2, cTsh = NULL, bTsh = NULL,
+  xlim = c(1e-05, 1))
 
 \S4method{rocThresholds}{INSPEcT_model,INSPEcT_model}(object, object2,
   cTsh = NULL, bTsh = NULL, xlim = c(1e-05, 1))
 
-\S4method{rocThresholds}{INSPEcT_model,INSPEcT}(object, object2, cTsh = NULL,
-  bTsh = NULL, xlim = c(1e-05, 1))
+\S4method{rocThresholds}{INSPEcT_model,INSPEcT}(object, object2,
+  cTsh = NULL, bTsh = NULL, xlim = c(1e-05, 1))
 }
 \arguments{
 \item{object}{An object of class INSPEcT_model, with true rates}
@@ -31,8 +31,6 @@ rocThresholds(object, object2, cTsh = NULL, bTsh = NULL, xlim = c(1e-05,
 None
 }
 \description{
-Display rate classification performance with thresholds visible at x-axis
-
 A method to visualize the performance in the classification of synthesis, degradation
 and processing rates based on the comparison of the original simulated rates and the one
 obtained by the function \code{\link{modelRates}}. For each rate, classification performance is measured 
@@ -49,18 +47,18 @@ if( Sys.info()["sysname"] != "Windows" ) {
   simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
    
   # newTpts<-simRates@params$tpts
-  # nascentInspObj_sim3<-makeSimDataset(object=simRates
+  # nascentSim2replicates<-makeSimDataset(object=simRates
   #                                    ,tpts=newTpts
   #                                    ,nRep=3
   #                                    ,NoNascent=FALSE
   #                                    ,seed=1)
-  # nascentInspObj_sim3<-modelRates(nascentInspObj_sim3[1:100]
+  # nascentSim2replicates<-modelRates(nascentSim2replicates[1:100]
   #                                ,seed=1)
   # (not evaluated to save computational time)
  
-  data("nascentInspObj_sim3",package='INSPEcT')
+  data("nascentSim2replicates",package='INSPEcT')
  
-  rocThresholds(simRates[1:100],nascentInspObj_sim3,bTsh=c(.01,.01,.05),cTsh=.1)
+  rocThresholds(simRates[1:100],nascentSim2replicates,bTsh=c(.01,.01,.05),cTsh=.1)
 }
 }
 \seealso{

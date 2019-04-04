@@ -1,3 +1,16 @@
+VERSION 1.12.1
+- major update of INSPEcT, which now handles additional functions and analysis, such as:
+	(i)   extracting RNA dynamics from only total RNA-seq data,
+	(ii)  assessing differential regulation between steady states with an improved statistics,
+	(iii) assessing the burden of the processing rate step in the responsiveness of mature RNA.
+- minor updates regard the estimation of the variance from replicates, that now uses the package "DESeq2" (when read counts are available) or "plgem" (when only expression data is available)
+
+######## the INSPEcT datasets older than this version are NOT COMPATIBLE anymore ##############
+######## and must be updated using the function "convert_ids", available in the  ##############
+######## "inst" folder of the package. Usage:                                    ##############
+> source(file.path(system.file(package='INSPEcT'), 'convert_ids.R'))
+> new_ids <- convert_ids(old_ids, degDuringPulse=c(FALSE,TRUE))
+
 VERSION 1.5.5
 - updated the results on the simulated data in the vignette
 

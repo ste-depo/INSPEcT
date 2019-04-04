@@ -62,6 +62,8 @@ degradation rates}
 
 \item{\code{processing}}{A data.frame which contains both input data and comparisons results regarding
 processing rates}
+
+\item{\code{modeling_res}}{A data.frame which contains modeling results}
 }}
 
 \examples{

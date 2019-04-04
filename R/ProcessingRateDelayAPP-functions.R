@@ -56,8 +56,8 @@ delta_fun <- function( k1 , k2 , k3 )
 
 
 ########################################################
-## plot the dynamics of mRNA following an induction ####
-## of the synthesis rate of 2 fold, with or without ####
+## plot the dynamics of mRNA following an induction ####
+## of the synthesis rate of 2 fold, with or without ####
 ## processing ##########################################
 ########################################################
 

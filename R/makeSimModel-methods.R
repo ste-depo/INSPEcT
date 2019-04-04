@@ -28,6 +28,7 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 {
 
 	tpts <- object@tpts
+	if( !is.numeric(tpts) ) stop('makeSimModel: simulated data can be created only from time-course.')
 
 	#I remove genes without intronic signal
 	genesTmp <- which(apply(ratesFirstGuess(object, 'preMRNA'),1,function(r)all(is.finite(r))&all(r>0)))		
@@ -179,17 +180,6 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 					)
 			}
 		}
-
-		# M.F. cambio perché si piantava con il gamma, utilizzo gli indici di riga per ovviare a problemi con quantili non definiti
-		# for(i in 1:quantiles)
-		# {
-		# 	nobjects <- length(which(idx==i))
-		# 	values_object[idx==i] <- rnorm(
-		# 		nobjects
-		# 		, mean=qmv[i,'mean'] 
-		# 		, sd=sqrt(qmv[i,'var']) 
-		# 		)
-		# }
 		return(values_object)
 	}
 
@@ -296,7 +286,7 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 							 , probs=c(constant=.5,sigmoid=.3,impulse=.2))
 	# given a vector of absolute values and a vector of log2foldchanges
 	# create parametric functions (either constant, sigmoidal or impulse, 
-	# according to probs) and evaluate them at tpts.
+	# according to probs) and evaluate them at tpts.
 	{
 
 		##############################
@@ -305,7 +295,7 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 
 		generateImpulseParams <- function(tpts, sampled_val, log2foldchange)
 		# Given an absolute value and a value of log2fold change sample a set 
-		# of parameters for the impulse function.
+		# of parameters for the impulse function.
 		{
 
 			n <- length(sampled_val)
@@ -323,7 +313,7 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 			sampled_deltas <- runif( n, min=delta_min, max=delta_max)
 
 			# the time of first response is sampled in order to include the 
-			# whole response within the time course
+			# whole response within the time course
 			time_of_first_response <- sapply(
 				max(tpts) - sampled_deltas
 				, function(max_first_response) 

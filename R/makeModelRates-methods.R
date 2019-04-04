@@ -10,7 +10,7 @@
 #' @return An object of class ExpressionSet containing the modeled rates and concentrations
 #' @examples
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
-#' tpts <- nascentInspObj10@tpts
+#' tpts <- tpts(nascentInspObj10)
 #' eSet <- makeModelRates(getModel(nascentInspObj10), tpts=tpts)
 #' exprs(eSet)
 setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
@@ -18,7 +18,7 @@ setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
 	tpts <- args$tpts
 	if( is.null(tpts) )
 		stop('makeModelRates: missing "tpts" argument with no default.')
-	## get ratesSpec field
+	## get ratesSpec field
 	ratesSpecs <- object@ratesSpecs
 	## in case some elements of ratesSpecs are longer than one,
 	# meaning that a unique choiche for a model has not been done yet,
@@ -80,12 +80,12 @@ setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' viewModelRates(nascentInspObj10, 'degradation')
 #' ## force every degradation rate to be accepted as variable
-#' thresholds(getModel(nascentInspObj10))$brown <- c(synthesis=.01, degradation=1, processing=.01)
+#' modelSelection(getModel(nascentInspObj10))$thresholds$brown <- c(synthesis=.01, degradation=1, processing=.01)
 #' nascentInspObj10 <- makeModelRates(nascentInspObj10)
 #' viewModelRates(nascentInspObj10, 'degradation')
 
 setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
-	## get ratesSpec field
+	## get ratesSpec field
 	ratesSpecs <- object@model@ratesSpecs
 	tpts <- object@tpts
 	log_shift <- find_tt_par(tpts)

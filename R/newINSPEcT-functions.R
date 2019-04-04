@@ -9,6 +9,7 @@
 #' @param labeling_time A number, lenght of the Nascent pulse
 #' @param nascentExpressions A list which contains exons and introns expression matrices and variances for the nascent RNA
 #' @param matureExpressions A list which contains exons and introns expression matrices and variances for the mature RNA
+#' @param preexisting A logical, indicating if the mature expression refers to the pre-exising (unlabeled) population. Not implemented yet for the "degDuringPulse" mode.
 #' @param BPPARAM Configuration for BiocParallel parallelization. By default is set to bpparam()
 #' @param labeledSF A vector storing user defined normalization scale over Nascent RNA exons and introns quantifications
 #' @param simulatedData A logical, set to TRUE in case the analysis is on simulated data
@@ -41,6 +42,7 @@ newINSPEcT <- function(tpts
 					, labeling_time = NULL
 					, nascentExpressions = NULL
 					, matureExpressions
+					, preexisting = FALSE
 					, BPPARAM = bpparam()
 					, labeledSF = NULL
 					, simulatedData = FALSE
@@ -314,7 +316,7 @@ newINSPEcT <- function(tpts
 		}
 
 		# Filter genes according to expression levels (in case the flag is active)
-		if(genesFilter)
+		if( genesFilter )
 		{
 			### filter out genes which have no signal in at least 2/3 of the time points in each feature
 			ix1 <- apply(rpkms_total_exons, 1, function(x) length(which(x==0)))/ncol(rpkms_total_exons)
@@ -330,11 +332,30 @@ newINSPEcT <- function(tpts
 				rpkms_total_introns <- rpkms_total_introns[eiGenes, ,drop=FALSE]
 				rpkms_total_introns_variances <- rpkms_total_introns_variances[eiGenes, ,drop=FALSE]
 			}
+		} else {
+			### in any case, filter out genes which have no signal in all observations
+			ix1 <- apply(rpkms_total_exons==0, 1, all)
+			ix2 <- apply(rpkms_total_exons_variances, 1, all)
+			ix3 <- apply(rpkms_total_introns, 1, all)
+			ix4 <- apply(rpkms_total_introns_variances, 1, all)
+			filteroutGenes <- rownames(rpkms_total_exons)[ix1 | ix2 | ix3 | ix4 ]
+			if( length(filteroutGenes)>0 ) {
+				message(paste('Filtering out', length(filteroutGenes),'gene(s) with more all zeros in their exonic or intronic quantifications..'))
+				eiGenes <- eiGenes[!eiGenes %in% filteroutGenes]
+				rpkms_total_exons <- rpkms_total_exons[eiGenes, ,drop=FALSE]
+				rpkms_total_exons_variances <- rpkms_total_exons_variances[eiGenes, ,drop=FALSE]
+				rpkms_total_introns <- rpkms_total_introns[eiGenes, ,drop=FALSE]
+				rpkms_total_introns_variances <- rpkms_total_introns_variances[eiGenes, ,drop=FALSE]
+			}		
 		}
 		message(paste('Number of genes with introns and exons: ', length(eiGenes)))
 		## sort according to time point ordering
-		ord <- order(tpts)
-		tpts <- tpts[ord]
+		if( is.numeric(tpts) ) {
+			ord <- order(tpts)
+			tpts <- tpts[ord]
+		} else {
+			ord <- seq_along(tpts)
+		}
 		## estimate RNA dynamics
 		totRpkmsIntEx <- list(
 				exons=rpkms_total_exons[,ord,drop=FALSE]
@@ -388,8 +409,12 @@ newINSPEcT <- function(tpts
 		# end - to remove
 
 		## sort according to time point ordering
-		ord <- order(tpts)
-		tpts <- tpts[ord]
+		if( is.numeric(tpts) ) {
+			ord <- order(tpts)
+			tpts <- tpts[ord]
+		} else {
+			ord <- seq_along(tpts)
+		}
 		## estimate RNA dynamics
 		totRpkmsIntEx <- list(
 				exons=rpkms_total_exons[,ord,drop=FALSE]
@@ -429,10 +454,26 @@ newINSPEcT <- function(tpts
 				rpkms_total_exons <- rpkms_total_exons[!rownames(rpkms_total_exons) %in% filteroutGenes, ,drop=FALSE]
 				rpkms_total_exons_variances <- rpkms_total_exons_variances[!rownames(rpkms_total_exons_variances) %in% filteroutGenes, ,drop=FALSE]
 			}
+		} else {
+			### filter out genes which have no signal in all oservations of a feature
+			ix1 <- apply(rpkms_Nascent_exons, 1, all)
+			ix2 <- apply(rpkms_total_exons, 1, all)
+			filteroutGenes <- rownames(rpkms_Nascent_exons)[ix1 | ix2]
+			if( length(filteroutGenes)>0 ) {
+				message(paste('Filtering out', length(filteroutGenes), 'genes with more than all zeros in their exonic quantifications.'))
+				rpkms_Nascent_exons <- rpkms_Nascent_exons[!rownames(rpkms_Nascent_exons) %in% filteroutGenes, ,drop=FALSE]
+				rpkms_Nascent_exons_variances <- rpkms_Nascent_exons_variances[!rownames(rpkms_Nascent_exons_variances) %in% filteroutGenes, ,drop=FALSE]
+				rpkms_total_exons <- rpkms_total_exons[!rownames(rpkms_total_exons) %in% filteroutGenes, ,drop=FALSE]
+				rpkms_total_exons_variances <- rpkms_total_exons_variances[!rownames(rpkms_total_exons_variances) %in% filteroutGenes, ,drop=FALSE]
+			}			
 		}
 		## sort according to time point ordering
-		ord <- order(tpts)
-		tpts <- tpts[ord]
+		if( is.numeric(tpts) ) {
+			ord <- order(tpts)
+			tpts <- tpts[ord]
+		} else {
+			ord <- seq_along(tpts)
+		}
 		## estimate RNA dynamics
 		totRpkmsIntEx <- list(
 			exons=rpkms_total_exons[,ord,drop=FALSE]
@@ -443,6 +484,9 @@ newINSPEcT <- function(tpts
 			, exons_var=rpkms_Nascent_exons_variances[,ord,drop=FALSE]
 			)
 		if( degDuringPulse ) {
+			if( preexisting ) {
+				stop('Pre-existing mode in still not implemeted when degDuringPulse is active.')
+			}
 			outSimple <- RNAdynamicsSimpleDDP(totRpkms=totRpkmsIntEx
 											, labeledRpkms=labeledRpkmsIntEx
 											, labeledSF=labeledSF
@@ -455,6 +499,7 @@ newINSPEcT <- function(tpts
 											, labeledSF=labeledSF
 											, tpts=tpts
 											, tL=labeling_time
+											, preexisting=preexisting
 											, BPPARAM=BPPARAM)
 		}
 		## return the results in the form of an INSPEcT object.
@@ -475,9 +520,10 @@ newINSPEcT <- function(tpts
 		# (it can only apply to genes with both exons and introns)
 		eiGenes <- intersect(rownames(rpkms_total_exons), rownames(rpkms_total_introns))
 		negativeMature <- apply(rpkms_total_exons[eiGenes,,drop=FALSE]<rpkms_total_introns[eiGenes,,drop=FALSE],1,any)
-		toRemove <- eiGenes[negativeMature]
+		negativeNascent <- apply(rpkms_Nascent_exons[eiGenes,,drop=FALSE]<rpkms_Nascent_introns[eiGenes,,drop=FALSE],1,any)
+		toRemove <- eiGenes[negativeMature|negativeNascent]
 		if( length(toRemove)>0 ) {
-			message(paste('Removing', length(toRemove), 'gene(s) with intronic quantifications greater than the exonic in the total fraction..'))
+			message(paste('Removing', length(toRemove), 'gene(s) with intronic quantifications greater than the exonic..'))
 			rpkms_Nascent_exons <- rpkms_Nascent_exons[!rownames(rpkms_Nascent_exons) %in% toRemove, ,drop=FALSE]
 			rpkms_total_exons <- rpkms_total_exons[!rownames(rpkms_total_exons) %in% toRemove, ,drop=FALSE]
 			rpkms_Nascent_introns <- rpkms_Nascent_introns[!rownames(rpkms_Nascent_introns) %in% toRemove, ,drop=FALSE]
@@ -509,6 +555,30 @@ newINSPEcT <- function(tpts
 				rpkms_Nascent_introns <- rpkms_Nascent_introns[!rownames(rpkms_Nascent_introns) %in% filteroutGenes, ,drop=FALSE]
 				rpkms_total_introns <- rpkms_total_introns[!rownames(rpkms_total_introns) %in% filteroutGenes, ,drop=FALSE]
 			}
+		} else {
+			### filter out genes which have no signal in at least 2/3 of the time points in exonic features
+			### in that case completely remove the gene (both intronic and exonic signal).
+			ix1 <- apply(rpkms_Nascent_exons, 1, all)
+			ix2 <- apply(rpkms_total_exons, 1, all)
+			filteroutGenes <- rownames(rpkms_Nascent_exons)[ix1 | ix2]
+			if( length(filteroutGenes)>0 ) {
+				message(paste('Filtering out', length(filteroutGenes), 'gene(s) with more than 2/3 of zeros in their exonic quantifications.'))
+				rpkms_Nascent_exons <- rpkms_Nascent_exons[!rownames(rpkms_Nascent_exons) %in% filteroutGenes, ,drop=FALSE]
+				rpkms_total_exons <- rpkms_total_exons[!rownames(rpkms_total_exons) %in% filteroutGenes, ,drop=FALSE]
+				rpkms_Nascent_introns <- rpkms_Nascent_introns[!rownames(rpkms_Nascent_introns) %in% filteroutGenes, ,drop=FALSE]
+				rpkms_total_introns <- rpkms_total_introns[!rownames(rpkms_total_introns) %in% filteroutGenes, ,drop=FALSE]
+			}
+			### filter out genes which have no signal in at least 2/3 of the time points in intronic features
+			### in that case just remove the intronic signal.
+			ix3 <- apply(rpkms_Nascent_introns, 1, all)
+			ix4 <- apply(rpkms_total_introns, 1, all)
+			filteroutGenes <- rownames(rpkms_Nascent_introns)[ix3 | ix4]
+			if( length(filteroutGenes)>0 ) {
+				message(paste('Filtering out intronic signal of', length(filteroutGenes), 'gene(s) with more than 2/3 of zero quantifications'))
+				message('(for those genes only synthesis and degradation will be evaluated).')
+				rpkms_Nascent_introns <- rpkms_Nascent_introns[!rownames(rpkms_Nascent_introns) %in% filteroutGenes, ,drop=FALSE]
+				rpkms_total_introns <- rpkms_total_introns[!rownames(rpkms_total_introns) %in% filteroutGenes, ,drop=FALSE]
+			}
 		}
 
 		## assign genes to "only exons" or "introns and exons" wheter they have introns or not
@@ -522,8 +592,12 @@ newINSPEcT <- function(tpts
 		}
 
 		## sort according to time point ordering
-		ord <- order(tpts)
-		tpts <- tpts[ord]
+		if( is.numeric(tpts) ) {
+			ord <- order(tpts)
+			tpts <- tpts[ord]
+		} else {
+			ord <- seq_along(tpts)
+		}
 		# RNA dynamics for genes to be analysed in the full mode:
 		message(paste('Number of genes with introns and exons: ', length(intExGenes)))
 		totRpkmsIntEx <- list(
@@ -539,19 +613,31 @@ newINSPEcT <- function(tpts
 				, introns_var=rpkms_Nascent_introns_variances[intExGenes, ord, drop=FALSE]
 			)
 		if( degDuringPulse ) {
+			if( preexisting ) {
+				stop('Pre-existing mode in still not implemeted when degDuringPulse is active.')
+			}
 			outIntEx <- RNAdynamicsDDP(totRpkms=totRpkmsIntEx
 									, labeledRpkms=labeledRpkmsIntEx
 									, tpts=tpts
 									, tL=labeling_time
 									, BPPARAM=BPPARAM
-									)
+									)				
 		} else {
-			outIntEx <- RNAdynamics(totRpkms=totRpkmsIntEx
-									, labeledRpkms=labeledRpkmsIntEx
-									, tpts=tpts
-									, tL=labeling_time
-									, BPPARAM=BPPARAM
-									)
+			if( preexisting ) {
+				outIntEx <- RNAdynamicsFromPreex(preexRpkms=totRpkmsIntEx
+										, labeledRpkms=labeledRpkmsIntEx
+										, tpts=tpts
+										, tL=labeling_time
+										, BPPARAM=BPPARAM
+										)
+			} else {
+				outIntEx <- RNAdynamics(totRpkms=totRpkmsIntEx
+										, labeledRpkms=labeledRpkmsIntEx
+										, tpts=tpts
+										, tL=labeling_time
+										, BPPARAM=BPPARAM
+										)				
+			}
 		}
 		# RNA dynamics for genes to be analysed in the simple mode (if they exist),
 		# scaling the labeled library using the "labeledSF" caluclated from the full analysis:
@@ -567,6 +653,9 @@ newINSPEcT <- function(tpts
 					, exons_var=rpkms_Nascent_exons_variances[onlyExGenes, ord, drop=FALSE]
 				)
 			if( degDuringPulse ) {
+				if( preexisting ) {
+					stop('Pre-existing mode in still not implemeted when degDuringPulse is active.')
+				}
 				outOnlyEx <- RNAdynamicsSimpleDDP(totRpkms=totRpkmsOnlyEx
 												, labeledRpkms=labeledRpkmsOnlyEx
 												, labeledSF=labeledSF
@@ -579,6 +668,7 @@ newINSPEcT <- function(tpts
 												, labeledSF=labeledSF
 												, tpts=tpts
 												, tL=labeling_time
+												, preexisting=preexisting
 												, BPPARAM=BPPARAM)			
 			}
 			# merge RNA dynamics coming from the full and the simples analysis
@@ -851,16 +941,21 @@ RNAdynamicsSimpleDDP <- function(totRpkms, labeledRpkms, labeledSF, tpts, tL, BP
 	
 }
 
-RNAdynamicsSimple <- function(totRpkms, labeledRpkms, labeledSF, tpts, tL, BPPARAM=bpparam()) 
+RNAdynamicsSimple <- function(totRpkms, labeledRpkms, labeledSF, tpts, tL, preexisting, BPPARAM=bpparam()) 
 {
 		
 	## retrieve gene names from rownames of exon total rpkms
 	geneNames <- rownames(totRpkms$exons)
-		
+
 	##### total fraction
 	## rename total exons
-	Texo  <- totRpkms$exons
-	Texo_var <- totRpkms$exons_var
+	if( preexisting ) {
+		Texo  <- totRpkms$exons + matrixColNorm(labeledRpkms$exons, labeledSF)
+		Texo_var <- totRpkms$exons_var + matrixColNorm(labeledRpkms$exons_var, labeledSF^2)
+	} else {
+		Texo  <- totRpkms$exons
+		Texo_var <- totRpkms$exons_var		
+	}
 
 	##### labeled fraction
 	## rename labeled exons
@@ -992,6 +1087,34 @@ RNAdynamicsSimple <- function(totRpkms, labeledRpkms, labeledSF, tpts, tL, BPPAR
 
 }
 
+#########################
+##### local functions ######
+########################
+fLint <- function(Lexo,gamma,tL) Lexo/(tL*gamma)*(1-exp(-gamma*tL))
+# given the number of labeled molecules, gamma and tL gives back the 
+# number of processed molecules
+fGamma <- function(Lint, Lexo, tL, maxGamma=1e3) {
+# given the number of labeled molecules and the number of processed
+# molecules gives back the processing rate. It's an inverse function,
+# therefore, the precision (step of the interval evaluated) and the
+# max value where gamma is possibly evaluated should be provided
+	if( is.na(Lint) | is.na(Lexo) ) return(NA)
+	if( Lint >= Lexo ) return(0)
+	if( Lint == 0 ) return(Inf)
+	errorfun <- function(gamma, Lexo, Lint, tL ) (Lint-fLint(Lexo, gamma, tL))^2
+	
+	optimize(errorfun, c(0,maxGamma), Lexo=Lexo, Lint=Lint, tL=tL)$minimum
+}
+# calculate the factor which bring the median of the residuals between
+# the modeled preMRNA levels and the measured to zero
+sq.median.resids <- function(sf, P, dP, alpha, gamma) sapply(sf, function(i) {
+	t1 <- dP + gamma*P
+	t2 <- i*alpha
+	idx <- is.finite(t1) & is.finite(t2) & t1 > 0 & t2 > 0
+	resids <- t1[idx] - t2[idx]
+	stats::median(resids , na.rm=TRUE)^2
+})
+
 RNAdynamicsDDP <- function(totRpkms, labeledRpkms, tpts, tL, simulatedData=FALSE, BPPARAM=bpparam()) 
 {
 	
@@ -1055,34 +1178,6 @@ RNAdynamicsDDP <- function(totRpkms, labeledRpkms, tpts, tL, simulatedData=FALSE
 		#########################
 		
 		message('Calculating scaling factor between total and Nascent libraries...')
-
-		#########################
-		##### local functions ######
-		########################
-		fLint <- function(Lexo,gamma,tL) Lexo/(tL*gamma)*(1-exp(-gamma*tL))
-		# given the number of labeled molecules, gamma and tL gives back the 
-		# number of processed molecules
-		fGamma <- function(Lint, Lexo, tL, maxGamma=1e3) {
-		# given the number of labeled molecules and the number of processed
-		# molecules gives back the processing rate. It's an inverse function,
-		# therefore, the precision (step of the interval evaluated) and the
-		# max value where gamma is possibly evaluated should be provided
-			if( is.na(Lint) | is.na(Lexo) ) return(NA)
-			if( Lint >= Lexo ) return(0)
-			if( Lint == 0 ) return(Inf)
-			errorfun <- function(gamma, Lexo, Lint, tL ) (Lint-fLint(Lexo, gamma, tL))^2
-			
-			optimize(errorfun, c(0,maxGamma), Lexo=Lexo, Lint=Lint, tL=tL)$minimum
-		}
-		# calculate the factor which bring the median of the residuals between
-		# the modeled preMRNA levels and the measured to zero
-		sq.median.resids <- function(sf, P, dP, alpha, gamma) sapply(sf, function(i) {
-			t1 <- dP + gamma*P
-			t2 <- i*alpha
-			idx <- is.finite(t1) & is.finite(t2) & t1 > 0 & t2 > 0
-			resids <- t1[idx] - t2[idx]
-			stats::median(resids , na.rm=TRUE)^2
-		})
 		
 		##################
 		#### scale data ###
@@ -1357,34 +1452,6 @@ RNAdynamics <- function(totRpkms, labeledRpkms, tpts, tL, simulatedData=FALSE, B
 		#########################
 		
 		message('Calculating scaling factor between total and Nascent libraries...')
-
-		#########################
-		##### local functions ######
-		########################
-		fLint <- function(Lexo,gamma,tL) Lexo/(tL*gamma)*(1-exp(-gamma*tL))
-		# given the number of labeled molecules, gamma and tL gives back the 
-		# number of processed molecules
-		fGamma <- function(Lint, Lexo, tL, maxGamma=1e3) {
-		# given the number of labeled molecules and the number of processed
-		# molecules gives back the processing rate. It's an inverse function,
-		# therefore, the precision (step of the interval evaluated) and the
-		# max value where gamma is possibly evaluated should be provided
-			if( is.na(Lint) | is.na(Lexo) ) return(NA)
-			if( Lint >= Lexo ) return(0)
-			if( Lint == 0 ) return(Inf)
-			errorfun <- function(gamma, Lexo, Lint, tL ) (Lint-fLint(Lexo, gamma, tL))^2
-			
-			optimize(errorfun, c(0,maxGamma), Lexo=Lexo, Lint=Lint, tL=tL)$minimum
-		}
-		# calculate the factor which bring the median of the residuals between
-		# the modeled preMRNA levels and the measured to zero
-		sq.median.resids <- function(sf, P, dP, alpha, gamma) sapply(sf, function(i) {
-			t1 <- dP + gamma*P
-			t2 <- i*alpha
-			idx <- is.finite(t1) & is.finite(t2) & t1 > 0 & t2 > 0
-			resids <- t1[idx] - t2[idx]
-			stats::median(resids , na.rm=TRUE)^2
-		})
 		
 		##################
 		#### scale data ###
@@ -1538,6 +1605,238 @@ RNAdynamics <- function(totRpkms, labeledRpkms, tpts, tL, simulatedData=FALSE, B
 	
 }
 
+RNAdynamicsFromPreex <- function(preexRpkms, labeledRpkms, tpts, tL, BPPARAM=bpparam()) 
+{
+			
+	## retrieve gene names from rownames of exon total rpkms
+	geneNames <- rownames(preexRpkms$exons)
+		
+	##### total fraction
+	## rename total exons
+	Pexo  <- preexRpkms$exons
+	Pexo_var <- preexRpkms$exons_var
+	## rename total introns
+	Pint  <- preexRpkms$introns
+	Pint_var <- preexRpkms$introns_var
+
+	##### labeled fraction
+	## rename labeled exons
+	Lexo <- labeledRpkms$exons
+	Lexo_var <- labeledRpkms$exons_var
+	## rename total introns
+	Lint <- labeledRpkms$introns
+	Lint_var <- labeledRpkms$introns_var
+						
+	#########################
+	#### scale Nascent rpkms ###
+	#########################
+	
+	message('Calculating scaling factor between Pre-existing and Nascent libraries...')
+
+	estimateSFpreexisting <- function(yf, labeledSF, Lint, Lexo, Pint, gammaTC, tL, tpts, j, BPPARAM=bpparam()) {
+
+		labeledSF[j] <- yf
+
+		Tint <- matrixColNorm(Lint, labeledSF) + Pint
+		Lint <- matrixColNorm(Lint, labeledSF)
+		Lexo <- matrixColNorm(Lexo, labeledSF)
+
+		if( is.numeric(tpts) & j > 1 ) {
+			TintDer <- as.matrix(sapply(1:nrow(Tint), 
+				function(i) {
+					if( all(is.finite(Tint[i,] ) ) ) {
+						spfun <- splinefun(tpts, Tint[i,])
+						return(spfun(tpts, deriv=1) )
+					} else return(rep(NA, length(tpts)) )
+				}
+			))
+			if( ncol(TintDer)>1 ) TintDer <- t(TintDer)
+		} else {
+			TintDer= matrix(0, nrow=nrow(Tint), ncol=ncol(Tint))
+		}
+
+		# scale factor 
+		optimize(sq.median.resids, c(0.01,100), P=Tint[,j], dP=TintDer[,j], 
+			alpha=Lexo[,j]/tL, gamma=gammaTC[,j] )$minimum
+
+	}
+
+	# estimate of alpha and gamma from 4sU data 
+	# (they are independent of a scaling factor that is common to 
+	# exonic and intronic signal)
+	gammaTC <- do.call('cbind',bplapply(
+		1:ncol(Lexo), function(j) 
+			sapply(1:nrow(Lint), 
+				function(i, Lint, Lexo, tL) fGamma(Lint[i,j] , Lexo[i,j] , tL)
+				, Lint=Lint, Lexo=Lexo, tL=tL)
+			,BPPARAM=BPPARAM))
+
+	labeledSF <- rep(1, ncol(Lint))
+
+	for( j in 1:ncol(Lint) ) {
+
+		labeledSF[j] <- optimize(
+			f = function(yf) 
+				sum((estimateSFpreexisting(yf, labeledSF, Lint, Lexo, 
+					Pint, gammaTC, tL, tpts, j, BPPARAM) - 1)^2),
+			interval=c(.1,10)
+			)$minimum
+
+	}
+
+	##### total fraction
+	## rename total exons
+	Texo <- Pexo + matrixColNorm(Lexo, labeledSF)
+	Texo_var <- Pexo_var + matrixColNorm(Lexo, labeledSF^2)
+	## rename total introns
+	Tint <- Pint + matrixColNorm(Lint, labeledSF)
+	Tint_var <- Pint_var + matrixColNorm(Lint, labeledSF^2)
+
+	# if tpts is numeric (timecourse analysis) estimate
+	# derivatives from time course
+	if( is.numeric(tpts) ) {
+		TintDer <- as.matrix(sapply(1:nrow(Tint), 
+			function(i) {
+				if( all(is.finite(Tint[i,] ) ) ) {
+					spfun <- splinefun(tpts, Tint[i,])
+					return(spfun(tpts, deriv=1) )
+				} else return(rep(NA, length(tpts)) )
+			}
+		))
+		if( ncol(TintDer)>1 ) TintDer <- t(TintDer)
+		TintDer[, 1] <- 0 
+		TexoDer <- as.matrix(sapply(1:nrow(Texo), 
+			function(i) {
+				if( all(is.finite(Texo[i,] ) ) ) {
+					spfun <- splinefun(tpts, Texo[i,])
+					return(spfun(tpts, deriv=1) )
+				} else return(rep(NA, length(tpts)) )
+			}
+		))
+		if( ncol(TexoDer)>1 ) TexoDer <- t(TexoDer)
+		TexoDer[, 1] <- 0
+	# otherwise put the derivatives to zero	
+	} else {
+		TintDer= matrix(0, nrow=nrow(Tint), ncol=ncol(Tint))
+		TexoDer= matrix(0, nrow=nrow(Texo), ncol=ncol(Texo))
+	}
+
+	##############################
+	## estimate synthesis rates ##
+	##############################
+			
+	## calculate alpha and recalculate the variance
+	alphaTC <- matrixColNorm(Lexo, labeledSF/tL)
+	alphaTC_var <- matrixColNorm(Lexo_var, (labeledSF/tL)^2)
+
+	if( is.numeric(tpts) ) {
+
+		################################
+		## estimate degradation rates ##
+		################################
+						
+		message('Estimating degradation rates...')
+		betaT0 <- ( alphaTC[,1] - TexoDer[,1] ) / (Texo[,1] - Tint[,1] )
+		betaT0[betaT0 < 0 | !is.finite(betaT0)] <- NA
+		if( length(tpts)>1 ) {
+			betaOut <- inferKBetaFromIntegralWithPre(tpts, alphaTC, Texo, Tint, 
+				maxBeta=quantile(betaT0,na.rm=TRUE,probs=.99)*10,BPPARAM=BPPARAM
+				)
+			betaTC <- cbind(betaT0, 
+				sapply(betaOut, function(x) sapply(x, '[[', 'root'))
+				)
+			betaEstimPrec <- cbind(0,
+				sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))
+				)
+		} else {
+			betaTC <- as.matrix(betaT0)
+			betaEstimPrec <- matrix(0, nrow=nrow(betaTC), ncol=ncol(betaTC))
+		}
+
+		###################################
+		## estimate processing rates #########
+		#####################################
+		
+		# calculate gamma (from  total RNA introns and alphas )
+		message('Estimating processing rates...')
+		gammaT0 <- ( alphaTC[,1] - TintDer[,1] ) / Tint[,1]
+		gammaT0[gammaT0 < 0 | !is.finite(gammaT0)] <- NA
+		if( length(tpts)>1 ) {
+			gammaOut <- inferKGammaFromIntegral(tpts, alphaTC, Tint, 
+				maxGamma=quantile(gammaT0,na.rm=TRUE,probs=.99)*10, BPPARAM=BPPARAM
+				)
+			gammaTC <- cbind(gammaT0, 
+				sapply(gammaOut, function(x) sapply(x, '[[', 'root'))
+				)
+			gammaEstimPrec <- cbind(0, 
+				sapply(gammaOut, function(x) sapply(x, '[[', 'estim.prec'))
+				)
+		} else {
+			gammaTC <- as.matrix(gammaT0)
+			gammaEstimPrec <- matrix(0, nrow=nrow(gammaTC), ncol=ncol(gammaTC))
+		}
+
+		# ## impute NA values
+		betaTC <- do.call('rbind',bplapply(1:nrow(betaTC), 
+			function(i) impute_na_tc(tpts, betaTC[i,]), BPPARAM=bpparam()))
+		gammaTC <- do.call('rbind',bplapply(1:nrow(gammaTC), 
+			function(i) impute_na_tc(tpts, gammaTC[i,]), BPPARAM=bpparam()))
+
+		ratesEstimPrec <- betaEstimPrec + gammaEstimPrec
+
+	} else {
+
+		betaTC= alphaTC/(Texo-Tint)
+		gammaTC= alphaTC/Tint
+		ratesEstimPrec= matrix(NA, nrow=nrow(betaTC), ncol=ncol(betaTC))
+
+	}
+	
+	## remove dimnames from matrices and names from vectors 
+	## that will be output
+	attr(alphaTC, 'dimnames') <- NULL
+	attr(betaTC, 'dimnames') <- NULL
+	attr(gammaTC, 'dimnames') <- NULL
+	attr(Texo, 'dimnames') <- NULL
+	attr(Tint, 'dimnames') <- NULL
+	attr(Lexo, 'dimnames') <- NULL
+	attr(Lint, 'dimnames') <- NULL
+	attr(alphaTC_var, 'dimnames') <- NULL
+	attr(Texo_var, 'dimnames') <- NULL
+	attr(Tint_var, 'dimnames') <- NULL
+	attr(Lexo_var, 'dimnames') <- NULL
+	attr(Lint_var, 'dimnames') <- NULL
+	attr(ratesEstimPrec, 'dimnames') <- NULL
+	
+	## return scaled results and rates (adding NA values 
+	## for preMRNA and gamma)
+
+	if(!is.matrix(Texo_var)){Texo_var <- matrix(rep(Texo_var,length(tpts)),nrow=length(Texo_var),ncol=length(tpts))}
+	if(!is.matrix(Tint_var)){Tint_var <- matrix(rep(Tint_var,length(tpts)),nrow=length(Tint_var),ncol=length(tpts))}
+
+	return(list(
+		concentrations=list(
+			total=Texo
+			, total_var=Texo_var
+			, preMRNA=Tint
+			, preMRNA_var=Tint_var
+			, labeled_total=Lexo
+			, labeled_total_var=Lexo_var
+			, labeled_preMRNA=Lint
+			, labeled_preMRNA_var=Lint_var
+		)
+		, rates=list(
+			alpha=alphaTC
+			, alpha_var=alphaTC_var
+			, beta=betaTC
+			, gamma=gammaTC)
+		, ratesEstimPrec=ratesEstimPrec
+		, geneNames=geneNames
+		, labeledSF=labeledSF
+		, tpts=tpts
+		, tL=tL))
+	
+}
 
 mcsapply <- function( X, FUN, ... ) do.call('cbind', bplapply( X, FUN, ... ))
 

@@ -24,18 +24,18 @@
 #'   simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
 #'    
 #'   # newTpts<-simRates@params$tpts
-#'   # nascentInspObj_sim3<-makeSimDataset(object=simRates
+#'   # nascentSim2replicates<-makeSimDataset(object=simRates
 #'   #                                    ,tpts=newTpts
 #'   #                                    ,nRep=3
 #'   #                                    ,NoNascent=FALSE
 #'   #                                    ,seed=1)
-#'   # nascentInspObj_sim3<-modelRates(nascentInspObj_sim3[1:100]
+#'   # nascentSim2replicates<-modelRates(nascentSim2replicates[1:100]
 #'   #                                ,seed=1)
 #'   # (not evaluated to save computational time)
 #'  
-#'   data("nascentInspObj_sim3",package='INSPEcT')
+#'   data("nascentSim2replicates",package='INSPEcT')
 #'  
-#'   rocCurve(simRates[1:100],nascentInspObj_sim3)
+#'   rocCurve(simRates[1:100],nascentSim2replicates)
 #'   title("3rep. 11t.p. Total and nascent RNA", line=3)
 #' }
 

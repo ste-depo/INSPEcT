@@ -22,8 +22,6 @@ chisqmodel(object, ...)
 A vector of chi-squared test results
 }
 \description{
-Retrieve results of chi-squared test for the selected models
-
 This method is used to retrieve the chi-squared test results for the models
 that have been selected to better represent the behavior of each gene.
 }

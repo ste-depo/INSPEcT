@@ -31,7 +31,6 @@ Methods that apply to INSPEcT_model class are
 \code{\link{chisqmodel}} \cr
 \code{\link{chisqtest}} \cr
 \code{\link{geneClass}} \cr
-\code{\link{llrtests}} \cr
 \code{\link{logLik}} \cr
 \code{\link{makeModelRates}} \cr
 \code{\link{makeSimDataset}} \cr
@@ -39,7 +38,6 @@ Methods that apply to INSPEcT_model class are
 \code{\link{ratePvals}} \cr
 \code{\link{rocCurve}} \cr
 \code{\link{rocThresholds}} \cr
-\code{\link{thresholds}} \cr
 }
 \section{Slots}{
 

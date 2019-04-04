@@ -26,8 +26,6 @@ makeSimDataset(object, tpts, nRep, NoNascent = FALSE, seed = NULL)
 An object of the class ExpressionSet containing rates and concentrations
 }
 \description{
-Generate synthetic rates and concentrations
-
 This method generates rates and concentrations where noise is added according to the desired number of 
 replicates that the user set as an arguments from the INSPEcT_model object that has been created by the 
 method of the class INSPEcT \code{\link{makeSimModel}}. Rates and concentrations can be generated at the 
@@ -40,7 +38,7 @@ if( Sys.info()["sysname"] != "Windows" ) {
   nascentInspObj <- readRDS(system.file(package='INSPEcT', 'nascentInspObj.rds'))
   simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
   tpts <- tpts(nascentInspObj)
-  nascentInspObj_sim3 <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
+  nascentSim2replicates <- makeSimDataset(object=simRates,tpts=tpts,nRep=3,NoNascent=FALSE,seed=1)
 }
 }
 \seealso{

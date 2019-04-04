@@ -10,6 +10,7 @@
 #' this method assigns the chi-squared test result of the model selected by AIC
 #' to the respective variable rates
 #' @param object An object of class INSPEcT or INSPEcT_model
+#' @param bTsh A numeric representing the p-value threshold for considering a rate as variable. P-values are calculated through \code{\link{ratePvals}}
 #' @param cTsh A numeric representing the threshold for the chi-squared test to consider a model as valid
 #' @details ratePvlas retrieve a single p-value for each rate thanks to multiple log likelihood tests performed on 
 #' nested models that has a chi-squared test below the selected threshold. 
@@ -24,98 +25,146 @@
 #' # for considering a model valid for the log likelihood ratio test
 #' ratePvals(nascentInspObj10, cTsh=.2)
 #' # Set permaenently the chi-squared threshold at .2 for nascentInspObj10 object
-#' thresholds(nascentInspObj10)$chisquare <- .2
-setMethod('ratePvals', 'INSPEcT_model', function(object, cTsh=NULL) {
+#' modelSelection(nascentInspObj10)$thresholds$chisquare <- .2
+setMethod('ratePvals', 'INSPEcT_model', function(object, bTsh=NULL, cTsh=NULL) {
+	calculate_rates_pvalues(object, bTsh, cTsh)
+	})
+
+#' @rdname ratePvals
+setMethod('ratePvals', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL) {
+	if( modelSelection(object)$limitModelComplexity ) {
+		dfmax = length(tpts(object))
+		rate_pvals = calculate_rates_pvalues(object@model, bTsh, cTsh, dfmax)
+	} else {
+		rate_pvals = calculate_rates_pvalues(object@model, bTsh, cTsh)
+	}
+	return(rate_pvals)
+	})
+
+calculate_rates_pvalues <- function(object, bTsh, cTsh, dfmax=Inf) {
+
 	## calculates the pval to be varying per rate per gene, 
 	## according to the threshold set for the chisq masking step)
+
+	## in case a rate has a threshold set to 0, avoid testing it
+	if( is.null(bTsh) )
+		bTsh <- object@params$thresholds$brown
+	rates_to_aviod <- names(bTsh)[bTsh == 0]
+	rates_to_aviod <- c('synthesis'='a','degradation'='b','processing'='c')[rates_to_aviod]
+	llrtests=list(
+		synthesis=list(c('0','a')
+			,c('b','ab')
+			,c('c','ac')
+			,c('bc','abc'))
+		, degradation=list(c('0','b')
+			,c('a','ab')
+			,c('c','bc')
+			,c('ac','abc'))
+		, processing=list(c('0','c')
+			,c('a','ac')
+			,c('b','bc')
+			,c('ab','abc'))
+		)
+
+	## retrieve models
+	ratesSpecs <- object@ratesSpecs
 
 	if( object@params$modelSelection=='llr' ) {
 		if( is.null(cTsh) )
 			cTsh <- object@params$thresholds$chisquare
-		## retrieve models
-		ratesSpecs <- object@ratesSpecs
-		## define which models have been tested
-		availableTests <- names(ratesSpecs[[1]])
 		## generic tests
 		chisq_pvals <- chisqtest(object)
 		logLik_vals <- logLik(object)
 		#########
 		# alpha #
 		#########
-		alphaCols <- object@params$llrtests$synthesis
-		alphaLLRtestPvlas <- sapply(alphaCols, function(compare) {
-			null <- compare[1]; alt <- compare[2]
-			sapply(ratesSpecs, function(x) 
-				tryCatch(logLikRatioTestInscpectModels(x[[null]], x[[alt]]), error=function(e) NA)
-				)
-			})
-		alphaChisqMask <- sapply(alphaCols, function(compare) {
-			chisq_pvals[,compare[1]] <= cTsh | 
-				chisq_pvals[,compare[2]] <= cTsh})
-
-		if( !is.matrix(alphaLLRtestPvlas) ) {
-			alphaLLRtestPvlas <- t(as.matrix(alphaLLRtestPvlas))
-			alphaChisqMask <- t(as.matrix(alphaChisqMask))
-			rownames(alphaLLRtestPvlas) <- rownames(alphaChisqMask) <-
-				names(ratesSpecs)
+		alphaCols <- llrtests$synthesis
+		if( length(rates_to_aviod)>0 )
+			alphaCols <- alphaCols[!sapply(alphaCols, function(x) any(grepl(rates_to_aviod, x)))]
+		if( length(alphaCols)>0 ) {
+			alphaLLRtestPvlas <- sapply(alphaCols, function(compare) {
+				null <- compare[1]; alt <- compare[2]
+				sapply(ratesSpecs, function(x) 
+					tryCatch(logLikRatioTestInscpectModels(x[[null]], x[[alt]], dfmax), error=function(e) NA)
+					)
+				})
+			alphaChisqMask <- sapply(alphaCols, function(compare) {
+				chisq_pvals[,compare[1]] <= cTsh | 
+					chisq_pvals[,compare[2]] <= cTsh})
+			if( !is.matrix(alphaLLRtestPvlas) ) {
+				alphaLLRtestPvlas <- t(as.matrix(alphaLLRtestPvlas))
+				alphaChisqMask <- t(as.matrix(alphaChisqMask))
+				rownames(alphaLLRtestPvlas) <- rownames(alphaChisqMask) <-
+					names(ratesSpecs)
+			}
+			colnames(alphaLLRtestPvlas) <- colnames(alphaChisqMask) <-
+				sapply(alphaCols, paste, collapse='_VS_')
+			alphaChisqMask <- alphaChisqMask[,which(apply(alphaLLRtestPvlas,2,var,na.rm=T)!=0)]
+			alphaLLRtestPvlas <- alphaLLRtestPvlas[,which(apply(alphaLLRtestPvlas,2,var,na.rm=T)!=0)]
+		} else {
+			alphaLLRtestPvlas <- rep(1, length(ratesSpecs))
 		}
-		colnames(alphaLLRtestPvlas) <- colnames(alphaChisqMask) <-
-			sapply(alphaCols, paste, collapse='_VS_')
 		########
 		# beta #
 		########
-		betaCols <- object@params$llrtests$degradation
+		betaCols <- llrtests$degradation
+		if( length(rates_to_aviod)>0 )
+			betaCols <- betaCols[!sapply(betaCols, function(x) any(grepl(rates_to_aviod, x)))]
 		## make the logLikRatio tests
-		betaLLRtestPvlas <- sapply(betaCols, function(compare) {
-			null <- compare[1]; alt <- compare[2]
-			sapply(ratesSpecs, function(x) 
-				tryCatch(logLikRatioTestInscpectModels(x[[null]], x[[alt]]), error=function(e) NA)
-				)
-			})
-		betaChisqMask <- sapply(betaCols, function(compare) {
-			chisq_pvals[,compare[1]] <= cTsh | 
-				chisq_pvals[,compare[2]] <= cTsh})
-		if( !is.matrix(betaLLRtestPvlas) ) {
-			betaLLRtestPvlas <- t(as.matrix(betaLLRtestPvlas))
-			betaChisqMask <- t(as.matrix(betaChisqMask))
-			rownames(betaLLRtestPvlas) <- rownames(betaChisqMask) <-
-				names(ratesSpecs)
+		if( length(betaCols)>0 ) {
+			betaLLRtestPvlas <- sapply(betaCols, function(compare) {
+				null <- compare[1]; alt <- compare[2]
+				sapply(ratesSpecs, function(x) 
+					tryCatch(logLikRatioTestInscpectModels(x[[null]], x[[alt]], dfmax), error=function(e) NA)
+					)
+				})
+			betaChisqMask <- sapply(betaCols, function(compare) {
+				chisq_pvals[,compare[1]] <= cTsh | 
+					chisq_pvals[,compare[2]] <= cTsh})
+			if( !is.matrix(betaLLRtestPvlas) ) {
+				betaLLRtestPvlas <- t(as.matrix(betaLLRtestPvlas))
+				betaChisqMask <- t(as.matrix(betaChisqMask))
+				rownames(betaLLRtestPvlas) <- rownames(betaChisqMask) <-
+					names(ratesSpecs)
+			}
+			colnames(betaLLRtestPvlas) <- colnames(betaChisqMask) <-
+				sapply(betaCols, paste, collapse='_VS_')
+
+			betaChisqMask <- betaChisqMask[,which(apply(betaLLRtestPvlas,2,var,na.rm=T)!=0)]
+			betaLLRtestPvlas <- betaLLRtestPvlas[,which(apply(betaLLRtestPvlas,2,var,na.rm=T)!=0)]
+		} else {
+			betaLLRtestPvlas <- rep(1, length(ratesSpecs))
 		}
-		colnames(betaLLRtestPvlas) <- colnames(betaChisqMask) <-
-			sapply(betaCols, paste, collapse='_VS_')
 		#########
 		# gamma #
 		#########
-		gammaCols <- object@params$llrtests$processing
+		gammaCols <- llrtests$processing
+		if( length(rates_to_aviod)>0 )
+			gammaCols <- gammaCols[!sapply(gammaCols, function(x) any(grepl(rates_to_aviod, x)))]
 		## make the logLikRatio tests
-		gammaLLRtestPvlas <- sapply(gammaCols, function(compare) {
-			null <- compare[1]; alt <- compare[2]
-			sapply(ratesSpecs, function(x) 
-				tryCatch(logLikRatioTestInscpectModels(x[[null]], x[[alt]]), error=function(e) NA)
-				)
-			})
-		gammaChisqMask <- sapply(gammaCols, function(compare) {
-			chisq_pvals[,compare[1]] <= cTsh | 
-				chisq_pvals[,compare[2]] <= cTsh})
-		if( !is.matrix(gammaLLRtestPvlas) ) {
-			gammaLLRtestPvlas <- t(as.matrix(gammaLLRtestPvlas))
-			gammaChisqMask <- t(as.matrix(gammaChisqMask))
-			rownames(gammaLLRtestPvlas) <- rownames(gammaChisqMask) <-
-				names(ratesSpecs)
-		}
-		colnames(gammaLLRtestPvlas) <- colnames(gammaChisqMask) <-
-			sapply(gammaCols, paste, collapse='_VS_')
-
-		# remove comparisons which have null variance due to the impossibility to evaluate a correlation mandatory for the brown's test
-
-		alphaChisqMask <- alphaChisqMask[,which(apply(alphaLLRtestPvlas,2,var,na.rm=T)!=0)]
-		betaChisqMask <- betaChisqMask[,which(apply(betaLLRtestPvlas,2,var,na.rm=T)!=0)]
-		gammaChisqMask <- gammaChisqMask[,which(apply(gammaLLRtestPvlas,2,var,na.rm=T)!=0)]
-
-		alphaLLRtestPvlas <- alphaLLRtestPvlas[,which(apply(alphaLLRtestPvlas,2,var,na.rm=T)!=0)]
-		betaLLRtestPvlas <- betaLLRtestPvlas[,which(apply(betaLLRtestPvlas,2,var,na.rm=T)!=0)]
-		gammaLLRtestPvlas <- gammaLLRtestPvlas[,which(apply(gammaLLRtestPvlas,2,var,na.rm=T)!=0)]
-
+		if( length(gammaCols)>0 ) {
+			gammaLLRtestPvlas <- sapply(gammaCols, function(compare) {
+				null <- compare[1]; alt <- compare[2]
+				sapply(ratesSpecs, function(x) 
+					tryCatch(logLikRatioTestInscpectModels(x[[null]], x[[alt]], dfmax), error=function(e) NA)
+					)
+				})
+			gammaChisqMask <- sapply(gammaCols, function(compare) {
+				chisq_pvals[,compare[1]] <= cTsh | 
+					chisq_pvals[,compare[2]] <= cTsh})
+			if( !is.matrix(gammaLLRtestPvlas) ) {
+				gammaLLRtestPvlas <- t(as.matrix(gammaLLRtestPvlas))
+				gammaChisqMask <- t(as.matrix(gammaChisqMask))
+				rownames(gammaLLRtestPvlas) <- rownames(gammaChisqMask) <-
+					names(ratesSpecs)
+			}
+			colnames(gammaLLRtestPvlas) <- colnames(gammaChisqMask) <-
+				sapply(gammaCols, paste, collapse='_VS_')
+			gammaChisqMask <- gammaChisqMask[,which(apply(gammaLLRtestPvlas,2,var,na.rm=T)!=0)]
+			gammaLLRtestPvlas <- gammaLLRtestPvlas[,which(apply(gammaLLRtestPvlas,2,var,na.rm=T)!=0)]
+		} else {
+			gammaLLRtestPvlas <- rep(1, length(ratesSpecs))
+		} 
 		#If we have a matrix of pValues we proceed with the Brown's test, otherwise it is useless
 		if(is.matrix(alphaLLRtestPvlas)){synthesisBP <- brown_method_mask(alphaLLRtestPvlas, alphaChisqMask)}
 		else{synthesisBP <- alphaLLRtestPvlas}
@@ -123,8 +172,7 @@ setMethod('ratePvals', 'INSPEcT_model', function(object, cTsh=NULL) {
 		else{degradationBP <- betaLLRtestPvlas}
 		if(is.matrix(gammaLLRtestPvlas)){processingBP <- brown_method_mask(gammaLLRtestPvlas, gammaChisqMask)}
 		else{processingBP <- gammaLLRtestPvlas}
-
-		if(object@params$padjG)
+		if(object@params$padj)
 		{
 			synthesisBP <- p.adjust(synthesisBP,method="BH",n=length(synthesisBP))
 			degradationBP <- p.adjust(degradationBP,method="BH",n=length(degradationBP))
@@ -132,42 +180,73 @@ setMethod('ratePvals', 'INSPEcT_model', function(object, cTsh=NULL) {
 		}
 		ratePvals <- data.frame(
 			synthesis=synthesisBP
-			, degradation=degradationBP
 			, processing=processingBP
+			, degradation=degradationBP
 			)		
 	} else if( object@params$modelSelection=='aic' ) {
 		## assign the chi-squared test result of the model selected by AIC
 		## to the respective variable rates
-		x2test <- chisqtest(object)
 		aictest <- AIC(object)
 		aictest[is.na(aictest)] <- Inf
-		modelNames <- colnames(aictest)
-		ix <- apply(aictest, 1, which.min)
-		geneBestModel <- modelNames[ix]
-		genePvals <- x2test[cbind(1:length(ix),ix)]
-		synthesisPval <- rep(1, length(ix))
-		ix <- grepl('a', geneBestModel)
-		synthesisPval[ix] <- genePvals[ix]
-		degradationPval <- rep(1, length(ix))
-		ix <- grepl('b', geneBestModel)
-		degradationPval[ix] <- genePvals[ix]
-		processingPval <- rep(1, length(ix))
-		ix <- grepl('c', geneBestModel)
-		processingPval[ix] <- genePvals[ix]
-		ratePvals <- data.frame(
-			synthesis=synthesisPval
-			, degradation=degradationPval
-			, processing=processingPval
-			)		
+		if( length(rates_to_aviod)>0 )
+			aictest = aictest[,grep(rates_to_aviod, colnames(aictest), invert=TRUE)]
+		gene_class <- colnames(aictest)[apply(aictest, 1, which.min)]
+		ratePvals <- data.frame(t(sapply(seq_along(ratesSpecs), function(i) {
+			switch(gene_class[i],
+				'0' = c(
+					synthesis=logLikRatioTestInscpectModels(ratesSpecs[[i]][['0']] ,ratesSpecs[[i]][['a']], dfmax),
+					processing=logLikRatioTestInscpectModels(ratesSpecs[[i]][['0']] ,ratesSpecs[[i]][['c']], dfmax),
+					degradation=logLikRatioTestInscpectModels(ratesSpecs[[i]][['0']] ,ratesSpecs[[i]][['b']], dfmax)
+					),
+				'a' = c(
+					synthesis=logLikRatioTestInscpectModels(ratesSpecs[[i]][['0']] ,ratesSpecs[[i]][['a']], dfmax),
+					processing=logLikRatioTestInscpectModels(ratesSpecs[[i]][['a']] ,ratesSpecs[[i]][['ac']], dfmax),
+					degradation=logLikRatioTestInscpectModels(ratesSpecs[[i]][['a']] ,ratesSpecs[[i]][['ab']], dfmax)
+					),
+				'c' = c(
+					synthesis=logLikRatioTestInscpectModels(ratesSpecs[[i]][['c']] ,ratesSpecs[[i]][['ac']], dfmax),
+					processing=logLikRatioTestInscpectModels(ratesSpecs[[i]][['0']] ,ratesSpecs[[i]][['c']], dfmax),
+					degradation=logLikRatioTestInscpectModels(ratesSpecs[[i]][['c']] ,ratesSpecs[[i]][['bc']], dfmax)
+					),
+				'b' = c(
+					synthesis=logLikRatioTestInscpectModels(ratesSpecs[[i]][['b']] ,ratesSpecs[[i]][['ab']], dfmax),
+					processing=logLikRatioTestInscpectModels(ratesSpecs[[i]][['b']] ,ratesSpecs[[i]][['bc']], dfmax),
+					degradation=logLikRatioTestInscpectModels(ratesSpecs[[i]][['0']] ,ratesSpecs[[i]][['b']], dfmax)
+					),
+				'ac' = c(
+					synthesis=logLikRatioTestInscpectModels(ratesSpecs[[i]][['c']] ,ratesSpecs[[i]][['ac']], dfmax),
+					processing=logLikRatioTestInscpectModels(ratesSpecs[[i]][['a']] ,ratesSpecs[[i]][['ac']], dfmax),
+					degradation=logLikRatioTestInscpectModels(ratesSpecs[[i]][['ac']],ratesSpecs[[i]][['abc']], dfmax)
+					),
+				'ab' = c(
+					synthesis=logLikRatioTestInscpectModels(ratesSpecs[[i]][['b']] ,ratesSpecs[[i]][['ab']], dfmax),
+					processing=logLikRatioTestInscpectModels(ratesSpecs[[i]][['ab']],ratesSpecs[[i]][['abc']], dfmax),
+					degradation=logLikRatioTestInscpectModels(ratesSpecs[[i]][['a']] ,ratesSpecs[[i]][['ab']], dfmax)
+					),
+				'bc' = c(
+					synthesis=logLikRatioTestInscpectModels(ratesSpecs[[i]][['bc']],ratesSpecs[[i]][['abc']], dfmax),
+					processing=logLikRatioTestInscpectModels(ratesSpecs[[i]][['b']], ratesSpecs[[i]][['bc']], dfmax),
+					degradation=logLikRatioTestInscpectModels(ratesSpecs[[i]][['c']], ratesSpecs[[i]][['bc']], dfmax)
+					),
+				'abc' = c(
+					synthesis=logLikRatioTestInscpectModels(ratesSpecs[[i]][['bc']],ratesSpecs[[i]][['abc']], dfmax),
+					processing=logLikRatioTestInscpectModels(ratesSpecs[[i]][['ab']],ratesSpecs[[i]][['abc']], dfmax),
+					degradation=logLikRatioTestInscpectModels(ratesSpecs[[i]][['ac']],ratesSpecs[[i]][['abc']], dfmax)
+					)
+				)
+			})))
+		rownames(ratePvals) <- rownames(aictest)
+		if( length(rates_to_aviod)>0 ) {
+			ratePvals[,c('a'='synthesis','b'='degradation','c'='processing')[rates_to_aviod]] <- 1
+		}
+ 		if(object@params$padj) {
+			ratePvals <- data.frame(apply(ratePvals, 2, p.adjust, method="BH"))
+		}
 	}
 	# return
 	return(ratePvals)
-	})
 
-#' @rdname ratePvals
-setMethod('ratePvals', 'INSPEcT', function(object, cTsh=NULL) {
-	return(ratePvals(object@model, cTsh))
-	})
+}
 
 brown_method <- function(y, na.rm=FALSE) {
 	## initialize answer as a vector of NA
@@ -228,13 +307,13 @@ brown_method_mask <- function(y, mask) {
 	return(out)
 }
 
-logLikRatioTestInscpectModels <- function(null, alt)
+logLikRatioTestInscpectModels <- function(null, alt, dfmax=Inf)
 {
 	D <- - 2*null$logLik + 2*alt$logLik
-	df_null <- null$alpha$df + null$beta$df +
-		ifelse(!is.null(null$gamma$df), null$gamma$df , 0)
-	df_alt <- alt$alpha$df + alt$beta$df +
-		ifelse(!is.null(alt$gamma$df), alt$gamma$df , 0)
+	df_null <- min(dfmax, null$alpha$df) + min(dfmax, null$beta$df) +
+		ifelse(!is.null(min(dfmax, null$gamma$df)), min(dfmax, null$gamma$df) , 0)
+	df_alt <- min(dfmax, alt$alpha$df) + min(dfmax, alt$beta$df) +
+		ifelse(!is.null(min(dfmax, alt$gamma$df)), min(dfmax, alt$gamma$df) , 0)
 	#chisq.test.inspect(D,  df_alt - df_null)
 	pchisq(D, df_alt-df_null, lower.tail=FALSE)	
 }

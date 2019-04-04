@@ -505,22 +505,22 @@ BiocStyle::latex()
 
   newTpts <- c(0.00, 0.13, 0.35, 0.69, 1.26, 2.16, 3.63, 
                5.99, 9.82, 16.00)
-  nascentInspObj_sim3<-makeSimDataset(object=simRates
+  nascentSim2replicates<-makeSimDataset(object=simRates
                                      ,tpts=newTpts
-                                     ,nRep=3
+                                     ,nRep=2
                                      ,NoNascent=FALSE
                                      ,seed=1)
-  nascentInspObj_sim3<-modelRates(nascentInspObj_sim3[1:100]
+  nascentSim2replicates<-modelRates(nascentSim2replicates[1:100]
                                  ,seed=1)
 
   newTpts <- c(0.00, 0.10, 0.26, 0.49, 0.82, 1.32, 2.06, 
                3.16, 4.78, 7.18, 10.73, 16.00)
-  nascentInspObj_sim4<-makeSimDataset(object=simRates
+  nascentSim3replicates<-makeSimDataset(object=simRates
                                      ,tpts=newTpts
-                                     ,nRep=4
+                                     ,nRep=3
                                      ,NoNascent=FALSE
                                      ,seed=1)
-  nascentInspObj_sim4<-modelRates(nascentInspObj_sim4[1:100]
+  nascentSim3replicates<-modelRates(nascentSim3replicates[1:100]
                                  ,seed=1)
   @
 
@@ -533,24 +533,24 @@ BiocStyle::latex()
   
   newTpts <- c(0.00, 0.13, 0.35, 0.69, 1.26, 2.16, 3.63, 
                5.99, 9.82, 16.00)
-  matureInspObj_sim3<-makeSimDataset(object=simRates
+  matureSim2replicates<-makeSimDataset(object=simRates
                                    ,tpts=newTpts
-                                   ,nRep=3
+                                   ,nRep=2
                                    ,NoNascent=TRUE
                                    ,seed=1)
-  thresholds(matureInspObj_sim3)$chisquare <- 1
-  matureInspObj_sim3<-modelRates(matureInspObj_sim3[1:100]
+  modelSelection(matureSim2replicates)$thresholds$chisquare <- 1
+  matureSim2replicates<-modelRates(matureSim2replicates[1:100]
                                ,seed=1)
 
   newTpts <- c(0.00, 0.10, 0.26, 0.49, 0.82, 1.32, 2.06, 
                3.16, 4.78, 7.18, 10.73, 16.00)
-  matureInspObj_sim4<-makeSimDataset(object=simRates
+  matureSim3replicates<-makeSimDataset(object=simRates
                                    ,tpts=newTpts
-                                   ,nRep=4
+                                   ,nRep=3
                                    ,NoNascent=TRUE
                                    ,seed=1)
-  thresholds(matureInspObj_sim4)$chisquare <- 1
-  matureInspObj_sim4<-modelRates(matureInspObj_sim4[1:100]
+  modelSelection(matureSim3replicates)$thresholds$chisquare <- 1
+  matureSim3replicates<-modelRates(matureSim3replicates[1:100]
                                ,seed=1)
 
   @
@@ -565,20 +565,20 @@ BiocStyle::latex()
 
   <<ROCs, message=FALSE, warnings=FALSE, eval=TRUE, fig.width=10, fig.height=10, fig.cap="ROC analysis of INSPEcT classification. For each rate, INSPEcT classification performance is measured in terms of sensitivity, TP / (TP + FN), and specificity, TN / (TN + FP), using a ROC curve analysis; false negatives (FN) represent cases where the rate is identified as constant while it was simulated as varying; false positives (FP) represent cases where INSPEcT identified a rate as varying while it was simulated as constant; on the contrary, true positives (TP) and negatives (TN) are cases of correct classification of varying and constant rates, respectively; sensitivity and specificity are computed using increasing thresholds for the Brown method used to combine multiple p-values derived from the log-likelihood ratio tests", fig.align="center">>=
 
-  data("nascentInspObj_sim3","nascentInspObj_sim4",
-    "matureInspObj_sim3","matureInspObj_sim4",package='INSPEcT')
+  data("nascentSim2replicates","nascentSim3replicates",
+    "matureSim2replicates","matureSim3replicates",package='INSPEcT')
 
   par(mfrow=c(2,2))
-  rocCurve(simRates[1:100],nascentInspObj_sim3)
+  rocCurve(simRates[1:100],nascentSim2replicates)
   title("2rep. 10t.p. Total and nascent RNA", line=3)
   
-  rocCurve(simRates[1:100],nascentInspObj_sim4)
+  rocCurve(simRates[1:100],nascentSim3replicates)
   title("3rep. 12t.p. Total and nascent RNA", line=3)
   
-  rocCurve(simRates[1:100],matureInspObj_sim3)
+  rocCurve(simRates[1:100],matureSim2replicates)
   title("2rep. 10t.p. Total RNA", line=3)
   
-  rocCurve(simRates[1:100],matureInspObj_sim4)
+  rocCurve(simRates[1:100],matureSim3replicates)
   title("3rep. 12t.p. Total RNA", line=3)
 
   @
@@ -591,7 +591,7 @@ BiocStyle::latex()
   \begin{center}
   <<ROCsThresholds, message=FALSE, warnings=FALSE, eval=TRUE, fig.width=8, fig.height=4, fig.cap="Effect of chi-squared and Brown tests thresholds in INSPEcT classification. Plot of the sensitivity (black curve) and specificity (red curve) that is achieved after performing the log-likelihood ratio and Brown method for combining p-values with selected thresholds; thresholds that can be set for chi-squared test to accept models that will undergo the log-likelihood ratio test and for Brown p-value to assess variability of rates">>=
 
-  rocThresholds(simRates[1:100],nascentInspObj_sim3,
+  rocThresholds(simRates[1:100],nascentSim2replicates,
     bTsh=c(.01,.01,.05),cTsh=.1)
  
   @
@@ -629,11 +629,10 @@ BiocStyle::latex()
 
   <<parameters2, message=FALSE, eval=TRUE>>=
 
-  thresholds(matureInspObj10)$chisquare<-.1
-  thresholds(matureInspObj10)$brown<-c(synthesis=.01
+  modelSelection(matureInspObj10)$thresholds$chisquare<-.1
+  modelSelection(matureInspObj10)$thresholds$brown<-c(synthesis=.01
                                       ,processing=.01
                                       ,degradation=.05)
-  llrtests(matureInspObj10)$processing<-list(c('0','c'))
   @
 
   To have a sense of all parameters that can be set, type:
@@ -645,8 +644,6 @@ BiocStyle::latex()
 
   ## model selection and testing framework
   modelSelection(matureInspObj10)
-  thresholds(matureInspObj10)
-  llrtests(matureInspObj10)
   @
 
   \section{Analysis of RNA dynamics in steady state RNA-seq data}
@@ -660,7 +657,7 @@ BiocStyle::latex()
 
   <<steadyStateNascent1, message=FALSE, warnings=FALSE, eval=TRUE>>=
   conditions <- letters[1:11]
-  nasFullObj <- newINSPEcT(tpts=conditions
+  nasSteadyObj <- newINSPEcT(tpts=conditions
                           ,labeling_time=tL
                           ,nascentExpressions=nasExp_DESeq2
                           ,matureExpressions=matExp_DESeq2)
@@ -675,11 +672,11 @@ BiocStyle::latex()
   the rates computed by the modeling in the two conditions, the log transfromed geometric mean of the rate, the log2 fold
   change between the two conditions and the statistics relative to the test. In case a rate was not assessed as 
   differentially regulated the same value is reported for the two conditions. Also in this case, the p-values thresholds
-  of the chi-squared and Brown test can be modified by the \Rmethod{thresholds}.
+  of the chi-squared and Brown test can be modified by the \Rmethod{modelSelection}.
 
   <<steadyStateNascent2, message=FALSE, warnings=FALSE, eval=TRUE>>=
 
-  diffrates <- compareSteady(nasFullObj[,c(1,11)])
+  diffrates <- compareSteady(nasSteadyObj[,c(1,11)])
 
   head(round(synthesis(diffrates),2))
   head(round(processing(diffrates),2))
@@ -756,9 +753,9 @@ BiocStyle::latex()
 
   <<processingDelay1, message=FALSE, warnings=FALSE, eval=TRUE>>=
 
-  tau <- calculateTau(nascentInspObj)
+  tau <- calculateTau(nasSteadyObj)
 
-  procDelay<- processingDelay(inspectIds=matureInspObj
+  procDelay<- processingDelay(inspectIds=nasSteadyObj
                              ,tauThreshold=1.2
                              ,deltaThreshold=1.0)
   table(procDelay, useNA='always')
@@ -771,7 +768,8 @@ BiocStyle::latex()
   <<processingDelay2, message=FALSE, warnings=FALSE, eval=TRUE, fig.width=4, fig.height=4, fig.cap="">>=
 
   tau_approx <- calculateTau(matureInspObj)
-  plot(tau, tau_approx, log='xy'
+  cg <- intersect(featureNames(nasSteadyObj), featureNames(matureInspObj))
+  plot(tau[cg,], tau_approx[cg,], log='xy'
       , main=expression(paste(tau,' metric'))
       , xlab='with nascent RNA'
       , ylab='approximation without nascent RNA')

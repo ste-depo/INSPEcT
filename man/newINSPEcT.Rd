@@ -5,9 +5,9 @@
 \title{Create a new INSPEcT object}
 \usage{
 newINSPEcT(tpts, labeling_time = NULL, nascentExpressions = NULL,
-  matureExpressions, BPPARAM = bpparam(), labeledSF = NULL,
-  simulatedData = FALSE, degDuringPulse = FALSE, Dmin = 1e-06,
-  Dmax = 10, genesFilter = TRUE)
+  matureExpressions, preexisting = FALSE, BPPARAM = bpparam(),
+  labeledSF = NULL, simulatedData = FALSE, degDuringPulse = FALSE,
+  Dmin = 1e-06, Dmax = 10, genesFilter = TRUE)
 }
 \arguments{
 \item{tpts}{A vector of time points, one for each sample}
@@ -17,6 +17,8 @@ newINSPEcT(tpts, labeling_time = NULL, nascentExpressions = NULL,
 \item{nascentExpressions}{A list which contains exons and introns expression matrices and variances for the nascent RNA}
 
 \item{matureExpressions}{A list which contains exons and introns expression matrices and variances for the mature RNA}
+
+\item{preexisting}{A logical, indicating if the mature expression refers to the pre-exising (unlabeled) population. Not implemented yet for the "degDuringPulse" mode.}
 
 \item{BPPARAM}{Configuration for BiocParallel parallelization. By default is set to bpparam()}
 

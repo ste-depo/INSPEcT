@@ -21,9 +21,9 @@ export("newINSPEcT", "runProcessingRateDelay", "runRNAdynamics", "compareSteadyN
 	"quantifyExpressionsFromBAMs", "quantifyExpressionsFromTrCounts", "quantifyExpressionsFromTrAbundance")
 exportMethods( "[", "AIC", "calculateDelta", "calculateTau", "chisqmodel", "chisqtest", "combine", 
     "compareSteady", "degradation", "dim", "featureNames", "featureNames<-", "geneClass", "getModel", 
-    "getModel<-", "inHeatmap", "labeledSF", "llrtests", "llrtests<-", "logLik", "makeModelRates", "makeSimDataset", 
+    "getModel<-", "inHeatmap", "labeledSF", "logLik", "makeModelRates", "makeSimDataset", 
     "makeSimModel", "modelingParams", "modelingParams<-", "modelRates", "modelSelection", "modelSelection<-", 
     "nGenes", "nTpts", "plotGene", "plotMA", "processing", "processingDelay", "ratePvals", "ratesFirstGuess",
     "ratesFirstGuessVar", "removeModel", "rocCurve", "rocThresholds", "sfPlot", "show", "split", "synthesis", 
-    "thresholds", "thresholds<-", "tpts", "viewModelRates")
+    "tpts", "viewModelRates")
 exportClasses("INSPEcT", "INSPEcT_model", "INSPEcT_diffsteady")

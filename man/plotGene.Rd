@@ -8,7 +8,8 @@
 \usage{
 plotGene(object, ix, fix.yaxis = FALSE, priors = TRUE)
 
-\S4method{plotGene}{INSPEcT}(object, ix, fix.yaxis = FALSE, priors = TRUE)
+\S4method{plotGene}{INSPEcT}(object, ix, fix.yaxis = FALSE,
+  priors = TRUE)
 }
 \arguments{
 \item{object}{An object of class INSPEcT}
@@ -26,8 +27,6 @@ one standard deviation), pre-RNA lelevs and their confidence intervals, synthsis
 their confidence intervals, degradation rates and processing rates of the selected gene.
 }
 \description{
-Plot the pre-modeled and modeled profiles for one gene
-
 A method to see the shapes of the estimated synthesis, degradation and processing rates, pre-RNA and total RNA 
 concentrations (solid thin lines) their variances (dashed lines) and the modeled rates and concentrations 
 (ticker solid line) of a single gene.

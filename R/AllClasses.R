@@ -43,7 +43,6 @@ NULL
 #'	\code{\link{chisqmodel}} \cr
 #'	\code{\link{chisqtest}} \cr
 #'	\code{\link{geneClass}} \cr
-#'	\code{\link{llrtests}} \cr
 #'	\code{\link{logLik}} \cr
 #'	\code{\link{makeModelRates}} \cr
 #'	\code{\link{makeSimDataset}} \cr
@@ -51,7 +50,6 @@ NULL
 #'	\code{\link{ratePvals}} \cr
 #'	\code{\link{rocCurve}} \cr
 #'	\code{\link{rocThresholds}} \cr
-#'	\code{\link{thresholds}} \cr
 setClass('INSPEcT_model', 
 	slots=c(
 		params='list'
@@ -62,26 +60,16 @@ setClass('INSPEcT_model',
 		simple=FALSE
 		, params=list(
 			modelSelection=c('llr','aic')[1]
-            , preferPValue = T
-            , padjG = T
+            , preferPValue = TRUE
+            , padj = TRUE
             , thresholds=list(
-                    chisquare=2e-1
-                    , brown=c(synthesis=.01, degradation=.01, processing=.01)
+                    chisquare=.1
+                    , brown=c(
+                    	synthesis=.05, 
+                    	processing=.05, 
+                    	degradation=.05)
                     )
-            , llrtests=list(
-                    synthesis=list(c('0','a')
-                    	,c('b','ab')
-                    	,c('c','ac')
-                    	,c('bc','abc'))
-                    , degradation=list(c('0','b')
-                    	,c('a','ab')
-                    	,c('c','bc')
-                    	,c('ac','abc'))
-                    , processing=list(c('0','c')
-                    	,c('a','ac')
-                    	,c('b','bc')
-                    	,c('ab','abc'))
-                    )
+            , limitModelComplexity = FALSE
 				)
 			)
 		)
@@ -124,7 +112,6 @@ setClass('INSPEcT_model',
 #'	\code{\link{getModel}} \cr
 #'	\code{\link{inHeatmap}} \cr
 #'	\code{\link{labeledSF}}
-#'	\code{\link{llrtests}} \cr
 #'	\code{\link{logLik}} \cr
 #'	\code{\link{makeModelRates}} \cr
 #'	\code{\link{makeSimModel}} \cr
@@ -140,7 +127,6 @@ setClass('INSPEcT_model',
 #'	\code{\link{ratesFirstGuess}} \cr
 #'	\code{\link{removeModel}} \cr
 #'	\code{\link{sfPlot}} \cr
-#'	\code{\link{thresholds}} \cr
 #'	\code{\link{tpts}} \cr
 #'	\code{\link{viewModelRates}} \cr
 setClass('INSPEcT', 
@@ -185,6 +171,7 @@ setClass('INSPEcT',
 #' degradation rates
 #' @slot processing A data.frame which contains both input data and comparisons results regarding
 #' processing rates
+#' @slot modeling_res A data.frame which contains modeling results
 #' @details
 #' Methods associated to the class INSPEcT_diffsteady are:
 #' \itemize{
@@ -198,5 +185,6 @@ setClass('INSPEcT_diffsteady',
 		synthesis='data.frame'
 		, degradation='data.frame'
 		, processing='data.frame'
+		, modeling_res='data.frame'
 		)
 	)

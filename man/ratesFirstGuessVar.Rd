@@ -19,8 +19,6 @@ ratesFirstGuessVar(object, feature)
 A numeric vector containing the values for the selected feature
 }
 \description{
-Retrieve pre-modeling rates and concentrations variance
-
 This method allow to access to the estimated variance of synthesis rates and pre mRNA and total mRNA 
 concentrations the way they were calculated by the constructor function \code{\link{newINSPEcT}}.
 }

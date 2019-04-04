@@ -9,8 +9,8 @@
 \usage{
 rocCurve(object, object2, cTsh = NULL, plot = TRUE)
 
-\S4method{rocCurve}{INSPEcT_model,INSPEcT_model}(object, object2, cTsh = NULL,
-  plot = TRUE)
+\S4method{rocCurve}{INSPEcT_model,INSPEcT_model}(object, object2,
+  cTsh = NULL, plot = TRUE)
 
 \S4method{rocCurve}{INSPEcT_model,INSPEcT}(object, object2, cTsh = NULL,
   plot = TRUE)
@@ -29,8 +29,6 @@ if NULL the value is taken from the INSPEcT_model object}
 A list of objects of class pROC with summary of each roc curve
 }
 \description{
-Display rate classification performance
-
 A method to visualize the performance in the classification of synthesis, degradation
 and processing rates based on the comparison of the original simulated rates and the one
 obtained by the function \code{\link{modelRates}}. For each rate, classification performance is measured 
@@ -48,18 +46,18 @@ if( Sys.info()["sysname"] != "Windows" ) {
   simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
    
   # newTpts<-simRates@params$tpts
-  # nascentInspObj_sim3<-makeSimDataset(object=simRates
+  # nascentSim2replicates<-makeSimDataset(object=simRates
   #                                    ,tpts=newTpts
   #                                    ,nRep=3
   #                                    ,NoNascent=FALSE
   #                                    ,seed=1)
-  # nascentInspObj_sim3<-modelRates(nascentInspObj_sim3[1:100]
+  # nascentSim2replicates<-modelRates(nascentSim2replicates[1:100]
   #                                ,seed=1)
   # (not evaluated to save computational time)
  
-  data("nascentInspObj_sim3",package='INSPEcT')
+  data("nascentSim2replicates",package='INSPEcT')
  
-  rocCurve(simRates[1:100],nascentInspObj_sim3)
+  rocCurve(simRates[1:100],nascentSim2replicates)
   title("3rep. 11t.p. Total and nascent RNA", line=3)
 }
 }

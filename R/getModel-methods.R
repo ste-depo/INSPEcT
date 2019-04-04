@@ -6,7 +6,6 @@
 #' within the INSPEcT object.
 #' @param object An object of class INSPEcT
 #' @return An object of class INSPEcT model
-#' @seealso \code{\link{testingParams}}
 #' @examples
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' getModel(nascentInspObj10)

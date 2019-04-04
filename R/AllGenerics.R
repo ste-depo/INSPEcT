@@ -2,24 +2,12 @@
 # generics for class INSPEcT_model ####
 ####################################
 
-#' @rdname testingParams
+#' @rdname modelSelection
 setGeneric('modelSelection', function(object) 
 	standardGeneric('modelSelection'))
-#' @rdname testingParams
+#' @rdname modelSelection
 setGeneric('modelSelection<-', function(object, value) 
 	standardGeneric('modelSelection<-'))
-#' @rdname testingParams
-setGeneric('thresholds', function(object) 
-	standardGeneric('thresholds'))
-#' @rdname testingParams
-setGeneric('thresholds<-', function(object, value) 
-	standardGeneric('thresholds<-'))
-#' @rdname testingParams
-setGeneric('llrtests', function(object) 
-	standardGeneric('llrtests'))
-#' @rdname testingParams
-setGeneric('llrtests<-', function(object, value) 
-	standardGeneric('llrtests<-'))
 #' Retrieve all results of chi-squared test
 setGeneric('chisqtest', function(object, ...) 
 	standardGeneric('chisqtest'))
@@ -30,7 +18,7 @@ setGeneric('chisqmodel', function(object, ...)
 setGeneric('logLik', function(object, ...) 
 	standardGeneric('logLik'))
 #' Retrieve a single p-value for each rate
-setGeneric('ratePvals', function(object, cTsh=NULL) 
+setGeneric('ratePvals', function(object, bTsh=NULL, cTsh=NULL) 
 	standardGeneric('ratePvals'))
 #' Retrieve the regulatory class for each gene
 setGeneric('geneClass', function(object, bTsh=NULL, cTsh=NULL)

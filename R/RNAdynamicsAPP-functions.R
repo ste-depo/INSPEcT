@@ -14,7 +14,7 @@ reconvert_gene_classes <- function(gene_classes) {
 ## function for ranges ####
 ###########################
 
-define_parameter_ranges <- function(ids, logshift) {
+define_parameter_ranges <- function(ids, logshift, linshift) {
 
 	range_k1_h_pars <- quantile(
 		unlist(lapply(ids@model@ratesSpecs, function(gene) {
@@ -84,7 +84,7 @@ define_parameter_ranges <- function(ids, logshift) {
 			c(k1_t, k2_t, k3_t)
 		}))
 	, probs=c(.025, .975))
-	range_t_pars <- time_transf_inv(range_t_pars, logshift)
+	range_t_pars <- time_transf_inv(range_t_pars, logshift, linshift)
 	range_t_pars <- c(
 		floor(range_t_pars[1]*100)/100, # (arrotonda per difetto al secondo decimale)
 		ceiling(range_t_pars[2]*100)/100
@@ -132,7 +132,7 @@ define_parameter_ranges <- function(ids, logshift) {
 ## PLOT FUNCTION ######
 #######################
 
-RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift, 
+RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift, linshift,
 	time_min, time_max, experiment, k1_function, k2_function, k3_function, 
 	k1_params, k2_params, k3_params) {
 
@@ -163,7 +163,11 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 	experimental_mRNAsd <- experiment$mRNAsd
 	experimental_preMRNAsd <- experiment$preMRNAsd
 	experimental_synthesissd <- experiment$synthesissd
-	experiment_tpts <- experiment$tpts
+	if( !experiment$steady_state ) {
+		experiment_tpts <- experiment$tpts	
+	} else {
+		experiment_tpts <- 1:16
+	}
 	
 	# make the simulation
 	
@@ -173,9 +177,16 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 	transf_tpts <- time_transf(experiment_tpts, logshift)
 	
 	sim <- deterministic_simulation(
-		logshift, simulation_time, 
+		logshift, linshift, simulation_time, 
 		k1_function, k2_function, k3_function, 
 		k1_params, k2_params, k3_params)
+
+	# function to define y-limits
+
+	deltaylim <- function( yrange ) {
+		deltarange <- yrange[2] * .05
+		ylim <- yrange + c(-deltarange, deltarange)
+	}
 
 	# start plot routine
 	
@@ -185,14 +196,17 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 	
 	# plot k1
 
-	if( data_selection != 'User defined' ) {
-		ylim <- range(c(sim[,'k1'], 
+	plot_k1_experiment = ! (data_selection == 'User defined' | experiment$no_nascent)
+
+	if( plot_k1_experiment ) {
+		yrange <- range(c(sim[,'k1'], 
 			c(secondary_synthesis + experimental_synthesissd, 
 				reference_synthesis + experimental_synthesissd) , 
 			c(secondary_synthesis - experimental_synthesissd, 
-				reference_synthesis - experimental_synthesissd))) * c(.95, 1.05)
+				reference_synthesis - experimental_synthesissd)))
+		ylim <- deltaylim(yrange)
 	} else {
-		ylim <- range(sim[,'k1']) * c(.95, 1.05)
+		ylim <- deltaylim( range(sim[,'k1']) )
 	}
 	if( show_logtime ) {
 		plot(transf_simulation_time, sim[,'k1'], 
@@ -202,38 +216,46 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 				+ diff(range(transf_simulation_time)) * c(-.05, .05),
 			ylim = ylim
 			)
-		points( transf_tpts, secondary_synthesis, pch=1, col='grey')
-		points( transf_tpts, reference_synthesis, pch=19)
-		segments( transf_tpts , reference_synthesis - experimental_synthesissd 
-			, transf_tpts , reference_synthesis + experimental_synthesissd )
-		# axis(1, at=transf_tpts, labels = signif(experiment_tpts,2) )
+		if( plot_k1_experiment ) {
+			points( transf_tpts, secondary_synthesis, pch=1, col='grey')
+			points( transf_tpts, reference_synthesis, pch=19)
+			segments( transf_tpts , reference_synthesis - experimental_synthesissd 
+				, transf_tpts , reference_synthesis + experimental_synthesissd )
+		}
 	} else {
 		plot(simulation_time, sim[,'k1'], 
-			xaxs='i', yaxs='i', xaxt = ifelse( data_selection != 'User defined' , 'n', 's'),
+			xaxs='i', yaxs='i', xaxt = ifelse( plot_k1_experiment , 'n', 's'),
 			ylab = 'synthesis', type='l', xlab='', lwd=2, cex.lab = 1.7, cex.axis=1.3,  
 			xlim = range(simulation_time) 
 				+ diff(range(simulation_time)) * c(-.05, .05),
 			ylim = ylim
 			)
-		if( data_selection != 'User defined' ) {
-			points( experiment_tpts, secondary_synthesis, pch=1, col='grey')
-			points( experiment_tpts, reference_synthesis, pch=19)
-			segments( experiment_tpts , reference_synthesis - experimental_synthesissd 
-				, experiment_tpts , reference_synthesis + experimental_synthesissd )
-			# axis(1, at=experiment_tpts, labels = signif(experiment_tpts,2) )
+		if( plot_k1_experiment ) {
+			if( !experiment$steady_state ) {
+				points( experiment_tpts, secondary_synthesis, pch=1, col='grey')
+				points( experiment_tpts, reference_synthesis, pch=19)
+				segments( experiment_tpts , reference_synthesis - experimental_synthesissd 
+					, experiment_tpts , reference_synthesis + experimental_synthesissd )
+			} else {
+				points( experiment_tpts[1], secondary_synthesis, pch=1, col='grey')
+				points( experiment_tpts[1], reference_synthesis, pch=19)
+				segments( experiment_tpts[1] , reference_synthesis - experimental_synthesissd 
+					, experiment_tpts[1] , reference_synthesis + experimental_synthesissd )				
+			}
 		}
 	}
 
 	# plot pre-RNA dynamics
 
 	if( data_selection != 'User defined' ) {
-		ylim <- range(c(sim[,'p'], 
+		yrange <- range(c(sim[,'p'], 
 			c(secondary_preMRNA + experimental_preMRNAsd, 
 				reference_preMRNA + experimental_preMRNAsd) , 
 			c(secondary_preMRNA - experimental_preMRNAsd, 
-				reference_preMRNA - experimental_preMRNAsd))) * c(.95, 1.05)
+				reference_preMRNA - experimental_preMRNAsd)))
+		ylim <- deltaylim( yrange )
 	} else {
-		ylim <- range(sim[,'p']) * c(.95, 1.05)
+		ylim <- deltaylim( range(sim[,'p']) )
 	}	
 	if( show_logtime ) {
 		plot(transf_simulation_time, sim[,'p'], 
@@ -247,7 +269,6 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 		points( transf_tpts, reference_preMRNA, pch=19)
 		segments( transf_tpts , reference_preMRNA - experimental_preMRNAsd 
 			, transf_tpts , reference_preMRNA + experimental_preMRNAsd )
-		# axis(1, at=transf_tpts, labels = signif(experiment_tpts,2) )
 	} else {
 		plot(simulation_time, sim[,'p'], 
 			xaxs='i', yaxs='i', xaxt = ifelse( data_selection != 'User defined' , 'n', 's'),
@@ -256,23 +277,31 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 				+ diff(range(simulation_time)) * c(-.05, .05),
 			ylim = ylim)
 		if( data_selection != 'User defined' ) {
-			points( experiment_tpts, secondary_preMRNA, pch=1, col='grey')
-			points( experiment_tpts, reference_preMRNA, pch=19)
-			segments( experiment_tpts , reference_preMRNA - experimental_preMRNAsd 
-				, experiment_tpts , reference_preMRNA + experimental_preMRNAsd )
-			# axis(1, at=experiment_tpts, labels = signif(experiment_tpts,2) )
+			if( !experiment$steady_state ) {
+				points( experiment_tpts, secondary_preMRNA, pch=1, col='grey')
+				points( experiment_tpts, reference_preMRNA, pch=19)
+				segments( experiment_tpts , reference_preMRNA - experimental_preMRNAsd 
+					, experiment_tpts , reference_preMRNA + experimental_preMRNAsd )
+			} else {
+				points( experiment_tpts[1], secondary_preMRNA, pch=1, col='grey')
+				points( experiment_tpts[1], reference_preMRNA, pch=19)
+				segments( experiment_tpts[1] , reference_preMRNA - experimental_preMRNAsd 
+					, experiment_tpts[1] , reference_preMRNA + experimental_preMRNAsd )								
+			}
 		}
 	}
 
 	# plot k2
 
+	ylim <- deltaylim( range(sim[,'k2']) )
+	
 	if( show_logtime ) {
 	plot(transf_simulation_time, sim[,'k2'], 
 			xaxs='i', yaxs='i', xaxt = 'n',
 			ylab = 'processing', type='l', xlab='', lwd=2, cex.lab = 1.7, cex.axis=1.3,  
 			xlim = range(transf_simulation_time) 
 				+ diff(range(transf_simulation_time)) * c(-.05, .05),
-			ylim = range(sim[,'k2']) * c(.95, 1.05)
+			ylim = ylim
 			)
 		# axis(1, at=transf_tpts, labels = signif(experiment_tpts,2) )
 	} else {
@@ -281,7 +310,7 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 			ylab = 'processing', type='l', xlab='', lwd=2, cex.lab = 1.7, cex.axis=1.3,  
 			xlim = range(simulation_time) 
 				+ diff(range(simulation_time)) * c(-.05, .05),
-			ylim = range(sim[,'k2']) * c(.95, 1.05)
+			ylim = ylim
 			)
 	# if( data_selection != 'User defined' )
 		# axis(1, at=experiment_tpts, labels = signif(experiment_tpts,2) )
@@ -290,13 +319,14 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 	# plot mRNA dynamics 
 	
 	if( data_selection != 'User defined' ) {
-		ylim <- range(c(sim[,'m'], 
+		yrange <- range(c(sim[,'m'], 
 			c(secondary_mRNA + experimental_mRNAsd, 
 				reference_mRNA + experimental_mRNAsd) , 
 			c(secondary_mRNA - experimental_mRNAsd, 
-				reference_mRNA - experimental_mRNAsd))) * c(.95, 1.05)
+				reference_mRNA - experimental_mRNAsd)))
+		ylim <- deltaylim( yrange )
 	} else {
-		ylim <- range(sim[,'m']) * c(.95, 1.05)
+		ylim <- deltaylim( range(sim[,'m']) )
 	}
 	if( show_logtime ) {
 		plot(transf_simulation_time, sim[,'m'], 
@@ -304,8 +334,7 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 			ylab = 'mature RNA', type='l', xlab='', lwd=2, cex.lab = 1.7, cex.axis=1.3,  
 			xlim = range(transf_simulation_time) 
 				+ diff(range(transf_simulation_time)) * c(-.05, .05),
-			ylim = range(c(sim[,'m'], reference_mRNA + experimental_mRNAsd,
-				reference_mRNA - experimental_mRNAsd)) * c(.95, 1.05)
+			ylim = ylim
 			)
 		points( transf_tpts, secondary_mRNA, pch=1, col='grey')
 		points( transf_tpts, reference_mRNA, pch=19)
@@ -321,15 +350,24 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 			ylim = ylim
 			)
 		if( data_selection != 'User defined' ) {
-			points( experiment_tpts, secondary_mRNA, pch=1, col='grey')
-			points( experiment_tpts, reference_mRNA, pch=19)
-			segments( experiment_tpts , reference_mRNA - experimental_mRNAsd 
-				, experiment_tpts , reference_mRNA + experimental_mRNAsd )
+			if( !experiment$steady_state ) {
+				points( experiment_tpts, secondary_mRNA, pch=1, col='grey')
+				points( experiment_tpts, reference_mRNA, pch=19)
+				segments( experiment_tpts , reference_mRNA - experimental_mRNAsd 
+					, experiment_tpts , reference_mRNA + experimental_mRNAsd )
+			} else {
+				points( experiment_tpts[1], secondary_mRNA, pch=1, col='grey')
+				points( experiment_tpts[1], reference_mRNA, pch=19)
+				segments( experiment_tpts[1] , reference_mRNA - experimental_mRNAsd 
+					, experiment_tpts[1] , reference_mRNA + experimental_mRNAsd )				
+			}
 			# axis(1, at=experiment_tpts, labels = signif(experiment_tpts,2) )
 		}
 	}
 	
 	# plot k3
+
+	ylim <- deltaylim( range(sim[,'k3']) )
 
 	if( show_logtime ) {
 	plot(transf_simulation_time, sim[,'k3'], 
@@ -337,7 +375,7 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 			ylab = 'degradation', type='l', xlab='', lwd=2, cex.lab = 1.7, cex.axis=1.3,  
 			xlim = range(transf_simulation_time) 
 				+ diff(range(transf_simulation_time)) * c(-.05, .05),
-			ylim = range(sim[,'k3']) * c(.95, 1.05)
+			ylim = ylim
 			)
 		axis(1, at=transf_tpts, labels = signif(experiment_tpts,2) , cex.axis = 1.3)
 	} else {
@@ -346,7 +384,7 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 			ylab = 'degradation', type='l', xlab='', lwd=2, cex.lab = 1.7, cex.axis=1.3,  
 			xlim = range(simulation_time) 
 				+ diff(range(simulation_time)) * c(-.05, .05),
-			ylim = range(sim[,'k3']) * c(.95, 1.05)
+			ylim = ylim
 			)
 	if( data_selection != 'User defined' )
 		axis(1, at=experiment_tpts, labels = signif(experiment_tpts,2) , cex.axis = 1.3)
@@ -354,7 +392,7 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 			
 	# calculate the scores of the modeling and assign to output
 	
-	if( data_selection != 'User defined' ) {
+	if( data_selection != 'User defined' & !experiment$steady_state ) {
 		
 		scores <- list()
 		
@@ -368,9 +406,9 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 								sim[simulation_time %in% experiment_tpts,'m'], 
 								experimental_mRNAsd^2) +
 			
-			logLikelihoodFunction(reference_synthesis, 
+			ifelse(experiment$no_nascent, 0, logLikelihoodFunction(reference_synthesis, 
 								sim[simulation_time %in% experiment_tpts,'k1'], 
-								experimental_synthesissd^2)
+								experimental_synthesissd^2))
 		
 		chisq_score <- 
 			
@@ -382,11 +420,11 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 								sim[simulation_time %in% experiment_tpts,'m'], 
 								experimental_mRNAsd^2) +
 
-			chisqFunction(reference_synthesis, 
+			ifelse(experiment$no_nascent, 0, chisqFunction(reference_synthesis, 
 								sim[simulation_time %in% experiment_tpts,'k1'], 
-								experimental_synthesissd^2)
+								experimental_synthesissd^2))
 		
-		k <- length(c(k1_params, k2_params, k3_params))
+		k <- length(c(ifelse(experiment$no_nascent, 0, k1_params), k2_params, k3_params))
 
 		scores$pchisq <- pchisq( chisq_score, 3*length(experiment_tpts) - k )
 		scores$aic <- 2*k - 2*loglik_score
@@ -405,14 +443,14 @@ RNAdynamicsAppPlot <- function(data_selection, show_logtime, logshift,
 	
 }
 
-constantModelRNApp <- function(x , par, log_shift) rep(par, length(x))
+constantModelRNApp <- function(x , par, log_shift, lin_shift) rep(par, length(x))
 
-sigmoidModelRNApp <- function(x, par, log_shift) 
-	par[1]+(par[2]-par[1])*(1/(1+exp(-par[4]*(time_transf(x,log_shift)-time_transf(par[3],log_shift)))))
+sigmoidModelRNApp <- function(x, par, log_shift, lin_shift=0) 
+	par[1]+(par[2]-par[1])*(1/(1+exp(-par[4]*(time_transf(x,log_shift,lin_shift)-time_transf(par[3],log_shift,lin_shift)))))
 
-impulseModelRNApp <- function(x, par, log_shift) 
-	1/par[2]*(par[1]+(par[2]-par[1])*(1/(1+exp(-par[6]*(time_transf(x,log_shift)-time_transf(par[4],log_shift))))))*
-	(par[3]+(par[2]-par[3])*(1/(1+exp(par[6]*(time_transf(x,log_shift)-time_transf(par[5],log_shift))))))
+impulseModelRNApp <- function(x, par, log_shift, lin_shift=0) 
+	1/par[2]*(par[1]+(par[2]-par[1])*(1/(1+exp(-par[6]*(time_transf(x,log_shift,lin_shift)-time_transf(par[4],log_shift,lin_shift))))))*
+	(par[3]+(par[2]-par[3])*(1/(1+exp(par[6]*(time_transf(x,log_shift,lin_shift)-time_transf(par[5],log_shift,lin_shift))))))
 
 
 #############################
@@ -429,7 +467,7 @@ rxnrateMatureRNA <- function(t,c,parms){
 	return(list(r))
 }
 
-deterministic_simulation <- function(log_shift, simulation_time,
+deterministic_simulation <- function(log_shift, lin_shift, simulation_time,
 	 k1_function, k2_function, k3_function,
 	 k1_params, k2_params, k3_params
 	 )
@@ -443,22 +481,22 @@ deterministic_simulation <- function(log_shift, simulation_time,
 		alpha = function(x) 
 			switch(k1_function, 
 						 "Constant" = constantModelRNApp(x, k1_params),
-						 "Sigmoidal" = sigmoidModelRNApp(x, k1_params, log_shift),
-						 "Impulsive" = impulseModelRNApp(x, k1_params, log_shift)
+						 "Sigmoidal" = sigmoidModelRNApp(x, k1_params, log_shift, lin_shift),
+						 "Impulsive" = impulseModelRNApp(x, k1_params, log_shift, lin_shift)
 						 )
 		,
 		beta = function(x) 
 			switch(k3_function, 
 						 "Constant" = constantModelRNApp(x, k3_params),
-						 "Sigmoidal" = sigmoidModelRNApp(x, k3_params, log_shift),
-						 "Impulsive" = impulseModelRNApp(x, k3_params, log_shift)
+						 "Sigmoidal" = sigmoidModelRNApp(x, k3_params, log_shift, lin_shift),
+						 "Impulsive" = impulseModelRNApp(x, k3_params, log_shift, lin_shift)
 			)
 		,
 		gamma = function(x) 
 			switch(k2_function, 
 						 "Constant" = constantModelRNApp(x, k2_params),
-						 "Sigmoidal" = sigmoidModelRNApp(x, k2_params, log_shift),
-						 "Impulsive" = impulseModelRNApp(x, k2_params, log_shift)
+						 "Sigmoidal" = sigmoidModelRNApp(x, k2_params, log_shift, lin_shift),
+						 "Impulsive" = impulseModelRNApp(x, k2_params, log_shift, lin_shift)
 			)
 	)
 	
@@ -538,19 +576,20 @@ smoothModel <- function(tpts, experiment, nInit=10, nIter=500, seed=1234)
 ###############################
 
 modelChisqMatureRNA <- function(par, tpts, fun, df, alpha_exp, alpha_var #, pval
-	, mature_exp, mature_var, preMRNA_exp, preMRNA_var, log_shift)
+	, mature_exp, mature_var, preMRNA_exp, preMRNA_var, log_shift, lin_shift, no_nascent)
 {
 	splitpar <- split(par 
 		, c(rep('alpha',df[1]), rep('beta',df[2]), rep('gamma',df[3])) 
 		)
 	#
+
 	params <- list()
 	params$alpha <- function(x) 
-		fun$alpha$value(x, splitpar$alpha, log_shift)
+		fun$alpha$value(x, splitpar$alpha, log_shift, lin_shift)
 	params$beta  <- function(x)
-		fun$beta$value(x, splitpar$beta, log_shift)
+		fun$beta$value(x, splitpar$beta, log_shift, lin_shift)
 	params$gamma <- function(x)
-		fun$gamma$value(x, splitpar$gamma, log_shift)
+		fun$gamma$value(x, splitpar$gamma, log_shift, lin_shift)
 	#
 	cinit <- c(params$alpha(tpts[1]) / params$gamma(tpts[1])
 		, params$alpha(tpts[1]) / params$beta(tpts[1]))
@@ -561,13 +600,13 @@ modelChisqMatureRNA <- function(par, tpts, fun, df, alpha_exp, alpha_var #, pval
 	matureodel <- model[,'m']
 	preMRNA_model <- model[,'p']
 	#
-	chisqFunction(alpha_exp, alpha_model, alpha_var) +
+	ifelse(no_nascent, 0, chisqFunction(alpha_exp, alpha_model, alpha_var)) +
 		chisqFunction(mature_exp, matureodel, mature_var) +
 		chisqFunction(preMRNA_exp, preMRNA_model, preMRNA_var)
 }
 
 optimParamsMatureRNA <- function(interpRates, tpts_exp, alpha_exp, alpha_var, mature_exp
-	, mature_var, preMRNA_exp, preMRNA_var, maxit=500, method='NM', log_shift)
+	, mature_var, preMRNA_exp, preMRNA_var, maxit=500, method='NM', log_shift, lin_shift, no_nascent)
 {
 	if( method == 'NM' ) method <- 'Nelder-Mead' 
 	tryCatch({
@@ -581,6 +620,8 @@ optimParamsMatureRNA <- function(interpRates, tpts_exp, alpha_exp, alpha_var, ma
 			, alpha_var=alpha_var, mature_var=mature_var
 			, preMRNA_var=preMRNA_var
 			, log_shift = log_shift
+			, lin_shift = lin_shift
+			, no_nascent = no_nascent
 			, control = list(maxit = maxit)
 			, method = method
 			)

@@ -129,7 +129,7 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 		geneOrder <- seq(1, nrow(clustMat))
 	}
 
-	## set the break boundaries into the data
+	## set the break boundaries into the data
 	# min
 	total_l2fc[total_l2fc<min(breaks)] <- min(breaks)
 	preMRNA_l2fc[preMRNA_l2fc<min(breaks)] <- min(breaks)
@@ -143,7 +143,7 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 	beta_l2fc[beta_l2fc>max(breaks)] <- max(breaks)
 	gamma_l2fc[gamma_l2fc>max(breaks)] <- max(breaks)
 
-	## the plotting function image will display it in reverse order
+	## the plotting function image will display it in reverse order
 	## (bottom-up)
 	geneOrder <- rev(geneOrder)
 
