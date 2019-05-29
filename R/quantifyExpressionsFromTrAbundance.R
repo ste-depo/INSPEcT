@@ -26,9 +26,9 @@ quantifyExpressionsFromTrAbundance <- function(trAbundaces
 			stop('quantifyExpressionsFromTrAbundance: the elements "exonsAbundances" and "intronsAbundances" of "trAbundaces" must be matrices with the same numebr of columns.')
 		if( ncol(exonsAbundances) != ncol(intronsAbundances) )
 			stop('quantifyExpressionsFromTrAbundance: the elements "exonsAbundances" and "intronsAbundances" of "trAbundaces" must be matrices with the same numebr of columns.')
-		# experimentalDesign
-		if(all(table(experimentalDesign)==1))
-			stop("quantifyExpressionsFromTrAbundance: at least one condition with replicates is required.")
+		# # experimentalDesign
+		# if(all(table(experimentalDesign)==1))
+		# 	stop("quantifyExpressionsFromTrAbundance: at least one condition with replicates is required.")
 		if(length(experimentalDesign)!=ncol(exonsAbundances))
 			stop('quantifyExpressionsFromTrAbundance: each counts column must be accounted in the experimentalDesign')
 		# varSamplingCondition
@@ -48,8 +48,8 @@ quantifyExpressionsFromTrAbundance <- function(trAbundaces
 		if( !is.matrix(exonsAbundances) )
 			stop('quantifyExpressionsFromTrAbundance: the element "exonsAbundances" of "trAbundaces" must be matrix.')
 		# experimentalDesign
-		if(all(table(experimentalDesign)==1))
-			stop("quantifyExpressionsFromTrAbundance: at least one condition with replicates is required.")
+		# if(all(table(experimentalDesign)==1))
+		# 	stop("quantifyExpressionsFromTrAbundance: at least one condition with replicates is required.")
 		if(length(experimentalDesign)!=ncol(exonsAbundances))
 			stop('quantifyExpressionsFromTrAbundance: each counts column must be accounted in the experimentalDesign')
 		# varSamplingCondition
@@ -61,8 +61,26 @@ quantifyExpressionsFromTrAbundance <- function(trAbundaces
 		}		
 	}
 
+	if(all(table(experimentalDesign)==1)) {
+
+		expressionsExons <- exonsAbundances
+		expressionsIntrons <- intronsAbundances
+
+		varianceExpressionsExonsTmp <- apply(expressionsExons, 1, var)
+		varianceExpressionsIntronsTmp <- apply(expressionsIntrons, 1, var)
+
+		varianceExpressionsExons <- sapply(1:ncol(expressionsExons), function(i) varianceExpressionsExonsTmp)
+		varianceExpressionsIntrons <- sapply(1:ncol(expressionsIntrons), function(i) varianceExpressionsIntronsTmp)
+		
+		return(list(exonsExpressions = expressionsExons
+				  , intronsExpressions = expressionsIntrons
+				  , exonsVariance = varianceExpressionsExons
+				  , intronsVariance = varianceExpressionsIntrons))	
+
+	}
+
 	expressionsExons <- exonsAbundances
-	
+
 	message('Powerlaw fit for exons')
 	if( is.numeric(experimentalDesign) ) 
 		experimentalDesign= signif(experimentalDesign,9)	

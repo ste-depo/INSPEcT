@@ -69,8 +69,8 @@ quantifyExpressionsFromTrCounts <- function(allcounts
 	if( ncol(exonsCounts) != ncol(intronsCounts) )
 		stop('quantifyExpressionsFromTrCounts: the elements "exonsCounts" and "intronsCounts" of "allcounts" must be matrices with the same numebr of columns.')
 	# experimentalDesign
-	if(all(table(experimentalDesign)==1))
-		stop("quantifyExpressionsFromTrCounts: at least one condition with replicates is required.")
+	# if(all(table(experimentalDesign)==1))
+	# 	stop("quantifyExpressionsFromTrCounts: at least one condition with replicates is required.")
 	if(length(experimentalDesign)!=ncol(exonsCounts))
 		stop('quantifyExpressionsFromTrCounts: each counts column must be accounted in the experimentalDesign')
 	# exonsWidths
@@ -109,6 +109,36 @@ quantifyExpressionsFromTrCounts <- function(allcounts
 	### ESTIMATE EXPRESSION AND VARIANCE #######
 	############################################
 
+	############## single replicate ############
+
+	if(all(table(experimentalDesign)==1)) {
+
+		#from counts to RPKMs
+
+		expressionsExons<-counts2expressions(exonsCounts,exonsWidths,libsize)
+		expressionsIntrons<-counts2expressions(intronsCounts,intronsWidths,libsize)
+
+		#estimate variance from RPKMs time course
+
+		varianceExpressionsExonsTmp <- apply(expressionsExons, 1, var)
+		varianceExpressionsIntronsTmp <- apply(expressionsIntrons, 1, var)
+
+		varianceExpressionsExons <- sapply(1:ncol(expressionsExons), function(i) varianceExpressionsExonsTmp)
+		varianceExpressionsIntrons <- sapply(1:ncol(expressionsIntrons), function(i) varianceExpressionsIntronsTmp)
+
+		rownames(expressionsExons) <- rownames(varianceExpressionsExons) <- rownames(exonsCounts)
+		rownames(expressionsIntrons) <- rownames(varianceExpressionsIntrons) <- rownames(intronsCounts)
+
+		colnames(expressionsExons) <- colnames(varianceExpressionsExons) <- sort(unique(experimentalDesign))
+		colnames(expressionsIntrons) <- colnames(varianceExpressionsIntrons) <- sort(unique(experimentalDesign))
+
+		return(list(exonsExpressions = expressionsExons
+				  , intronsExpressions = expressionsIntrons
+				  , exonsVariance = varianceExpressionsExons
+				  , intronsVariance = varianceExpressionsIntrons
+				  ))		
+
+	}
 
 	############## with DESeq2 #################
 	if(DESeq2)

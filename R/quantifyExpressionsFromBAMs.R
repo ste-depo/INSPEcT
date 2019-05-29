@@ -69,8 +69,8 @@ quantifyExpressionsFromBAMs <- function(txdb
 	# experimentalDesign
 	if(length(experimentalDesign)!=length(BAMfiles))
 		stop('quantifyExpressionsFromBAMs: each bam file must be accounted in the experimentalDesign.')
-	if(all(table(experimentalDesign)==1))
-		stop("quantifyExpressionsFromBAMs: at least one replicate is required.")
+	# if(all(table(experimentalDesign)==1))
+	# 	stop("quantifyExpressionsFromBAMs: at least one replicate is required.")
 	# by
 	by <- by[1]
 	if( !is.character(by) )
