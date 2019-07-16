@@ -1,7 +1,7 @@
 #' INSPEcT package
 #'
 #' @description
-#' INSPEcT (INference of Synthesis, Processing and dEgradation rates from Transcriptome data),
+#' INSPEcT (INference of Synthesis, Processing and degradation rates from Transcriptome data),
 #' is a package that analyse RNA-seq data in order to evaluate synthesis, processing and degradation
 #' rates and asses via modeling the rates that determines changes in RNA levels.
 #'
@@ -68,8 +68,18 @@ setClass('INSPEcT_model',
                     	synthesis=.05, 
                     	processing=.05, 
                     	degradation=.05)
+                    , CI=c(synthesis=.05, 
+                    	processing=.05, 
+                    	degradation=.05)
                     )
             , limitModelComplexity = FALSE
+            , priors=c(
+            	synthesis=1,
+            	processing=1,
+            	degradation=1)
+            , computeDerivatives = TRUE
+            , logLikelihoodConfidenceThreshold = 0.95
+
 				)
 			)
 		)
@@ -138,6 +148,7 @@ setClass('INSPEcT',
 		, precision='matrix'
 		, model='INSPEcT_model'
 		, modelRates='ExpressionSet'
+		, confidenceIntervals='ExpressionSet'
 		, tpts='vector'
 		, labeledSF='numeric'
 		, tL='numeric'
@@ -152,9 +163,10 @@ setClass('INSPEcT',
 			, Dmax = 10
 			, Dmin = 1e-6
 			, verbose=TRUE
-			, estimateRatesWith=c('int', 'der')[1]
+			, estimateRatesWith=c('int', 'der')[2]
 			, useSigmoidFun=TRUE
 			, testOnSmooth=TRUE
+			, cores = 1
 			)
 		)
 	)

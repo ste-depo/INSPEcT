@@ -17,7 +17,6 @@
 #' plotGene(nascentInspObj10, 1)
 setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TRUE) {
 
-
 	ix <- ix[1]
 	tpts <- object@tpts
 
@@ -25,24 +24,39 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 
 	ratesFirstGuessTotalTmp <- ratesFirstGuess(oneGene, 'total')
 	ratesFirstGuessPreTmp <- ratesFirstGuess(oneGene, 'preMRNA')
+
+	ratesFirstGuessTotalVarTmp <- ratesFirstGuessVar(oneGene, 'total')
+	ratesFirstGuessPreVarTmp <- ratesFirstGuessVar(oneGene, 'preMRNA')
+
 	ratesFirstGuessSynthesisTmp <- ratesFirstGuess(oneGene, 'synthesis')
 	ratesFirstGuessProcessingTmp <- ratesFirstGuess(oneGene, 'processing')
 	ratesFirstGuessDegradationTmp <- ratesFirstGuess(oneGene, 'degradation')
 
-	ratesFirstGuessTotalVarTmp <- ratesFirstGuessVar(oneGene, 'total')
-	ratesFirstGuessPreVarTmp <- ratesFirstGuessVar(oneGene, 'preMRNA')
 	ratesFirstGuessSynthesisVarTmp <- ratesFirstGuessVar(oneGene, 'synthesis')
-	
+
 	if(!priors)
 	{
-		ratesFirstGuessSynthesisTmp[is.finite(ratesFirstGuessSynthesisTmp)] <- NaN
 		ratesFirstGuessProcessingTmp[is.finite(ratesFirstGuessProcessingTmp)] <- NaN
 		ratesFirstGuessDegradationTmp[is.finite(ratesFirstGuessDegradationTmp)] <- NaN
-		
-		ratesFirstGuessSynthesisVarTmp[is.finite(ratesFirstGuessSynthesisVarTmp)] <- NaN
+
+		if(object@NoNascent)
+		{
+			ratesFirstGuessSynthesisTmp[is.finite(ratesFirstGuessSynthesisTmp)] <- NaN
+			ratesFirstGuessSynthesisVarTmp[is.finite(ratesFirstGuessSynthesisVarTmp)] <- NaN			
+		}
 	}
 
+	if(!object@NoNascent)
+	{
+		alpha_left <- viewConfidenceIntervals(object,"synthesis_left")[ix,]
+		alpha_right <- viewConfidenceIntervals(object,"synthesis_right")[ix,]
 
+		gamma_left <- viewConfidenceIntervals(object,"processing_left")[ix,]
+		gamma_right <- viewConfidenceIntervals(object,"processing_right")[ix,]
+
+		beta_left <- viewConfidenceIntervals(object,"degradation_left")[ix,]
+		beta_right <- viewConfidenceIntervals(object,"degradation_right")[ix,]
+	}
 	if( length(object@model@ratesSpecs) > 0 ) {
 
 			total <- t(rbind(
@@ -63,94 +77,137 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 				))
 			if(!object@NoNascent)
 			{
-			alpha <- t(rbind(
-				ratesFirstGuessSynthesisTmp
-				, ratesFirstGuessSynthesisTmp + 
-					sqrt(ratesFirstGuessSynthesisVarTmp)
-				, ratesFirstGuessSynthesisTmp - 
-					sqrt(ratesFirstGuessSynthesisVarTmp)
-				, viewModelRates(oneGene, 'synthesis')
+				alpha <- t(rbind(ratesFirstGuessSynthesisTmp
+						, alpha_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
+						, alpha_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
+						, viewModelRates(oneGene, 'synthesis')
 				))
+
+				gamma <- t(rbind(ratesFirstGuessProcessingTmp
+						, gamma_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
+						, gamma_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
+						, viewModelRates(oneGene, 'processing')
+				))
+
+				beta <- t(rbind(ratesFirstGuessDegradationTmp
+						, beta_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
+						, beta_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
+						, viewModelRates(oneGene, 'degradation')
+				))
+
 			}else{
-			alpha <- t(rbind(
-				ratesFirstGuessSynthesisTmp
-				, viewModelRates(oneGene, 'synthesis')
-				))			
+				alpha <- t(rbind(
+					ratesFirstGuessSynthesisTmp
+					, viewModelRates(oneGene, 'synthesis')
+					))			
+				beta <- t(rbind(
+					ratesFirstGuessDegradationTmp
+					, viewModelRates(oneGene, 'degradation')
+					))
+				gamma <- t(rbind(
+					ratesFirstGuessProcessingTmp
+					, viewModelRates(oneGene, 'processing')
+					))
 			}
-			beta <- t(rbind(
-				ratesFirstGuessDegradationTmp
-				, viewModelRates(oneGene, 'degradation')
-				))
-			gamma <- t(rbind(
-				ratesFirstGuessProcessingTmp
-				, viewModelRates(oneGene, 'processing')
-				))
 
 		if( fix.yaxis ) {
 
 			degradationYlim <- quantile(ratesFirstGuess(object, 'degradation'), probs=c(.02, .98), na.rm=TRUE)
 			processingYlim <- quantile(ratesFirstGuess(object, 'processing'), probs=c(.02, .98), na.rm=TRUE)
 
-			log_shift <- find_tt_par(tpts)
-			if(object@NoNascent)
-			{
-				x <- time_transf_NoNascent(tpts, log_shift, abs(min(time_transf(tpts, log_shift))))
-			}else{x <- time_transf(tpts, log_shift)}
+			x <- seq_along(tpts)
 
 			par(mfrow=c(1,5))
-			matplot(x, total, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
-				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
+			matplot(x, total, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3), col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
-			matplot(x, preMRNA, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
-				, col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')
-			axis(1, at=x, labels=signif(tpts, 2), las=3)
+
+			functionTmp <- function()
+			{
+				matplot(x, preMRNA, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3), col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')
+				axis(1, at=x, labels=signif(tpts, 2), las=3)
+			}
+			tryCatch(functionTmp(),error=function(e)NaN)
+
 			if(object@NoNascent)
 			{
 				matplot(x, alpha, type='l', lty=c(1,1), lwd=c(1,3)
 					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
 				axis(1, at=x, labels=signif(tpts, 2), las=3)
+
+				matplot(x, gamma, type='l', lty=c(1,1), lwd=c(1,3)
+					, col=5, main='processing', xaxt='n', xlab='time', ylab='')		
+				axis(1, at=x, labels=signif(tpts, 2), las=3)
+
+				matplot(x, beta, type='l', lty=c(1,1), lwd=c(1,3)
+					, col=4, main='degradation', xaxt='n', xlab='time', ylab='')		
+				axis(1, at=x, labels=signif(tpts, 2), las=3)
 			}else{
 				matplot(x, alpha, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
 					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
 				axis(1, at=x, labels=signif(tpts, 2), las=3)
+
+				functionTmp <- function()
+				{
+					matplot(x, gamma, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3), col=5
+						, main='processing', xaxt='n', xlab='time', ylab='', ylim=processingYlim)
+					axis(1, at=x, labels=signif(tpts, 2), las=3)		
+				}
+				tryCatch(functionTmp(),error=function(e)NaN)
+
+				matplot(x, beta, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3), col=4
+					, main='degradation', xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
+				axis(1, at=x, labels=signif(tpts, 2), las=3)
 			}
-			matplot(x, gamma, type='l', lty=c(1,1), lwd=c(1,3), col=5
-				, main='processing', xaxt='n', xlab='time', ylab='', ylim=processingYlim)
-			axis(1, at=x, labels=signif(tpts, 2), las=3)		
-			matplot(x, beta, type='l', lty=c(1,1), lwd=c(1,3), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
-			axis(1, at=x, labels=signif(tpts, 2), las=3)
 		} else {
-			log_shift <- find_tt_par(tpts)
-			if(object@NoNascent)
-			{
-				x <- time_transf_NoNascent(tpts, log_shift, abs(min(time_transf(tpts, log_shift))))
-			}else{x <- time_transf(tpts, log_shift)}
+
+			x <- seq_along(tpts)
+
 			par(mfrow=c(1,5))
 			matplot(x, total, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
 				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
-			matplot(x, preMRNA, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
-				, col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')
-			axis(1, at=x, labels=signif(tpts, 2), las=3)
+
+			functionTmp <- function()
+			{
+				matplot(x, preMRNA, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
+					, col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')
+				axis(1, at=x, labels=signif(tpts, 2), las=3)			
+			}
+			tryCatch(functionTmp(),error=function(e)NaN)
+
 			if(object@NoNascent)
 			{
 				matplot(x, alpha, type='l', lty=c(1,1), lwd=c(1,3)
-					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
+					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')
 				axis(1, at=x, labels=signif(tpts, 2), las=3)
+
+				matplot(x, gamma, type='l', lty=c(1,1), lwd=c(1,3)
+					, col=5, main='processing', xaxt='n', xlab='time', ylab='')
+				axis(1, at=x, labels=signif(tpts, 2), las=3)
+
+				matplot(x, beta, type='l', lty=c(1,1), lwd=c(1,3)
+					, col=4, main='degradation', xaxt='n', xlab='time', ylab='')
+				axis(1, at=x, labels=signif(tpts, 2), las=3)
+
 			}else{
 				matplot(x, alpha, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
 					, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
 				axis(1, at=x, labels=signif(tpts, 2), las=3)
-			}
-			matplot(x, gamma, type='l', lty=c(1,1), lwd=c(1,3), col=5
-				, main='processing', xaxt='n', xlab='time', ylab='')
-			axis(1, at=x, labels=signif(tpts, 2), las=3)		
-			matplot(x, beta, type='l', lty=c(1,1), lwd=c(1,3), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='')
-			axis(1, at=x, labels=signif(tpts, 2), las=3)
-		}
 
+				functionTmp <- function()
+				{
+					matplot(x, gamma, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3), col=5
+						, main='processing', xaxt='n', xlab='time', ylab='')
+					axis(1, at=x, labels=signif(tpts, 2), las=3)		
+				}
+
+				tryCatch(functionTmp(),error=function(e)NaN)
+
+				matplot(x, beta, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3), col=4
+					, main='degradation', xaxt='n', xlab='time', ylab='')
+				axis(1, at=x, labels=signif(tpts, 2), las=3)
+			}
+		}
 
 	} else {
 
@@ -193,41 +250,67 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 
 			degradationYlim <- quantile(ratesFirstGuess(object, 'degradation'), probs=c(.02, .98), na.rm=TRUE)
 			processingYlim <- quantile(ratesFirstGuess(object, 'processing'), probs=c(.02, .98), na.rm=TRUE)
+			
+			x <- seq_along(tpts)
 
-			log_shift <- find_tt_par(tpts)
-			x <- time_transf(tpts, log_shift)
 			par(mfrow=c(1,5))
 			matplot(x, total, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
+			
+			functionTmp() <- function()
+			{
 			matplot(x, preMRNA, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')
-			axis(1, at=x, labels=signif(tpts, 2), las=3)
+			axis(1, at=x, labels=signif(tpts, 2), las=3)				
+			}
+			tryCatch(functionTmp(),error=function(e)NaN)
+
 			matplot(x, alpha, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
-			matplot(x, gamma, type='l', lty=c(1), lwd=c(1), col=5
-				, main='processing', xaxt='n', xlab='time', ylab='', ylim=processingYlim)
-			axis(1, at=x, labels=signif(tpts, 2), las=3)		
+
+			functionTmp <- function()
+			{
+				matplot(x, gamma, type='l', lty=c(1), lwd=c(1), col=5
+					, main='processing', xaxt='n', xlab='time', ylab='', ylim=processingYlim)
+				axis(1, at=x, labels=signif(tpts, 2), las=3)		
+			}
+			tryCatch(functionTmp(),error=function(e)NaN)
+
 			matplot(x, beta, type='l', lty=c(1), lwd=c(1), col=4
 				, main='degradation', xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 		} else {
-			log_shift <- find_tt_par(tpts)
-			x <- time_transf(tpts, log_shift)
+			
+			x <- seq_along(tpts)
+
 			par(mfrow=c(1,5))
 			matplot(x, total, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
-			matplot(x, preMRNA, type='l', lty=c(1,2,2), lwd=c(1,1,1)
-				, col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')
-			axis(1, at=x, labels=signif(tpts, 2), las=3)
+
+			functionTmp <- function()
+			{
+				matplot(x, preMRNA, type='l', lty=c(1,2,2), lwd=c(1,1,1)
+					, col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')
+				axis(1, at=x, labels=signif(tpts, 2), las=3)
+			}
+			tryCatch(functionTmp(),error=function(e)NaN)
+
 			matplot(x, alpha, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
-			matplot(x, gamma, type='l', lty=c(1), lwd=c(1), col=5
-				, main='processing', xaxt='n', xlab='time', ylab='')
-			axis(1, at=x, labels=signif(tpts, 2), las=3)		
+
+			functionTmp <- function()
+			{
+				matplot(x, gamma, type='l', lty=c(1), lwd=c(1), col=5
+					, main='processing', xaxt='n', xlab='time', ylab='')
+				axis(1, at=x, labels=signif(tpts, 2), las=3)		
+			}
+
+			tryCatch(functionTmp(),error=function(e)NaN)
+
 			matplot(x, beta, type='l', lty=c(1), lwd=c(1), col=4
 				, main='degradation', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)

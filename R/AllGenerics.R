@@ -26,11 +26,17 @@ setGeneric('geneClass', function(object, bTsh=NULL, cTsh=NULL)
 #' Calculate modeled rates and concentrations
 setGeneric('makeModelRates', function(object, ...) 
 	standardGeneric('makeModelRates'))
+#' Set confidence intervals
+setGeneric('setConfidenceIntervals', function(object, setConfidenceIntervals, ...) 
+	standardGeneric('setConfidenceIntervals'))
 #' Generate synthetic rates and concentrations
-setGeneric('makeSimDataset', function(object, tpts, nRep, NoNascent = FALSE, seed=NULL, a = NULL, b = NULL, tL = NULL)
+setGeneric('makeSimDataset', function(object, tpts, nRep, NoNascent = FALSE, seed=NULL, b = NULL, tL = NULL, noise_sd = 0)
 	standardGeneric('makeSimDataset'))
 #' Display rate classification performance
-setGeneric('rocCurve', function(object, object2, cTsh=NULL, plot=TRUE) 
+setGeneric('correlationPlot', function(object, object2, plot=TRUE) 
+	standardGeneric('correlationPlot'))
+#' Display rate classification performance
+setGeneric('rocCurve', function(object, object2, cTsh=NULL, plot=TRUE, comparative=FALSE) 
 	standardGeneric('rocCurve'))
 #' Display rate classification performance with thresholds visible at x-axis
 setGeneric('rocThresholds', function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1), plot=TRUE) 
@@ -87,6 +93,9 @@ setGeneric('makeSimModel', function(object, nGenes, newTpts=NULL
 #' Retrieve the modeled rates and concentrations
 setGeneric('viewModelRates', function(object, feature) 
 	standardGeneric('viewModelRates'))
+#' Retrieve the modeled Confidence Intervals
+setGeneric('viewConfidenceIntervals', function(object, feature) 
+	standardGeneric('viewConfidenceIntervals'))
 #' Plot the pre-modeled and modeled profiles for one gene
 setGeneric('plotGene', function(object, ix, fix.yaxis=FALSE, priors=TRUE) 
 	standardGeneric('plotGene'))

@@ -30,25 +30,23 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 													, nRep
 													, NoNascent = FALSE
 													, seed=NULL
-													, a = NULL
 													, b = NULL
-													, tL = NULL)
+													, tL = NULL
+													, noise_sd = 0)
 {
-
 	if(tpts[[1]]!=object@params$tpts[[1]]){stop("makeSimDataset: new and old tpts starts must coincide.")}
 	if(tpts[[length(tpts)]]!=object@params$tpts[[length(object@params$tpts)]]){stop("makeSimDataset: new and old tpts ends must coincide.")}
-	if(!is.null(a)|!is.null(b)|!is.null(tL))
+	if(!is.null(b)|!is.null(tL))
 	{
-		if(!is.numeric(a)|!is.numeric(b)|!is.numeric(tL)){stop("makeSimDataset: a,b and tL must be numeric.")}
-		if(a>1|a<0|b>1|b<0){stop("makeSimDataset: a and b must be greater than 0 and lower than 1.")}		
+		if(!is.numeric(b)|!is.numeric(tL)){stop("makeSimDataset: a,b and tL must be numeric.")}
+		if(b>1|b<0){stop("makeSimDataset: a and b must be greater than 0 and lower than 1.")}		
 	}
 
 	ratesSpecs <- object@ratesSpecs
 	nGenes <- length(ratesSpecs)
-	log_shift <- find_tt_par(tpts)
-
+	
 	## I compute the corrupted data
-	if(!is.null(a)&!is.null(b)&!is.null(tL))
+	if(!is.null(b)&!is.null(tL))
 	{
 		## I solve the ode system starting from zero in order to quantify Mature and Premature RNA for the Nascent population
 		cleanRates <- lapply(1:nGenes, function(i) {
@@ -57,10 +55,10 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 				outTmp <- tryCatch(
 					.makeModel(tpts=c(t-tL,t)
 						 , ratesSpecs[[i]][[1]]
-						 , log_shift
-						 , time_transf
-						 , deSolve::ode
-						 , .rxnrate
+						 # , log_shift
+						 # , time_transf
+						 # , deSolve::ode
+						 # , .rxnrate
 						 , nascent = TRUE)
 					, error=function(e)
 					.makeEmptyModel(tpts)
@@ -78,15 +76,16 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 		## I solve the system for the total
 		ratesSpecs <- object@ratesSpecs
 		nGenes <- length(ratesSpecs)
-		log_shift <- find_tt_par(tpts)
+		# log_shift <- find_tt_par(tpts)
 		cleanRates <- lapply(1:nGenes, function(i) {
 			tryCatch(
 				.makeModel(tpts
 						 , ratesSpecs[[i]][[1]]
-						 , log_shift
-						 , time_transf
-						 , deSolve::ode
-						 , .rxnrate)
+						 # , log_shift
+						 # , time_transf
+						 # , deSolve::ode
+						 # , .rxnrate
+						 , nascent = FALSE)
 				, error=function(e)
 					.makeEmptyModel(tpts)
 				)
@@ -130,29 +129,36 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 		U_exons <- U_exons[genesTmp,]
 		U_introns <- U_introns[genesTmp,]
 
-		## Corruption
-		E_exons <- (1-a)*L_exons + b*U_exons
-		E_introns <- (1-a)*L_introns + b*U_introns
+	### NEW CORRUPTION START ###
+		set.seed(seed)
 
-		## Variance evaluation
 		totalFitVarianceLaw <- object@params$sim$noiseFunctions$total
 		preFitVarianceLaw <- object@params$sim$noiseFunctions$pre
 
+		X <- mean((b/(1 - b))*((L_exons+L_introns)/(U_exons+U_introns)))
+
+		X_noisy <- rnorm(1000*nrow(L_exons), X, sd = noise_sd)
+		X_noisy <- X_noisy[X_noisy>=0&X_noisy<=1]
+
+		if(length(X_noisy)<nrow(L_exons))
+		{
+			message("makeSimDataset: warning, very large noise coefficient standard deviation! ")
+			X_noisy <- c(X_noisy,rep(b,length.out=nrow(L_exons) - length(X_noisy)))
+		}
+
+		X_noisy <- sample(X_noisy,nrow(L_exons))
+
+		E_exons <- L_exons + X*U_exons
+		E_introns <- L_introns + X*U_introns
+
+	### NEW CORRUPTION END ###
+	
 		E_exons_var <- t(apply(E_exons,1,function(r){totalFitVarianceLaw(r)}))
 		E_introns_var <- t(apply(E_introns,1,function(r){preFitVarianceLaw(r)}))
 
 		T_exons_var <- t(apply(T_exons,1,function(r){totalFitVarianceLaw(r)}))
 		T_introns_var <- t(apply(T_introns,1,function(r){preFitVarianceLaw(r)}))
 		
-		# rownames(E_exons)<-
-		# rownames(E_introns)<-
-		# rownames(E_exons_var)<-
-		# rownames(E_introns_var)<-
-		# rownames(T_exons)<-
-		# rownames(T_introns)<-
-		# rownames(T_exons_var)<-
-		# rownames(T_introns_var)<-as.character(1:nrow(E_exons))
-
 		## Evaluation of the new simulated data
 		E_data <- list("exonsExpressions"=E_exons, "intronsExpressions"=E_introns, "exonsVariance"=E_exons_var, "intronsVariance"=E_introns_var)
 		T_data <- list("exonsExpressions"=T_exons, "intronsExpressions"=T_introns, "exonsVariance"=T_exons_var, "intronsVariance"=T_introns_var)	
@@ -165,16 +171,19 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 		totalSim <- ratesFirstGuess(corruptedInspObj,"total")
 		preMRNASim <- ratesFirstGuess(corruptedInspObj,"preMRNA")
 		alphaSim <- ratesFirstGuess(corruptedInspObj,"synthesis")
+
+	### NEW CORRUPTION END ###
 	}else{
 		## create the clean concentrations and rates for each gene
 		cleanRates <- lapply(1:nGenes, function(i) {
 			tryCatch(
 				.makeModel(tpts
 						 , ratesSpecs[[i]][[1]]
-						 , log_shift
-						 , time_transf
-						 , deSolve::ode
-						 , .rxnrate)
+						 # , log_shift
+						 # , time_transf
+						 # , deSolve::ode
+						 # , .rxnrate
+						 , nascent = FALSE)
 				, error=function(e)
 					.makeEmptyModel(tpts)
 				)
@@ -230,22 +239,16 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 	# Required to keep track of the genes names after the dataset reduction caused by the contamination
 	rownames(totalSimReplicates)<-rownames(preMRNASimReplicates)<-rownames(alphaSimReplicates)<-rownames(totalSim)
 
-	nascentExpressions <- quantifyExpressionsFromTrAbundance(
-											 trAbundaces = list(
-											 	exonsAbundances = alphaSimReplicates
-										     	, intronsAbundances = NULL
-										     	)
-											 , experimentalDesign = experimentalDesign
-											 , varSamplingCondition = as.character(tpts[[1]])
-											 , simulatedData = TRUE)
+	nascentExpressions <- quantifyExpressionsFromTrAbundance(trAbundaces = list(exonsAbundances = alphaSimReplicates
+																			  , intronsAbundances = NULL)
+														   , experimentalDesign = experimentalDesign
+														   , varSamplingCondition = as.character(tpts[[1]])
+														   , simulatedData = TRUE)
 
-	matureExpressions <- quantifyExpressionsFromTrAbundance(
-											 trAbundaces = list(
-														 exonsAbundances = totalSimReplicates
-										     			 , intronsAbundances = preMRNASimReplicates
-										     			 )
-								 			 , experimentalDesign = experimentalDesign
-								 			 , varSamplingCondition = as.character(tpts[[1]]))
+	matureExpressions <- quantifyExpressionsFromTrAbundance(trAbundaces = list(exonsAbundances = totalSimReplicates
+																			 , intronsAbundances = preMRNASimReplicates)
+														  , experimentalDesign = experimentalDesign
+														  , varSamplingCondition = as.character(tpts[[1]]))
 	if(!NoNascent)
 	{
 		## create the INSPEcT object
