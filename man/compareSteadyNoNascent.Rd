@@ -21,6 +21,8 @@ compareSteadyNoNascent(inspectIds, expressionThreshold = 0.25,
 \item{log2FCThreshold}{A parameter which sets the log2 fold change distance from the median behaviour that is imputable to noise.}
 }
 \description{
+Compare mature RNA steady state data from an object of class INSPEcT
+
 This function compare exons and introns expression level matrices, from two up to an arbitrary number of samples, in order
 to identify genes which are oddly regluated, compared to an expected standard behaviour, from the post transcriptional point of view.
 }

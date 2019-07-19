@@ -19,6 +19,8 @@ nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds
 sfPlot(nascentInspObj10)
 }
 \description{
+A nice plot to see scaling factors used for RNA-seq and Nascent-seq libraries
+
 This method generates a plot that immediately shows the scaling factors used to scale
 RNA- and Nascent-seq libraries and the possible relations between them. The ratio between the RNA- and the 
 Nascent-seq scaling can be in fact considered as a yield of the synthesis within the cells.

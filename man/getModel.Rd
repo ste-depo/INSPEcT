@@ -25,6 +25,8 @@ getModel(object) <- value
 An object of class INSPEcT model
 }
 \description{
+Get or replace INSPEcT_model object within INSPEcT object
+
 A method to get or set the INSPEcT_model object within an INSPEcT object. This method
 is particularly useful to get and set testing parameters of the INSPEcT_model object
 within the INSPEcT object.

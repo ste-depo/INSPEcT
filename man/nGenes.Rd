@@ -17,6 +17,8 @@ nGenes(object)
 A numeric that indicates the number of genes within the object
 }
 \description{
+Get the number of genes within the INSPEcT object
+
 A method to obtain the number of the genes associated with the object of class INSPEcT
 }
 \examples{

@@ -6,7 +6,7 @@
 \alias{INSPEcT-package}
 \title{INSPEcT package}
 \description{
-INSPEcT (INference of Synthesis, Processing and dEgradation rates from Transcriptome data),
+INSPEcT (INference of Synthesis, Processing and degradation rates from Transcriptome data),
 is a package that analyse RNA-seq data in order to evaluate synthesis, processing and degradation
 rates and asses via modeling the rates that determines changes in RNA levels.
 
