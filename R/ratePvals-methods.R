@@ -34,8 +34,6 @@ setMethod('ratePvals', 'INSPEcT_model', function(object, bTsh=NULL, cTsh=NULL) {
 setMethod('ratePvals', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL) {
 	if(!object@NoNascent)
 	{
-		# BPPARAM <- MulticoreParam(object@params$cores)
-
 		synthesis_left <- viewConfidenceIntervals(object,"synthesis_left")
 		synthesis_center <- viewModelRates(object,"synthesis")
 		synthesis_right <- viewConfidenceIntervals(object,"synthesis_right")
@@ -48,7 +46,7 @@ setMethod('ratePvals', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL) {
 		degradation_center <- viewModelRates(object,"degradation")
 		degradation_right <- viewConfidenceIntervals(object,"degradation_right")
 
-		fitResults_synthesis <- unlist(bplapply(featureNames(object),function(g)
+		fitResults_synthesis <- unlist(lapply(featureNames(object),function(g)
 		{
 			rate_conf_int <- cbind(synthesis_left[g,],synthesis_center[g,],synthesis_right[g,])
 			k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
@@ -56,9 +54,9 @@ setMethod('ratePvals', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL) {
 			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
 			pchisq(k_scores_out$value,length(tpts(object))-1,lower.tail=FALSE)
 			# return(list(par=k_scores_out$par, score=k_scores_out$value))
-		},BPPARAM=BPPARAM))
+		}))
 
-		fitResults_processing <- unlist(bplapply(featureNames(object),function(g)
+		fitResults_processing <- unlist(lapply(featureNames(object),function(g)
 		{
 			rate_conf_int <- cbind(processing_left[g,],processing_center[g,],processing_right[g,])
 			k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
@@ -66,9 +64,9 @@ setMethod('ratePvals', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL) {
 			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
 			pchisq(k_scores_out$value,length(tpts(object))-1,lower.tail=FALSE)
 			# return(list(par=k_scores_out$par, score=k_scores_out$value))
-		},BPPARAM=BPPARAM))
+		}))
 
-		fitResults_degradation <- unlist(bplapply(featureNames(object),function(g)
+		fitResults_degradation <- unlist(lapply(featureNames(object),function(g)
 		{
 			rate_conf_int <- cbind(degradation_left[g,],degradation_center[g,],degradation_right[g,])
 			k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
@@ -76,7 +74,7 @@ setMethod('ratePvals', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL) {
 			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
 			pchisq(k_scores_out$value,length(tpts(object))-1,lower.tail=FALSE)
 			# return(list(par=k_scores_out$par, score=k_scores_out$value))
-		},BPPARAM=BPPARAM))
+		}))
 
 		return(cbind("synthesis"=fitResults_synthesis,"processing"=fitResults_processing,"degradation"=fitResults_degradation))
 	}else{
