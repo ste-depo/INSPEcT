@@ -7,7 +7,6 @@
 #' provided. This method has to be used before the \code{\link{makeSimDataset}} method.
 #' @param object An object of class INSPEcT
 #' @param nGenes A numeric with the number of synthtic genes to be created
-#' @param newTpts A numeric verctor with time points of the synthtic dataset, if NULL the time points of the real dataset will be used
 #' @param probs A numeric matrix wich describes the probability of each rate (rows) to be constant, shaped like a sigmoid or like an impulse model (columns)
 #' @param na.rm A logical that set whether missing values in the real dataset should be removed
 #' @param seed A numeric to obtain reproducible results

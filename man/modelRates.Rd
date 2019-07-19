@@ -8,8 +8,8 @@
 \usage{
 modelRates(object, seed = NULL, BPPARAM = bpparam(), verbose = NULL)
 
-\S4method{modelRates}{INSPEcT}(object, seed = NULL,
-  BPPARAM = bpparam(), verbose = NULL)
+\S4method{modelRates}{INSPEcT}(object, seed = NULL, BPPARAM = bpparam(),
+  verbose = NULL)
 }
 \arguments{
 \item{object}{An object of class INSPEcT}

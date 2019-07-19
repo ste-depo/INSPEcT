@@ -17,6 +17,8 @@ nTpts(object)
 A numeric that indicates the number of time points contained the object
 }
 \description{
+Get the number of time points within the INSPEcT object
+
 A method to obtain the number of the tpts associated with the object of class INSPEcT
 }
 \examples{

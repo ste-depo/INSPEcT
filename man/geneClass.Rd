@@ -15,8 +15,7 @@ geneClass(object, bTsh = NULL, cTsh = NULL)
 
 \S4method{geneClass}{INSPEcT}(object, bTsh = NULL, cTsh = NULL)
 
-\S4method{geneClass}{INSPEcT_diffsteady}(object, bTsh = NULL,
-  cTsh = NULL)
+\S4method{geneClass}{INSPEcT_diffsteady}(object, bTsh = NULL, cTsh = NULL)
 }
 \arguments{
 \item{object}{An object of class INSPEcT or INSPEcT_model}
@@ -29,6 +28,8 @@ geneClass(object, bTsh = NULL, cTsh = NULL)
 A character containing the regulatory class for each gene
 }
 \description{
+Retrieve the regulatory class for each gene
+
 This method returns a factor that summarise the gene class (transcriptional regulatory mechanism) that
 INSPEcT has assigned to each gene. The classification depends on the chi-squared and Brown's method
 thresholds, that can be both provided as arguments. If the user decides a different thresholding respect to

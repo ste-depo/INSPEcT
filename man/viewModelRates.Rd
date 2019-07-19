@@ -19,6 +19,8 @@ viewModelRates(object, feature)
 A numeric matrix containing the values for the selected feature
 }
 \description{
+Retrieve the modeled rates and concentrations
+
 A method to access the modeld rates via the method \code{\link{modelRates}}
 }
 \examples{

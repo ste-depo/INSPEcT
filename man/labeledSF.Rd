@@ -19,6 +19,8 @@ of the data coming from Nascent-seq library (applies directly to synthesis
 rates and indirectly to degradation rates)
 }
 \description{
+Accessor to the slot labeledSF of an INSPEcT object
+
 Accessor to obtain the labeledSF slot associated with the object of class INSPEcT
 }
 \examples{

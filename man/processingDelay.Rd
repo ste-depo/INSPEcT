@@ -34,6 +34,8 @@ calculateTau(inspectIds, silent = FALSE)
 \item{silent}{A logical indicating whether informaiton about the procedure should be printed or not.}
 }
 \description{
+Classify genes as delayed by the processing using the delta and tau metrics
+
 These functions calculates the tau and delta metrics for all genes with introns and exons in an oblect of class INSPEcT.
 If the INSPEcT dataset was obtained with nascent RNA the metrics are caluclated using RNA dynamics and solving numerically the system of equations.
 If the INSPEcT dataset was obtained without nascent RNA the metrics are approximated using premature and mature levels.

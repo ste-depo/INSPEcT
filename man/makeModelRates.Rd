@@ -23,6 +23,8 @@ tpts : A vector of time points where rates and concentrations have to be evaluat
 An object of class ExpressionSet containing the modeled rates and concentrations
 }
 \description{
+Calculate modeled rates and concentrations
+
 This function is used to evaluate rates and concentrations after modeling of the 
 rates has been run with \code{\link{modelRates}}. The modeled rates are in functional 
 form and can be evaluated at any time points.

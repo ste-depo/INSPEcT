@@ -17,6 +17,8 @@ tpts(object)
 A numeric that indicates time points contained the object
 }
 \description{
+Accessor to the slot tpts of an INSPEcT object
+
 Accessor to obtain the tpts associated with the object of class INSPEcT
 }
 \examples{
