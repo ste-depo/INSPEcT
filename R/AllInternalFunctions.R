@@ -837,6 +837,18 @@ impulseModelP <- newPointer(impulseModel)
   -(2*b^2*(h1-h0)*(h1-h2)*exp(b*(t-t2)-b*(t-t1)))/(h1*(exp(-b*(t-t1))+1)^2*(exp(b*(t-t2))+1)^2)+((h1-h2)*((2*b^2*exp(2*b*(t-t2)))/(exp(b*(t-t2))+1)^3-(b^2*exp(b*(t-t2)))/(exp(b*(t-t2))+1)^2)*((h1-h0)/(exp(-b*(t-t1))+1)+h0))/h1+((h1-h0)*((2*b^2*exp(-2*b*(t-t1)))/(exp(-b*(t-t1))+1)^3-(b^2*exp(-b*(t-t1)))/(exp(-b*(t-t1))+1)^2)*((h1-h2)/(exp(b*(t-t2))+1)+h2))/h1
 }
 
+############### oscillatory
+
+oscillatoryModel <- function(x, par) 
+{
+	freq = par[1]
+	initial_value = par[2]
+	amplitude = par[3]
+	x_shift = par[4]
+	initial_value + initial_value * amplitude * sin(freq * (x - x_shift))
+}
+oscillatoryModelP <- newPointer(oscillatoryModel)
+
 ############### polynomial
 
 .polynomialModel <- function(x, par)
