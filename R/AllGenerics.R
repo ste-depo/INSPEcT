@@ -12,7 +12,7 @@ setGeneric('modelSelection<-', function(object, value)
 setGeneric('chisqtest', function(object, ...) 
 	standardGeneric('chisqtest'))
 #' Retrieve results of chi-squared test for the selected models
-setGeneric('chisqmodel', function(object, ...) 
+setGeneric('chisqmodel', function(object, gc=NULL, tpts=NULL, ...) 
 	standardGeneric('chisqmodel'))
 #' Retrieve results of log likelihood test
 setGeneric('logLik', function(object, ...) 
@@ -26,8 +26,11 @@ setGeneric('geneClass', function(object, bTsh=NULL, cTsh=NULL)
 #' Calculate modeled rates and concentrations
 setGeneric('makeModelRates', function(object, ...) 
 	standardGeneric('makeModelRates'))
+#' Compute confidence intervals
+setGeneric('computeConfidenceIntervals', function(object, computeConfidenceIntervals, ...) 
+	standardGeneric('computeConfidenceIntervals'))
 #' Set confidence intervals
-setGeneric('setConfidenceIntervals', function(object, setConfidenceIntervals, ...) 
+setGeneric('setConfidenceIntervals', function(object, confidenceIntervals, ...) 
 	standardGeneric('setConfidenceIntervals'))
 #' Generate synthetic rates and concentrations
 setGeneric('makeSimDataset', function(object, tpts, nRep, NoNascent = FALSE, seed=NULL, b = NULL, tL = NULL, noise_sd = 0)
@@ -90,10 +93,6 @@ setGeneric('modelRates', function(object, seed=NULL, BPPARAM=bpparam(), verbose=
 setGeneric('makeSimModel', function(object, nGenes, newTpts=NULL
 		, probs=c(constant=.5,sigmoid=.3,impulse=.2), na.rm=TRUE, seed=NULL) 
 	standardGeneric('makeSimModel'))
-#' Build the synthetic rates with oscillatory pattern
-setGeneric('makeOscillatorySimModel', function(object, nGenes
-		, oscillatoryk3=FALSE, k3delay=NULL, na.rm=TRUE, seed=NULL) 
-	standardGeneric('makeOscillatorySimModel'))
 #' Retrieve the modeled rates and concentrations
 setGeneric('viewModelRates', function(object, feature) 
 	standardGeneric('viewModelRates'))

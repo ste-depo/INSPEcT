@@ -149,8 +149,8 @@ calculate_rates_pvalues <- function(object, bTsh, cTsh, dfmax=Inf) {
 			}
 			colnames(alphaLLRtestPvlas) <- colnames(alphaChisqMask) <-
 				sapply(alphaCols, paste, collapse='_VS_')
-			alphaChisqMask <- alphaChisqMask[,which(apply(alphaLLRtestPvlas,2,var,na.rm=T)!=0)]
-			alphaLLRtestPvlas <- alphaLLRtestPvlas[,which(apply(alphaLLRtestPvlas,2,var,na.rm=T)!=0)]
+			# alphaChisqMask <- alphaChisqMask[,which(apply(alphaLLRtestPvlas,2,var,na.rm=T)!=0)]
+			# alphaLLRtestPvlas <- alphaLLRtestPvlas[,which(apply(alphaLLRtestPvlas,2,var,na.rm=T)!=0)]
 		} else {
 			alphaLLRtestPvlas <- rep(1, length(ratesSpecs))
 		}
@@ -180,8 +180,8 @@ calculate_rates_pvalues <- function(object, bTsh, cTsh, dfmax=Inf) {
 			colnames(betaLLRtestPvlas) <- colnames(betaChisqMask) <-
 				sapply(betaCols, paste, collapse='_VS_')
 
-			betaChisqMask <- betaChisqMask[,which(apply(betaLLRtestPvlas,2,var,na.rm=T)!=0)]
-			betaLLRtestPvlas <- betaLLRtestPvlas[,which(apply(betaLLRtestPvlas,2,var,na.rm=T)!=0)]
+			# betaChisqMask <- betaChisqMask[,which(apply(betaLLRtestPvlas,2,var,na.rm=T)!=0)]
+			# betaLLRtestPvlas <- betaLLRtestPvlas[,which(apply(betaLLRtestPvlas,2,var,na.rm=T)!=0)]
 		} else {
 			betaLLRtestPvlas <- rep(1, length(ratesSpecs))
 		}
@@ -210,23 +210,21 @@ calculate_rates_pvalues <- function(object, bTsh, cTsh, dfmax=Inf) {
 			}
 			colnames(gammaLLRtestPvlas) <- colnames(gammaChisqMask) <-
 				sapply(gammaCols, paste, collapse='_VS_')
-			gammaChisqMask <- gammaChisqMask[,which(apply(gammaLLRtestPvlas,2,var,na.rm=T)!=0)]
-			gammaLLRtestPvlas <- gammaLLRtestPvlas[,which(apply(gammaLLRtestPvlas,2,var,na.rm=T)!=0)]
+			# gammaChisqMask <- gammaChisqMask[,which(apply(gammaLLRtestPvlas,2,var,na.rm=T)!=0)]
+			# gammaLLRtestPvlas <- gammaLLRtestPvlas[,which(apply(gammaLLRtestPvlas,2,var,na.rm=T)!=0)]
 		} else {
 			gammaLLRtestPvlas <- rep(1, length(ratesSpecs))
 		} 
 		#If we have a matrix of pValues we proceed with the Brown's test, otherwise it is useless
-		if(is.matrix(alphaLLRtestPvlas)){synthesisBP <- brown_method_mask(alphaLLRtestPvlas, alphaChisqMask)}
-		else{synthesisBP <- alphaLLRtestPvlas}
-		if(is.matrix(betaLLRtestPvlas)){degradationBP <- brown_method_mask(betaLLRtestPvlas, betaChisqMask)}
-		else{degradationBP <- betaLLRtestPvlas}
-		if(is.matrix(gammaLLRtestPvlas)){processingBP <- brown_method_mask(gammaLLRtestPvlas, gammaChisqMask)}
-		else{processingBP <- gammaLLRtestPvlas}
+		if(is.matrix(alphaLLRtestPvlas)){synthesisBP <- brown_method_mask(alphaLLRtestPvlas, alphaChisqMask)}else{synthesisBP <- alphaLLRtestPvlas}
+		if(is.matrix(betaLLRtestPvlas)){degradationBP <- brown_method_mask(betaLLRtestPvlas, betaChisqMask)}else{degradationBP <- betaLLRtestPvlas}
+		if(is.matrix(gammaLLRtestPvlas)){processingBP <- brown_method_mask(gammaLLRtestPvlas, gammaChisqMask)}else{processingBP <- gammaLLRtestPvlas}
+
 		if(object@params$padj)
 		{
-			synthesisBP <- p.adjust(synthesisBP,method="BH",n=length(synthesisBP))
-			degradationBP <- p.adjust(degradationBP,method="BH",n=length(degradationBP))
-			processingBP <- p.adjust(processingBP,method="BH",n=length(processingBP))
+			synthesisBP <- p.adjust(synthesisBP,method="BH",n=object@modeledGenes)
+			degradationBP <- p.adjust(degradationBP,method="BH",n=object@modeledGenes)
+			processingBP <- p.adjust(processingBP,method="BH",n=object@modeledGenes)
 		}
 		ratePvals <- data.frame(
 			synthesis=synthesisBP
@@ -292,8 +290,10 @@ calculate_rates_pvalues <- function(object, bTsh, cTsh, dfmax=Inf) {
 			ratePvals[,c('a'='synthesis','b'='degradation','c'='processing')[rates_to_avoid]] <- 1
 		}
  		if(object@params$padj) {
-			ratePvals <- data.frame(apply(ratePvals, 2, p.adjust, method="BH"))
+			ratePvals <- data.frame(apply(ratePvals, 2, p.adjust, method="BH", n=object@modeledGenes))
+			if(ncol(ratePvals)!=3){ratePvals <- t(ratePvals); rownames(ratePvals) <- rownames(aictest)}
 		}
+		return(ratePvals)
 	}
 	if( object@params$modelSelection=='llr' ) {
 		ratePvals <- llr_temp_function()

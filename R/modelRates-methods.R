@@ -191,8 +191,9 @@ setMethod('modelRates', 'INSPEcT', function(object
 
 	# Split between genes with and without intronic signal
 		eiGenes <- rownames(concentrations$preMRNA[is.finite(concentrations$preMRNA[,1]),])
-		eGenes <- rownames(concentrations$preMRNA[!is.finite(concentrations$preMRNA[,1]),])
-
+		eGenes <- NULL # rownames(concentrations$preMRNA[!is.finite(concentrations$preMRNA[,1]),])
+		message("Simple methods still to setup")
+		
 		if(!is.null(eiGenes))
 		{
 			eiConcentrations <- lapply(concentrations,function(o){o[eiGenes,]})
@@ -234,7 +235,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 																  , derivativePenalityRelevance=derivativePenalityRelevance
 																  , llConfidenceThreshold=llConfidenceThreshold)
 			}else{stop('modelRates: the user must set the variable "estimateRatesWith" either equal to "int" or equal to "der" (default).')}
-	
+
 			eiconfidenceIntervals <- eiRatesSpecs$confidenceIntervals
 			eiRatesSpecs <- eiRatesSpecs$ratesSpecs
 
@@ -285,6 +286,8 @@ setMethod('modelRates', 'INSPEcT', function(object
 		object@model@ratesSpecs <- ratesSpecs
 		object <- makeModelRates(object)
 		object <- setConfidenceIntervals(object=object,confidenceIntervals=confidenceIntervals)
+
+		object@model@modeledGenes <- length(featureNames(object))
 
 		return(object)
 	}

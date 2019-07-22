@@ -9,9 +9,11 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' viewConfidenceIntervals(nascentInspObj10, 'synthesis')
 setMethod('viewConfidenceIntervals', 'INSPEcT', function(object, feature) {
-
-	if(object@NoNascent)stop('viewConfidenceIntervals: no confidence intervals for INSPEcT objects without nascent RNA.')
-
 	ix <- grep(feature,pData(object@confidenceIntervals)$feature)
-	exprs(object@confidenceIntervals)[,ix, drop=FALSE]
+	out <- exprs(object@confidenceIntervals)[,ix, drop=FALSE]
+	if(all(dim(out)==c(0,0)))
+	{
+		message("Confidence intervals must be computed!")
+		return(NaN)
+	}else{return(out)}
 })
