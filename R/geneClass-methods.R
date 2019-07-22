@@ -57,25 +57,25 @@ setMethod('geneClass', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL)
 
 })
 
-score_and_par <- function(conf_int) {
+# score_and_par <- function(conf_int) {
 
-	k_scores_out <- lapply(seq_along(conf_int), function(gene)
-		{
-			gene <- conf_int[[gene]]
-			lapply(gene, function(rate_conf_int) {
+# 	k_scores_out <- lapply(seq_along(conf_int), function(gene)
+# 		{
+# 			gene <- conf_int[[gene]]
+# 			lapply(gene, function(rate_conf_int) {
 
-		k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
-		if(!is.finite(k_start)) return(list(par=NaN, value=NaN))
-		optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)	
-		})
-	})
+# 		k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
+# 		if(!is.finite(k_start)) return(list(par=NaN, value=NaN))
+# 		optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)	
+# 		})
+# 	})
 
-	k_par <- t(sapply(k_scores_out, function(x) sapply(x,'[[','par')))
-	k_value <- t(sapply(k_scores_out, function(x) sapply(x,'[[','value')))
+# 	k_par <- t(sapply(k_scores_out, function(x) sapply(x,'[[','par')))
+# 	k_value <- t(sapply(k_scores_out, function(x) sapply(x,'[[','value')))
 
-	return(list(par=k_par, score=k_value))
+# 	return(list(par=k_par, score=k_value))
 
-}
+# }
 
 .bestModel_confidenceIntervals <- function(object,ciTsh=NULL)
 {

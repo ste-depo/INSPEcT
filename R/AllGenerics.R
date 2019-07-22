@@ -89,6 +89,9 @@ setGeneric('ratesFirstGuessVar', function(object, feature)
 #' @description Launch the modeling process with parameters set with \code{\link{modelingParams}}
 setGeneric('modelRates', function(object, seed=NULL, BPPARAM=bpparam(), verbose=NULL) 
 	standardGeneric('modelRates'))
+#' @rdname modelRates
+setGeneric('modelRatesNF', function(object, BPPARAM=SerialParam()) 
+	standardGeneric('modelRatesNF'))
 #' Build the synthetic rates shaped on a dataset
 setGeneric('makeSimModel', function(object, nGenes, newTpts=NULL
 		, probs=c(constant=.5,sigmoid=.3,impulse=.2), na.rm=TRUE, seed=NULL) 
