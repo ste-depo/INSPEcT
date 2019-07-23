@@ -220,7 +220,15 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 	## in case some elements of ratesSpecs are longer than one,
 	# meaning that a unique choiche for a model has not been done yet,
 	# choose one using "bestModel" method
-	if( any(sapply(ratesSpecs, length)!=1) ) ratesSpecs <- .bestModel(object@model)@ratesSpecs
+	if( any(sapply(ratesSpecs, length)!=1) )
+	{	
+		if(object@NoNascent)
+		{
+			ratesSpecs <- .bestModel(object@model)@ratesSpecs			
+		}else{
+			ratesSpecs <- .bestModel(object@model,Nascent=TRUE)@ratesSpecs # Always VVV
+		}
+	}
 	names(ratesSpecs) <- allGenes
 	bestModels <- sapply(ratesSpecs,names)
 
