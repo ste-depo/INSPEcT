@@ -52,6 +52,8 @@ setMethod('modelRatesNF', 'INSPEcT', function(object, BPPARAM=SerialParam())
 
 	}
 
+	browser()
+
 	object@modelRates <- object@ratesFirstGuess ## da modificare con le rates ottimizzate 
 	## poi:
 	#### - aggiungere flag "Non-functional" perché la funzione ratePvals possa usare gli intervalli
@@ -243,7 +245,7 @@ piecedFunctionLogLikelihood4sU <- function(parameters, tpts, experimentalP, expe
 						  variance = c(varianceM, varianceP, varianceK1))		
 }
 
-perturbedLogLikelihood4sU <- function(parameter,name,parameters,tpts,experimentalP,experimentalM,experimentalK1,varianceP,varianceM,varianceK1,N)
+perturbedLogLikelihood4sU_NF <- function(parameter,name,parameters,tpts,experimentalP,experimentalM,experimentalK1,varianceP,varianceM,varianceK1,N)
 {
 
 	perturbedParameters <- parameters
@@ -290,7 +292,7 @@ piecedFunctionLogLikelihood <- function(parameters, tpts, experimentalP, experim
 						  variance = c(varianceM, varianceP))		
 }
 
-perturbedLogLikelihood <- function(parameter,name,parameters,tpts,experimentalP,experimentalM,varianceP,varianceM,N)
+perturbedLogLikelihood_NF <- function(parameter,name,parameters,tpts,experimentalP,experimentalM,varianceP,varianceM,N)
 {
 
 	perturbedParameters <- parameters
@@ -306,7 +308,7 @@ perturbedLogLikelihood <- function(parameter,name,parameters,tpts,experimentalP,
 							  )	
 }
 
-logLikelihoodCIerror <- function(parameter,name,parameters,tpts,experimentalP,experimentalM,varianceP,varianceM,N,confidenceThreshold)
+logLikelihoodCIerror_NF <- function(parameter,name,parameters,tpts,experimentalP,experimentalM,varianceP,varianceM,N,confidenceThreshold)
 {
 
 	maximumLogLikelihoodTmp <- piecedFunctionLogLikelihood(parameters = parameters
@@ -318,7 +320,7 @@ logLikelihoodCIerror <- function(parameter,name,parameters,tpts,experimentalP,ex
 														 , N = N
 														 )
 	
-	perturbedLogLikelihoodTmp <- perturbedLogLikelihood(parameter = parameter
+	perturbedLogLikelihoodTmp <- perturbedLogLikelihood_NF(parameter = parameter
 													  , name = name
 													  , parameters = parameters
 													  , tpts = tpts
@@ -493,7 +495,7 @@ estimate_priors <- function(
 
 }
 
-logLikelihoodCIerror4sU <- function(parameter,name,parameters,tpts,experimentalP,experimentalM,experimentalK1,varianceP,varianceM,varianceK1,N,confidenceThreshold)
+logLikelihoodCIerror4sU_NF <- function(parameter,name,parameters,tpts,experimentalP,experimentalM,experimentalK1,varianceP,varianceM,varianceK1,N,confidenceThreshold)
 {
 
 	maximumLogLikelihoodTmp <- piecedFunctionLogLikelihood4sU(parameters = parameters
@@ -507,7 +509,7 @@ logLikelihoodCIerror4sU <- function(parameter,name,parameters,tpts,experimentalP
 														 , N = N
 														 )
 	
-	perturbedLogLikelihoodTmp <- perturbedLogLikelihood4sU(parameter = parameter
+	perturbedLogLikelihoodTmp <- perturbedLogLikelihood4sU_NF(parameter = parameter
 													  , name = name
 													  , parameters = parameters
 													  , tpts = tpts
@@ -670,11 +672,11 @@ classify_rates_from_priors_4sU_v5 <- function(
 		{
 			par <- parameters[parname]
 			mOut = list(
-				left_1 =tryCatch(multiroot(f = logLikelihoodCIerror4sU, start = 1e-2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
-				left_2 =tryCatch(multiroot(f = logLikelihoodCIerror4sU, start = 1/2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
-				center =tryCatch(multiroot(f = logLikelihoodCIerror4sU, start = par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
-				right_1 =tryCatch(multiroot(f = logLikelihoodCIerror4sU, start = 2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
-				right_2 =tryCatch(multiroot(f = logLikelihoodCIerror4sU, start = 1e2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN))
+				left_1 =tryCatch(multiroot(f = logLikelihoodCIerror4sU_NF, start = 1e-2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
+				left_2 =tryCatch(multiroot(f = logLikelihoodCIerror4sU_NF, start = 1/2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
+				center =tryCatch(multiroot(f = logLikelihoodCIerror4sU_NF, start = par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
+				right_1 =tryCatch(multiroot(f = logLikelihoodCIerror4sU_NF, start = 2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
+				right_2 =tryCatch(multiroot(f = logLikelihoodCIerror4sU_NF, start = 1e2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN))
 			)
 			precis = sapply(mOut, '[[', 'f.root')
 
@@ -871,11 +873,11 @@ classify_rates_from_priors_v5 <- function(
 		{
 			par <- parameters[parname]
 			mOut = list(
-				left_1 =tryCatch(multiroot(f = logLikelihoodCIerror, start = 1e-2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
-				left_2 =tryCatch(multiroot(f = logLikelihoodCIerror, start = 1/2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
-				center =tryCatch(multiroot(f = logLikelihoodCIerror, start = par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
-				right_1 =tryCatch(multiroot(f = logLikelihoodCIerror, start = 2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
-				right_2 =tryCatch(multiroot(f = logLikelihoodCIerror, start = 1e2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN))
+				left_1 =tryCatch(multiroot(f = logLikelihoodCIerror_NF, start = 1e-2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
+				left_2 =tryCatch(multiroot(f = logLikelihoodCIerror_NF, start = 1/2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
+				center =tryCatch(multiroot(f = logLikelihoodCIerror_NF, start = par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
+				right_1 =tryCatch(multiroot(f = logLikelihoodCIerror_NF, start = 2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
+				right_2 =tryCatch(multiroot(f = logLikelihoodCIerror_NF, start = 1e2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN))
 			)
 			precis = sapply(mOut, '[[', 'f.root')
 
