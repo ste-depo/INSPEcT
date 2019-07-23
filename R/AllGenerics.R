@@ -96,6 +96,10 @@ setGeneric('modelRatesNF', function(object, BPPARAM=SerialParam())
 setGeneric('makeSimModel', function(object, nGenes, newTpts=NULL
 		, probs=c(constant=.5,sigmoid=.3,impulse=.2), na.rm=TRUE, seed=NULL) 
 	standardGeneric('makeSimModel'))
+#' Build the synthetic rates with oscillatory pattern
+setGeneric('makeOscillatorySimModel', function(object, nGenes
+		, oscillatoryk3=FALSE, k3delay=NULL, na.rm=TRUE, seed=NULL) 
+	standardGeneric('makeOscillatorySimModel'))
 #' Retrieve the modeled rates and concentrations
 setGeneric('viewModelRates', function(object, feature) 
 	standardGeneric('viewModelRates'))
