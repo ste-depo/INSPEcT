@@ -9992,8 +9992,7 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 	})
 
 	# saveRDS(accelerationCoefficient,"accelerationCoefficient.rds")
-
-	eiGenes <- rownames(mature)
+	# eiGenes <- rownames(mature)
 
  	print("VVV modeling.")
 	VVV <- bplapply(eiGenes,function(row){

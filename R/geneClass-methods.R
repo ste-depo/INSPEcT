@@ -98,7 +98,8 @@ setMethod('geneClass', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL)
 	return(geneClass)
 }
 
-.bestModel <- function(object, bTsh=NULL, cTsh=NULL) {
+.bestModel <- function(object, bTsh=NULL, cTsh=NULL, Nascent = FALSE) {
+
 	preferPValue <- object@params$preferPValue
 	
 	## in case bTsh or bTsh are provided set them as
@@ -107,9 +108,17 @@ setMethod('geneClass', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL)
 		bTsh <- object@params$thresholds$brown
 	if( is.null(cTsh) )
 		cTsh <- object@params$thresholds$chisquare
-	## calculate ratePvals
-	ratePvals <- ratePvals(object, bTsh, cTsh)
-	ratePvals <- replace(ratePvals,is.na(ratePvals),1)
+
+	if(Nascent) # It must be always VVV, just for makeModelRates
+	{
+		ratePvals <- matrix(rep(0,length(object@ratesSpecs)*3),ncol=3)
+		rownames(ratePvals) <- names(object@ratesSpecs)
+		colnames(ratePvals) <- c("synthesis","processing","degradation")
+	}else{
+		## calculate ratePvals
+		ratePvals <- ratePvals(object, bTsh, cTsh)
+		ratePvals <- replace(ratePvals,is.na(ratePvals),1)
+	}
 
 	if(preferPValue)
 	{

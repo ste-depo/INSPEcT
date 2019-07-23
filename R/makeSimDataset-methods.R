@@ -135,24 +135,58 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 		totalFitVarianceLaw <- object@params$sim$noiseFunctions$total
 		preFitVarianceLaw <- object@params$sim$noiseFunctions$pre
 
-		X <- mean((b/(1 - b))*((L_exons+L_introns)/(U_exons+U_introns)))
+		## Evaluate sigma X from the sigma of b
+		# X_noise_sd <- mean((L_exons+L_introns)/(U_exons+U_introns)*((1/(1-b))-(b/(1-b)^2))*noise_sd)
+		## Standard deviation on X from the sd of b
+		X <- (b/(1 - b))*((L_exons+L_introns)/(U_exons+U_introns))
+		# b <- X/(X+(L_exons+L_introns)/(U_exons+U_introns))
+		X_noisy <- X*matrix(rnorm(length(X), 1, sd = noise_sd),nrow=nrow(X),ncol=ncol(X))
+		
+		X_noisy[X_noisy<0] <- 0
+		X_noisy[X_noisy>1] <- 1
 
-		X_noisy <- rnorm(1000*nrow(L_exons), X, sd = noise_sd)
-		X_noisy <- X_noisy[X_noisy>=0&X_noisy<=1]
+		b_noisy <- X_noisy/(X_noisy+(L_exons+L_introns)/(U_exons+U_introns))
 
-		if(length(X_noisy)<nrow(L_exons))
-		{
-			message("makeSimDataset: warning, very large noise coefficient standard deviation! ")
-			X_noisy <- c(X_noisy,rep(b,length.out=nrow(L_exons) - length(X_noisy)))
-		}
+		message(paste0("b_noisy momenta: ",mean(b_noisy)," - ",sd(b_noisy)))
 
-		X_noisy <- sample(X_noisy,nrow(L_exons))
+		## calculate the noise distribution
+		# X_noisy <- rnorm(1000*nrow(L_exons), X, sd = X_noise_sd)
 
-		E_exons <- L_exons + X*U_exons
-		E_introns <- L_introns + X*U_introns
+		# X_noisy <- X_noisy[X_noisy>=0&X_noisy<=1]
+		# if(length(X_noisy)<nrow(L_exons))
+		# {
+		# 	message("makeSimDataset: warning, very large noise coefficient standard deviation! ")
+		# 	X_noisy <- c(X_noisy,rep(X,length.out=nrow(L_exons) - length(X_noisy)))
+		# }
+		# X_noisy <- sample(X_noisy,nrow(L_exons))
+
+		# X_noisy x<- (L_exons+L_introns)/(U_exons+U_introns)*((1/(1-b))-(b/(1-b)^2))*noise_sd
+		# b_noisy <- 	X_noisy/(X_noisy+mean((L_exons+L_introns)/(U_exons+U_introns)))
+
+
+		### We set a standard deviation on X, instead of b, because the boundaries for this parameter
+		### are more clear and identical for all the genes (0 <= X <= 1) while for b the boundaries
+		### are gene dependent (0 <= b <= 1 - (L)/(L + U))
+		#
+		# ## Standard deviation on b
+		# b_noisy <- rnorm(1000*nrow(L_exons), b, sd = noise_sd)
+		# b_noisy <- b_noisy[b_noisy>=0&b_noisy<=1]
+
+		# if(length(b_noisy)<nrow(L_exons))
+		# {
+		# 	message("makeSimDataset: warning, very large noise coefficient standard deviation! ")
+		# 	b_noisy <- c(b_noisy,rep(b,length.out=nrow(L_exons) - length(b_noisy)))
+		# }
+
+		# b_noisy <- sample(b_noisy,nrow(L_exons))
+
+		# X_noisy <- (b_noisy/(1 - b_noisy))*apply(((L_exons+L_introns)/(U_exons+U_introns)),1,mean)
 
 	### NEW CORRUPTION END ###
 	
+		E_exons <- L_exons + X_noisy*U_exons
+		E_introns <- L_introns + X_noisy*U_introns
+
 		E_exons_var <- t(apply(E_exons,1,function(r){totalFitVarianceLaw(r)}))
 		E_introns_var <- t(apply(E_introns,1,function(r){preFitVarianceLaw(r)}))
 
