@@ -265,7 +265,6 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 			# eiModelRates <- c(eiModelRates,eModelRates)
 		}
 	}
-
 	modelRates <- eiModelRates
 	## make an objec of ExpressionSet class
 	exprData <- cbind(t(sapply(modelRates, function(x) x$total))

@@ -53,7 +53,8 @@ quantifyExpressionsFromBAMs <- function(txdb
 					, strandSpecific = 0
 					, isPairedEnd = FALSE
 					, DESeq2 = TRUE
-					, varSamplingCondition = NULL)
+					, varSamplingCondition = NULL
+					, BPPARAM = MulticoreParam(1))
 {
 
 	############################################
@@ -140,7 +141,7 @@ quantifyExpressionsFromBAMs <- function(txdb
 		names(BAMfiles) <- paste(experimentalDesign, paste0('rep',replicate_id), sep='_')
 	}
 
-	iecounts <- lapply(BAMfiles, function(bamfile)
+	iecounts <- bplapply(BAMfiles, function(bamfile)
 	{
 			message(paste('##### - File:',bamfile,'- #####'))
 			if( countMultiMappingReads ) {
@@ -203,7 +204,7 @@ quantifyExpressionsFromBAMs <- function(txdb
 				)
 
 			return(list(exonCounts=exonCounts, intronCounts=intronCounts, countsStats=stat))
-	})
+	},BPPARAM=BPPARAM)
 	allcounts <- lapply(c(exonsCounts="exonCounts",intronsCounts="intronCounts",countsStats="countsStats")
 			, function(name) sapply(iecounts,'[[',name))
 	libsize <- colSums(allcounts$countsStats[c('Assigned_Exons','Assigned_Introns'),,drop=FALSE])

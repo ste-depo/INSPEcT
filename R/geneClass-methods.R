@@ -89,7 +89,7 @@ setMethod('geneClass', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL)
 
 	geneClass <- apply(cbind(fitResults_synthesis,fitResults_processing,fitResults_degradation),1,function(r)
 	{
-		r <- r>ciTsh
+		r <- r < (1 - unlist(ciTsh))
 		if(!r[1]&!r[2]&!r[3]) return("0")
 		if(r[1]&!r[2]&!r[3]) return("a")
 		if(!r[1]&r[2]&!r[3]) return("b")

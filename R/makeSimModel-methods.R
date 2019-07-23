@@ -7,6 +7,7 @@
 #' provided. This method has to be used before the \code{\link{makeSimDataset}} method.
 #' @param object An object of class INSPEcT
 #' @param nGenes A numeric with the number of synthtic genes to be created
+#' @param newTpts A numeric verctor with time points of the synthtic dataset, if NULL the time points of the real dataset will be used
 #' @param probs A numeric matrix wich describes the probability of each rate (rows) to be constant, shaped like a sigmoid or like an impulse model (columns)
 #' @param na.rm A logical that set whether missing values in the real dataset should be removed
 #' @param seed A numeric to obtain reproducible results
@@ -108,163 +109,6 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 
 }
 
-sampleNormQuantile <- function(values_subject
-							 , dist_subject
-							 , dist_object, na.rm=FALSE
-							 , quantiles=100)
-# sample values from the distribution OBJECT given that some values of the 
-# distribution SUBJECT are known.
-{
-	quantileMeanVar <- function(dist_subject, dist_object=NULL, na.rm=FALSE, quantiles)
-	# for each quantile of the distribution SUBJECT gives back
-	# the mean and the standard deviation of distribution OBJECT
-	{
-		if( is.null(dist_object)) 
-			dist_object <- dist_subject
-		idx <- .which.quantile(values=dist_subject, na.rm=na.rm, 
-			quantiles=quantiles)
-		distMean <- tapply(dist_object, idx, mean)
-		distVar <- tapply(dist_object, idx, stats::var)
-		return(cbind(mean=distMean, var=distVar))
-	}
-	## linearize the time-course matrices into vectors of values
-	dist_subject <- c(dist_subject)
-	dist_object  <- c(dist_object)
-	if( na.rm ) {
-		tokeep <- is.finite(dist_subject) & is.finite(dist_object)
-		dist_subject <- dist_subject[tokeep]
-		dist_object  <- dist_object[tokeep]
-	}
-	## number of quantile can't be too large in order that each quantile
-	## can host al least 4 elements
-	quantiles <- min(quantiles, floor(length(dist_subject)/4))
-	## sample the values
-	idx <- .which.quantile(
-		values         = values_subject 
-		, distribution = dist_subject 
-		, quantiles    = quantiles
-		, na.rm        = na.rm
-		)
-	qmv <- quantileMeanVar(
-		dist_subject  = dist_subject 
-		, dist_object = dist_object
-		, quantiles   = quantiles
-		, na.rm       = na.rm
-		)
-	values_object <- rep(NA, length(values_subject))
-
-	for(i in 1:quantiles)
-	{
-		nobjects <- length(which(idx==i))
-		if(nobjects!=0){
-			values_object[idx==i] <- rnorm(
-				nobjects
-				, mean=qmv[as.character(i),'mean'] 
-				, sd=sqrt(qmv[as.character(i),'var']) 
-				)
-		}
-	}
-	return(values_object)
-}
-
-sampleNorm2DQuantile <- function(values_subject1
-							   , values_subject2
-							   , dist_subject1
-							   , dist_subject2
-							   , dist_object
-							   , na.rm=FALSE
-							   , quantiles=10)
-# sample values from the distribution OBJECT given that some values odf the 
-# distribution SUBJECT are known.
-{
-	dist_subject1 <- c(dist_subject1)
-	dist_subject2 <- c(dist_subject2)
-	dist_object   <- c(dist_object)
-	if( na.rm ) {
-		tokeep <- is.finite(dist_subject1) & is.finite(dist_subject2) & 
-			is.finite(dist_object)
-		dist_subject1 <- dist_subject1[tokeep]
-		dist_subject2 <- dist_subject2[tokeep]
-		dist_object <- dist_object[tokeep]
-	}
-	## number of quantile can't be too large in order that each quantile
-	## can host al least 4 elements
-	quantiles <- min(quantiles, floor(sqrt(length(dist_subject1)/4)))
-	##
-	idx1 <- .which.quantile(values_subject1, dist_subject1, 
-		na.rm=na.rm, quantiles=quantiles)
-	idx2 <- .which.quantile(values_subject2, dist_subject2, 
-		na.rm=na.rm, quantiles=quantiles)
-
-	quantile2DMeanVar <- function(dist_subject1
-								, dist_subject2
-								, dist_object
-								, na.rm=FALSE
-								, quantiles=100)
-	# for each quantile of the distribution SUBJECT1 and SUBJECT2 gives
-	# back the mean and the standard deviation of distribution OBJECT. 
-	# Returns the two square matrices of mean and variance corresponding 
-	# to each pair of quantiles of SUBJECT1 and SUBJECT2.
-	{
-		idx1 <- .which.quantile(dist_subject1, na.rm=na.rm, quantiles=quantiles)
-		idx2 <- .which.quantile(dist_subject2, na.rm=na.rm, quantiles=quantiles)
-		meansTab <- matrix(NA, nrow=quantiles, ncol=quantiles)
-		varsTab  <- matrix(NA, nrow=quantiles, ncol=quantiles)
-		for(i1 in unique(idx1))
-		{
-			for(i2 in unique(idx2))
-			{
-				# belonging to either quantiles
-				ix <- idx1 == i1 & idx2 == i2
-				meansTab[i1,i2] <- mean(dist_object[ix])
-				varsTab[i1,i2]  <- stats::var(dist_object[ix])
-			}
-		}
-		# fill the missing values
-		na.fill <- function(mat)
-		# Fill the NA values of a matrix with the mean of the surroundings.
-		# Iterates until all the missing values are filled.
-		{
-			if( all(is.na(mat))) return(mat)
-			nRow <- nrow(mat)
-			nCol <- ncol(mat)
-			while(length(which(is.na(mat))) > 0){
-				for(i in 1:nrow(mat)){
-					for(j in 1:ncol(mat)){
-						if( is.na(mat[i,j]))
-						{
-							idx_top <- max(1,i-1)
-							idx_bottom <- min(nRow,i+1)
-							idx_left <- max(1,j-1)
-							idx_right <- min(nCol,j+1)
-							surroundingRows <- idx_top:idx_bottom
-							surroundingCols <- idx_left:idx_right
-							mat[i,j] <- mean(
-								mat[surroundingRows,surroundingCols], 
-								na.rm=TRUE
-								)
-						} } } }
-			return(mat)
-		}
-		meansTab <- na.fill(meansTab)
-		varsTab  <- na.fill(varsTab)
-		return(list(mean=meansTab,var=varsTab))
-	}
-
-	q2dmv <- quantile2DMeanVar(dist_subject1, dist_subject2, dist_object, 
-		na.rm=na.rm, quantiles=quantiles)
-	sampledValues <- sapply(1:length(idx1), function(i) {
-		qtMean <- q2dmv$mean[idx1[i], idx2[i]]
-		qtVar <- q2dmv$var[idx1[i], idx2[i]]
-		########## Why not sqrt(qtVar) ?????????????
-		# changed to sd=sqrt(qtVar), previously was:
-		# sd=qtVar
-		return(rnorm(1, mean=qtMean, sd=sqrt(qtVar)))
-		})
-	return(sampledValues)		
-}
-
-
 .makeSimData <- function(nGenes
 					   , tpts
 					   , concentrations
@@ -277,6 +121,162 @@ sampleNorm2DQuantile <- function(values_subject1
 	######################
 	# internal functions ###
 	##########################
+
+	sampleNormQuantile <- function(values_subject
+								 , dist_subject
+								 , dist_object, na.rm=FALSE
+								 , quantiles=100)
+	# sample values from the distribution OBJECT given that some values of the 
+	# distribution SUBJECT are known.
+	{
+		quantileMeanVar <- function(dist_subject, dist_object=NULL, na.rm=FALSE, quantiles)
+		# for each quantile of the distribution SUBJECT gives back
+		# the mean and the standard deviation of distribution OBJECT
+		{
+			if( is.null(dist_object)) 
+				dist_object <- dist_subject
+			idx <- .which.quantile(values=dist_subject, na.rm=na.rm, 
+				quantiles=quantiles)
+			distMean <- tapply(dist_object, idx, mean)
+			distVar <- tapply(dist_object, idx, stats::var)
+			return(cbind(mean=distMean, var=distVar))
+		}
+		## linearize the time-course matrices into vectors of values
+		dist_subject <- c(dist_subject)
+		dist_object  <- c(dist_object)
+		if( na.rm ) {
+			tokeep <- is.finite(dist_subject) & is.finite(dist_object)
+			dist_subject <- dist_subject[tokeep]
+			dist_object  <- dist_object[tokeep]
+		}
+		## number of quantile can't be too large in order that each quantile
+		## can host al least 4 elements
+		quantiles <- min(quantiles, floor(length(dist_subject)/4))
+		## sample the values
+		idx <- .which.quantile(
+			values         = values_subject 
+			, distribution = dist_subject 
+			, quantiles    = quantiles
+			, na.rm        = na.rm
+			)
+		qmv <- quantileMeanVar(
+			dist_subject  = dist_subject 
+			, dist_object = dist_object
+			, quantiles   = quantiles
+			, na.rm       = na.rm
+			)
+		values_object <- rep(NA, length(values_subject))
+
+		for(i in 1:quantiles)
+		{
+			nobjects <- length(which(idx==i))
+			if(nobjects!=0){
+				values_object[idx==i] <- rnorm(
+					nobjects
+					, mean=qmv[as.character(i),'mean'] 
+					, sd=sqrt(qmv[as.character(i),'var']) 
+					)
+			}
+		}
+		return(values_object)
+	}
+
+	sampleNorm2DQuantile <- function(values_subject1
+								   , values_subject2
+								   , dist_subject1
+								   , dist_subject2
+								   , dist_object
+								   , na.rm=FALSE
+								   , quantiles=10)
+	# sample values from the distribution OBJECT given that some values odf the 
+	# distribution SUBJECT are known.
+	{
+		dist_subject1 <- c(dist_subject1)
+		dist_subject2 <- c(dist_subject2)
+		dist_object   <- c(dist_object)
+		if( na.rm ) {
+			tokeep <- is.finite(dist_subject1) & is.finite(dist_subject2) & 
+				is.finite(dist_object)
+			dist_subject1 <- dist_subject1[tokeep]
+			dist_subject2 <- dist_subject2[tokeep]
+			dist_object <- dist_object[tokeep]
+		}
+		## number of quantile can't be too large in order that each quantile
+		## can host al least 4 elements
+		quantiles <- min(quantiles, floor(sqrt(length(dist_subject1)/4)))
+		##
+		idx1 <- .which.quantile(values_subject1, dist_subject1, 
+			na.rm=na.rm, quantiles=quantiles)
+		idx2 <- .which.quantile(values_subject2, dist_subject2, 
+			na.rm=na.rm, quantiles=quantiles)
+
+		quantile2DMeanVar <- function(dist_subject1
+									, dist_subject2
+									, dist_object
+									, na.rm=FALSE
+									, quantiles=100)
+		# for each quantile of the distribution SUBJECT1 and SUBJECT2 gives
+		# back the mean and the standard deviation of distribution OBJECT. 
+		# Returns the two square matrices of mean and variance corresponding 
+		# to each pair of quantiles of SUBJECT1 and SUBJECT2.
+		{
+			idx1 <- .which.quantile(dist_subject1, na.rm=na.rm, quantiles=quantiles)
+			idx2 <- .which.quantile(dist_subject2, na.rm=na.rm, quantiles=quantiles)
+			meansTab <- matrix(NA, nrow=quantiles, ncol=quantiles)
+			varsTab  <- matrix(NA, nrow=quantiles, ncol=quantiles)
+			for(i1 in unique(idx1))
+			{
+				for(i2 in unique(idx2))
+				{
+					# belonging to either quantiles
+					ix <- idx1 == i1 & idx2 == i2
+					meansTab[i1,i2] <- mean(dist_object[ix])
+					varsTab[i1,i2]  <- stats::var(dist_object[ix])
+				}
+			}
+			# fill the missing values
+			na.fill <- function(mat)
+			# Fill the NA values of a matrix with the mean of the surroundings.
+			# Iterates until all the missing values are filled.
+			{
+				if( all(is.na(mat))) return(mat)
+				nRow <- nrow(mat)
+				nCol <- ncol(mat)
+				while(length(which(is.na(mat))) > 0){
+					for(i in 1:nrow(mat)){
+						for(j in 1:ncol(mat)){
+							if( is.na(mat[i,j]))
+							{
+								idx_top <- max(1,i-1)
+								idx_bottom <- min(nRow,i+1)
+								idx_left <- max(1,j-1)
+								idx_right <- min(nCol,j+1)
+								surroundingRows <- idx_top:idx_bottom
+								surroundingCols <- idx_left:idx_right
+								mat[i,j] <- mean(
+									mat[surroundingRows,surroundingCols], 
+									na.rm=TRUE
+									)
+							} } } }
+				return(mat)
+			}
+			meansTab <- na.fill(meansTab)
+			varsTab  <- na.fill(varsTab)
+			return(list(mean=meansTab,var=varsTab))
+		}
+
+		q2dmv <- quantile2DMeanVar(dist_subject1, dist_subject2, dist_object, 
+			na.rm=na.rm, quantiles=quantiles)
+		sampledValues <- sapply(1:length(idx1), function(i) {
+			qtMean <- q2dmv$mean[idx1[i], idx2[i]]
+			qtVar <- q2dmv$var[idx1[i], idx2[i]]
+			########## Why not sqrt(qtVar) ?????????????
+			# changed to sd=sqrt(qtVar), previously was:
+			# sd=qtVar
+			return(rnorm(1, mean=qtMean, sd=sqrt(qtVar)))
+			})
+		return(sampledValues)		
+	}
 
 	generateParams <- function(tpts
 							 , sampled_val

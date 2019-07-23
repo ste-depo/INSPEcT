@@ -55,6 +55,7 @@ setClass('INSPEcT_model',
 		params='list'
 		, ratesSpecs='list'
 		, simple='logical'
+		, modeledGenes='numeric'
 		)
 	, prototype=list(
 		simple=FALSE
