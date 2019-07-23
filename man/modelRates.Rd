@@ -3,10 +3,13 @@
 \docType{methods}
 \name{modelRates}
 \alias{modelRates}
+\alias{modelRatesNF}
 \alias{modelRates,INSPEcT-method}
 \title{Launch the modeling process}
 \usage{
 modelRates(object, seed = NULL, BPPARAM = bpparam(), verbose = NULL)
+
+modelRatesNF(object, BPPARAM = SerialParam())
 
 \S4method{modelRates}{INSPEcT}(object, seed = NULL, BPPARAM = bpparam(),
   verbose = NULL)

@@ -54,8 +54,9 @@ setMethod('modelRatesNF', 'INSPEcT', function(object, BPPARAM=SerialParam())
 
 	object@modelRates <- object@ratesFirstGuess ## da modificare con le rates ottimizzate 
 	## poi:
-	#### aggiungere flag "Non-functional" perché la funzione ratePvals possa usare gli intervalli
+	#### - aggiungere flag "Non-functional" perché la funzione ratePvals possa usare gli intervalli
 	#### di confidenza per determinare il p-value anche se NoNascent=FALSE 
+	#### - controllare funzione plotGene (occhio a conflitti con MF)
 	object <- setConfidenceIntervals(object=object,confidenceIntervals=confidenceIntervals)
 
 	return(object)
