@@ -52,9 +52,32 @@ setMethod('modelRatesNF', 'INSPEcT', function(object, BPPARAM=SerialParam())
 
 	}
 
-	browser()
+	# make an "ExpressionSet" object containing optimized rates
+	nTpts <- length(tpts)
+	tptsLabels = if( is.numeric(tpts) ) signif(tpts,9) else tpts
+	exprData <- cbind(total
+					, premature
+					, t(sapply(confidenceIntervals, function(g) g[[1]][,'opt']))
+					, t(sapply(confidenceIntervals, function(g) g[[2]][,'opt']))
+					, t(sapply(confidenceIntervals, function(g) g[[3]][,'opt'])))
 
-	object@modelRates <- object@ratesFirstGuess ## da modificare con le rates ottimizzate 
+	pData <- data.frame(feature=c(rep('total',nTpts)
+								, rep('preMRNA',nTpts)
+								, rep('synthesis',nTpts)
+								, rep('processing',nTpts) 
+								, rep('degradation',nTpts)
+								)
+					  , time=rep(tpts, 5))
+
+	colnames(exprData) <- paste(pData$feature, tptsLabels, sep='_')
+	rownames(pData) <- colnames(exprData)
+	phenoData <- new('AnnotatedDataFrame', data=pData)
+
+	modelRates <- ExpressionSet(assayData=exprData
+								   , phenoData=phenoData)
+	featureNames(modelRates) <- geneNames
+
+	object@modelRates <- modelRates
 	## poi:
 	#### - aggiungere flag "Non-functional" perché la funzione ratePvals possa usare gli intervalli
 	#### di confidenza per determinare il p-value anche se NoNascent=FALSE 
@@ -706,13 +729,39 @@ classify_rates_from_priors_4sU_v5 <- function(
 		k2right = allratesconfidences[2,(N+1):(2*N)]
 		k3left = allratesconfidences[1,(2*N+1):(3*N)]
 		k3right = allratesconfidences[2,(2*N+1):(3*N)]
-		
-		return(list(
-			k1 = rate_conf_int_impute(cbind(left=k1left, opt=alphaTC[g,], right=k1right)),
-			k2 = rate_conf_int_impute(cbind(left=k2left, opt=gammaTC[g,], right=k2right)),
-			k3 = rate_conf_int_impute(cbind(left=k3left, opt=betaTC[g,], right=k3right))
-			))
 
+		rate_conf_int_k1 <- rate_conf_int_impute(cbind(left=k1left, opt=alphaTC[g,], right=k1right))
+		k_start <- mean(rate_conf_int_k1[,2],na.rm=TRUE)
+		if(is.finite(k_start)) {
+			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int_k1)$par
+		} else {
+			k_scores_out <- NaN
+		}
+		rate_conf_int_k1 <- cbind(rate_conf_int_k1, 'constant'=k_scores_out)
+
+		rate_conf_int_k2 <- rate_conf_int_impute(cbind(left=k2left, opt=gammaTC[g,], right=k2right))
+		k_start <- mean(rate_conf_int_k2[,2],na.rm=TRUE)
+		if(is.finite(k_start)) {
+			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int_k2)$par
+		} else {
+			k_scores_out <- NaN
+		}
+		rate_conf_int_k2 <- cbind(rate_conf_int_k2, 'constant'=k_scores_out)
+
+		rate_conf_int_k3 <- rate_conf_int_impute(cbind(left=k3left, opt=betaTC[g,], right=k3right))
+		k_start <- mean(rate_conf_int_k3[,2],na.rm=TRUE)
+		if(is.finite(k_start)) {
+			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int_k3)$par
+		} else {
+			k_scores_out <- NaN
+		}
+		rate_conf_int_k3 <- cbind(rate_conf_int_k3, 'constant'=k_scores_out)
+				
+		return(list(
+			k1 = rate_conf_int_k1,
+			k2 = rate_conf_int_k2,
+			k3 = rate_conf_int_k3
+			))
 
 	}, BPPARAM=BPPARAM)
 
@@ -907,12 +956,21 @@ classify_rates_from_priors_v5 <- function(
 		k2right = log2linPar(allratesconfidences[2,(N+1):(2*N)])
 		k3left = log2linPar(allratesconfidences[1,(2*N+1):(3*N)])
 		k3right = log2linPar(allratesconfidences[2,(2*N+1):(3*N)])
+
+		rate_conf_int_k1 <- rate_conf_int_impute(cbind(left=k1left, opt=alphaTC[g,], right=k1right))
+		rate_conf_int_k1 <- cbind(rate_conf_int_k1, 'constant'= score_and_par(rate_conf_int_k1)$par)
+
+		rate_conf_int_k2 <- rate_conf_int_impute(cbind(left=k2left, opt=gammaTC[g,], right=k2right))
+		rate_conf_int_k2 <- cbind(rate_conf_int_k2, 'constant'= score_and_par(rate_conf_int_k2)$par)
+
+		rate_conf_int_k3 <- rate_conf_int_impute(cbind(left=k3left, opt=betaTC[g,], right=k3right))
+		rate_conf_int_k3 <- cbind(rate_conf_int_k3, 'constant'= score_and_par(rate_conf_int_k3)$par)
 		
 		return(list(
-			k1 = rate_conf_int_impute(cbind(left=k1left, opt=k1TC[g,], right=k1right)),
-			k2 = rate_conf_int_impute(cbind(left=k2left, opt=k2TC[g,], right=k2right)),
-			k3 = rate_conf_int_impute(cbind(left=k3left, opt=k3TC[g,], right=k3right))
-			))
+			k1 = rate_conf_int_k1,
+			k2 = rate_conf_int_k2,
+			k3 = rate_conf_int_k3
+			))		
 
 	}, BPPARAM=BPPARAM)
 

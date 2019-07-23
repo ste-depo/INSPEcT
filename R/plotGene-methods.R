@@ -22,7 +22,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 
 	oneGene <- object[ix]
 	foe <- capture.output(oneGene <- computeConfidenceIntervals(oneGene))
-	
+
 	ratesFirstGuessTotalTmp <- ratesFirstGuess(oneGene, 'total')
 	ratesFirstGuessPreTmp <- ratesFirstGuess(oneGene, 'preMRNA')
 
@@ -66,7 +66,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 		beta_constant <- rep(NaN,length(tpts(oneGene)))
 	}
 
-	if( length(oneGene@model@ratesSpecs) > 0 ) {
+	if( nrow(oneGene@modelRates) > 0 ) {
 
 			total <- t(rbind(
 				ratesFirstGuessTotalTmp

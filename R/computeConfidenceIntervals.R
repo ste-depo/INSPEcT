@@ -7,8 +7,12 @@
 
 setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object)
 {
-	if(!object@NoNascent){message("+ Nascent objects have confidence intervals by default!")}else
-	{
+	if(!object@NoNascent){
+
+		message("+ Nascent objects have confidence intervals by default!")
+		return(object)
+		
+	} else {
 		gc <- geneClass(object)
 
 		llConfidenceThreshold <- object@model@params$logLikelihoodConfidenceThreshold

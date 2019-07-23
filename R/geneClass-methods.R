@@ -83,13 +83,9 @@ setMethod('geneClass', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL)
 
 	ratePvalsTmp <- ratePvals(object)
 
-	fitResults_synthesis <- ratePvalsTmp[,"synthesis"]
-	fitResults_processing <- ratePvalsTmp[,"processing"]
-	fitResults_degradation <- ratePvalsTmp[,"degradation"]
-
-	geneClass <- apply(cbind(fitResults_synthesis,fitResults_processing,fitResults_degradation),1,function(r)
+	geneClass <- apply(ratePvalsTmp,1,function(r)
 	{
-		r <- r < (1 - unlist(ciTsh))
+		r <- r < unlist(ciTsh)
 		if(!r[1]&!r[2]&!r[3]) return("0")
 		if(r[1]&!r[2]&!r[3]) return("a")
 		if(!r[1]&r[2]&!r[3]) return("b")
@@ -101,6 +97,7 @@ setMethod('geneClass', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL)
 	})
 	return(geneClass)
 }
+
 .bestModel <- function(object, bTsh=NULL, cTsh=NULL) {
 	preferPValue <- object@params$preferPValue
 	
