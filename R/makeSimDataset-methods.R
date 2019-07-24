@@ -138,14 +138,14 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 		## Evaluate sigma X from the sigma of b
 		# X_noise_sd <- mean((L_exons+L_introns)/(U_exons+U_introns)*((1/(1-b))-(b/(1-b)^2))*noise_sd)
 		## Standard deviation on X from the sd of b
-		X <- (b/(1 - b))*((L_exons+L_introns)/(U_exons+U_introns))
+		X <- (b/(1 - b))*apply(((L_exons+L_introns)/(U_exons+U_introns)),1,mean)
 		# b <- X/(X+(L_exons+L_introns)/(U_exons+U_introns))
-		X_noisy <- X*matrix(rnorm(length(X), 1, sd = noise_sd),nrow=nrow(X),ncol=ncol(X))
+		X_noisy <- X*rnorm(length(X), 1, sd = noise_sd)#matrix(rnorm(length(X), 1, sd = noise_sd),nrow=nrow(X),ncol=ncol(X))
 		
 		X_noisy[X_noisy<0] <- 0
 		X_noisy[X_noisy>1] <- 1
 
-		b_noisy <- X_noisy/(X_noisy+(L_exons+L_introns)/(U_exons+U_introns))
+		b_noisy <- X_noisy/(X_noisy+apply((L_exons+L_introns)/(U_exons+U_introns),1,mean))
 
 		message(paste0("b_noisy momenta: ",mean(b_noisy)," - ",sd(b_noisy)))
 
