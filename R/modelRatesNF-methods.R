@@ -78,6 +78,7 @@ setMethod('modelRatesNF', 'INSPEcT', function(object, BPPARAM=SerialParam())
 	featureNames(modelRates) <- geneNames
 
 	object@modelRates <- modelRates
+	object@NF <- TRUE
 	## poi:
 	#### - aggiungere flag "Non-functional" perché la funzione ratePvals possa usare gli intervalli
 	#### di confidenza per determinare il p-value anche se NoNascent=FALSE 
@@ -403,6 +404,8 @@ estimate_priors <- function(
 
 	matureDer <- as.matrix(t(sapply(1:nrow(mature),function(i)
 		tcder(tpts, mature[i,]))))
+
+	total <- premature + mature
 
 	## fix k1
 
@@ -802,7 +805,7 @@ classify_rates_from_priors_v5 <- function(
 	gammaTC <- prOut[[2]]
 	betaTC  <- prOut[[3]]
 
-	print("Rates first guess optimization through the minimum likelihood.")
+	message("Rates first guess optimization through the minimum likelihood.")
 
 	N <- length(tpts)
 	gene_number <- nrow(alphaTC)
@@ -838,42 +841,36 @@ classify_rates_from_priors_v5 <- function(
 		},error=function(e)return(errorOptim(N*3,e)))
 	}, BPPARAM=BPPARAM)
 
-	n_iter = 10
+	n_iter = length(tpts)
 	solved_genes = numeric(n_iter)
 
 	for( iter in 1:n_iter ) {
 
-		print(iter)
-
-		print(system.time({
-
-			many_na_genes <- which(N_na_genes>0 & N_na_genes<3*N)
-			newParams[many_na_genes] <- bplapply(many_na_genes,function(r)
-			{
-				parameters <- c(lin2logPar(alphaTC[r,]),lin2logPar(gammaTC[r,]),lin2logPar(betaTC[r,]))
-				parameters <- na.omit(parameters)
-				na_ids <- as.vector(attr(parameters, 'na.action'))
-				M <- N_na_genes[r]
-				tryCatch({
-					optOut <- optim(par = as.vector(parameters)
-						, fn = piecedFunctionLogLikelihoodManyNA
-						, tpts = tpts
-						, experimentalP = premature[r,]
-						, experimentalM = mature[r,]
-						, varianceP = prematureVariance[r,]
-						, varianceM = matureVariance[r,]
-						, na_ids = na_ids
-						, N = N
-						, M = M
-						, control = list(maxit = 2000, fnscale=-1)
-						, method = "BFGS")
-					## expand parameters
-					optOut$par = unlist(lapply(rates_from_napars(optOut$par, na_ids, N, M), log2linPar))
-					return(optOut)
-				},error=function(e)return(errorOptim(N*3,e)))
-			}, BPPARAM=BPPARAM)
-
-			}))
+		many_na_genes <- which(N_na_genes>0 & N_na_genes<3*N)
+		newParams[many_na_genes] <- bplapply(many_na_genes,function(r)
+		{
+			parameters <- c(lin2logPar(alphaTC[r,]),lin2logPar(gammaTC[r,]),lin2logPar(betaTC[r,]))
+			parameters <- na.omit(parameters)
+			na_ids <- as.vector(attr(parameters, 'na.action'))
+			M <- N_na_genes[r]
+			tryCatch({
+				optOut <- optim(par = as.vector(parameters)
+					, fn = piecedFunctionLogLikelihoodManyNA
+					, tpts = tpts
+					, experimentalP = premature[r,]
+					, experimentalM = mature[r,]
+					, varianceP = prematureVariance[r,]
+					, varianceM = matureVariance[r,]
+					, na_ids = na_ids
+					, N = N
+					, M = M
+					, control = list(maxit = 2000, fnscale=-1)
+					, method = "BFGS")
+				## expand parameters
+				optOut$par = unlist(lapply(rates_from_napars(optOut$par, na_ids, N, M), log2linPar))
+				return(optOut)
+			},error=function(e)return(errorOptim(N*3,e)))
+		}, BPPARAM=BPPARAM)
 
 		alphaTC <- t(sapply(newParams,function(g)g[[1]][1:N]))
 		gammaTC <- t(sapply(newParams,function(g)g[[1]][(N+1):(2*N)]))
@@ -889,9 +886,15 @@ classify_rates_from_priors_v5 <- function(
 		## in case all genes are resolved or failed break the for cycle
 		tab_N = table(N_na_genes)
 		solved_genes[iter] = sum(tab_N[names(tab_N) %in% as.character(c(0,N*3))])
-		print(paste0('solved ', round(solved_genes[iter]/gene_number*100), '% genes'))
-		if( solved_genes[iter] == gene_number ) break
-		if( iter>1 ) if( solved_genes[iter] == solved_genes[iter-1] ) break
+		message(paste0('Iteration ', iter, ' / ', n_iter,', solved ', round(solved_genes[iter]/gene_number*100), '% genes.'))
+		if( solved_genes[iter] == gene_number ) {
+			# message('Done.')
+			break
+		}
+		if( iter>1 ) if( solved_genes[iter] == solved_genes[iter-1] ) {
+			# message('Done.')
+			break
+		}
 
 	}
 
@@ -904,7 +907,7 @@ classify_rates_from_priors_v5 <- function(
 	k2TC <- gammaTC
 	k3TC <- betaTC
 
-	print("Rates first guess confidece intervals estimation.")
+	message("Rates first guess confidece intervals estimation.")
 
 	non_resolved_gene <- list(
 			k1 = cbind(left=rep(NaN, N), opt=rep(NaN, N), right=rep(NaN, N)),
@@ -921,13 +924,13 @@ classify_rates_from_priors_v5 <- function(
 		allratesconfidences = sapply(seq_along(parameters), function(parname) 
 		{
 			par <- parameters[parname]
-			mOut = list(
+			suppressWarnings(capture.output(mOut <- list(
 				left_1 =tryCatch(multiroot(f = logLikelihoodCIerror_NF, start = 1e-2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
 				left_2 =tryCatch(multiroot(f = logLikelihoodCIerror_NF, start = 1/2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
 				center =tryCatch(multiroot(f = logLikelihoodCIerror_NF, start = par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
 				right_1 =tryCatch(multiroot(f = logLikelihoodCIerror_NF, start = 2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
 				right_2 =tryCatch(multiroot(f = logLikelihoodCIerror_NF, start = 1e2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN))
-			)
+			)))
 			precis = sapply(mOut, '[[', 'f.root')
 
 			if( length(which(precis<1e-2))>0 )  {
@@ -957,20 +960,53 @@ classify_rates_from_priors_v5 <- function(
 		k3left = log2linPar(allratesconfidences[1,(2*N+1):(3*N)])
 		k3right = log2linPar(allratesconfidences[2,(2*N+1):(3*N)])
 
+		# rate_conf_int_k1 <- rate_conf_int_impute(cbind(left=k1left, opt=alphaTC[g,], right=k1right))
+		# rate_conf_int_k1 <- cbind(rate_conf_int_k1, 'constant'= score_and_par(rate_conf_int_k1)$par)
+
+		# rate_conf_int_k2 <- rate_conf_int_impute(cbind(left=k2left, opt=gammaTC[g,], right=k2right))
+		# rate_conf_int_k2 <- cbind(rate_conf_int_k2, 'constant'= score_and_par(rate_conf_int_k2)$par)
+
+		# rate_conf_int_k3 <- rate_conf_int_impute(cbind(left=k3left, opt=betaTC[g,], right=k3right))
+		# rate_conf_int_k3 <- cbind(rate_conf_int_k3, 'constant'= score_and_par(rate_conf_int_k3)$par)
+		
+		# return(list(
+		# 	k1 = rate_conf_int_k1,
+		# 	k2 = rate_conf_int_k2,
+		# 	k3 = rate_conf_int_k3
+		# 	))
+
 		rate_conf_int_k1 <- rate_conf_int_impute(cbind(left=k1left, opt=alphaTC[g,], right=k1right))
-		rate_conf_int_k1 <- cbind(rate_conf_int_k1, 'constant'= score_and_par(rate_conf_int_k1)$par)
+		k_start <- mean(rate_conf_int_k1[,2],na.rm=TRUE)
+		if(is.finite(k_start)) {
+			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int_k1)$par
+		} else {
+			k_scores_out <- NaN
+		}
+		rate_conf_int_k1 <- cbind(rate_conf_int_k1, 'constant'=k_scores_out)
 
 		rate_conf_int_k2 <- rate_conf_int_impute(cbind(left=k2left, opt=gammaTC[g,], right=k2right))
-		rate_conf_int_k2 <- cbind(rate_conf_int_k2, 'constant'= score_and_par(rate_conf_int_k2)$par)
+		k_start <- mean(rate_conf_int_k2[,2],na.rm=TRUE)
+		if(is.finite(k_start)) {
+			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int_k2)$par
+		} else {
+			k_scores_out <- NaN
+		}
+		rate_conf_int_k2 <- cbind(rate_conf_int_k2, 'constant'=k_scores_out)
 
 		rate_conf_int_k3 <- rate_conf_int_impute(cbind(left=k3left, opt=betaTC[g,], right=k3right))
-		rate_conf_int_k3 <- cbind(rate_conf_int_k3, 'constant'= score_and_par(rate_conf_int_k3)$par)
-		
+		k_start <- mean(rate_conf_int_k3[,2],na.rm=TRUE)
+		if(is.finite(k_start)) {
+			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int_k3)$par
+		} else {
+			k_scores_out <- NaN
+		}
+		rate_conf_int_k3 <- cbind(rate_conf_int_k3, 'constant'=k_scores_out)
+				
 		return(list(
 			k1 = rate_conf_int_k1,
 			k2 = rate_conf_int_k2,
 			k3 = rate_conf_int_k3
-			))		
+			))
 
 	}, BPPARAM=BPPARAM)
 

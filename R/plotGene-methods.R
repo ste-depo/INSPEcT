@@ -21,7 +21,9 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 	tpts <- object@tpts
 
 	oneGene <- object[ix]
-	foe <- capture.output(oneGene <- computeConfidenceIntervals(oneGene))
+
+	if( oneGene@NoNascent & !oneGene@NF )
+		foe <- capture.output(oneGene <- computeConfidenceIntervals(oneGene))
 
 	ratesFirstGuessTotalTmp <- ratesFirstGuess(oneGene, 'total')
 	ratesFirstGuessPreTmp <- ratesFirstGuess(oneGene, 'preMRNA')

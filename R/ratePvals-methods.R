@@ -32,7 +32,11 @@ setMethod('ratePvals', 'INSPEcT_model', function(object, bTsh=NULL, cTsh=NULL) {
 
 #' @rdname ratePvals
 setMethod('ratePvals', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL) {
-	if(!object@NoNascent)
+	if( nrow(object@modelRates) == 0 )
+		stop('ratePvals: run modelRates or modelRatesNF before.')
+	if( !object@NoNascent | object@NF )
+	# in case of Nascent mode or Non-Functional (both Nascent and No-Nascent)
+	# perform the estimation of variability using the confidence intervals
 	{
 		synthesis_left <- viewConfidenceIntervals(object,"synthesis_left")
 		synthesis_center <- viewModelRates(object,"synthesis")

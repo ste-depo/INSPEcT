@@ -108,6 +108,7 @@ setClass('INSPEcT_model',
 #' @slot labeledSF A numeric vector of the scaling factor used for inter time-point normalization of Nascent-seq libraries.
 #' @slot tL A numeric containing the length of the Nascent pulse.
 #' @slot NoNascent A logical indicating if the nascent RNA was included into the analysis.
+#' @slot NF A logical indicating if the modeling approach is Non-Functional
 #' @slot degDuringPulse A logical indicating if degradation of RNA during the 4sU pulse was considered.
 #' @details Methods that apply to INSPEcT class are
 #'
@@ -154,6 +155,7 @@ setClass('INSPEcT',
 		, labeledSF='numeric'
 		, tL='numeric'
 		, NoNascent='logical'
+		, NF='logical'
 		, degDuringPulse='logical'
 		)
 	, prototype=list(

@@ -52,7 +52,7 @@ setMethod('geneClass', 'INSPEcT_model',
 #' @rdname geneClass
 setMethod('geneClass', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL)
 {
-	if(object@NoNascent){return(geneClass(object@model, bTsh=bTsh, cTsh=cTsh))}
+	if(object@NoNascent & !object@NF){return(geneClass(object@model, bTsh=bTsh, cTsh=cTsh))}
 	else{.bestModel_confidenceIntervals(object, ciTsh = object@model@params$thresholds$CI)}
 
 })
