@@ -158,7 +158,11 @@ quantifyExpressionsFromBAMs <- function(txdb
 					samTab <- readGAlignments(bamfile, param=ScanBamParam(tagFilter=list('NH'=1)))
 				if( length(samTab)==0 ) stop('No alignments imported.')
 			}
-	
+
+			# match seqlevels based on the name (must be contained within) and 
+			# sequence length (must be equal)
+			samTab <- matchSeqnames(match_object=samTab, ref_object=exonsDB)
+
 			if( strandSpecific == 2 ) samTab <- invertStrand(samTab)
 
 			message('Counting reads on exon features...')
@@ -221,4 +225,31 @@ quantifyExpressionsFromBAMs <- function(txdb
 											 , varSamplingCondition = varSamplingCondition)
 	out <- c( out, list(exonsWidths=exonsWidths, intronsWidths=intronsWidths), allcounts )
 	return(out)
+}
+
+
+# look for possible sequence matches between two genomic annotaion objects
+# where the name of the match sequence is included within the name 
+# of the reference and with the same sequence length
+matchSeqnames <- function(match_object, ref_object) {
+
+	match_seqnames <- seqnames(seqinfo(match_object))
+	ref_seqnames <- seqnames(seqinfo(ref_object))
+
+	possible_name_matches <- lapply(match_seqnames, function(x) grep(x, ref_seqnames))
+
+	match_seqlengths <- seqlengths(seqinfo(match_object))
+	ref_seqlengths <- seqlengths(seqinfo(ref_object))
+	possible_length_matches <- lapply(match_seqlengths, function(x) which(ref_seqlengths==x))
+
+	both_matches <- lapply(seq_along(possible_name_matches), function(i) {
+		intersect(possible_name_matches[[i]], possible_length_matches[[i]])
+		})
+	names(both_matches) <- match_seqnames
+
+	good_matches <- sapply(both_matches, length) == 1
+	seqlevels(match_object)[good_matches] <- ref_seqnames[unlist(both_matches[good_matches])]
+
+	return(match_object)
+
 }

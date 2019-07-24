@@ -316,7 +316,7 @@ rocCurve_confidenceIntervals<-function(object, object2, plot, comparative=FALSE)
 #' @rdname rocCurve
 setMethod('rocCurve', signature(object='INSPEcT_model', object2='INSPEcT'), function(object, object2, cTsh=NULL, plot=TRUE, comparative=FALSE)
 {
-	if(object2@NoNascent)
+	if( object2@NoNascent & !object2@NF )
 	{
 		out <- rocCurve(object, object2@model, cTsh, plot, comparative=comparative)
 	}else{
