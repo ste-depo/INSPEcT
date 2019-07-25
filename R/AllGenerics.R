@@ -120,7 +120,9 @@ setGeneric('inHeatmap', function(object, type='pre-model'
 setGeneric('compareSteady', function(inspectIds, BPPARAM=bpparam()) 
 	standardGeneric('compareSteady'))
 #' Compare mature RNA steady state data from an object of class INSPEcT
-setGeneric('compareSteadyNoNascent', function(inspectIds, expressionThreshold=0.25,log2FCThreshold=2.) 
+setGeneric('compareSteadyNoNascent', function(inspectIds,
+	expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NULL, 
+	returnScores=FALSE, referenceCondition=NULL) 
 	standardGeneric('compareSteadyNoNascent'))
 #' Classify genes as delayed by the processing using the delta and tau metrics
 setGeneric('processingDelay', function(inspectIds, tauThreshold=1.2,deltaThreshold=1.0, silent=TRUE) 

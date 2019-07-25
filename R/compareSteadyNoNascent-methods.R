@@ -31,7 +31,8 @@
 #' head(regGenes)
 #' table(regGenes)
 setMethod('compareSteadyNoNascent', 'INSPEcT', function(inspectIds,
-	expressionThreshold=0.25, log2FCThreshold=2.)
+	expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NULL, 
+	returnScores=FALSE, referenceCondition=NULL)
 {
 	# Mature, premature and total rpkms
 	premature <- ratesFirstGuess(inspectIds, 'preMRNA')
@@ -41,16 +42,37 @@ setMethod('compareSteadyNoNascent', 'INSPEcT', function(inspectIds,
 	prematureMedian <- apply(premature,1,function(r)median(r,na.rm=T))
 	matureMedian <- apply(mature,1,function(r)median(r,na.rm=T))
 	
-	suppressWarnings(standardCurveFit <- standardCurveFitFunction(p=prematureMedian
-																, m=matureMedian
-																, err=log2FCThreshold))
-	message(paste0("Trivial angle: ",standardCurveFit))
+	if( is.null(trivialAngle) ) {
+		suppressWarnings(standardCurveFit <- standardCurveFitFunction(p=prematureMedian
+																	, m=matureMedian
+																	, err=log2FCThreshold))
+		message(paste0("Trivial angle: ",standardCurveFit))
+	} else {
+		standardCurveFit <- trivialAngle		
+	}
 
 	premature[premature<=expressionThreshold] <- NA
 	mature[mature<=expressionThreshold] <- NA
 
-	suppressWarnings(classificationTmp <- classificationFunction(p=premature,m=mature,
-		alpha=standardCurveFit,err=log2FCThreshold))
+	if( is.null(referenceCondition) ) {
+		suppressWarnings(scores <- classificationFunction(p=premature,m=mature,
+			alpha=standardCurveFit))
+	} else {
+		ref <- which(tpts(inspectIds)==referenceCondition)
+		if( length(ref) != 1 ) stop('not existing referenceCondition')
+		suppressWarnings(scores <- classificationFunction(p=premature,m=mature,
+			alpha=standardCurveFit, ref=ref))
+	}
+
+	colnames(scores) <- tpts(inspectIds)
+
+	if(returnScores) {
+		return(scores)
+	} else {
+		pi_angle <- standardCurveFit * pi/180
+		threshold <- log2FCThreshold/cos(pi_angle)
+		return(abs(scores)>threshold)
+	}
 
 	return(classificationTmp)
 })

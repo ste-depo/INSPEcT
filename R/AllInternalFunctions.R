@@ -6194,7 +6194,7 @@ standardCurveFitFunction <- function(p,m,err)
 	return(seq(-89,90)[which.min(all_alphas_outliers)])
 }
 
-classificationFunction <- function(p,m,alpha,err)
+classificationFunction <- function(p,m,alpha,ref)
 {
 	standardCurveFit <- alpha
 	classificationTmp <- sapply(rownames(p),function(g)
@@ -6204,13 +6204,19 @@ classificationFunction <- function(p,m,alpha,err)
 
 		pi_angle <- standardCurveFit * pi/180
 		coef_ang <- tan(pi_angle)
-		delta_intercept <- err/cos(pi_angle)
 
-		intercept <- median(y,na.rm=TRUE) - coef_ang*median(x,na.rm=TRUE)
+		if(is.null(ref)) {
+			ref_x <- median(x,na.rm=TRUE)
+			ref_y <- median(y,na.rm=TRUE)
+		} else {
+			ref_x <- x[ref]
+			ref_y <- y[ref]
+		}
 
-		outliers <- y > coef_ang * x + intercept + delta_intercept |
-				y < coef_ang * x + intercept - delta_intercept
-		return(outliers)
+		intercept <- ref_y - coef_ang*ref_x
+
+		return(y - (coef_ang * x + intercept))
+
 	})
 
 	return(t(classificationTmp))
