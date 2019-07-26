@@ -32,12 +32,16 @@
 #' table(regGenes)
 setMethod('compareSteadyNoNascent', 'INSPEcT', function(inspectIds,
 	expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NULL, 
-	returnScores=FALSE, referenceCondition=NULL)
+	returnNormScores=FALSE, referenceCondition=NULL)
 {
 	# Mature, premature and total rpkms
 	premature <- ratesFirstGuess(inspectIds, 'preMRNA')
 	total <- ratesFirstGuess(inspectIds, 'total')
 	mature <- total - premature
+	# Mature, premature and total variances
+	prematureVar <- ratesFirstGuessVar(inspectIds, 'preMRNA')
+	totalVar <- ratesFirstGuessVar(inspectIds, 'total')
+	matureVar <- total + premature
 
 	prematureMedian <- apply(premature,1,function(r)median(r,na.rm=T))
 	matureMedian <- apply(mature,1,function(r)median(r,na.rm=T))
@@ -55,24 +59,29 @@ setMethod('compareSteadyNoNascent', 'INSPEcT', function(inspectIds,
 	mature[mature<=expressionThreshold] <- NA
 
 	if( is.null(referenceCondition) ) {
-		suppressWarnings(scores <- classificationFunction(p=premature,m=mature,
+		suppressWarnings(log2maturemodel <- classificationFunction(p=premature,m=mature,
 			alpha=standardCurveFit))
 	} else {
 		ref <- which(tpts(inspectIds)==referenceCondition)
 		if( length(ref) != 1 ) stop('not existing referenceCondition')
-		suppressWarnings(scores <- classificationFunction(p=premature,m=mature,
+		suppressWarnings(log2maturemodel <- classificationFunction(p=premature,m=mature,
 			alpha=standardCurveFit, ref=ref))
 	}
 
-	colnames(scores) <- tpts(inspectIds)
-
-	if(returnScores) {
-		return(scores)
+	if(returnNormScores) {
+		maturemodel <- 2^log2maturemodel
+		normScores <- (mature - maturemodel)/sqrt(matureVar)
+		colnames(normScores) <- tpts(inspectIds)
+		return(normScores)
 	} else {
-		pi_angle <- standardCurveFit * pi/180
-		threshold <- log2FCThreshold/cos(pi_angle)
-		return(abs(scores)>threshold)
+		scores <- log2(mature) - log2maturemodel
+		colnames(scores) <- tpts(inspectIds)
+		# pi_angle <- standardCurveFit * pi/180
+		# threshold <- log2FCThreshold/cos(pi_angle)
+		# classification <- abs(scores)>threshold
+		return(scores)
 	}
 
-	return(classificationTmp)
+	# return(list(scores=scores, norm=normScores, lognorm=lognormScores))
+	# return(classificationTmp)
 })

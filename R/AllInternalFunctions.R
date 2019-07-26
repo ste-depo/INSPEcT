@@ -6215,7 +6215,8 @@ classificationFunction <- function(p,m,alpha,ref)
 
 		intercept <- ref_y - coef_ang*ref_x
 
-		return(y - (coef_ang * x + intercept))
+		return(coef_ang * x + intercept)
+		# return(y - (coef_ang * x + intercept))
 
 	})
 
