@@ -80,7 +80,7 @@ setMethod('ratePvals', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL) {
 			# return(list(par=k_scores_out$par, score=k_scores_out$value))
 		}))
 
-		return(cbind("synthesis"=fitResults_synthesis,"processing"=fitResults_processing,"degradation"=fitResults_degradation))
+		return(data.frame("synthesis"=fitResults_synthesis,"processing"=fitResults_processing,"degradation"=fitResults_degradation))
 	}else{
 		if( modelSelection(object)$limitModelComplexity ) {
 			dfmax = length(tpts(object))
