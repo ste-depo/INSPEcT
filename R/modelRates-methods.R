@@ -286,6 +286,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 		object@model@ratesSpecs <- ratesSpecs
 		object <- makeModelRates(object)
 		object <- setConfidenceIntervals(object=object,confidenceIntervals=confidenceIntervals)
+		object@NF <- FALSE
 
 		object@model@modeledGenes <- length(featureNames(object))
 
