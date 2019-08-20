@@ -123,9 +123,6 @@ setMethod('rocCurve', signature(object='INSPEcT_model', object2='INSPEcT'),
 
 	} else { ########## comparative mode, show also cross-classifications
 
-		oldMfrow <- par()$mfrow
-		par(mfrow=c(1,3))
-
 		## obtain the response
 		allResponses <- geneClass(object)
 		ratePvals <- ratePvals(object2)
@@ -151,59 +148,65 @@ setMethod('rocCurve', signature(object='INSPEcT_model', object2='INSPEcT'),
 		rBetaBeta <- tryCatch(roc(response=as.numeric(grepl('b', allResponses))
 			, predictor=ratePvals[,"degradation"],direction=">"), error=function(e) list(auc=NA))
 
-		if( !is.na(rAlphaAlpha[[1]]) )
-			plot.roc(rAlphaAlpha, col='red', lwd=4, add=FALSE, main="Synthesis rate classification")
-		if( !is.na(rGammaAlpha[[1]]) ) 
-			plot.roc(rGammaAlpha, col='navy', lwd=4, add=!is.na(rAlphaAlpha[[1]]), lty=3)
-		if( !is.na(rBetaAlpha[[1]]) ) 
-			plot.roc(rBetaAlpha, col='deepskyblue', lwd=4, add=!(is.na(rAlphaAlpha[[1]]) & is.na(rGammaAlpha[[1]])), lty=3)
+		if( plot ) {
+	
+			oldMfrow <- par()$mfrow
+			par(mfrow=c(1,3))
 
-		legendText <- paste(
-			c('synthesis', 'processing', 'degradation')
-			, ' - AUC='
-			, signif(c(as.numeric(rAlphaAlpha$auc), as.numeric(rGammaAlpha$auc), as.numeric(rBetaAlpha$auc)), 3)
-			, sep=''
-			)
+			if( !is.na(rAlphaAlpha[[1]]) )
+				plot.roc(rAlphaAlpha, col='red', lwd=4, add=FALSE, main="Synthesis rate classification")
+			if( !is.na(rGammaAlpha[[1]]) ) 
+				plot.roc(rGammaAlpha, col='navy', lwd=4, add=!is.na(rAlphaAlpha[[1]]), lty=3)
+			if( !is.na(rBetaAlpha[[1]]) ) 
+				plot.roc(rBetaAlpha, col='deepskyblue', lwd=4, add=!(is.na(rAlphaAlpha[[1]]) & is.na(rGammaAlpha[[1]])), lty=3)
 
-		legend('bottomright', legend=legendText
-			, col=c('red', 'navy', 'deepskyblue'), lty=c(1,3,3), lwd=4)
+			legendText <- paste(
+				c('synthesis', 'processing', 'degradation')
+				, ' - AUC='
+				, signif(c(as.numeric(rAlphaAlpha$auc), as.numeric(rGammaAlpha$auc), as.numeric(rBetaAlpha$auc)), 3)
+				, sep=''
+				)
 
-		if( !is.na(rAlphaGamma[[1]]) )
-			plot.roc(rAlphaGamma, col='red', lwd=4, lty=3, add=FALSE, main="Processing rate classification")
-		if( !is.na(rGammaGamma[[1]]) )
-			plot.roc(rGammaGamma, col='navy', lwd=4, add=!is.na(rAlphaGamma[[1]]))
-		if( !is.na(rBetaGamma[[1]]) )
-			plot.roc(rBetaGamma, col='deepskyblue', lwd=4, lty=3, add=!(is.na(rAlphaGamma[[1]]) & is.na(rGammaGamma[[1]])))
-
-		legendText <- paste(
-			c('synthesis', 'processing', 'degradation')
-			, ' - AUC='
-			, signif(c(as.numeric(rAlphaGamma$auc), as.numeric(rGammaGamma$auc), as.numeric(rBetaGamma$auc)), 3)
-			, sep=''
-			)
-
-		legend('bottomright', legend=legendText
-			, col=c('red', 'navy', 'deepskyblue'), lty=c(3,1,3), lwd=4)
-
-		if( !is.na(rAlphaBeta[[1]]) )
-			plot.roc(rAlphaBeta, col='red', lwd=4, lty=3, add=FALSE, main="Degradation rate classification")
-		if( !is.na(rGammaBeta[[1]]) )
-			plot.roc(rGammaBeta, col='navy', lwd=4, lty=3, add=!is.na(rAlphaBeta[[1]]))
-		if( !is.na(rBetaBeta[[1]]) )
-			plot.roc(rBetaBeta, col='deepskyblue', lwd=4, add=!(is.na(rAlphaBeta[[1]]) & is.na(rGammaBeta[[1]])))
-
-		legendText <- paste(
-			c('synthesis', 'processing', 'degradation')
-			, ' - AUC='
-			, signif(c(as.numeric(rAlphaBeta$auc), as.numeric(rGammaBeta$auc), as.numeric(rBetaBeta$auc)), 3)
-			, sep=''
-			)
-
-		legend('bottomright', legend=legendText
-			, col=c('red', 'navy', 'deepskyblue'), lty=c(3,3,1), lwd=4)
-
-		# restore par settings
-		par(mfrow=oldMfrow)
+			legend('bottomright', legend=legendText
+				, col=c('red', 'navy', 'deepskyblue'), lty=c(1,3,3), lwd=4)
+	
+			if( !is.na(rAlphaGamma[[1]]) )
+				plot.roc(rAlphaGamma, col='red', lwd=4, lty=3, add=FALSE, main="Processing rate classification")
+			if( !is.na(rGammaGamma[[1]]) )
+				plot.roc(rGammaGamma, col='navy', lwd=4, add=!is.na(rAlphaGamma[[1]]))
+			if( !is.na(rBetaGamma[[1]]) )
+				plot.roc(rBetaGamma, col='deepskyblue', lwd=4, lty=3, add=!(is.na(rAlphaGamma[[1]]) & is.na(rGammaGamma[[1]])))
+	
+			legendText <- paste(
+				c('synthesis', 'processing', 'degradation')
+				, ' - AUC='
+				, signif(c(as.numeric(rAlphaGamma$auc), as.numeric(rGammaGamma$auc), as.numeric(rBetaGamma$auc)), 3)
+				, sep=''
+				)
+	
+			legend('bottomright', legend=legendText
+				, col=c('red', 'navy', 'deepskyblue'), lty=c(3,1,3), lwd=4)
+	
+			if( !is.na(rAlphaBeta[[1]]) )
+				plot.roc(rAlphaBeta, col='red', lwd=4, lty=3, add=FALSE, main="Degradation rate classification")
+			if( !is.na(rGammaBeta[[1]]) )
+				plot.roc(rGammaBeta, col='navy', lwd=4, lty=3, add=!is.na(rAlphaBeta[[1]]))
+			if( !is.na(rBetaBeta[[1]]) )
+				plot.roc(rBetaBeta, col='deepskyblue', lwd=4, add=!(is.na(rAlphaBeta[[1]]) & is.na(rGammaBeta[[1]])))
+	
+			legendText <- paste(
+				c('synthesis', 'processing', 'degradation')
+				, ' - AUC='
+				, signif(c(as.numeric(rAlphaBeta$auc), as.numeric(rGammaBeta$auc), as.numeric(rBetaBeta$auc)), 3)
+				, sep=''
+				)
+	
+			legend('bottomright', legend=legendText
+				, col=c('red', 'navy', 'deepskyblue'), lty=c(3,3,1), lwd=4)
+		
+			# restore par settings
+			par(mfrow=oldMfrow)
+		}
 
 		out <- list("ClassifyAlphaWithAlpha"=rAlphaAlpha
 				   ,"ClassifyBetaWithAlpha"=rBetaAlpha

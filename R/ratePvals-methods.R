@@ -129,6 +129,11 @@ calculate_rates_pvalues <- function(object, bTsh, cTsh, dfmax=Inf) {
 		## generic tests
 		chisq_pvals <- chisqtest(object)
 		logLik_vals <- logLik(object)
+
+		### New lines "copied" from AIC method - control repeated in logLikRatioTestInscpectModels
+		chisq_pvals[!is.finite(chisq_pvals)] <- 1
+		logLik_vals[!is.finite(logLik_vals)] <- -Inf
+
 		#########
 		# alpha #
 		#########
@@ -230,11 +235,43 @@ calculate_rates_pvalues <- function(object, bTsh, cTsh, dfmax=Inf) {
 			degradationBP <- p.adjust(degradationBP,method="BH",n=object@modeledGenes)
 			processingBP <- p.adjust(processingBP,method="BH",n=object@modeledGenes)
 		}
+
 		ratePvals <- data.frame(
 			synthesis=synthesisBP
 			, processing=processingBP
 			, degradation=degradationBP
 			)
+
+		ratePvals <- replace(ratePvals,is.na(ratePvals),1)
+		### New controls to uniform ratePvals and geneClass
+		if(object@params$preferPValue)
+		{
+			for(i in rownames(chisq_pvals))
+			{
+				acceptableModelsTemp <- which(chisq_pvals[i,] <= cTsh)
+				if(length(acceptableModelsTemp)==0)
+				{
+					if(is.finite(sort(chisq_pvals[i,])[1]))
+					{
+						if(grepLogic("a",names(sort(chisq_pvals[i,])[1]))){ratePvals[i,"synthesis"] <- 0}else{ratePvals[i,"synthesis"] <- 1}
+						if(grepLogic("c",names(sort(chisq_pvals[i,])[1]))){ratePvals[i,"processing"] <- 0}else{ratePvals[i,"processing"] <- 1}
+						if(grepLogic("b",names(sort(chisq_pvals[i,])[1]))){ratePvals[i,"degradation"] <- 0}else{ratePvals[i,"degradation"] <- 1}
+					}else{
+						ratePvals[i,"synthesis"] <- 1
+						ratePvals[i,"processing"] <- 1
+						ratePvals[i,"degradation"] <- 1
+					}
+				}
+			
+				if(length(acceptableModelsTemp)==1)
+				{
+					if(grepLogic("a",colnames(chisq_pvals)[acceptableModelsTemp])){ratePvals[i,"synthesis"] <- 0}else{ratePvals[i,"synthesis"] <- 1}
+					if(grepLogic("c",colnames(chisq_pvals)[acceptableModelsTemp])){ratePvals[i,"processing"] <- 0}else{ratePvals[i,"processing"] <- 1}
+					if(grepLogic("b",colnames(chisq_pvals)[acceptableModelsTemp])){ratePvals[i,"degradation"] <- 0}else{ratePvals[i,"degradation"] <- 1}
+				}
+			}
+		}
+		ratePvals
 	}
 	aic_temp_function <- function()
 	{
@@ -377,7 +414,10 @@ brown_method_mask <- function(y, mask) {
 
 logLikRatioTestInscpectModels <- function(null, alt, dfmax=Inf, constantProbability=1)
 {
-	D <- - 2*null$logLik + 2*alt$logLik
+	if(is.finite(null$logLik)){nullLL <- null$logLik}else{nullLL <- (-Inf)}
+	if(is.finite(alt$logLik)){altnullLL <- alt$logLik}else{altnullLL <- (-Inf)}
+	
+	D <- - 2*nullLL + 2*altnullLL
 
 	df_null <- min(dfmax,sum(sapply(null[names(null)%in%c("alpha","beta","gamma","total","mature","premature")],"[[","df")))
 	df_alt <- min(dfmax,sum(sapply(alt[names(alt)%in%c("alpha","beta","gamma","total","mature","premature")],"[[","df")))

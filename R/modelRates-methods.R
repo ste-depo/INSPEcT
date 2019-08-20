@@ -156,6 +156,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 															 , derivativePenalityRelevance = 10^-50
 															 , llConfidenceThreshold = NULL)
 		}else if(object@params$estimateRatesWith=="int"){
+			message("Integrative modeling")
 			ratesSpecs <- .inspect.engine_Integrative_NoNascent(tpts=tpts
 															  , concentrations=concentrations
 															  , rates=rates
@@ -177,6 +178,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 		## update and return the object
 		# names(ratesSpecs) <- featureNames(object)
 		object@model@ratesSpecs <- ratesSpecs
+		object@model@modeledGenes <- length(featureNames(object))
 		object <- makeModelRates(object)
 		return(object)
 
@@ -218,6 +220,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 															     , derivativePenalityRelevance=derivativePenalityRelevance
 															     , llConfidenceThreshold=llConfidenceThreshold)
 			}else if(object@params$estimateRatesWith=="int"){
+				message("Integrative modeling")
 				eiRatesSpecs <- .inspect.engine_Integrative_Nascent(tpts=tpts
 																  , concentrations=eiConcentrations
 																  , rates=eiRates
