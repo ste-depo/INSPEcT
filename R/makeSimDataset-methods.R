@@ -149,9 +149,6 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 
 		message(paste0("b_noisy momenta: ",mean(b_noisy)," - ",sd(b_noisy)))
 
-		saveRDS(b_noisy,paste0("b_noisy_",length(tpts),"tpts_",b,"_",noise_sd,".rds"))
-		saveRDS(X_noisy,paste0("X_noisy_",length(tpts),"tpts_",b,"_",noise_sd,".rds"))
-
 		## calculate the noise distribution
 		# X_noisy <- rnorm(1000*nrow(L_exons), X, sd = X_noise_sd)
 
