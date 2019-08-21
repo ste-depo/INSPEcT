@@ -33,7 +33,7 @@ setGeneric('computeConfidenceIntervals', function(object, computeConfidenceInter
 setGeneric('setConfidenceIntervals', function(object, confidenceIntervals, ...) 
 	standardGeneric('setConfidenceIntervals'))
 #' Generate synthetic rates and concentrations
-setGeneric('makeSimDataset', function(object, tpts, nRep, NoNascent = FALSE, seed=NULL, b = NULL, tL = NULL, noise_sd = 0)
+setGeneric('makeSimDataset', function(object, tpts, nRep, NoNascent = FALSE, seed=NULL, b = 0.3, tL = 1/6, noise_sd = 4.0)
 	standardGeneric('makeSimDataset'))
 #' Display rate classification performance
 setGeneric('correlationPlot', function(object, object2, plot=TRUE) 

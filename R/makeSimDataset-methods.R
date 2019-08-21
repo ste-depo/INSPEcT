@@ -31,7 +31,7 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 													, NoNascent = FALSE
 													, seed=NULL
 													, b = 0.3
-													, tL = NULL
+													, tL = 1/6
 													, noise_sd = 4.0)
 {
 	if(tpts[[1]]!=object@params$tpts[[1]]){stop("makeSimDataset: new and old tpts starts must coincide.")}
@@ -147,7 +147,7 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 
 		b_noisy <- X_noisy/(X_noisy+apply((L_exons+L_introns)/(U_exons+U_introns),1,mean))
 
-		message(paste0("b_noisy momenta: ",mean(b_noisy)," - ",sd(b_noisy)))
+		message(paste0("b_noisy momenta: ",signif(mean(b_noisy),3)," - ",signif(sd(b_noisy),3)))
 
 		## calculate the noise distribution
 		# X_noisy <- rnorm(1000*nrow(L_exons), X, sd = X_noise_sd)
