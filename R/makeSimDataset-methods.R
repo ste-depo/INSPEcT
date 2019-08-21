@@ -30,16 +30,16 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 													, nRep
 													, NoNascent = FALSE
 													, seed=NULL
-													, b = NULL
+													, b = 0.3
 													, tL = NULL
-													, noise_sd = 0)
+													, noise_sd = 4.0)
 {
 	if(tpts[[1]]!=object@params$tpts[[1]]){stop("makeSimDataset: new and old tpts starts must coincide.")}
 	if(tpts[[length(tpts)]]!=object@params$tpts[[length(object@params$tpts)]]){stop("makeSimDataset: new and old tpts ends must coincide.")}
 	if(!is.null(b)|!is.null(tL))
 	{
-		if(!is.numeric(b)|!is.numeric(tL)){stop("makeSimDataset: a,b and tL must be numeric.")}
-		if(b>1|b<0){stop("makeSimDataset: a and b must be greater than 0 and lower than 1.")}		
+		if(!is.numeric(b)|!is.numeric(tL)){stop("makeSimDataset: b and tL must be numeric.")}
+		if(b>1|b<0){stop("makeSimDataset: b must be greater than 0 and lower than 1.")}		
 	}
 
 	ratesSpecs <- object@ratesSpecs
@@ -148,6 +148,9 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 		b_noisy <- X_noisy/(X_noisy+apply((L_exons+L_introns)/(U_exons+U_introns),1,mean))
 
 		message(paste0("b_noisy momenta: ",mean(b_noisy)," - ",sd(b_noisy)))
+
+		saveRDS(b_noisy,paste0("b_noisy_",length(tpts),"tpts_",b,"_",noise_sd,".rds"))
+		saveRDS(X_noisy,paste0("X_noisy_",length(tpts),"tpts_",b,"_",noise_sd,".rds"))
 
 		## calculate the noise distribution
 		# X_noisy <- rnorm(1000*nrow(L_exons), X, sd = X_noise_sd)
