@@ -79,10 +79,6 @@ setMethod('modelRatesNF', 'INSPEcT', function(object, BPPARAM=SerialParam())
 
 	object@modelRates <- modelRates
 	object@NF <- TRUE
-	## poi:
-	#### - aggiungere flag "Non-functional" perché la funzione ratePvals possa usare gli intervalli
-	#### di confidenza per determinare il p-value anche se NoNascent=FALSE 
-	#### - controllare funzione plotGene (occhio a conflitti con MF)
 	object <- setConfidenceIntervals(object=object,confidenceIntervals=confidenceIntervals)
 
 	return(object)
@@ -572,7 +568,7 @@ classify_rates_from_priors_4sU_v5 <- function(
 	mature <- total - premature
 	matureVariance <- totalVariance + prematureVariance
 
-	print("Rates first guess optimization through the minimum likelihood.")
+	message("Rates optimization through the minimum likelihood.")
 
 	N <- length(tpts)
 	gene_number <- nrow(premature)
@@ -623,38 +619,32 @@ classify_rates_from_priors_4sU_v5 <- function(
 	if( any(N_na_genes>0 & N_na_genes<3*N) )
 		for( iter in 1:n_iter ) {
 
-			print(iter)
-
-			print(system.time({
-
-				many_na_genes <- which(N_na_genes>0 & N_na_genes<3*N)
-				newParams[many_na_genes] <- bplapply(many_na_genes,function(r)
-				{
-					parameters <- na.omit(c(alphaTC[r,],gammaTC[r,],betaTC[r,]))
-					na_ids <- as.vector(attr(parameters, 'na.action'))
-					M <- N_na_genes[r]
-					tryCatch({
-						optOut <- optim(par = as.vector(parameters)
-							, fn = piecedFunctionLogLikelihoodManyNA4sU
-							, tpts = tpts
-							, experimentalP = premature[r,]
-							, experimentalM = mature[r,]
-							, experimentalK1 = synthesis[r,]
-							, varianceP = prematureVariance[r,]
-							, varianceM = matureVariance[r,]
-							, varianceK1 = synthesisVariance[r,]
-							, na_ids = na_ids
-							, N = N
-							, M = M
-							, control = list(maxit = 2000, fnscale=-1)
-							, method = "BFGS")
-						## expand parameters
-						optOut$par = unlist(rates_from_napars(optOut$par, na_ids, N, M))
-						return(optOut)
-					},error=function(e)return(errorOptim(N*3,e)))
-				}, BPPARAM=BPPARAM)
-
-				}))
+			many_na_genes <- which(N_na_genes>0 & N_na_genes<3*N)
+			newParams[many_na_genes] <- bplapply(many_na_genes,function(r)
+			{
+				parameters <- na.omit(c(alphaTC[r,],gammaTC[r,],betaTC[r,]))
+				na_ids <- as.vector(attr(parameters, 'na.action'))
+				M <- N_na_genes[r]
+				tryCatch({
+					optOut <- optim(par = as.vector(parameters)
+						, fn = piecedFunctionLogLikelihoodManyNA4sU
+						, tpts = tpts
+						, experimentalP = premature[r,]
+						, experimentalM = mature[r,]
+						, experimentalK1 = synthesis[r,]
+						, varianceP = prematureVariance[r,]
+						, varianceM = matureVariance[r,]
+						, varianceK1 = synthesisVariance[r,]
+						, na_ids = na_ids
+						, N = N
+						, M = M
+						, control = list(maxit = 2000, fnscale=-1)
+						, method = "BFGS")
+					## expand parameters
+					optOut$par = unlist(rates_from_napars(optOut$par, na_ids, N, M))
+					return(optOut)
+				},error=function(e)return(errorOptim(N*3,e)))
+			}, BPPARAM=BPPARAM)
 
 			alphaTC <- t(sapply(newParams,function(g)g[[1]][1:N]))
 			gammaTC <- t(sapply(newParams,function(g)g[[1]][(N+1):(2*N)]))
@@ -670,7 +660,7 @@ classify_rates_from_priors_4sU_v5 <- function(
 			## in case all genes are resolved or failed break the for cycle
 			tab_N = table(N_na_genes)
 			solved_genes[iter] = sum(tab_N[names(tab_N) %in% as.character(c(0,N*3))])
-			print(paste0('solved ', round(solved_genes[iter]/gene_number*100), '% genes'))
+			message(paste0('Iteration ', iter, ' / ', n_iter,', solved ', round(solved_genes[iter]/gene_number*100), '% genes.'))
 			if( solved_genes[iter] == gene_number ) break
 			if( iter>1 ) if( solved_genes[iter] == solved_genes[iter-1] ) break
 
@@ -681,12 +671,12 @@ classify_rates_from_priors_4sU_v5 <- function(
 	resolved_id <- which(N_na_genes==0)
 	# resolvedGenesNames <- geneNames[resolved_id]
 
-	print("Rates first guess confidece intervals estimation.")
+	message("Confidece intervals estimation.")
 
 	non_resolved_gene <- list(
-			k1 = cbind(left=rep(NaN, N), opt=rep(NaN, N), right=rep(NaN, N)),
-			k2 = cbind(left=rep(NaN, N), opt=rep(NaN, N), right=rep(NaN, N)),
-			k3 = cbind(left=rep(NaN, N), opt=rep(NaN, N), right=rep(NaN, N))
+			k1 = cbind(left=rep(NaN, N), opt=rep(NaN, N), right=rep(NaN, N), constant=rep(NaN, N)),
+			k2 = cbind(left=rep(NaN, N), opt=rep(NaN, N), right=rep(NaN, N), constant=rep(NaN, N)),
+			k3 = cbind(left=rep(NaN, N), opt=rep(NaN, N), right=rep(NaN, N), constant=rep(NaN, N))
 			)
 	confidence_intervals <- as.list(rep(NA,gene_number))
 	for( g in which(N_na_genes>0) ) confidence_intervals[[g]] <- non_resolved_gene
@@ -697,13 +687,13 @@ classify_rates_from_priors_4sU_v5 <- function(
 		allratesconfidences = sapply(seq_along(parameters), function(parname) 
 		{
 			par <- parameters[parname]
-			mOut = list(
+			suppressWarnings(capture.output(mOut <- list(
 				left_1 =tryCatch(multiroot(f = logLikelihoodCIerror4sU_NF, start = 1e-2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
 				left_2 =tryCatch(multiroot(f = logLikelihoodCIerror4sU_NF, start = 1/2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
 				center =tryCatch(multiroot(f = logLikelihoodCIerror4sU_NF, start = par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
 				right_1 =tryCatch(multiroot(f = logLikelihoodCIerror4sU_NF, start = 2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN)),
 				right_2 =tryCatch(multiroot(f = logLikelihoodCIerror4sU_NF, start = 1e2*par, name = parname, parameters = parameters, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalK1 = synthesis[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceK1 = synthesisVariance[g,], N=N, confidenceThreshold = llConfidenceThreshold), error=function(e) list(root=NaN, 'f.root'=NaN))
-			)
+			)))
 			precis = sapply(mOut, '[[', 'f.root')
 
 			if( length(which(precis<1e-2))>0 )  {
@@ -805,7 +795,7 @@ classify_rates_from_priors_v5 <- function(
 	gammaTC <- prOut[[2]]
 	betaTC  <- prOut[[3]]
 
-	message("Rates first guess optimization through the minimum likelihood.")
+	message("Rates optimization through the minimum likelihood.")
 
 	N <- length(tpts)
 	gene_number <- nrow(alphaTC)
@@ -907,12 +897,12 @@ classify_rates_from_priors_v5 <- function(
 	k2TC <- gammaTC
 	k3TC <- betaTC
 
-	message("Rates first guess confidece intervals estimation.")
+	message("Confidece intervals estimation.")
 
 	non_resolved_gene <- list(
-			k1 = cbind(left=rep(NaN, N), opt=rep(NaN, N), right=rep(NaN, N)),
-			k2 = cbind(left=rep(NaN, N), opt=rep(NaN, N), right=rep(NaN, N)),
-			k3 = cbind(left=rep(NaN, N), opt=rep(NaN, N), right=rep(NaN, N))
+			k1 = cbind(left=rep(NaN, N), opt=rep(NaN, N), right=rep(NaN, N), constant=rep(NaN, N)),
+			k2 = cbind(left=rep(NaN, N), opt=rep(NaN, N), right=rep(NaN, N), constant=rep(NaN, N)),
+			k3 = cbind(left=rep(NaN, N), opt=rep(NaN, N), right=rep(NaN, N), constant=rep(NaN, N))
 			)
 	confidence_intervals <- as.list(rep(NA,gene_number))
 	for( g in which(N_na_genes>0) ) confidence_intervals[[g]] <- non_resolved_gene
