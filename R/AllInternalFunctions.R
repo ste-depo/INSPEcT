@@ -7563,6 +7563,7 @@ k_score_fun <- function(k, rate_conf_int)
 	}, BPPARAM=BPPARAM)
 
 	names(VVV) <- eiGenes
+ 	message("Model ABC finished.")
 
 	### Confidence intervals
  	print("Confidence intervals.")
@@ -9154,7 +9155,7 @@ k_score_fun <- function(k, rate_conf_int)
 	# Log likelihood
 	logLikelihood <- t(sapply(eiGenes,function(g)
 	{
-		modelKKK <- expressionData_integrativeModels(tpts, class = "KKK", parameters = KKK[[g]][grep("par",names(KKK[[g]]))])
+		modelKKK <- expressionData_integrativeModels(tpts, class = "KKK", parameters = unlist(KKK[[g]][grep("par",names(KKK[[g]]))]))
 		
 		matureModel <- modelKKK[grep("^mature",names(modelKKK))]
 		prematureModel <- modelKKK[grep("^premature",names(modelKKK))]
@@ -9165,7 +9166,7 @@ k_score_fun <- function(k, rate_conf_int)
 		                               , model = modelKKK
 		                               , variance = c(matureVariance[g,],prematureVariance[g,])),error=function(e)NaN)
 
-		modelVKK <- expressionData_integrativeModels(tpts, class = "VKK", parameters = VKK[[g]][grep("par",names(VKK[[g]]))])
+		modelVKK <- expressionData_integrativeModels(tpts, class = "VKK", parameters = unlist(VKK[[g]][grep("par",names(VKK[[g]]))]))
 		
 		matureModel <- modelVKK[grep("^mature",names(modelVKK))]
 		prematureModel <- modelVKK[grep("^premature",names(modelVKK))]
@@ -9176,7 +9177,7 @@ k_score_fun <- function(k, rate_conf_int)
 		                               , model = modelVKK
 		                               , variance = c(matureVariance[g,],prematureVariance[g,])),error=function(e)NaN)
 
-		modelKVK <- expressionData_integrativeModels(tpts, class = "KVK", parameters = KVK[[g]][grep("par",names(KVK[[g]]))])
+		modelKVK <- expressionData_integrativeModels(tpts, class = "KVK", parameters = unlist(KVK[[g]][grep("par",names(KVK[[g]]))]))
 		
 		matureModel <- modelKVK[grep("^mature",names(modelKVK))]
 		prematureModel <- modelKVK[grep("^premature",names(modelKVK))]
@@ -9187,7 +9188,7 @@ k_score_fun <- function(k, rate_conf_int)
 		                               , model = modelKVK
 		                               , variance = c(matureVariance[g,],prematureVariance[g,])),error=function(e)NaN)
 
-		modelKKV <- expressionData_integrativeModels(tpts, class = "KKV", parameters = KKV[[g]][grep("par",names(KKV[[g]]))])
+		modelKKV <- expressionData_integrativeModels(tpts, class = "KKV", parameters = unlist(KKV[[g]][grep("par",names(KKV[[g]]))]))
 		
 		matureModel <- modelKKV[grep("^mature",names(modelKKV))]
 		prematureModel <- modelKKV[grep("^premature",names(modelKKV))]
@@ -9198,7 +9199,7 @@ k_score_fun <- function(k, rate_conf_int)
 		                               , model = modelKKV
 		                               , variance = c(matureVariance[g,],prematureVariance[g,])),error=function(e)NaN)
 
-		modelVVK <- expressionData_integrativeModels(tpts, class = "VVK", parameters = VVK[[g]][grep("par",names(VVK[[g]]))])
+		modelVVK <- expressionData_integrativeModels(tpts, class = "VVK", parameters = unlist(VVK[[g]][grep("par",names(VVK[[g]]))]))
 		
 		matureModel <- modelVVK[grep("^mature",names(modelVVK))]
 		prematureModel <- modelVVK[grep("^premature",names(modelVVK))]
@@ -9209,7 +9210,7 @@ k_score_fun <- function(k, rate_conf_int)
 		                               , model = modelVVK
 		                               , variance = c(matureVariance[g,],prematureVariance[g,])),error=function(e)NaN)
 
-		modelVKV <- expressionData_integrativeModels(tpts, class = "VKV", parameters = VKV[[g]][grep("par",names(VKV[[g]]))])
+		modelVKV <- expressionData_integrativeModels(tpts, class = "VKV", parameters = unlist(VKV[[g]][grep("par",names(VKV[[g]]))]))
 		
 		matureModel <- modelVKV[grep("^mature",names(modelVKV))]
 		prematureModel <- modelVKV[grep("^premature",names(modelVKV))]
@@ -9220,7 +9221,7 @@ k_score_fun <- function(k, rate_conf_int)
 		                               , model = modelVKV
 		                               , variance = c(matureVariance[g,],prematureVariance[g,])),error=function(e)NaN)
 
-		modelKVV <- expressionData_integrativeModels(tpts, class = "KVV", parameters = KVV[[g]][grep("par",names(KVV[[g]]))])
+		modelKVV <- expressionData_integrativeModels(tpts, class = "KVV", parameters = unlist(KVV[[g]][grep("par",names(KVV[[g]]))]))
 		
 		matureModel <- modelKVV[grep("^mature",names(modelKVV))]
 		prematureModel <- modelKVV[grep("^premature",names(modelKVV))]
@@ -9231,7 +9232,7 @@ k_score_fun <- function(k, rate_conf_int)
 		                               , model = modelKVV
 		                               , variance = c(matureVariance[g,],prematureVariance[g,])),error=function(e)NaN)
 
-		modelVVV <- expressionData_integrativeModels(tpts, class = "VVV", parameters = VVV[[g]][grep("par",names(VVV[[g]]))])
+		modelVVV <- expressionData_integrativeModels(tpts, class = "VVV", parameters = unlist(VVV[[g]][grep("par",names(VVV[[g]]))]))
 		
 		matureModel <- modelVVV[grep("^mature",names(modelVVV))]
 		prematureModel <- modelVVV[grep("^premature",names(modelVVV))]
