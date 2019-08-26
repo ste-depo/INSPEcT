@@ -7667,6 +7667,17 @@ k_score_fun <- function(k, rate_conf_int)
 	k3_low <- median(sapply(confidenceIntervals,function(g){abs(g[[3]][,2] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
 	k3_high <- median(sapply(confidenceIntervals,function(g){abs(g[[3]][,3] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
 
+	### Possible for very few genes
+	#
+	if(k1_low==0)k1_low <- mean(sapply(confidenceIntervals,function(g){abs(g[[1]][,2] - g[[1]][,1])/g[[1]][,1]}),na.rm=TRUE)
+	if(k1_high==0)k1_high <- mean(sapply(confidenceIntervals,function(g){abs(g[[1]][,3] - g[[1]][,1])/g[[1]][,1]}),na.rm=TRUE)
+	
+	if(k2_low==0)k2_low <- mean(sapply(confidenceIntervals,function(g){abs(g[[2]][,2] - g[[2]][,1])/g[[2]][,1]}),na.rm=TRUE)
+	if(k2_high==0)k2_high <- mean(sapply(confidenceIntervals,function(g){abs(g[[2]][,3] - g[[2]][,1])/g[[2]][,1]}),na.rm=TRUE)
+	
+	if(k3_low==0)k3_low <- mean(sapply(confidenceIntervals,function(g){abs(g[[3]][,2] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
+	if(k3_high==0)k3_high <- mean(sapply(confidenceIntervals,function(g){abs(g[[3]][,3] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
+
 	median_low <- c(k1=k1_low,k2=k2_low,k3=k3_low)
 	median_high <- c(k1=k1_high,k2=k2_high,k3=k3_high)
 
@@ -10364,6 +10375,17 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 
 	k3_low <- median(sapply(confidenceIntervals,function(g){abs(g[[3]][,2] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
 	k3_high <- median(sapply(confidenceIntervals,function(g){abs(g[[3]][,3] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
+
+	### Possible for very few genes
+	#
+	if(k1_low==0)k1_low <- mean(sapply(confidenceIntervals,function(g){abs(g[[1]][,2] - g[[1]][,1])/g[[1]][,1]}),na.rm=TRUE)
+	if(k1_high==0)k1_high <- mean(sapply(confidenceIntervals,function(g){abs(g[[1]][,3] - g[[1]][,1])/g[[1]][,1]}),na.rm=TRUE)
+	
+	if(k2_low==0)k2_low <- mean(sapply(confidenceIntervals,function(g){abs(g[[2]][,2] - g[[2]][,1])/g[[2]][,1]}),na.rm=TRUE)
+	if(k2_high==0)k2_high <- mean(sapply(confidenceIntervals,function(g){abs(g[[2]][,3] - g[[2]][,1])/g[[2]][,1]}),na.rm=TRUE)
+	
+	if(k3_low==0)k3_low <- mean(sapply(confidenceIntervals,function(g){abs(g[[3]][,2] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
+	if(k3_high==0)k3_high <- mean(sapply(confidenceIntervals,function(g){abs(g[[3]][,3] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
 
 	median_low <- c(k1=k1_low,k2=k2_low,k3=k3_low)
 	median_high <- c(k1=k1_high,k2=k2_high,k3=k3_high)
