@@ -59,6 +59,8 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 	if( !all(clustIdx %in% 0:5) )
 		stop('inHeatmap: clustIdx must contain only values between 0 and 5')
 
+	oldMfrow <- par()$mfrow
+	oldMar <- par()$mar
 	nBreaks <- length(breaks)
 
 	if( type=='pre-model') {
@@ -219,6 +221,7 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 			, degradation_l2fc=beta_l2fc[rev(geneOrder),,drop=FALSE]
 		)
 	}
+	par(mfrow=oldMfrow, mar=oldMar)
 	out <- out
 
 	})

@@ -38,7 +38,7 @@ setMethod('compareSteadyNoNascent', 'INSPEcT', function(inspectIds,
 	premature <- ratesFirstGuess(inspectIds, 'preMRNA')
 	total <- ratesFirstGuess(inspectIds, 'total')
 	mature <- total - premature
-	# Mature, premature and total variances
+	# Mature, premature and total variances
 	prematureVar <- ratesFirstGuessVar(inspectIds, 'preMRNA')
 	totalVar <- ratesFirstGuessVar(inspectIds, 'total')
 	matureVar <- total + premature
@@ -76,10 +76,10 @@ setMethod('compareSteadyNoNascent', 'INSPEcT', function(inspectIds,
 	} else {
 		scores <- log2(mature) - log2maturemodel
 		colnames(scores) <- tpts(inspectIds)
-		# pi_angle <- standardCurveFit * pi/180
-		# threshold <- log2FCThreshold/cos(pi_angle)
-		# classification <- abs(scores)>threshold
-		return(scores)
+		pi_angle <- standardCurveFit * pi/180
+		threshold <- log2FCThreshold/cos(pi_angle)
+		classification <- abs(scores)>threshold
+		return(classification)
 	}
 
 	# return(list(scores=scores, norm=normScores, lognorm=lognormScores))

@@ -6366,7 +6366,7 @@ standardCurveFitFunction <- function(p,m,err)
 	return(seq(-89,90)[which.min(all_alphas_outliers)])
 }
 
-classificationFunction <- function(p,m,alpha,ref)
+classificationFunction <- function(p,m,alpha,ref=NULL)
 {
 	standardCurveFit <- alpha
 	classificationTmp <- sapply(rownames(p),function(g)
