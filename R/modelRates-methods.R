@@ -180,6 +180,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 		object@model@ratesSpecs <- ratesSpecs
 		object@model@modeledGenes <- length(featureNames(object))
 		object <- makeModelRates(object)
+		object@NF <- FALSE
 		return(object)
 
 	}else{
