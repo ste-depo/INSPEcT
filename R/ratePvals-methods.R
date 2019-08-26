@@ -54,7 +54,7 @@ setMethod('ratePvals', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL) {
 		{
 			rate_conf_int <- cbind(synthesis_left[g,],synthesis_center[g,],synthesis_right[g,])
 			k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
-			if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
+			if(!is.finite(k_start)) return(NaN) #return(list(par=NaN, value=NaN))
 			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
 			pchisq(k_scores_out$value,length(tpts(object))-1,lower.tail=FALSE)
 			# return(list(par=k_scores_out$par, score=k_scores_out$value))
@@ -64,7 +64,7 @@ setMethod('ratePvals', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL) {
 		{
 			rate_conf_int <- cbind(processing_left[g,],processing_center[g,],processing_right[g,])
 			k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
-			if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
+			if(!is.finite(k_start)) return(NaN) #return(list(par=NaN, value=NaN))
 			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
 			pchisq(k_scores_out$value,length(tpts(object))-1,lower.tail=FALSE)
 			# return(list(par=k_scores_out$par, score=k_scores_out$value))
@@ -74,13 +74,13 @@ setMethod('ratePvals', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL) {
 		{
 			rate_conf_int <- cbind(degradation_left[g,],degradation_center[g,],degradation_right[g,])
 			k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
-			if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
+			if(!is.finite(k_start)) return(NaN) #return(list(par=NaN, value=NaN))
 			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
 			pchisq(k_scores_out$value,length(tpts(object))-1,lower.tail=FALSE)
 			# return(list(par=k_scores_out$par, score=k_scores_out$value))
 		}))
 
-		return(data.frame("synthesis"=fitResults_synthesis,"processing"=fitResults_processing,"degradation"=fitResults_degradation))
+		return(data.frame("synthesis"=fitResults_synthesis,"processing"=fitResults_processing,"degradation"=fitResults_degradation,row.names=featureNames(object)))
 	}else{
 		if( modelSelection(object)$limitModelComplexity ) {
 			dfmax = length(tpts(object))

@@ -44,8 +44,10 @@ setMethod('chisqmodel', 'INSPEcT_model', function(object, ...) {
 	
 	if(NoNascent)
 	{
-		colid <- sapply(gc, function(x) which(colnames(chisqtest)==x))		
-		return(chisqtest[cbind(1:nrow(chisqtest),colid)])
+		colid <- sapply(gc, function(x) which(colnames(chisqtest)==x))
+		chisqmodel <- chisqtest[cbind(1:nrow(chisqtest),colid)]
+		names(chisqmodel) <- rownames(chisqtest)
+		return(chisqmodel)
 	}else{
 		colid <- chisqtest[,"abc"]
 		oldDF <- sapply(object@ratesSpecs,function(g)

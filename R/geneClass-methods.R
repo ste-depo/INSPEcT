@@ -46,6 +46,7 @@ setMethod('geneClass', 'INSPEcT_model',
 		}
 
 		## return
+		names(geneClass) <- seq_along(geneClass)
 		return(geneClass)
 	})
 
