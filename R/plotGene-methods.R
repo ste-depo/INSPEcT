@@ -9,17 +9,28 @@
 #' @param fix.yaxis A logical, indicating whether the limits for y-axis of degradation and processing rates should be fixed
 #' relative to their distributions
 #' @param priors A logical, if true the priors of the rates are plotted
+#' @param constantModel A logical, if true the constant model for the + nascent modeling are shown
 #' @return A list containing total RNA levels and their confidence interval (levels plus and minus
 #' one standard deviation), pre-RNA lelevs and their confidence intervals, synthsis rates and 
 #' their confidence intervals, degradation rates and processing rates of the selected gene.
 #' @examples
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' plotGene(nascentInspObj10, 1)
-setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TRUE) {
+setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TRUE, constantModel=FALSE) {
+
 	ix <- ix[1]
 	tpts <- object@tpts
 
 	oneGene <- object[ix]
+
+	if(object@NoNascent)
+	{
+		pValues <- formatC(as.numeric(ratePvals(object)[ix,]),format = "e", digits = 1)
+		names(pValues) <- c('synthesis','processing','degradation')
+	}else{
+		pValues <- formatC(as.numeric(ratePvals(oneGene)[ix,]),format = "e", digits = 1)
+		names(pValues) <- c('synthesis','processing','degradation')		
+	}
 
 	if( oneGene@NoNascent & !oneGene@NF )
 		foe <- capture.output(oneGene <- computeConfidenceIntervals(oneGene))
@@ -60,7 +71,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 	beta_right <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_right")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
 	beta_constant <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_constant")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
 
-	if(oneGene@NoNascent)
+	if(oneGene@NoNascent|!constantModel)
 	{
 		alpha_constant <- rep(NaN,length(tpts(oneGene)))
 		gamma_constant <- rep(NaN,length(tpts(oneGene)))
@@ -126,19 +137,19 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, alpha, type='l', lty=c(1,1,2,2,3), lwd=c(1,3,1,1,3)
-				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
+				, col=3, main=paste0('synthesis\n',pValues['synthesis']), xaxt='n', xlab='time', ylab='')		
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 
 			functionTmp <- function()
 			{
 				matplot(x, gamma, type='l', lty=c(1,1,2,2,3), lwd=c(1,3,1,1,3), col=5
-					, main='processing', xaxt='n', xlab='time', ylab='', ylim=processingYlim)
+					, main=paste0('processing\n',pValues['processing']), xaxt='n', xlab='time', ylab='', ylim=processingYlim)
 				axis(1, at=x, labels=signif(tpts, 2), las=3)		
 			}
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, beta, type='l', lty=c(1,1,2,2,3), lwd=c(1,3,1,1,3), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
+				, main=paste0('degradation\n',pValues['degradation']), xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 
 		} else {
@@ -159,20 +170,20 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, alpha, type='l', lty=c(1,1,2,2,3), lwd=c(1,3,1,1,3)
-				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
+				, col=3, main=paste0('synthesis\n',pValues['synthesis']), xaxt='n', xlab='time', ylab='')		
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 
 			functionTmp <- function()
 			{
 				matplot(x, gamma, type='l', lty=c(1,1,2,2,3), lwd=c(1,3,1,1,3), col=5
-					, main='processing', xaxt='n', xlab='time', ylab='')
+					, main=paste0('processing\n',pValues['processing']), xaxt='n', xlab='time', ylab='')
 				axis(1, at=x, labels=signif(tpts, 2), las=3)		
 			}
 
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, beta, type='l', lty=c(1,1,2,2,3), lwd=c(1,3,1,1,3), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='')
+				, main=paste0('degradation\n',pValues['degradation']), xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 		}
 
@@ -234,19 +245,19 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, alpha, type='l', lty=c(1,2,2), lwd=c(1,1,1)
-				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')
+				, col=3, main=paste0('synthesis\n',pValues['synthesis']), xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 
 			functionTmp <- function()
 			{
 				matplot(x, gamma, type='l', lty=c(1), lwd=c(1), col=5
-					, main='processing', xaxt='n', xlab='time', ylab='', ylim=processingYlim)
+					, main=paste0('processing\n',pValues['processing']), xaxt='n', xlab='time', ylab='', ylim=processingYlim)
 				axis(1, at=x, labels=signif(tpts, 2), las=3)		
 			}
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, beta, type='l', lty=c(1), lwd=c(1), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
+				, main=paste0('degradation\n',pValues['degradation']), xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 		} else {
 			
@@ -266,20 +277,20 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, alpha, type='l', lty=c(1,2,2), lwd=c(1,1,1)
-				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')
+				, col=3, main=paste0('synthesis\n',pValues['synthesis']), xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 
 			functionTmp <- function()
 			{
 				matplot(x, gamma, type='l', lty=c(1), lwd=c(1), col=5
-					, main='processing', xaxt='n', xlab='time', ylab='')
+					, main=paste0('processing\n',pValues['processing']), xaxt='n', xlab='time', ylab='')
 				axis(1, at=x, labels=signif(tpts, 2), las=3)		
 			}
 
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, beta, type='l', lty=c(1), lwd=c(1), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='')
+				, main=paste0('degradation\n',pValues['degradation']), xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 		}
 

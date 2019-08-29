@@ -14,7 +14,8 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object)
 		
 	} else {
 		gc <- geneClass(object)
-
+		names(gc) <- featureNames(object)
+		
 		llConfidenceThreshold <- object@model@params$logLikelihoodConfidenceThreshold
 		if(is.null(llConfidenceThreshold)) llConfidenceThreshold <- 0.95
 		llConfidenceThreshold <- qchisq(llConfidenceThreshold,1)
@@ -171,7 +172,7 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object)
 			rate_conf_int <- confidenceIntervals[[g]][["k1"]]
 			k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
 			if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
-			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
+			k_scores_out <- tryCatch(optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int),error=function(e)list('par'=NaN))
 			return(k_scores_out$par)
 		}))
 
@@ -180,7 +181,7 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object)
 			rate_conf_int <- confidenceIntervals[[g]][["k2"]]
 			k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
 			if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
-			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
+			k_scores_out <- tryCatch(optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int),error=function(e)list('par'=NaN))
 			return(k_scores_out$par)
 		}))
 
@@ -189,7 +190,7 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object)
 			rate_conf_int <- confidenceIntervals[[g]][["k3"]]
 			k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
 			if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
-			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
+			k_scores_out <- tryCatch(optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int),error=function(e)list('par'=NaN))
 			return(k_scores_out$par)
 		}))
 

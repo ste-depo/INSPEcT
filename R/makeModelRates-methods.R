@@ -18,63 +18,22 @@
 #
 setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
 
-	print("makeModelRates for INSPEcT_model object was required!")
+	args <- list(...)
+	tpts <- args$tpts
 
-	# args <- list(...)
-	# tpts <- args$tpts
-	# if( is.null(tpts) )
-	# 	stop('makeModelRates: missing "tpts" argument with no default.')
-	# ## get ratesSpec field
-	# ratesSpecs <- object@ratesSpecs
-	# ## in case some elements of ratesSpecs are longer than one,
-	# # meaning that a unique choiche for a model has not been done yet,
-	# # choose one using "bestModel" method
-	# if( any(sapply(ratesSpecs, length)!=1) )
-	# 	ratesSpecs <- .bestModel(object)@ratesSpecs
-	# ## solve the differential equation model for each gene
-	# nGenes <- length(ratesSpecs)
-	# # log_shift <- find_tt_par(tpts)
-	# modelRates <- lapply(1:nGenes, function(i) {
-	# 	tryCatch(
-	# 		# .makeModel(tpts, ratesSpecs[[i]][[1]], log_shift, time_transf, deSolve::ode, .rxnrate)
-	# 		.makeModel(tpts, ratesSpecs[[i]][[1]], .rxnrate, nascent = FALSE)
-	# 		, error=function(e)
-	# 			tryCatch(
-	# 				# .makeSimpleModel(tpts, ratesSpecs[[i]][[1]], log_shift, time_transf, deSolve::ode, .rxnrateSimple)
-	# 				.makeSimpleModel(tpts, ratesSpecs[[i]][[1]], .rxnrateSimple)
-	# 				, error=function(e) .makeEmptyModel(tpts)
-	# 				)
-	# 			)
-	# 	})
-	# ## make an object of ExpressionSet class
-	# exprData <- cbind(
-	# 	t(sapply(modelRates, function(x) x$total))
-	# 	, t(sapply(modelRates, function(x) x$preMRNA))
-	# 	, t(sapply(modelRates, function(x) x$alpha))
-	# 	, t(sapply(modelRates, function(x) x$beta))
-	# 	, t(sapply(modelRates, function(x) x$gamma))
-	# 	)
-	# nTpts <- length(tpts)
-	# pData <- data.frame(
-	# 	feature=c(
-	# 		rep('total',nTpts)
-	# 		, rep('preMRNA',nTpts)
-	# 		, rep('synthesis',nTpts)
-	# 		, rep('degradation',nTpts)
-	# 		, rep('processing',nTpts)
-	# 		)
-	# 	, time=rep(tpts, 5))
-	# colnames(exprData) <- paste(pData$feature, 
-	# 	signif(pData$time,2), sep='_')
-	# rownames(exprData) <- names(object@ratesSpecs)
-	# rownames(pData) <- colnames(exprData)
-	# phenoData <- new('AnnotatedDataFrame', data=pData)
-	# modelRates <- ExpressionSet(
-	# 	assayData=exprData
-	# 	, phenoData=phenoData
-	# 	)
-	# ## return the ExpressionSet object
-	# return(modelRates)
+	if( is.null(tpts) )
+		stop('makeModelRates: missing "tpts" argument with no default.')
+
+	models <- object@ratesSpecs
+	
+	realSynthesis <- t(sapply(models,function(model)model[[1]][['alpha']]$fun$value(tpts,model[[1]][['alpha']]$par)))
+	realProcessing <- t(sapply(models,function(model)model[[1]][['gamma']]$fun$value(tpts,model[[1]][['gamma']]$par)))
+	realDegradation <- t(sapply(models,function(model)model[[1]][['beta']]$fun$value(tpts,model[[1]][['beta']]$par)))
+
+	rownames(realSynthesis) <- rownames(realProcessing) <- rownames(realDegradation) <- seq_along(models)
+	colnames(realSynthesis) <- colnames(realProcessing) <- colnames(realDegradation) <- tpts
+
+	return(list('synthesis'=realSynthesis,'processing'=realProcessing,'degradation'=realDegradation))
 })
 
 # setGeneric('makeModelRates', function(object, ...) standardGeneric('makeModelRates'))

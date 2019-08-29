@@ -100,7 +100,6 @@ setMethod('geneClass', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL)
 }
 
 .bestModel <- function(object, bTsh=NULL, cTsh=NULL, Nascent = FALSE) {
-
 	preferPValue <- object@params$preferPValue
 	
 	## in case bTsh or bTsh are provided set them as

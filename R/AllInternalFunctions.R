@@ -7571,7 +7571,7 @@ k_score_fun <- function(k, rate_conf_int)
 	{
 		classTmp <- "VVV"
 
-		parameters <- VVV[[g]][grep("par",names(VVV[[g]]))]
+		parameters <- unlist(VVV[[g]][grep("par",names(VVV[[g]]))])
 		optTmp <- rates_integrativeModels(tpts=tpts, class=classTmp, parameters=parameters)
 
 		foe <- capture.output({ # Just to capture the output of multiroot function
