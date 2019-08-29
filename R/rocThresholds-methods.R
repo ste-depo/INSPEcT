@@ -91,6 +91,10 @@ setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT_mo
 
 	if(plot)
 	{
+
+		oldMfrow <- par()$mfrow
+		oldMar <- par()$mar
+
 		par(mfrow=c(1,3))
 		ix <- is.finite(rAlpha$thresholds)
 		matplot(rAlpha$thresholds[ix], cbind(rAlpha$sensitivities[ix], rAlpha$specificities[ix])
@@ -115,6 +119,9 @@ setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT_mo
 
 		legend('left', col=c('blue','blue','black','red'), lty=c(3,2,1,1), lwd=c(2,2,4,4)
 			, legend=c('optimal Brown\nthreshold','selected Brown\nthreshold', 'sensitivities', 'specificities'))
+
+		par(mfrow=oldMfrow, mar=oldMar)
+		
 		}
 
 		return(unlist(outTmp))

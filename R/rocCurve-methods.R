@@ -45,7 +45,7 @@
 setMethod('rocCurve', signature(object='INSPEcT_model', object2='INSPEcT'), 
 	function(object, object2, cTsh=NULL, plot=TRUE, comparative=FALSE) {
 
-	# reduce the set of genes to the one present in the modeled object
+	# reduce the set of genes to the one present in the modeled object
 	if( length(object@ratesSpecs) !=  length(featureNames(object2)) )
 		object <- object[as.numeric(featureNames(object2))]
 
@@ -55,7 +55,7 @@ setMethod('rocCurve', signature(object='INSPEcT_model', object2='INSPEcT'),
 		allResponses <- geneClass(object)
 
 		## in case the classification is based on model selction (i.e. functional NoNascent)
-		## plot also the AIC information
+		## plot also the AIC information
 		plotAIC <- (object2@NoNascent & !object2@NF)
 		if( plotAIC ) {
 			## Pure AIC selection
@@ -154,7 +154,7 @@ setMethod('rocCurve', signature(object='INSPEcT_model', object2='INSPEcT'),
 			, predictor=ratePvals[,"degradation"],direction=">"), error=function(e) list(auc=NA))
 
 		## in case the classification is based on model selction (i.e. functional NoNascent)
-		## plot also the AIC information
+		## plot also the AIC information
 		plotAIC <- object2@NoNascent & !object2@NF
 		if( plotAIC ) {
 			## Pure AIC selection

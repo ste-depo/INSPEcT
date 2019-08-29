@@ -31,6 +31,9 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 		pValues <- formatC(as.numeric(ratePvals(oneGene)[ix,]),format = "e", digits = 1)
 		names(pValues) <- c('synthesis','processing','degradation')		
 	}
+	
+	oldMfrow <- par()$mfrow
+	oldMar <- par()$mar
 
 	if( oneGene@NoNascent & !oneGene@NF )
 		foe <- capture.output(oneGene <- computeConfidenceIntervals(oneGene))
@@ -125,7 +128,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 
 			x <- seq_along(tpts)
 
-			par(mfrow=c(1,5))
+			par(mfrow=c(1,5), mar=.1+c(5,2.5,4,.5))
 			matplot(x, total, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3), col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 
@@ -156,7 +159,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 
 			x <- seq_along(tpts)
 
-			par(mfrow=c(1,5))
+			par(mfrow=c(1,5), mar=.1+c(5,2.5,4,.5))
 			matplot(x, total, type='l', lty=c(1,2,2,1), lwd=c(1,1,1,3)
 				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
@@ -231,7 +234,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			
 			x <- seq_along(tpts)
 
-			par(mfrow=c(1,5))
+			par(mfrow=c(1,5), mar=.1+c(5,2.5,4,.5))
 			matplot(x, total, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
@@ -263,7 +266,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			
 			x <- seq_along(tpts)
 
-			par(mfrow=c(1,5))
+			par(mfrow=c(1,5), mar=.1+c(5,2.5,4,.5))
 			matplot(x, total, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
@@ -296,6 +299,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 
 	}
 
+	par(mfrow=oldMfrow, mar=oldMar)
 	out <- list(total=total, premature=preMRNA, synthesis=alpha, processing=gamma, degradation=beta)
 
 	})

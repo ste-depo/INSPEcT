@@ -228,7 +228,7 @@ quantifyExpressionsFromBAMs <- function(txdb
 }
 
 
-# look for possible sequence matches between two genomic annotaion objects
+# look for possible sequence matches between two genomic annotaion objects
 # where the name of the match sequence is included within the name 
 # of the reference and with the same sequence length
 matchSeqnames <- function(match_object, ref_object) {

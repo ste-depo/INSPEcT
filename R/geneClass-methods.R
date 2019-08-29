@@ -27,7 +27,6 @@ setMethod('geneClass', 'INSPEcT_model',
 		if( any(sapply(ratesSpecs, length)!=1) )
 			ratesSpecs <- .bestModel(object, bTsh, cTsh)@ratesSpecs
 		geneClass <- sapply(ratesSpecs,names)
-		names(geneClass) <- names(object@ratesSpecs)
 		if(all(is.null(unlist(sapply(ratesSpecs,names)))))
 		{
 			# Standard names: alpha, beta and gamma for all
@@ -44,9 +43,10 @@ setMethod('geneClass', 'INSPEcT_model',
 				function(accepted) paste(c('a','b','c')[accepted],collapse=''))
 			geneClass[geneClass==''] <- '0'
 		}
-
+		names(geneClass) <- if( !is.null(names(object@ratesSpecs)) ) names(object@ratesSpecs) else 
+			seq_along(object@ratesSpecs)
 		## return
-		names(geneClass) <- seq_along(geneClass)
+		# names(geneClass) <- seq_along(geneClass)
 		return(geneClass)
 	})
 
@@ -87,6 +87,7 @@ setMethod('geneClass', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL)
 	geneClass <- apply(ratePvalsTmp,1,function(r)
 	{
 		r <- r < unlist(ciTsh)
+		if(all(is.na(r))) return(NA)
 		if(!r[1]&!r[2]&!r[3]) return("0")
 		if(r[1]&!r[2]&!r[3]) return("a")
 		if(!r[1]&r[2]&!r[3]) return("b")

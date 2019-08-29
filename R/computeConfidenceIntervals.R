@@ -5,7 +5,7 @@
 #' @param object An object of class INSPEcT_model
 #' @return An object of class INSPEcT.
 
-setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object)
+setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object, BPPARAM=bpparam())
 {
 	if(!object@NoNascent){
 
@@ -37,7 +37,7 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object)
 
 		confidenceIntervals <- bplapply(eiGenes,function(g)
 		{
-			classTmp <- gc[g]
+		  classTmp <- gc[g]
 
 			parameters <- unlist(object@model@ratesSpecs[[g]][[classTmp]])
 			parameters <- unlist(parameters[grep("params",names(parameters))])

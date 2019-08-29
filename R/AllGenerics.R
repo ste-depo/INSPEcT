@@ -27,10 +27,10 @@ setGeneric('geneClass', function(object, bTsh=NULL, cTsh=NULL)
 setGeneric('makeModelRates', function(object, ...) 
 	standardGeneric('makeModelRates'))
 #' Compute confidence intervals
-setGeneric('computeConfidenceIntervals', function(object, computeConfidenceIntervals, ...) 
+setGeneric('computeConfidenceIntervals', function(object, BPPARAM=bpparam()) 
 	standardGeneric('computeConfidenceIntervals'))
 #' Set confidence intervals
-setGeneric('setConfidenceIntervals', function(object, confidenceIntervals, ...) 
+setGeneric('setConfidenceIntervals', function(object, confidenceIntervals) 
 	standardGeneric('setConfidenceIntervals'))
 #' Generate synthetic rates and concentrations
 setGeneric('makeSimDataset', function(object, tpts, nRep, NoNascent = FALSE, seed=NULL, b = 0.3, tL = 1/6, noise_sd = 4.0)
