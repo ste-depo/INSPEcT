@@ -131,7 +131,6 @@ quantifyExpressionsFromBAMs <- function(txdb
 		stop("quantifyExpressionsFromBAMs: argument 'by' not recognized.")
 
 	}
-
 	############################################
 	### MAKE COUNTS FROM BAM ###################
 	############################################

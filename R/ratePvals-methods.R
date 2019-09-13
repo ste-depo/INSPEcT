@@ -95,7 +95,6 @@ setMethod('ratePvals', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL) {
 calculate_rates_pvalues <- function(object, bTsh, cTsh, dfmax=Inf) {
 	## calculates the pval to be varying per rate per gene, 
 	## according to the threshold set for the chisq masking step)
-
 	priors <- object@params$priors
 	if(is.null(priors)) priors<-c("synthesis"=1,"processing"=1,"degradation"=1)
 
@@ -429,8 +428,6 @@ logLikRatioTestInscpectModels <- function(null, alt, dfmax=Inf, constantProbabil
 			sum(sqrt((qchisq(c(0.0001,0.001,0.01,0.05,0.10,0.25),df_alt-df_null,lower.tail=FALSE)*constantProbability-qchisq(c(0.0001,0.001,0.01,0.05,0.10,0.25),x,lower.tail=FALSE))^2))
 		}
 		deltaDF <- optimize(errorFunction,lower=0,upper=10^3,constantProbability=constantProbability,df_alt=df_alt,df_null=df_null)$minimum
-
-		# print(deltaDF - (df_alt-df_null))
 
 		pchisq(D, deltaDF, lower.tail=FALSE)
 	}

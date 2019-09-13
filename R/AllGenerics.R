@@ -27,7 +27,7 @@ setGeneric('geneClass', function(object, bTsh=NULL, cTsh=NULL)
 setGeneric('makeModelRates', function(object, ...) 
 	standardGeneric('makeModelRates'))
 #' Compute confidence intervals
-setGeneric('computeConfidenceIntervals', function(object, BPPARAM=bpparam()) 
+setGeneric('computeConfidenceIntervals', function(object, singleGeneClass=NULL, BPPARAM=bpparam()) 
 	standardGeneric('computeConfidenceIntervals'))
 #' Set confidence intervals
 setGeneric('setConfidenceIntervals', function(object, confidenceIntervals) 

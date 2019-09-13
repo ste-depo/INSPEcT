@@ -129,7 +129,7 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 		U_exons <- U_exons[genesTmp,]
 		U_introns <- U_introns[genesTmp,]
 
-	### NEW CORRUPTION START ###
+		### NEW CORRUPTION START ###
 		set.seed(seed)
 
 		totalFitVarianceLaw <- object@params$sim$noiseFunctions$total
@@ -182,7 +182,7 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 
 		# X_noisy <- (b_noisy/(1 - b_noisy))*apply(((L_exons+L_introns)/(U_exons+U_introns)),1,mean)
 
-	### NEW CORRUPTION END ###
+		### NEW CORRUPTION END ###
 	
 		E_exons <- L_exons + X_noisy*U_exons
 		E_introns <- L_introns + X_noisy*U_introns
@@ -249,6 +249,13 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 	}))
 
 	addNoise <- function(signal, noiseVar){
+		if(is.null(noiseVar)) # Control added to generate data without noise just for rebutal
+		{
+			noiseVar <- matrix(rep(0,length(signal)),nrow=nrow(signal))
+			noiseVar[,1] <- 0.01*signal[,1]
+			rownames(noiseVar) <- rownames(signal)
+			colnames(noiseVar) <- colnames(signal)
+		}
 		t(sapply(1:nrow(signal),function(r){
 			sapply(1:ncol(signal),function(c)
 			{
@@ -259,13 +266,13 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 
 	if( !is.null(seed) ) set.seed(seed)
 	totalSimReplicates <- do.call('cbind', 
-		lapply(1:nRep, function(i) addNoise(totalSim,totalSim_noisevar)))
+		lapply(1:nRep, function(i) addNoise(signal=totalSim,noiseVar=totalSim_noisevar)))#NULL)))#
 	rownames(totalSimReplicates) <- 1:nrow(totalSimReplicates)
 	preMRNASimReplicates <- do.call('cbind', 
-		lapply(1:nRep, function(i) addNoise(preMRNASim,preMRNASim_noisevar)))
+		lapply(1:nRep, function(i) addNoise(signal=preMRNASim,noiseVar=preMRNASim_noisevar)))#NULL)))#
 	rownames(preMRNASimReplicates) <- 1:nrow(preMRNASimReplicates)
 	alphaSimReplicates <- do.call('cbind', 
-		lapply(1:nRep, function(i) addNoise(alphaSim,alphaSim_noisevar)))
+		lapply(1:nRep, function(i) addNoise(signal=alphaSim,noiseVar=alphaSim_noisevar)))#NULL)))#
 	rownames(alphaSimReplicates) <- 1:nrow(alphaSimReplicates)
 	experimentalDesign <- rep(tpts, nRep)
 	colnames(totalSimReplicates)<-colnames(preMRNASimReplicates)<-colnames(alphaSimReplicates) <- experimentalDesign

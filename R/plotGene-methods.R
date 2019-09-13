@@ -17,11 +17,11 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' plotGene(nascentInspObj10, 1)
 setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TRUE, constantModel=FALSE) {
-
 	ix <- ix[1]
 	tpts <- object@tpts
 
 	oneGene <- object[ix]
+	geneClassIX <- geneClass(object)[ix]
 
 	if(object@NoNascent)
 	{
@@ -36,19 +36,19 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 	oldMar <- par()$mar
 
 	if( oneGene@NoNascent & !oneGene@NF )
-		foe <- capture.output(oneGene <- computeConfidenceIntervals(oneGene))
+		foe <- capture.output(oneGene <- computeConfidenceIntervals(computeConfidenceIntervals,singleGeneClass = geneClassIX))
 
-	ratesFirstGuessTotalTmp <- ratesFirstGuess(oneGene, 'total')
-	ratesFirstGuessPreTmp <- ratesFirstGuess(oneGene, 'preMRNA')
+	ratesFirstGuessTotalTmp <- ratesFirstGuess(object, 'total')[ix,]
+	ratesFirstGuessPreTmp <- ratesFirstGuess(object, 'preMRNA')[ix,]
 
-	ratesFirstGuessTotalVarTmp <- ratesFirstGuessVar(oneGene, 'total')
-	ratesFirstGuessPreVarTmp <- ratesFirstGuessVar(oneGene, 'preMRNA')
+	ratesFirstGuessTotalVarTmp <- ratesFirstGuessVar(object, 'total')[ix,]
+	ratesFirstGuessPreVarTmp <- ratesFirstGuessVar(object, 'preMRNA')[ix,]
 
-	ratesFirstGuessSynthesisTmp <- ratesFirstGuess(oneGene, 'synthesis')
-	ratesFirstGuessProcessingTmp <- ratesFirstGuess(oneGene, 'processing')
-	ratesFirstGuessDegradationTmp <- ratesFirstGuess(oneGene, 'degradation')
+	ratesFirstGuessSynthesisTmp <- ratesFirstGuess(object, 'synthesis')[ix,]
+	ratesFirstGuessProcessingTmp <- ratesFirstGuess(object, 'processing')[ix,]
+	ratesFirstGuessDegradationTmp <- ratesFirstGuess(object, 'degradation')[ix,]
 
-	ratesFirstGuessSynthesisVarTmp <- ratesFirstGuessVar(oneGene, 'synthesis')
+	ratesFirstGuessSynthesisVarTmp <- ratesFirstGuessVar(object, 'synthesis')[ix,]
 
 	if(!priors)
 	{
@@ -89,7 +89,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 					sqrt(ratesFirstGuessTotalVarTmp)
 				, ratesFirstGuessTotalTmp - 
 					sqrt(ratesFirstGuessTotalVarTmp)
-				, viewModelRates(oneGene, 'total')
+				, viewModelRates(object, 'total')[ix,]
 				))
 			preMRNA <- t(rbind(
 				ratesFirstGuessPreTmp
@@ -97,25 +97,25 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 					sqrt(ratesFirstGuessPreVarTmp)
 				, ratesFirstGuessPreTmp - 
 					sqrt(ratesFirstGuessPreVarTmp)
-				, viewModelRates(oneGene, 'preMRNA')
+				, viewModelRates(object, 'preMRNA')[ix,]
 				))
 
 			alpha <- t(rbind(ratesFirstGuessSynthesisTmp
-					, viewModelRates(oneGene, 'synthesis')
+					, viewModelRates(object, 'synthesis')[ix,]
 					, alpha_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
 					, alpha_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
 					, alpha_constant
 			))
 
 			gamma <- t(rbind(ratesFirstGuessProcessingTmp
-					, viewModelRates(oneGene, 'processing')
+					, viewModelRates(object, 'processing')[ix,]
 					, gamma_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
 					, gamma_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
 					, gamma_constant
 			))
 
 			beta <- t(rbind(ratesFirstGuessDegradationTmp
-					, viewModelRates(oneGene, 'degradation')
+					, viewModelRates(object, 'degradation')[ix,]
 					, beta_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
 					, beta_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
 					, beta_constant

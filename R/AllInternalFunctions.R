@@ -10867,7 +10867,7 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 											 , derivativePenalityRelevance = 10^-50
 											 , llConfidenceThreshold)
 {
-	#$# print("newSave")
+	browser()
 	total <- concentrations$total
 	totalVariance <- concentrations$total_var
 
@@ -10933,7 +10933,6 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 				), error=function(e) return(.emptyGene(e)))
 	},BPPARAM=BPPARAM)
 	names(modelTotalRNAfun) <- eiGenes
-	#$# saveRDS(modelTotalRNAfun,"modelTotalRNAfun.rds")
 
 	impulseGenes <- as.numeric(sapply(modelMatureRNAfun,"[[","type")=="impulse") + 
 					as.numeric(sapply(modelTotalRNAfun,"[[","type")=="impulse")
@@ -10978,7 +10977,6 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 										, seed = seed
 										, computeDerivatives = computeDerivatives
 										), error=function(e) return(.emptyGene(e)))
-
 	}
 
 	message("          mixed genes coercion: sigmoid")

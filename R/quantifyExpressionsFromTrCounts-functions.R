@@ -113,7 +113,6 @@ quantifyExpressionsFromTrCounts <- function(allcounts
 	############## with DESeq2 #################
 	if(DESeq2)
 	{
-
 		message('Estimation of expressions and variances using DESeq2...')
 
 		if( is.numeric(experimentalDesign) ) 
