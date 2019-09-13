@@ -9,35 +9,46 @@
 #' @param fix.yaxis A logical, indicating whether the limits for y-axis of degradation and processing rates should be fixed
 #' relative to their distributions
 #' @param priors A logical, if true the priors of the rates are plotted
+#' @param constantModel A logical, if true the constant model for the + nascent modeling are shown
 #' @return A list containing total RNA levels and their confidence interval (levels plus and minus
 #' one standard deviation), pre-RNA lelevs and their confidence intervals, synthsis rates and 
 #' their confidence intervals, degradation rates and processing rates of the selected gene.
 #' @examples
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' plotGene(nascentInspObj10, 1)
-setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TRUE) {
+setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TRUE, constantModel=FALSE) {
 	ix <- ix[1]
 	tpts <- object@tpts
 
 	oneGene <- object[ix]
+	geneClassIX <- geneClass(object)[ix]
 
+	if(object@NoNascent)
+	{
+		pValues <- formatC(as.numeric(ratePvals(object)[ix,]),format = "e", digits = 1)
+		names(pValues) <- c('synthesis','processing','degradation')
+	}else{
+		pValues <- formatC(as.numeric(ratePvals(oneGene)[ix,]),format = "e", digits = 1)
+		names(pValues) <- c('synthesis','processing','degradation')		
+	}
+	
 	oldMfrow <- par()$mfrow
 	oldMar <- par()$mar
 
 	if( oneGene@NoNascent & !oneGene@NF )
-		foe <- capture.output(oneGene <- computeConfidenceIntervals(oneGene))
+		foe <- capture.output(oneGene <- computeConfidenceIntervals(computeConfidenceIntervals,singleGeneClass = geneClassIX))
 
-	ratesFirstGuessTotalTmp <- ratesFirstGuess(oneGene, 'total')
-	ratesFirstGuessPreTmp <- ratesFirstGuess(oneGene, 'preMRNA')
+	ratesFirstGuessTotalTmp <- ratesFirstGuess(object, 'total')[ix,]
+	ratesFirstGuessPreTmp <- ratesFirstGuess(object, 'preMRNA')[ix,]
 
-	ratesFirstGuessTotalVarTmp <- ratesFirstGuessVar(oneGene, 'total')
-	ratesFirstGuessPreVarTmp <- ratesFirstGuessVar(oneGene, 'preMRNA')
+	ratesFirstGuessTotalVarTmp <- ratesFirstGuessVar(object, 'total')[ix,]
+	ratesFirstGuessPreVarTmp <- ratesFirstGuessVar(object, 'preMRNA')[ix,]
 
-	ratesFirstGuessSynthesisTmp <- ratesFirstGuess(oneGene, 'synthesis')
-	ratesFirstGuessProcessingTmp <- ratesFirstGuess(oneGene, 'processing')
-	ratesFirstGuessDegradationTmp <- ratesFirstGuess(oneGene, 'degradation')
+	ratesFirstGuessSynthesisTmp <- ratesFirstGuess(object, 'synthesis')[ix,]
+	ratesFirstGuessProcessingTmp <- ratesFirstGuess(object, 'processing')[ix,]
+	ratesFirstGuessDegradationTmp <- ratesFirstGuess(object, 'degradation')[ix,]
 
-	ratesFirstGuessSynthesisVarTmp <- ratesFirstGuessVar(oneGene, 'synthesis')
+	ratesFirstGuessSynthesisVarTmp <- ratesFirstGuessVar(object, 'synthesis')[ix,]
 
 	if(!priors)
 	{
@@ -63,7 +74,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 	beta_right <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_right")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
 	beta_constant <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_constant")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
 
-	if(oneGene@NoNascent)
+	if(oneGene@NoNascent|!constantModel)
 	{
 		alpha_constant <- rep(NaN,length(tpts(oneGene)))
 		gamma_constant <- rep(NaN,length(tpts(oneGene)))
@@ -78,7 +89,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 					sqrt(ratesFirstGuessTotalVarTmp)
 				, ratesFirstGuessTotalTmp - 
 					sqrt(ratesFirstGuessTotalVarTmp)
-				, viewModelRates(oneGene, 'total')
+				, viewModelRates(object, 'total')[ix,]
 				))
 			preMRNA <- t(rbind(
 				ratesFirstGuessPreTmp
@@ -86,25 +97,25 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 					sqrt(ratesFirstGuessPreVarTmp)
 				, ratesFirstGuessPreTmp - 
 					sqrt(ratesFirstGuessPreVarTmp)
-				, viewModelRates(oneGene, 'preMRNA')
+				, viewModelRates(object, 'preMRNA')[ix,]
 				))
 
 			alpha <- t(rbind(ratesFirstGuessSynthesisTmp
-					, viewModelRates(oneGene, 'synthesis')
+					, viewModelRates(object, 'synthesis')[ix,]
 					, alpha_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
 					, alpha_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
 					, alpha_constant
 			))
 
 			gamma <- t(rbind(ratesFirstGuessProcessingTmp
-					, viewModelRates(oneGene, 'processing')
+					, viewModelRates(object, 'processing')[ix,]
 					, gamma_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
 					, gamma_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
 					, gamma_constant
 			))
 
 			beta <- t(rbind(ratesFirstGuessDegradationTmp
-					, viewModelRates(oneGene, 'degradation')
+					, viewModelRates(object, 'degradation')[ix,]
 					, beta_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
 					, beta_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
 					, beta_constant
@@ -129,19 +140,19 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, alpha, type='l', lty=c(1,1,2,2,3), lwd=c(1,3,1,1,3)
-				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
+				, col=3, main=paste0('synthesis\n',pValues['synthesis']), xaxt='n', xlab='time', ylab='')		
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 
 			functionTmp <- function()
 			{
 				matplot(x, gamma, type='l', lty=c(1,1,2,2,3), lwd=c(1,3,1,1,3), col=5
-					, main='processing', xaxt='n', xlab='time', ylab='', ylim=processingYlim)
+					, main=paste0('processing\n',pValues['processing']), xaxt='n', xlab='time', ylab='', ylim=processingYlim)
 				axis(1, at=x, labels=signif(tpts, 2), las=3)		
 			}
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, beta, type='l', lty=c(1,1,2,2,3), lwd=c(1,3,1,1,3), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
+				, main=paste0('degradation\n',pValues['degradation']), xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 
 		} else {
@@ -162,20 +173,20 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, alpha, type='l', lty=c(1,1,2,2,3), lwd=c(1,3,1,1,3)
-				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')		
+				, col=3, main=paste0('synthesis\n',pValues['synthesis']), xaxt='n', xlab='time', ylab='')		
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 
 			functionTmp <- function()
 			{
 				matplot(x, gamma, type='l', lty=c(1,1,2,2,3), lwd=c(1,3,1,1,3), col=5
-					, main='processing', xaxt='n', xlab='time', ylab='')
+					, main=paste0('processing\n',pValues['processing']), xaxt='n', xlab='time', ylab='')
 				axis(1, at=x, labels=signif(tpts, 2), las=3)		
 			}
 
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, beta, type='l', lty=c(1,1,2,2,3), lwd=c(1,3,1,1,3), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='')
+				, main=paste0('degradation\n',pValues['degradation']), xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 		}
 
@@ -237,19 +248,19 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, alpha, type='l', lty=c(1,2,2), lwd=c(1,1,1)
-				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')
+				, col=3, main=paste0('synthesis\n',pValues['synthesis']), xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 
 			functionTmp <- function()
 			{
 				matplot(x, gamma, type='l', lty=c(1), lwd=c(1), col=5
-					, main='processing', xaxt='n', xlab='time', ylab='', ylim=processingYlim)
+					, main=paste0('processing\n',pValues['processing']), xaxt='n', xlab='time', ylab='', ylim=processingYlim)
 				axis(1, at=x, labels=signif(tpts, 2), las=3)		
 			}
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, beta, type='l', lty=c(1), lwd=c(1), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
+				, main=paste0('degradation\n',pValues['degradation']), xaxt='n', xlab='time', ylab='', ylim=degradationYlim)
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 		} else {
 			
@@ -269,20 +280,20 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, alpha, type='l', lty=c(1,2,2), lwd=c(1,1,1)
-				, col=3, main='synthesis', xaxt='n', xlab='time', ylab='')
+				, col=3, main=paste0('synthesis\n',pValues['synthesis']), xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 
 			functionTmp <- function()
 			{
 				matplot(x, gamma, type='l', lty=c(1), lwd=c(1), col=5
-					, main='processing', xaxt='n', xlab='time', ylab='')
+					, main=paste0('processing\n',pValues['processing']), xaxt='n', xlab='time', ylab='')
 				axis(1, at=x, labels=signif(tpts, 2), las=3)		
 			}
 
 			tryCatch(functionTmp(),error=function(e)NaN)
 
 			matplot(x, beta, type='l', lty=c(1), lwd=c(1), col=4
-				, main='degradation', xaxt='n', xlab='time', ylab='')
+				, main=paste0('degradation\n',pValues['degradation']), xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 		}
 

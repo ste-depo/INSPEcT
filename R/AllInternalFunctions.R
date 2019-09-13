@@ -7571,7 +7571,7 @@ k_score_fun <- function(k, rate_conf_int)
 	{
 		classTmp <- "VVV"
 
-		parameters <- VVV[[g]][grep("par",names(VVV[[g]]))]
+		parameters <- unlist(VVV[[g]][grep("par",names(VVV[[g]]))])
 		optTmp <- rates_integrativeModels(tpts=tpts, class=classTmp, parameters=parameters)
 
 		foe <- capture.output({ # Just to capture the output of multiroot function
@@ -10867,7 +10867,6 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 											 , derivativePenalityRelevance = 10^-50
 											 , llConfidenceThreshold)
 {
-	#$# print("newSave")
 	total <- concentrations$total
 	totalVariance <- concentrations$total_var
 
@@ -10933,7 +10932,6 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 				), error=function(e) return(.emptyGene(e)))
 	},BPPARAM=BPPARAM)
 	names(modelTotalRNAfun) <- eiGenes
-	#$# saveRDS(modelTotalRNAfun,"modelTotalRNAfun.rds")
 
 	impulseGenes <- as.numeric(sapply(modelMatureRNAfun,"[[","type")=="impulse") + 
 					as.numeric(sapply(modelTotalRNAfun,"[[","type")=="impulse")
@@ -10978,7 +10976,6 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 										, seed = seed
 										, computeDerivatives = computeDerivatives
 										), error=function(e) return(.emptyGene(e)))
-
 	}
 
 	message("          mixed genes coercion: sigmoid")

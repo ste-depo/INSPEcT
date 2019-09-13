@@ -60,7 +60,7 @@ setClass('INSPEcT_model',
 	, prototype=list(
 		simple=FALSE
 		, params=list(
-			modelSelection=c('llr','aic')[1]
+			modelSelection=c('llr','aic','hib')[2]
             , preferPValue = TRUE
             , padj = TRUE
             , thresholds=list(

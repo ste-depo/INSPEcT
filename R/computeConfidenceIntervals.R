@@ -5,7 +5,7 @@
 #' @param object An object of class INSPEcT_model
 #' @return An object of class INSPEcT.
 
-setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object, BPPARAM=bpparam())
+setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object, singleGeneClass=NULL, BPPARAM=bpparam())
 {
 	if(!object@NoNascent){
 
@@ -13,8 +13,15 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object,
 		return(object)
 		
 	} else {
-		gc <- geneClass(object)
 
+		if(nGenes(object)==1&!is.null(singleGeneClass))
+		{
+			gc <- singleGeneClass
+		}else{
+			gc <- geneClass(object)
+			names(gc) <- featureNames(object)
+		}
+		
 		llConfidenceThreshold <- object@model@params$logLikelihoodConfidenceThreshold
 		if(is.null(llConfidenceThreshold)) llConfidenceThreshold <- 0.95
 		llConfidenceThreshold <- qchisq(llConfidenceThreshold,1)
@@ -143,6 +150,14 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object,
 		k3_low <- median(sapply(confidenceIntervals,function(g){abs(g[[3]][,2] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
 		k3_high <- median(sapply(confidenceIntervals,function(g){abs(g[[3]][,3] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
 
+		# Usefull for single gene (no nascent)
+		if(!is.finite(k1_low)|k1_low==0) k1_low <- NaN
+		if(!is.finite(k1_high)|k1_high==0) k1_high <- NaN
+		if(!is.finite(k2_low)|k2_low==0) k2_low <- NaN
+		if(!is.finite(k2_high)|k2_high==0) k2_high <- NaN
+		if(!is.finite(k3_low)|k3_low==0) k3_low <- NaN
+		if(!is.finite(k3_high)|k3_high==0) k3_high <- NaN
+
 		median_low <- c(k1=k1_low,k2=k2_low,k3=k3_low)
 		median_high <- c(k1=k1_high,k2=k2_high,k3=k3_high)
 
@@ -162,8 +177,12 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object,
 		}
 
 		# Removal of not modeled genes
-		eiGenes <- eiGenes[sapply(confidenceIntervals,function(g)all(is.finite(g[[1]]))&all(is.finite(g[[2]]))&all(is.finite(g[[3]])))]
-		confidenceIntervals <- confidenceIntervals[eiGenes]
+		# Check for single modeled genes (no nascent)
+		if(!object@NoNascent)
+		{
+			eiGenes <- eiGenes[sapply(confidenceIntervals,function(g)all(is.finite(g[[1]]))&all(is.finite(g[[2]]))&all(is.finite(g[[3]])))]
+			confidenceIntervals <- confidenceIntervals[eiGenes]
+		}
 
 		# I compute che constant rates
 		fitResults_synthesis <- unlist(lapply(eiGenes,function(g)
@@ -171,7 +190,7 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object,
 			rate_conf_int <- confidenceIntervals[[g]][["k1"]]
 			k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
 			if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
-			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
+			k_scores_out <- tryCatch(optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int),error=function(e)list('par'=NaN))
 			return(k_scores_out$par)
 		}))
 
@@ -180,7 +199,7 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object,
 			rate_conf_int <- confidenceIntervals[[g]][["k2"]]
 			k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
 			if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
-			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
+			k_scores_out <- tryCatch(optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int),error=function(e)list('par'=NaN))
 			return(k_scores_out$par)
 		}))
 
@@ -189,7 +208,7 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object,
 			rate_conf_int <- confidenceIntervals[[g]][["k3"]]
 			k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
 			if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
-			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
+			k_scores_out <- tryCatch(optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int),error=function(e)list('par'=NaN))
 			return(k_scores_out$par)
 		}))
 
@@ -204,6 +223,8 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object,
 			confidenceIntervals[[g]][['k3']] <- cbind(confidenceIntervals[[g]][['k3']],'constant'=rep(fitResults_degradation[[g]],length(tpts)))
 			confidenceIntervals[[g]]
 		})
+
+		confidenceIntervals <- lapply(confidenceIntervals,function(i)lapply(i,function(j){j[!is.finite(j)]<-NaN;j}))
 
 		object <- setConfidenceIntervals(object=object,confidenceIntervals=confidenceIntervals)
 
