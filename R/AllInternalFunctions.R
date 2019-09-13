@@ -10867,7 +10867,6 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 											 , derivativePenalityRelevance = 10^-50
 											 , llConfidenceThreshold)
 {
-	browser()
 	total <- concentrations$total
 	totalVariance <- concentrations$total_var
 
