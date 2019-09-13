@@ -114,7 +114,7 @@ setGeneric('inHeatmap', function(object, type='pre-model'
 	, breaks=seq(-1,1,length.out=51)
 	, palette=colorRampPalette(c("green", "black", "firebrick3"))
 	, plot_matureRNA=FALSE, absoluteExpression=TRUE
-	, rowLabels=NULL, clustering=TRUE, clustIdx=3:5)
+	, show_rowLabels=TRUE, clustering=TRUE, clustIdx=3:5)
 	standardGeneric('inHeatmap'))
 #' Generate an object of class INSPEcT_diffsteady from an object of class INSPEcT
 setGeneric('compareSteady', function(inspectIds, BPPARAM=bpparam()) 
