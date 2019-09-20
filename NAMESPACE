@@ -22,7 +22,7 @@ export("newINSPEcT", "runProcessingRateDelay", "runRNAdynamics", "compareSteadyN
 exportMethods( "[", "AIC", "calculateDelta", "calculateTau", "chisqmodel", "chisqtest", "combine", 
     "compareSteady", "degradation", "dim", "featureNames", "featureNames<-", "geneClass", "getModel", 
     "getModel<-", "inHeatmap", "labeledSF", "logLik", "makeModelRates", "makeSimDataset", 
-    "makeSimModel", "makeOscillatorySimModel", "modelingParams", "modelingParams<-", "modelRates", "modelSelection", "modelSelection<-", 
+    "makeSimModel", "makeOscillatorySimModel", "modelingParams", "modelingParams<-", "modelRates", "modelRatesNF", "modelSelection", "modelSelection<-", 
     "nGenes", "nTpts", "plotGene", "plotMA", "processing", "processingDelay", "ratePvals", "ratesFirstGuess",
     "ratesFirstGuessVar", "removeModel", "rocCurve", "rocThresholds", "sfPlot", "show", "split", "synthesis", 
     "tpts", "viewModelRates")

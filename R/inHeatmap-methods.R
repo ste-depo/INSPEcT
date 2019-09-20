@@ -12,7 +12,7 @@
 #'   total-RNA (default: FALSE)
 #' @param absoluteExpression A logical. If set to FALSE, the plot representing the 
 #'   intensity of expression is omitted. (default=TRUE)
-#' @param rowLabels A character that represent the label names that will be
+#' @param show_rowLabels A character that represent the label names that will be
 #'   shown on the y-axis of the heatmap. If NULL featureNames(object) will be shown
 #'   (default is NULL)
 #' @param clustering A logical. If set to FALSE, it displys genes the order they are, 
@@ -32,18 +32,18 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 	, breaks=seq(-1,1,length.out=51)
 	, palette=colorRampPalette(c("green", "black", "firebrick3"))
 	, plot_matureRNA=FALSE, absoluteExpression=TRUE
-	, rowLabels=NULL, clustering=TRUE, clustIdx=3:5) 
+	, show_rowLabels=TRUE, clustering=TRUE, clustIdx=3:5) 
 {
 	if( !is.character(type) )
 		stop('inHeatmap: type must be character')
 	if( !type %in% c('model', 'pre-model') )
 		stop('inHeatmap: type must either "model" or "pre-model"')
-	if( !is.null(rowLabels) ) {
-		if( !is.character(rowLabels) )
-			stop('inHeatmap: rowLabels must be either NULL or a character')
-		if( length(rowLabels) != nGenes(object) )
-			stop('inHeatmap: rowLabels must be a vector of length equal to nGenes(object)')
-	}
+	# if( !is.null(rowLabels) ) {
+		if( !is.logical(show_rowLabels) )
+			stop('inHeatmap: rowLabels must be logical')
+		# if( length(rowLabels) != nGenes(object) )
+		# 	stop('inHeatmap: rowLabels must be a vector of length equal to nGenes(object)')
+	# }
 	if( !is.logical(plot_matureRNA) )
 		stop('inHeatmap: plot_matureRNA must be logical')
 	if( !is.logical(absoluteExpression) )
@@ -182,7 +182,7 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 	##
 	if( plot_matureRNA ) {totalMain <- 'mature RNA'} else {totalMain <- 'total RNA'}
 
-	if( is.null(rowLabels) ) rowLabels <- featureNames(object)
+	rowLabels <- featureNames(object)
 	rowLabels <- rowLabels[geneOrder]
 	# colLabels <- paste('t', signif(object@tpts[-1],2), sep='_')
 	colLabels <- signif(object@tpts[-1],2)
@@ -198,7 +198,7 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 	image(t(alpha_l2fc[geneOrder,,drop=FALSE]), col=cols, breaks=breaks
 		, xaxt='n', yaxt='n', main='synthesis', xlab='time')
 	axis(1, at=atX, labels=colLabels, las=3)
-	axis(2, at=atY, labels=rowLabels, las=1, tick=FALSE, line=1)
+	if( show_rowLabels ) axis(2, at=atY, labels=rowLabels, las=1, tick=FALSE, line=1)
 	image(t(gamma_l2fc[geneOrder,,drop=FALSE]), col=cols, breaks=breaks
 		, xaxt='n', yaxt='n', main='processing', xlab='time')
 	axis(1, at=atX, labels=colLabels, las=3)

@@ -69,9 +69,6 @@ setClass('INSPEcT_model',
                     	synthesis=.05, 
                     	processing=.05, 
                     	degradation=.05)
-                    , CI=c(synthesis=.05, 
-                    	processing=.05, 
-                    	degradation=.05)
                     )
             , limitModelComplexity = FALSE
             , priors=c(
@@ -170,7 +167,10 @@ setClass('INSPEcT',
 			, useSigmoidFun=TRUE
 			, testOnSmooth=TRUE
 			, cores = 1
-			)
+			),
+		NoNascent=FALSE,
+		NF=FALSE,
+		degDuringPulse=FALSE
 		)
 	)
 

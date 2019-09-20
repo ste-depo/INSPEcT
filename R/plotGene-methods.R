@@ -21,22 +21,9 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 	tpts <- object@tpts
 
 	oneGene <- object[ix]
-	geneClassIX <- geneClass(object)[ix]
-
-	if(object@NoNascent)
-	{
-		pValues <- formatC(as.numeric(ratePvals(object)[ix,]),format = "e", digits = 1)
-		names(pValues) <- c('synthesis','processing','degradation')
-	}else{
-		pValues <- formatC(as.numeric(ratePvals(oneGene)[ix,]),format = "e", digits = 1)
-		names(pValues) <- c('synthesis','processing','degradation')		
-	}
 	
 	oldMfrow <- par()$mfrow
 	oldMar <- par()$mar
-
-	if( oneGene@NoNascent & !oneGene@NF )
-		foe <- capture.output(oneGene <- computeConfidenceIntervals(computeConfidenceIntervals,singleGeneClass = geneClassIX))
 
 	ratesFirstGuessTotalTmp <- ratesFirstGuess(object, 'total')[ix,]
 	ratesFirstGuessPreTmp <- ratesFirstGuess(object, 'preMRNA')[ix,]
@@ -62,64 +49,78 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 		}
 	}
 
-	alpha_left <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_left")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-	alpha_right <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_right")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-	alpha_constant <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_constant")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-
-	gamma_left <- tryCatch(viewConfidenceIntervals(oneGene,"processing_left")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-	gamma_right <- tryCatch(viewConfidenceIntervals(oneGene,"processing_right")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-	gamma_constant <- tryCatch(viewConfidenceIntervals(oneGene,"processing_constant")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-
-	beta_left <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_left")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-	beta_right <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_right")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-	beta_constant <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_constant")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-
-	if(oneGene@NoNascent|!constantModel)
-	{
-		alpha_constant <- rep(NaN,length(tpts(oneGene)))
-		gamma_constant <- rep(NaN,length(tpts(oneGene)))
-		beta_constant <- rep(NaN,length(tpts(oneGene)))
-	}
-
 	if( nrow(oneGene@modelRates) > 0 ) {
 
-			total <- t(rbind(
-				ratesFirstGuessTotalTmp
-				, ratesFirstGuessTotalTmp + 
-					sqrt(ratesFirstGuessTotalVarTmp)
-				, ratesFirstGuessTotalTmp - 
-					sqrt(ratesFirstGuessTotalVarTmp)
-				, viewModelRates(object, 'total')[ix,]
-				))
-			preMRNA <- t(rbind(
-				ratesFirstGuessPreTmp
-				, ratesFirstGuessPreTmp + 
-					sqrt(ratesFirstGuessPreVarTmp)
-				, ratesFirstGuessPreTmp - 
-					sqrt(ratesFirstGuessPreVarTmp)
-				, viewModelRates(object, 'preMRNA')[ix,]
-				))
+		if(object@NoNascent)
+		{
+			pValues <- formatC(as.numeric(ratePvals(object)[ix,]),format = "e", digits = 1)
+			names(pValues) <- c('synthesis','processing','degradation')
+		}else{
+			pValues <- formatC(as.numeric(ratePvals(oneGene)),format = "e", digits = 1)
+			names(pValues) <- c('synthesis','processing','degradation')		
+		}
 
-			alpha <- t(rbind(ratesFirstGuessSynthesisTmp
-					, viewModelRates(object, 'synthesis')[ix,]
-					, alpha_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
-					, alpha_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
-					, alpha_constant
+		geneClassIX <- geneClass(object)[ix]
+
+		if( oneGene@NoNascent & !oneGene@NF )
+			foe <- capture.output(oneGene <- computeConfidenceIntervals(oneGene,singleGeneClass = geneClassIX))
+
+		alpha_left <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_left")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
+		alpha_right <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_right")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
+		alpha_constant <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_constant")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
+
+		gamma_left <- tryCatch(viewConfidenceIntervals(oneGene,"processing_left")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
+		gamma_right <- tryCatch(viewConfidenceIntervals(oneGene,"processing_right")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
+		gamma_constant <- tryCatch(viewConfidenceIntervals(oneGene,"processing_constant")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
+
+		beta_left <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_left")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
+		beta_right <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_right")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
+		beta_constant <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_constant")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
+
+		if(oneGene@NoNascent|!constantModel)
+		{
+			alpha_constant <- rep(NaN,length(tpts(oneGene)))
+			gamma_constant <- rep(NaN,length(tpts(oneGene)))
+			beta_constant <- rep(NaN,length(tpts(oneGene)))
+		}
+
+		total <- t(rbind(
+			ratesFirstGuessTotalTmp
+			, ratesFirstGuessTotalTmp + 
+				sqrt(ratesFirstGuessTotalVarTmp)
+			, ratesFirstGuessTotalTmp - 
+				sqrt(ratesFirstGuessTotalVarTmp)
+			, viewModelRates(object, 'total')[ix,]
+			))
+		preMRNA <- t(rbind(
+			ratesFirstGuessPreTmp
+			, ratesFirstGuessPreTmp + 
+				sqrt(ratesFirstGuessPreVarTmp)
+			, ratesFirstGuessPreTmp - 
+				sqrt(ratesFirstGuessPreVarTmp)
+			, viewModelRates(object, 'preMRNA')[ix,]
 			))
 
-			gamma <- t(rbind(ratesFirstGuessProcessingTmp
-					, viewModelRates(object, 'processing')[ix,]
-					, gamma_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
-					, gamma_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
-					, gamma_constant
-			))
+		alpha <- t(rbind(ratesFirstGuessSynthesisTmp
+				, viewModelRates(object, 'synthesis')[ix,]
+				, alpha_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
+				, alpha_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
+				, alpha_constant
+		))
 
-			beta <- t(rbind(ratesFirstGuessDegradationTmp
-					, viewModelRates(object, 'degradation')[ix,]
-					, beta_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
-					, beta_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
-					, beta_constant
-			))
+		gamma <- t(rbind(ratesFirstGuessProcessingTmp
+				, viewModelRates(object, 'processing')[ix,]
+				, gamma_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
+				, gamma_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
+				, gamma_constant
+		))
+
+		beta <- t(rbind(ratesFirstGuessDegradationTmp
+				, viewModelRates(object, 'degradation')[ix,]
+				, beta_left#ratesFirstGuessSynthesisTmp + sqrt(ratesFirstGuessSynthesisVarTmp)
+				, beta_right#ratesFirstGuessSynthesisTmp - sqrt(ratesFirstGuessSynthesisVarTmp)
+				, beta_constant
+		))
 
 		if( fix.yaxis ) {
 
@@ -226,6 +227,8 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 		gamma <- t(rbind(
 			ratesFirstGuessProcessingTmp
 			))
+
+		pValues <- c('synthesis'=NA,'processing'=NA,'degradation'=NA)
 
 		if( fix.yaxis ) {
 
