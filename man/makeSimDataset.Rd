@@ -6,10 +6,12 @@
 \alias{makeSimDataset,INSPEcT_model-method}
 \title{Generate synthetic rates and concentrations}
 \usage{
-makeSimDataset(object, tpts, nRep, NoNascent = FALSE, seed = NULL)
+makeSimDataset(object, tpts, nRep, NoNascent = FALSE, seed = NULL,
+  b = 0.3, tL = 1/6, noise_sd = 4)
 
 \S4method{makeSimDataset}{INSPEcT_model}(object, tpts, nRep,
-  NoNascent = FALSE, seed = NULL)
+  NoNascent = FALSE, seed = NULL, b = 0.3, tL = 1/6,
+  noise_sd = 4)
 }
 \arguments{
 \item{object}{An object of class INSPEcT_model, usually the output of \code{\link{makeSimModel}}}
@@ -18,9 +20,17 @@ makeSimDataset(object, tpts, nRep, NoNascent = FALSE, seed = NULL)
 
 \item{nRep}{Number of replicates to simulate}
 
-\item{NoNascent}{A logical which, if true, makes the output of the method suitable for an analysis wothout Nascent}
+\item{NoNascent}{A logical which, if true, makes the output of the method suitable for an analysis 
+without Nascent. (default=FALSE)}
 
-\item{seed}{A numeric to obtain reproducible results}
+\item{seed}{A numeric to obtain reproducible results. When NULL (default) no seed is set.}
+
+\item{b}{A numeric which represents the probability of contamination of the unlabeled sample due to the labled one}
+
+\item{tL}{A numeric which represents the labeling time for an ideal nascent RNA profiling, it is required for 
+the contamination analysis. (default=1/6)}
+
+\item{noise_sd}{A numeric which represents the noise standard deviation. (default=4)}
 }
 \value{
 An object of the class ExpressionSet containing rates and concentrations

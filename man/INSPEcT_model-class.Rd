@@ -47,5 +47,7 @@ Methods that apply to INSPEcT_model class are
 \item{\code{ratesSpecs}}{A list containing the modeling output}
 
 \item{\code{simple}}{A logical that indicates whether the mode of INSPEcT is simple (no pre-mRNA and degradation rates) or not.}
+
+\item{\code{modeledGenes}}{A numeric that indicates the number of modeled genes (for multiple testing purpouses).}
 }}
 

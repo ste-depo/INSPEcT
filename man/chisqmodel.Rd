@@ -3,18 +3,19 @@
 \docType{methods}
 \name{chisqmodel}
 \alias{chisqmodel}
-\alias{chisqmodel,INSPEcT_model-method}
 \alias{chisqmodel,INSPEcT-method}
 \title{Retrieve results of chi-squared test for the selected models}
 \usage{
-chisqmodel(object, ...)
+chisqmodel(object, gc = NULL, tpts = NULL, ...)
 
-\S4method{chisqmodel}{INSPEcT_model}(object, ...)
-
-\S4method{chisqmodel}{INSPEcT}(object, ...)
+\S4method{chisqmodel}{INSPEcT}(object, gc = NULL, tpts = NULL, ...)
 }
 \arguments{
 \item{object}{An object of class INSPEcT or INSPEcT_model}
+
+\item{gc}{Additional arguments for the generic}
+
+\item{tpts}{Additional arguments for the generic}
 
 \item{...}{Additional arguments for the generic}
 }

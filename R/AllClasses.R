@@ -1,7 +1,7 @@
 #' INSPEcT package
 #'
 #' @description
-#' INSPEcT (INference of Synthesis, Processing and dEgradation rates from Transcriptome data),
+#' INSPEcT (INference of Synthesis, Processing and degradation rates from Transcriptome data),
 #' is a package that analyse RNA-seq data in order to evaluate synthesis, processing and degradation
 #' rates and asses via modeling the rates that determines changes in RNA levels.
 #'
@@ -36,6 +36,7 @@ NULL
 #' @slot params A list that defines thresholds and how to perform log likelihood ratio tests
 #' @slot ratesSpecs A list containing the modeling output
 #' @slot simple A logical that indicates whether the mode of INSPEcT is simple (no pre-mRNA and degradation rates) or not.
+#' @slot modeledGenes A numeric that indicates the number of modeled genes (for multiple testing purpouses).
 #' @details Methods that apply to INSPEcT_model class are
 #'
 #'	\code{\link{[}} \cr
@@ -55,11 +56,12 @@ setClass('INSPEcT_model',
 		params='list'
 		, ratesSpecs='list'
 		, simple='logical'
+		, modeledGenes='numeric'
 		)
 	, prototype=list(
 		simple=FALSE
 		, params=list(
-			modelSelection=c('llr','aic')[1]
+			modelSelection=c('llr','aic','hib')[2]
             , preferPValue = TRUE
             , padj = TRUE
             , thresholds=list(
@@ -70,6 +72,13 @@ setClass('INSPEcT_model',
                     	degradation=.05)
                     )
             , limitModelComplexity = FALSE
+            , priors=c(
+            	synthesis=1,
+            	processing=1,
+            	degradation=1)
+            , computeDerivatives = TRUE
+            , logLikelihoodConfidenceThreshold = 0.95
+
 				)
 			)
 		)
@@ -93,10 +102,12 @@ setClass('INSPEcT_model',
 #' @slot precision A matrix that contains the estimated precision of the rates. Rows represent genes, Columns represent time points.
 #' @slot model An object of class INSPEcT_model that contains the output of the mdoeling.
 #' @slot modelRates An object of class ExpressionSet that contains all modeled the rates and concentrations.
+#' @slot confidenceIntervals An object of class ExpressionSet that contains the confidence intervals.
 #' @slot tpts A numeric vector of the time-points.
 #' @slot labeledSF A numeric vector of the scaling factor used for inter time-point normalization of Nascent-seq libraries.
 #' @slot tL A numeric containing the length of the Nascent pulse.
 #' @slot NoNascent A logical indicating if the nascent RNA was included into the analysis.
+#' @slot NF A logical indicating if the modeling approach is Non-Functional
 #' @slot degDuringPulse A logical indicating if degradation of RNA during the 4sU pulse was considered.
 #' @details Methods that apply to INSPEcT class are
 #'
@@ -138,10 +149,12 @@ setClass('INSPEcT',
 		, precision='matrix'
 		, model='INSPEcT_model'
 		, modelRates='ExpressionSet'
+		, confidenceIntervals='ExpressionSet'
 		, tpts='vector'
 		, labeledSF='numeric'
 		, tL='numeric'
 		, NoNascent='logical'
+		, NF='logical'
 		, degDuringPulse='logical'
 		)
 	, prototype=list(
@@ -152,10 +165,14 @@ setClass('INSPEcT',
 			, Dmax = 10
 			, Dmin = 1e-6
 			, verbose=TRUE
-			, estimateRatesWith=c('int', 'der')[1]
+			, estimateRatesWith=c('int', 'der')[2]
 			, useSigmoidFun=TRUE
 			, testOnSmooth=TRUE
-			)
+			, cores = 1
+			),
+		NoNascent=FALSE,
+		NF=FALSE,
+		degDuringPulse=FALSE
 		)
 	)
 

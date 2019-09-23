@@ -12,7 +12,7 @@ setGeneric('modelSelection<-', function(object, value)
 setGeneric('chisqtest', function(object, ...) 
 	standardGeneric('chisqtest'))
 #' Retrieve results of chi-squared test for the selected models
-setGeneric('chisqmodel', function(object, ...) 
+setGeneric('chisqmodel', function(object, gc=NULL, tpts=NULL, ...) 
 	standardGeneric('chisqmodel'))
 #' Retrieve results of log likelihood test
 setGeneric('logLik', function(object, ...) 
@@ -26,14 +26,23 @@ setGeneric('geneClass', function(object, bTsh=NULL, cTsh=NULL)
 #' Calculate modeled rates and concentrations
 setGeneric('makeModelRates', function(object, ...) 
 	standardGeneric('makeModelRates'))
+#' Compute confidence intervals
+setGeneric('computeConfidenceIntervals', function(object, singleGeneClass=NULL, BPPARAM=bpparam()) 
+	standardGeneric('computeConfidenceIntervals'))
+#' Set confidence intervals
+setGeneric('setConfidenceIntervals', function(object, confidenceIntervals) 
+	standardGeneric('setConfidenceIntervals'))
 #' Generate synthetic rates and concentrations
-setGeneric('makeSimDataset', function(object, tpts, nRep, NoNascent = FALSE, seed=NULL)
+setGeneric('makeSimDataset', function(object, tpts, nRep, NoNascent = FALSE, seed=NULL, b = 0.3, tL = 1/6, noise_sd = 4.0)
 	standardGeneric('makeSimDataset'))
 #' Display rate classification performance
-setGeneric('rocCurve', function(object, object2, cTsh=NULL, plot=TRUE) 
+setGeneric('correlationPlot', function(object, object2, plot=TRUE) 
+	standardGeneric('correlationPlot'))
+#' Display rate classification performance
+setGeneric('rocCurve', function(object, object2, cTsh=NULL, plot=TRUE, comparative=FALSE) 
 	standardGeneric('rocCurve'))
 #' Display rate classification performance with thresholds visible at x-axis
-setGeneric('rocThresholds', function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1)) 
+setGeneric('rocThresholds', function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1), plot=TRUE) 
 	standardGeneric('rocThresholds'))
 
 #############################
@@ -80,28 +89,40 @@ setGeneric('ratesFirstGuessVar', function(object, feature)
 #' @description Launch the modeling process with parameters set with \code{\link{modelingParams}}
 setGeneric('modelRates', function(object, seed=NULL, BPPARAM=bpparam(), verbose=NULL) 
 	standardGeneric('modelRates'))
+#' Launch the modeling process without imposing sigmoid/impulse functional form
+setGeneric('modelRatesNF', function(object, BPPARAM=SerialParam()) 
+	standardGeneric('modelRatesNF'))
 #' Build the synthetic rates shaped on a dataset
 setGeneric('makeSimModel', function(object, nGenes, newTpts=NULL
 		, probs=c(constant=.5,sigmoid=.3,impulse=.2), na.rm=TRUE, seed=NULL) 
 	standardGeneric('makeSimModel'))
+#' Build the synthetic rates with oscillatory pattern
+setGeneric('makeOscillatorySimModel', function(object, nGenes
+		, oscillatoryk3=FALSE, k3delay=NULL, na.rm=TRUE, seed=NULL) 
+	standardGeneric('makeOscillatorySimModel'))
 #' Retrieve the modeled rates and concentrations
 setGeneric('viewModelRates', function(object, feature) 
 	standardGeneric('viewModelRates'))
+#' Retrieve the modeled Confidence Intervals
+setGeneric('viewConfidenceIntervals', function(object, feature) 
+	standardGeneric('viewConfidenceIntervals'))
 #' Plot the pre-modeled and modeled profiles for one gene
-setGeneric('plotGene', function(object, ix, fix.yaxis=FALSE, priors=TRUE) 
+setGeneric('plotGene', function(object, ix, fix.yaxis=FALSE, priors=TRUE, constantModel=FALSE) 
 	standardGeneric('plotGene'))
 #' Heatmap that represent the fold changes of all the five features
 setGeneric('inHeatmap', function(object, type='pre-model'
 	, breaks=seq(-1,1,length.out=51)
 	, palette=colorRampPalette(c("green", "black", "firebrick3"))
 	, plot_matureRNA=FALSE, absoluteExpression=TRUE
-	, rowLabels=NULL, clustering=TRUE, clustIdx=3:5)
+	, show_rowLabels=TRUE, clustering=TRUE, clustIdx=3:5)
 	standardGeneric('inHeatmap'))
 #' Generate an object of class INSPEcT_diffsteady from an object of class INSPEcT
 setGeneric('compareSteady', function(inspectIds, BPPARAM=bpparam()) 
 	standardGeneric('compareSteady'))
 #' Compare mature RNA steady state data from an object of class INSPEcT
-setGeneric('compareSteadyNoNascent', function(inspectIds, expressionThreshold=0.25,log2FCThreshold=2.) 
+setGeneric('compareSteadyNoNascent', function(inspectIds,
+	expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NULL, 
+	returnNormScores=FALSE, referenceCondition=NULL) 
 	standardGeneric('compareSteadyNoNascent'))
 #' Classify genes as delayed by the processing using the delta and tau metrics
 setGeneric('processingDelay', function(inspectIds, tauThreshold=1.2,deltaThreshold=1.0, silent=TRUE) 

@@ -29,7 +29,8 @@
 #' 	nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' 	## models removal
 #' 	nascentInspObjThreeGenes <- removeModel(nascentInspObj10[1:3])
-#' 	nascentInspObjThreeGenes <- modelRates(nascentInspObjThreeGenes, seed=1, BPPARAM=SerialParam())
+#' 	nascentInspObjThreeGenes <- modelRates(nascentInspObjThreeGenes, 
+#' 	  seed=1, BPPARAM=SerialParam())
 #' 	## view modeled synthesis rates
 #' 	viewModelRates(nascentInspObjThreeGenes, 'synthesis')
 #' 	## view gene classes
@@ -40,93 +41,147 @@ setMethod('modelRates', 'INSPEcT', function(object
 										  , BPPARAM=bpparam()
 										  , verbose=NULL)
 {
-
 	if( length(object@model@ratesSpecs) > 0 )
 		stop('Remove the model before running the model again. (See "?removeModel")')
+
+	llConfidenceThreshold <- object@model@params$logLikelihoodConfidenceThreshold
+	if(is.null(llConfidenceThreshold)) llConfidenceThreshold <- 0.95
+	llConfidenceThreshold <- qchisq(llConfidenceThreshold,1)
+
+	initialPenalityRelevance <- object@model@params$initialPenalityRelevance
+	if(is.null(initialPenalityRelevance)) initialPenalityRelevance <- 1
+
+	derivativePenalityRelevance <- object@model@params$derivativePenalityRelevance
+	if(is.null(derivativePenalityRelevance)) derivativePenalityRelevance <- 10^-50
 
 	NoNascent <- object@NoNascent
 
 	if(NoNascent){message("No nascent RNA data mode.")}
 	if(!NoNascent){message("Nascent RNA data mode.")}
 
+	nInit <- object@params$nInit
+	nIter <- object@params$nIter
+	Dmax <- object@params$Dmax
+	Dmin <- object@params$Dmin
+	na.rm <- object@params$na.rm
+	verbose <- object@params$verbose
+	testOnSmooth <- object@params$testOnSmooth
+	limitModelComplexity <- object@model@params$limitModelComplexity
+	sigmoid <- object@params$useSigmoidFun
 	object@params$seed <- seed
-	
+
+	computeDerivatives <- object@model@params$computeDerivatives
+	if(is.null(computeDerivatives)) computeDerivatives <- TRUE
+
+	tpts <- tpts(object)
+
+	concentrations <- list(total = ratesFirstGuess(object, 'total')
+						 , total_var = ratesFirstGuessVar(object, 'total')
+						 , preMRNA = ratesFirstGuess(object, 'preMRNA')
+						 , preMRNA_var = ratesFirstGuessVar(object, 'preMRNA')
+						 , mature = ratesFirstGuess(object, 'total') - ratesFirstGuess(object, 'preMRNA')
+						 , mature_var = ratesFirstGuessVar(object, 'total') + ratesFirstGuessVar(object, 'preMRNA'))
+
+	rates <- list(alpha=ratesFirstGuess(object, 'synthesis')
+				, alpha_var=ratesFirstGuessVar(object, 'synthesis')
+				, beta=ratesFirstGuess(object, 'degradation')
+				, gamma=ratesFirstGuess(object, 'processing'))
+
 	if(NoNascent){
 
 		if( !is.numeric(tpts(object)) ) {
 			stop("modelRates is not supported in steady-state analysis without nascent, run compareSteadyNoNascent instead.")
 		}
-
-		nInit <- object@params$nInit
-		nIter <- object@params$nIter
-		Dmax <- object@params$Dmax
-		Dmin <- object@params$Dmin
-		na.rm <- object@params$na.rm
-		verbose <- object@params$verbose
-		testOnSmooth <- object@params$testOnSmooth
-		limitModelComplexity <- object@model@params$limitModelComplexity
 	
 		if( !is.null(seed) && !is.numeric(seed) )
 			stop('Seed argument must be either NULL or numeric.')
 		if( !is.null(verbose) && !is.logical(verbose) )
 			stop('verbose argument must be either NULL or logical.')
 	
-		# Time transformation
-		tpts <- tpts(object)
-		a <- find_tt_par(tpts)
-		tptsOriginal <- tpts
-		tptsLinear <- time_transf(tptsOriginal,a)
-		c <- abs(min(tptsLinear))
-		tptsLinear <- tptsLinear + abs(min(tptsLinear))
-		concentrations <- list(total = ratesFirstGuess(object, 'total')
-							 , total_var = ratesFirstGuessVar(object, 'total')
-							 , preMRNA = ratesFirstGuess(object, 'preMRNA')
-							 , preMRNA_var = ratesFirstGuessVar(object, 'preMRNA')
-							 , mature = ratesFirstGuess(object, 'total') - ratesFirstGuess(object, 'preMRNA')
-							 , mature_var = ratesFirstGuessVar(object, 'total') + ratesFirstGuessVar(object, 'preMRNA'))
-		rates <- list(
-			alpha=ratesFirstGuess(object, 'synthesis')
-			, beta=ratesFirstGuess(object, 'degradation')
-			, gamma=ratesFirstGuess(object, 'processing')
-			)
+								# Time transformation
+						#		a <- find_tt_par(tpts)
+						#		tptsOriginal <- tpts
+						#		tptsLinear <- time_transf(tptsOriginal,a)
+						#		c <- abs(min(tptsLinear))
+						#		tptsLinear <- tptsLinear + abs(min(tptsLinear))
 
-		if(object@params$estimateRatesWith=="int")
+						#		if(object@params$estimateRatesWith=="int")
+						#		{
+						#			ratesSpecs <- .inspect.engine_Integrative_NoNascent(tptsOriginal = tptsOriginal
+						#															,tptsLinear = tptsLinear
+						#															,a = a
+						#															,c = c
+						#															,concentrations = concentrations
+						#															,rates = rates
+						#															,BPPARAM = BPPARAM
+						#															,na.rm = na.rm
+						#															,verbose = verbose
+						#															,testOnSmooth = testOnSmooth
+						#															,seed = seed
+						#															,nInit = nInit
+						#															,nIter = nIter
+						#															,limitModelComplexity=limitModelComplexity
+						#															,sigmoid=sigmoid)
+						#		}else{
+						#			ratesSpecs <- .inspect.engine_Derivative_NoNascent(tptsOriginal = tptsOriginal
+						#														  ,tptsLinear = tptsLinear
+						#														  ,a = a
+						#														  ,c = c
+						#														  ,concentrations = concentrations
+						#														  ,rates = rates
+						#														  ,BPPARAM = BPPARAM
+						#														  ,na.rm = na.rm
+						#														  ,verbose = verbose
+						#														  ,testOnSmooth = testOnSmooth
+						#														  ,seed = seed
+						#														  ,nInit = nInit
+						#														  ,nIter = nIter
+						#														  ,limitModelComplexity=limitModelComplexity)
+
+		if(object@params$estimateRatesWith=="der")
 		{
-			ratesSpecs <- .inspect.engine_Integrative_NoNascent(tptsOriginal = tptsOriginal
-															,tptsLinear = tptsLinear
-															,a = a
-															,c = c
-															,concentrations = concentrations
-															,rates = rates
-															,BPPARAM = BPPARAM
-															,na.rm = na.rm
-															,verbose = verbose
-															,testOnSmooth = testOnSmooth
-															,seed = seed
-															,nInit = nInit
-															,nIter = nIter
-															,limitModelComplexity=limitModelComplexity)
-		}else{
-			ratesSpecs <- .inspect.engine_Derivative_NoNascent(tptsOriginal = tptsOriginal
-														  ,tptsLinear = tptsLinear
-														  ,a = a
-														  ,c = c
-														  ,concentrations = concentrations
-														  ,rates = rates
-														  ,BPPARAM = BPPARAM
-														  ,na.rm = na.rm
-														  ,verbose = verbose
-														  ,testOnSmooth = testOnSmooth
-														  ,seed = seed
-														  ,nInit = nInit
-														  ,nIter = nIter
-														  ,limitModelComplexity=limitModelComplexity)
-		}
+			ratesSpecs <- .inspect.engine_Derivative_NoNascent(tpts=tpts
+															 , concentrations=concentrations
+															 , rates=rates
+															 , BPPARAM=BPPARAM
+															 , na.rm=na.rm
+															 , verbose=verbose
+															 , testOnSmooth=testOnSmooth
+															 , seed=seed
+															 , nInit=nInit
+															 , nIter=nIter
+															 , limitModelComplexity=limitModelComplexity
+															 , computeDerivatives=computeDerivatives
+															 , useSigmoidFun=sigmoid
+															 , initialPenalityRelevance = 1
+															 , derivativePenalityRelevance = 10^-50
+															 , llConfidenceThreshold = NULL)
+		}else if(object@params$estimateRatesWith=="int"){
+			message("Integrative modeling")
+			ratesSpecs <- .inspect.engine_Integrative_NoNascent(tpts=tpts
+															  , concentrations=concentrations
+															  , rates=rates
+															  , BPPARAM=BPPARAM
+															  , na.rm=na.rm
+															  , verbose=verbose
+															  , testOnSmooth=testOnSmooth
+															  , seed=seed
+															  , nInit=nInit
+															  , nIter=nIter
+															  , limitModelComplexity=limitModelComplexity
+															  , computeDerivatives=computeDerivatives
+															  , useSigmoidFun=sigmoid
+															  , initialPenalityRelevance = 1
+															  , derivativePenalityRelevance = 10^-50
+															  , llConfidenceThreshold = NULL)
+		}else{stop('modelRates: the user must set the variable "estimateRatesWith" either equal to "int" or equal to "der" (default).')}
 
 		## update and return the object
-		names(ratesSpecs) <- featureNames(object@ratesFirstGuess)[seq_along(ratesSpecs)]
-		object@model@ratesSpecs <- ratesSpecs		
+		# names(ratesSpecs) <- featureNames(object)
+		object@model@ratesSpecs <- ratesSpecs
+		object@model@modeledGenes <- length(featureNames(object))
 		object <- makeModelRates(object)
+		object@NF <- FALSE
 		return(object)
 
 	}else{
@@ -138,41 +193,110 @@ setMethod('modelRates', 'INSPEcT', function(object
 		if( !is.null(verbose) && !is.logical(verbose) )
 			stop('verbose argument must be either NULL or logical.')
 
-		tpts <- object@tpts
-		log_shift <- find_tt_par(tpts)
-		concentrations <- list(
-			total=ratesFirstGuess(object, 'total')
-			, total_var=ratesFirstGuessVar(object, 'total')
-			, preMRNA=ratesFirstGuess(object, 'preMRNA')
-			, preMRNA_var=ratesFirstGuessVar(object, 'preMRNA')
-			)
-		rates <- list(
-			alpha=ratesFirstGuess(object, 'synthesis')
-			, alpha_var=ratesFirstGuessVar(object, 'synthesis')
-			, beta=ratesFirstGuess(object, 'degradation')
-			, gamma=ratesFirstGuess(object, 'processing')
-			)
-		ratesSpecs <- .inspect.engine(tpts, log_shift, concentrations, rates
-			, nInit=object@params$nInit
-			, nIter=object@params$nIter
-			, na.rm=object@params$na.rm
-			, BPPARAM=BPPARAM
-			, verbose=if(is.null(verbose)) object@params$verbose else verbose
-			, limitModelComplexity=object@model@params$limitModelComplexity
-			, estimateRatesWith=object@params$estimateRatesWith
-			, sigmoidDegradation=object@params$useSigmoidFun
-			, sigmoidSynthesis=object@params$useSigmoidFun
-			, sigmoidTotal=object@params$useSigmoidFun
-			, sigmoidProcessing=object@params$useSigmoidFun
-			, sigmoidPre=object@params$useSigmoidFun
-			, testOnSmooth=object@params$testOnSmooth
-			, seed=seed
-			)
+	# Split between genes with and without intronic signal
+		eiGenes <- rownames(concentrations$preMRNA[is.finite(concentrations$preMRNA[,1]),])
+		eGenes <- NULL # rownames(concentrations$preMRNA[!is.finite(concentrations$preMRNA[,1]),])
+		message("Simple methods still to setup")
+
+		if(!is.null(eiGenes))
+		{
+			eiConcentrations <- lapply(concentrations,function(o){o[eiGenes,]})
+			eiRates <- lapply(rates,function(o){o[eiGenes,]})
+
+			if(object@params$estimateRatesWith=="der")
+			{
+				eiRatesSpecs <- .inspect.engine_Derivative_Nascent(tpts=tpts
+															     , concentrations=eiConcentrations
+															     , rates=eiRates
+															     , BPPARAM=BPPARAM
+															     , na.rm=na.rm
+															     , verbose=verbose
+															     , testOnSmooth=testOnSmooth
+															     , seed=seed
+															     , nInit=nInit
+															     , nIter=nIter
+															     , limitModelComplexity=limitModelComplexity
+															     , computeDerivatives=computeDerivatives
+															     , useSigmoidFun=sigmoid
+															     , initialPenalityRelevance=initialPenalityRelevance
+															     , derivativePenalityRelevance=derivativePenalityRelevance
+															     , llConfidenceThreshold=llConfidenceThreshold)
+			}else if(object@params$estimateRatesWith=="int"){
+				message("Integrative modeling")
+				eiRatesSpecs <- .inspect.engine_Integrative_Nascent(tpts=tpts
+																  , concentrations=eiConcentrations
+																  , rates=eiRates
+																  , BPPARAM=BPPARAM
+																  , na.rm=na.rm
+																  , verbose=verbose
+																  , testOnSmooth=testOnSmooth
+																  , seed=seed
+																  , nInit=nInit
+																  , nIter=nIter
+																  , limitModelComplexity=limitModelComplexity
+																  , computeDerivatives=computeDerivatives
+																  , useSigmoidFun=sigmoid
+																  , initialPenalityRelevance=initialPenalityRelevance
+																  , derivativePenalityRelevance=derivativePenalityRelevance
+																  , llConfidenceThreshold=llConfidenceThreshold)
+			}else{stop('modelRates: the user must set the variable "estimateRatesWith" either equal to "int" or equal to "der" (default).')}
+
+			eiconfidenceIntervals <- eiRatesSpecs$confidenceIntervals
+			eiRatesSpecs <- eiRatesSpecs$ratesSpecs
+
+			eiGenes <- names(eiRatesSpecs)
+		#	names(eiRatesSpecs) <- eiGenes
+		}
+
+		if(!is.null(eGenes))
+		{
+			message("Simple methods still to setup")
+			# 			eConcentrations <- lapply(concentrations,function(o){o[eGenes,]})
+			# 			eRates <- lapply(rates,function(o){o[eGenes,]})
+			# 
+			# 			eRatesSpecs <- .inspect.engine_Derivative_Nascent_Simple(tpts=tpts
+			# 																   , concentrations=eConcentrations
+			# 																   , rates=eRates
+			# 																   , BPPARAM=BPPARAM
+			# 																   , na.rm=na.rm
+			# 																   , verbose=verbose
+			# 																   , testOnSmooth=testOnSmooth
+			# 																   , seed=seed
+			# 																   , nInit=nInit
+			# 																   , nIter=nIter
+			# 																   , limitModelComplexity=limitModelComplexity
+			# 																   , computeDerivatives=computeDerivatives
+			# 																   , useSigmoidFun=sigmoid)
+			# 			names(eRatesSpecs) <- eGenes
+			eRatesSpecs <- NULL
+			econfidenceIntervals <- NULL
+		}
+		
+		if(!is.null(eiGenes)&!is.null(eGenes)){
+			ratesSpecs <- c(eiRatesSpecs,eRatesSpecs)
+		}else if(!is.null(eiGenes)){
+			ratesSpecs <- eiRatesSpecs
+		}else if(!is.null(eGenes)){
+			ratesSpecs <- eRatesSpecs
+		}else{stop("No genes suitable for the analysis! ")}
+
+		if(!is.null(eiGenes)&!is.null(eGenes)){
+			confidenceIntervals <- c(eiconfidenceIntervals,econfidenceIntervals)
+		}else if(!is.null(eiGenes)){
+			confidenceIntervals <- eiconfidenceIntervals
+		}else if(!is.null(eGenes)){
+			confidenceIntervals <- econfidenceIntervals
+		}else{stop("No genes suitable for the analysis! ")}
 
 		## update and return the object
-		names(ratesSpecs) <- featureNames(object@ratesFirstGuess)
+		object <- object[names(ratesSpecs)]
 		object@model@ratesSpecs <- ratesSpecs
 		object <- makeModelRates(object)
+		object <- setConfidenceIntervals(object=object,confidenceIntervals=confidenceIntervals)
+		object@NF <- FALSE
+
+		object@model@modeledGenes <- length(featureNames(object))
+
 		return(object)
 	}
 })

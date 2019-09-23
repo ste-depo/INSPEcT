@@ -9,8 +9,10 @@
 makeSimModel(object, nGenes, newTpts = NULL, probs = c(constant = 0.5,
   sigmoid = 0.3, impulse = 0.2), na.rm = TRUE, seed = NULL)
 
-\S4method{makeSimModel}{INSPEcT}(object, nGenes, probs = c(constant =
-  0.5, sigmoid = 0.3, impulse = 0.2), na.rm = TRUE, seed = NULL)
+\S4method{makeSimModel}{INSPEcT}(object, nGenes, probs = rbind(synthesis
+  = c(constant = 0.5, sigmoid = 0.3, impulse = 0.2), processing =
+  c(constant = 0.5, sigmoid = 0.3, impulse = 0.2), degradation = c(constant
+  = 0.5, sigmoid = 0.3, impulse = 0.2)), na.rm = TRUE, seed = NULL)
 }
 \arguments{
 \item{object}{An object of class INSPEcT}
@@ -19,7 +21,7 @@ makeSimModel(object, nGenes, newTpts = NULL, probs = c(constant = 0.5,
 
 \item{newTpts}{A numeric verctor with time points of the synthtic dataset, if NULL the time points of the real dataset will be used}
 
-\item{probs}{A numeric vector wich describes the probability of a rate to be constant, shaped like a sigmoid or like an impulse model}
+\item{probs}{A numeric matrix wich describes the probability of each rate (rows) to be constant, shaped like a sigmoid or like an impulse model (columns)}
 
 \item{na.rm}{A logical that set whether missing values in the real dataset should be removed}
 

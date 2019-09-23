@@ -17,7 +17,7 @@ setMethod('chisqtest', 'INSPEcT_model', function(object, ...) {
 #' @rdname chisqtest
 setMethod('chisqtest', 'INSPEcT', function(object, ...) {
 	chisqtest(object@model, ...)
-	})
+})
 
 #' @rdname chisqmodel
 #'
@@ -25,22 +25,56 @@ setMethod('chisqtest', 'INSPEcT', function(object, ...) {
 #' This method is used to retrieve the chi-squared test results for the models
 #' that have been selected to better represent the behavior of each gene.
 #' @param object An object of class INSPEcT or INSPEcT_model
+#' @param gc Additional arguments for the generic
+#' @param tpts Additional arguments for the generic
 #' @param ... Additional arguments for the generic
 #' @return A vector of chi-squared test results
 #' @examples
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' chisqmodel(nascentInspObj10)
-setMethod('chisqmodel', 'INSPEcT_model', function(object, ...) {
-	# chisqtest <- exp(t(sapply(object@ratesSpecs, function(x) sapply(x, '[[', 'test'))))
-	chisqtest <- chisqtest(object)
-	gc <- geneClass(object)
-	colid <- sapply(gc, function(x) which(colnames(chisqtest)==x))
-	chisqtest[cbind(1:nrow(chisqtest),colid)]
-	})
-#' @rdname chisqmodel
 setMethod('chisqmodel', 'INSPEcT', function(object, ...) {
-	chisqmodel(object@model)
+	if(object@NoNascent)
+	{
+		chisqmodelfun(object@model)
+	}else{
+		chisqmodelfun(object@model, gc=geneClass(object), tpts=tpts(object))
+	}
 	})
+
+chisqmodelfun <- function(object, gc=NULL, tpts=NULL, ...) 
+{
+	if(is.null(gc)&is.null(tpts))
+	{
+		gc <- geneClass(object)
+		NoNascent <- TRUE
+	}else{
+		NoNascent <- FALSE
+	}
+	
+	chisqtest <- chisqtest(object)	
+	
+	if(NoNascent)
+	{
+		colid <- sapply(gc, function(x) which(colnames(chisqtest)==x))
+		chisqmodel <- chisqtest[cbind(1:nrow(chisqtest),colid)]
+		names(chisqmodel) <- rownames(chisqtest)
+		return(chisqmodel)
+	}else{
+		colid <- chisqtest[,"abc"]
+		oldDF <- sapply(object@ratesSpecs,function(g)
+		{
+			dataTmp <- unlist(g[[8]])
+			sum(unlist(dataTmp[grep(".df",names(dataTmp))]))
+		})
+		newDF <- ((oldDF/3)-1)*sapply(gc,function(c)length(strsplit(c,"")[[1]])) + 3
+		
+		oldDF <- sapply(oldDF,function(oldDF)max(0,3*length(tpts) - oldDF))
+		newDF <- sapply(newDF,function(newDF)max(0,3*length(tpts) - newDF))
+		
+		pchisq(qchisq(colid,oldDF),newDF)
+	}
+}
+
 
 #' @name AIC-INSPEcT-method
 #' @title Akaike information criterion calculated for the models evaluated by INSPEcT

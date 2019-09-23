@@ -8,7 +8,7 @@
 #' @param object An object of class INSPEcT
 #' @param nGenes A numeric with the number of synthtic genes to be created
 #' @param newTpts A numeric verctor with time points of the synthtic dataset, if NULL the time points of the real dataset will be used
-#' @param probs A numeric vector wich describes the probability of a rate to be constant, shaped like a sigmoid or like an impulse model
+#' @param probs A numeric matrix wich describes the probability of each rate (rows) to be constant, shaped like a sigmoid or like an impulse model (columns)
 #' @param na.rm A logical that set whether missing values in the real dataset should be removed
 #' @param seed A numeric to obtain reproducible results
 #' @details The method \code{\link{makeSimModel}} generates an object of class INSPEcT_model that stores the parametric functions to genrate clean rates of a time-course. To any of the rates also a noise variance is associate but not used yet. In a typical workflow the output of \code{\link{makeSimModel}} is the input of the method \code{\link{makeSimDataset}}, that build the noisy rates and concentrations, given a specified number of replicates.
@@ -20,13 +20,12 @@
 #' table(geneClass(simRates))
 setMethod('makeSimModel', 'INSPEcT', function(object
 											, nGenes
-											, probs=c(constant=.5
-													, sigmoid=.3
-													, impulse=.2)
+											, probs=rbind("synthesis"=c(constant=.5, sigmoid=.3, impulse=.2),
+														  "processing"=c(constant=.5, sigmoid=.3, impulse=.2),
+														  "degradation"=c(constant=.5, sigmoid=.3, impulse=.2))
 											, na.rm=TRUE
 											, seed=NULL)
 {
-
 	tpts <- object@tpts
 	if( !is.numeric(tpts) ) stop('makeSimModel: simulated data can be created only from time-course.')
 
@@ -47,10 +46,11 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 		)
 	#
 	suppressWarnings(
-		out <- .makeSimData(nGenes
-						  , tpts
-						  , concentrations
-						  , rates
+
+		out <- .makeSimData(nGenes = nGenes
+						  , tpts = tpts
+						  , concentrations = concentrations
+						  , rates = rates
 						  , probs = probs
 						  , na.rm = na.rm
 						  , seed = seed)
@@ -85,8 +85,7 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 # 	rowMeans((data-rowMeans(data))^2) * n / (n-1)
 # }
 
-.which.quantile <- function(values, distribution=values, na.rm=FALSE, 
-	quantiles=100)
+.which.quantile <- function(values, distribution=values, na.rm=FALSE, quantiles=100)
 # given a number of quantiles, returns the quantile each element of 'values'
 # belongs to. By default the quantiles are evaluested on 'values' itself, 
 # otherwise can be calculated on a specified 'distribution'
@@ -114,171 +113,10 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 					   , tpts
 					   , concentrations
 					   , rates
-					   , probs=c(constant=.5,sigmoid=.3,impulse=.2)
+					   , probs=NULL#c(constant=.5,sigmoid=.3,impulse=.2)
 					   , na.rm=FALSE
 					   , seed=NULL)
 {
-
-	######################
-	# internal functions ###
-	##########################
-
-	sampleNormQuantile <- function(values_subject
-								 , dist_subject
-								 , dist_object, na.rm=FALSE
-								 , quantiles=100)
-	# sample values from the distribution OBJECT given that some values of the 
-	# distribution SUBJECT are known.
-	{
-
-		quantileMeanVar <- function(dist_subject, dist_object=NULL, na.rm=FALSE, quantiles)
-		# for each quantile of the distribution SUBJECT gives back
-		# the mean and the standard deviation of distribution OBJECT
-		{
-			if( is.null(dist_object)) 
-				dist_object <- dist_subject
-			idx <- .which.quantile(values=dist_subject, na.rm=na.rm, 
-				quantiles=quantiles)
-			distMean <- tapply(dist_object, idx, mean)
-			distVar <- tapply(dist_object, idx, stats::var)
-			return(cbind(mean=distMean, var=distVar))
-		}
-		## linearize the time-course matrices into vectors of values
-		dist_subject <- c(dist_subject)
-		dist_object  <- c(dist_object)
-		if( na.rm ) {
-			tokeep <- is.finite(dist_subject) & is.finite(dist_object)
-			dist_subject <- dist_subject[tokeep]
-			dist_object  <- dist_object[tokeep]
-		}
-		## number of quantile can't be too large in order that each quantile
-		## can host al least 4 elements
-		quantiles <- min(quantiles, floor(length(dist_subject)/4))
-		## sample the values
-		idx <- .which.quantile(
-			values         = values_subject 
-			, distribution = dist_subject 
-			, quantiles    = quantiles
-			, na.rm        = na.rm
-			)
-		qmv <- quantileMeanVar(
-			dist_subject  = dist_subject 
-			, dist_object = dist_object
-			, quantiles   = quantiles
-			, na.rm       = na.rm
-			)
-		values_object <- rep(NA, length(values_subject))
-
-		for(i in 1:quantiles)
-		{
-			nobjects <- length(which(idx==i))
-			if(nobjects!=0){
-				values_object[idx==i] <- rnorm(
-					nobjects
-					, mean=qmv[as.character(i),'mean'] 
-					, sd=sqrt(qmv[as.character(i),'var']) 
-					)
-			}
-		}
-		return(values_object)
-	}
-
-	sampleNorm2DQuantile <- function(values_subject1
-								   , values_subject2
-								   , dist_subject1
-								   , dist_subject2
-								   , dist_object
-								   , na.rm=FALSE
-								   , quantiles=10)
-	# sample values from the distribution OBJECT given that some values odf the 
-	# distribution SUBJECT are known.
-	{
-		dist_subject1 <- c(dist_subject1)
-		dist_subject2 <- c(dist_subject2)
-		dist_object   <- c(dist_object)
-		if( na.rm ) {
-			tokeep <- is.finite(dist_subject1) & is.finite(dist_subject2) & 
-				is.finite(dist_object)
-			dist_subject1 <- dist_subject1[tokeep]
-			dist_subject2 <- dist_subject2[tokeep]
-			dist_object <- dist_object[tokeep]
-		}
-		## number of quantile can't be too large in order that each quantile
-		## can host al least 4 elements
-		quantiles <- min(quantiles, floor(sqrt(length(dist_subject1)/4)))
-		##
-		idx1 <- .which.quantile(values_subject1, dist_subject1, 
-			na.rm=na.rm, quantiles=quantiles)
-		idx2 <- .which.quantile(values_subject2, dist_subject2, 
-			na.rm=na.rm, quantiles=quantiles)
-
-		quantile2DMeanVar <- function(dist_subject1
-									, dist_subject2
-									, dist_object
-									, na.rm=FALSE
-									, quantiles=100)
-		# for each quantile of the distribution SUBJECT1 and SUBJECT2 gives
-		# back the mean and the standard deviation of distribution OBJECT. 
-		# Returns the two square matrices of mean and variance corresponding 
-		# to each pair of quantiles of SUBJECT1 and SUBJECT2.
-		{
-			idx1 <- .which.quantile(dist_subject1, na.rm=na.rm, quantiles=quantiles)
-			idx2 <- .which.quantile(dist_subject2, na.rm=na.rm, quantiles=quantiles)
-			meansTab <- matrix(NA, nrow=quantiles, ncol=quantiles)
-			varsTab  <- matrix(NA, nrow=quantiles, ncol=quantiles)
-			for(i1 in unique(idx1))
-			{
-				for(i2 in unique(idx2))
-				{
-					# belonging to either quantiles
-					ix <- idx1 == i1 & idx2 == i2
-					meansTab[i1,i2] <- mean(dist_object[ix])
-					varsTab[i1,i2]  <- stats::var(dist_object[ix])
-				}
-			}
-			# fill the missing values
-			na.fill <- function(mat)
-			# Fill the NA values of a matrix with the mean of the surroundings.
-			# Iterates until all the missing values are filled.
-			{
-				if( all(is.na(mat))) return(mat)
-				nRow <- nrow(mat)
-				nCol <- ncol(mat)
-				while(length(which(is.na(mat))) > 0){
-					for(i in 1:nrow(mat)){
-						for(j in 1:ncol(mat)){
-							if( is.na(mat[i,j]))
-							{
-								idx_top <- max(1,i-1)
-								idx_bottom <- min(nRow,i+1)
-								idx_left <- max(1,j-1)
-								idx_right <- min(nCol,j+1)
-								surroundingRows <- idx_top:idx_bottom
-								surroundingCols <- idx_left:idx_right
-								mat[i,j] <- mean(
-									mat[surroundingRows,surroundingCols], 
-									na.rm=TRUE
-									)
-							} } } }
-				return(mat)
-			}
-			meansTab <- na.fill(meansTab)
-			varsTab  <- na.fill(varsTab)
-			return(list(mean=meansTab,var=varsTab))
-		}
-
-		q2dmv <- quantile2DMeanVar(dist_subject1, dist_subject2, dist_object, 
-			na.rm=na.rm, quantiles=quantiles)
-		sampledValues <- sapply(1:length(idx1), function(i) {
-			qtMean <- q2dmv$mean[idx1[i], idx2[i]]
-			qtVar <- q2dmv$var[idx1[i], idx2[i]]
-			########## Why not sqrt(qtVar) ?????????????
-			# changed to sd=sqrt(qtVar), previously was:
-			# sd=qtVar
-			return(rnorm(1, mean=qtMean, sd=sqrt(qtVar)))
-			})
-		return(sampledValues)		
-	}
 
 	generateParams <- function(tpts
 							 , sampled_val
@@ -289,9 +127,9 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 	# according to probs) and evaluate them at tpts.
 	{
 
-		##############################
-		#### define local functions ####
-		##################################
+		##########################
+		# define local functions #
+		##########################
 
 		generateImpulseParams <- function(tpts, sampled_val, log2foldchange)
 		# Given an absolute value and a value of log2fold change sample a set 
@@ -300,13 +138,16 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 
 			n <- length(sampled_val)
 
+			log_shift <- find_tt_par(tpts)
+			tpts_log <- time_transf(tpts,log_shift) 
+
 			# sample the delta of the two responses between a range that 
 			# is considered valid to reproduce the expected fold change
 			# (intervals that are too small or too large compared to the 
 			# length of the dynamics can lead to a reduced fold change)
-			time_span <- diff(range(tpts))
-			delta_max <- time_span / 1.5
-			delta_min <- time_span / 6.5
+			time_span <- diff(range(tpts_log))
+			delta_max <- time_span / 3.5
+			delta_min <- time_span / 7.5
 
 			# sample the delta of the response (difference between first and 
 			# second response) uniformly over the confidence interval
@@ -315,20 +156,25 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 			# the time of first response is sampled in order to include the 
 			# whole response within the time course
 			time_of_first_response <- sapply(
-				max(tpts) - sampled_deltas
+				max(tpts_log[-1]) - sampled_deltas
 				, function(max_first_response) 
-					runif( 1,min=min(tpts),max=max_first_response)
+					runif( 1,min=min(tpts_log[-1]),max=max_first_response)
 				)
 			# second response is then trivial
 			time_of_second_response <- time_of_first_response + sampled_deltas
-			
+
+			time_of_first_response <- (2^time_of_first_response) - log_shift
+			time_of_second_response <- (2^time_of_second_response) - log_shift
+
+			sampled_deltas <- time_of_second_response - time_of_first_response
+
 			# the slope of the response is inversely proportional to the delta
 			# sampled (the shorter is the response the fastest it has to be, 
 			# in order to satisfy the fold change)
 			slope_of_response <- time_span / sampled_deltas
 
-			initial_values      <- sampled_val * 2^(-log2foldchange)
-			intermediate_values <- sampled_val
+			initial_values      <- sampled_val 
+			intermediate_values <- sampled_val * 2^(log2foldchange)
 			end_values          <- initial_values
 
 			impulsepars <- cbind(
@@ -350,10 +196,13 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 		{
 
 			n <- length(sampled_val)
-			time_span <- diff(range(tpts))
+
+			log_shift <- find_tt_par(tpts)
+			tpts_log <- time_transf(tpts,log_shift) 
 
 			# sample the time uniformely
-			time_of_response <- runif( n, min=min(tpts), max=max(tpts))
+			time_of_response <- runif( n, min=min(head(tpts_log[-1],length(tpts_log)-2)), max=max(head(tpts_log[-1],length(tpts_log)-2)))
+			time_of_response <- 2^time_of_response - log_shift
 
 			# slope of response must be high if the time of response is close 
 			# to one of the two boundaries
@@ -362,10 +211,12 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 					time_of_response - min(tpts)
 					, max(tpts) - time_of_response
 				),1,min)
+
+			time_span <- diff(range(tpts))
 			slope_of_response <- time_span / distance_from_boundary
 
-			initial_values <- sampled_val * 2^(-log2foldchange)
-			end_values     <- sampled_val
+			initial_values <- sampled_val 
+			end_values     <- sampled_val * 2^(log2foldchange)
 
 			sigmoidpars <- cbind(
 				initial_values
@@ -401,7 +252,8 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 					list(type='constant', fun=constantModelP , params=val, df=1)
 					)
 		}
-		# impulse varying, fist guess
+		# impulse varying, first guess
+
 		impulse_idx <- 1:nGenes %in% sample(which(!constant_idx), n_impulse)
 		if( any(impulse_idx) ) {
 			impulseParamGuess <- lapply(which(impulse_idx), 
@@ -465,7 +317,6 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 	#########################################
 	# body of the main function starts here ###
 	#############################################
-
 	if( !is.null(seed) ) set.seed(seed)
 
 	# read input
@@ -489,7 +340,7 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 	preFitVariance <- lm(formula = log(c(sqrt(preMRNA_var))) ~ log(c(preMRNA)))$coefficients
 	preFitVarianceLaw <- function(pre)(exp(preFitVariance[[1]])*pre^(preFitVariance[[2]]))^2
 
-	# make twice the number of genes and then select only the valid ones
+	# make 2 times the number of genes and then select only the valid ones
 	nGenes.bkp <- nGenes
 	nGenes <- nGenes * 2
 	# sample initial timepoint
@@ -516,17 +367,26 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 	alphaLog2FC <- log2(alpha[,-1]) - log2(alpha[,1])
 	betaLog2FC  <- log2(beta[,-1])  - log2(beta[,1])
 	gammaLog2FC <- log2(gamma[,-1]) - log2(gamma[,1])
+
+	alphaLog2FC <- apply(alphaLog2FC, 1, function(r){idx <- which.max(abs(r));median(r[max(1,idx-1):min(length(r),idx+1)])})
+	betaLog2FC  <- apply(betaLog2FC, 1, function(r){idx <- which.max(abs(r));median(r[max(1,idx-1):min(length(r),idx+1)])})
+	gammaLog2FC <- apply(gammaLog2FC, 1, function(r){idx <- which.max(abs(r));median(r[max(1,idx-1):min(length(r),idx+1)])})
+
+	# alpha <- apply(alpha, 1, median)
+	# beta  <- apply(beta, 1, median)
+	# gamma <- apply(gamma, 1, median)
+
 	# sample log2 fc
 	alphaSimLog2FC <- sampleNormQuantile(
 		values_subject = log2(alphaVals) 
-		, dist_subject = log2(alpha[,-1]) 
+		, dist_subject = log2(alpha[,1]) 
 		, dist_object  = alphaLog2FC
 		, na.rm=na.rm
 		)
 	betaSimLog2FC  <- sampleNorm2DQuantile(
 		values_subject1   = log2(betaVals)
 		, values_subject2 = alphaSimLog2FC
-		, dist_subject1   = log2(beta[,-1])
+		, dist_subject1   = log2(beta[,1])
 		, dist_subject2   = alphaLog2FC
 		, dist_object     = betaLog2FC
 		, na.rm=na.rm, quantiles=50
@@ -534,20 +394,32 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 	gammaSimLog2FC  <- sampleNorm2DQuantile(
 		values_subject1   = log2(gammaVals)
 		, values_subject2 = alphaSimLog2FC
-		, dist_subject1   = log2(gamma[,-1])
+		, dist_subject1   = log2(gamma[,1])
 		, dist_subject2   = alphaLog2FC
 		, dist_object     = gammaLog2FC
 		, na.rm=na.rm, quantiles=50
 		)
 
-	# transform time in log scale
-	log_shift <- find_tt_par(tpts)
-	x <- time_transf(tpts, log_shift)
-	# generate alpha, beta, gamma
+	# generate alpha, beta, gamma - THE TEMPORAL RESPONSE IS STILL SAMPLED FROM THE TIME-TRANSFORMED TIME SERIES
 	message('generating rates time course...')
-	alphaParams <- generateParams(x, alphaVals, alphaSimLog2FC, probs)
-	betaParams  <- generateParams(x, betaVals , betaSimLog2FC , probs)
-	gammaParams <- generateParams(x, gammaVals, gammaSimLog2FC, probs)
+
+	set.seed(seed)
+
+	alphaParams <- generateParams(tpts=tpts
+								, sampled_val=alphaVals
+								, log2foldchange=alphaSimLog2FC
+								, probs["synthesis",])
+
+	betaParams  <- generateParams(tpts=tpts
+								, sampled_val=betaVals
+								, log2foldchange=betaSimLog2FC
+								, probs["degradation",])
+
+	gammaParams <- generateParams(tpts=tpts
+								, sampled_val=gammaVals
+								, log2foldchange=gammaSimLog2FC
+								, probs["processing",])
+
 	# generate total and preMRNA from alpha,beta,gamma
 	paramSpecs <- lapply(1:nGenes, 
 		function(i) 
@@ -557,13 +429,23 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 
 	out <- lapply(1:nGenes, function(i){
 			tryCatch(
-				.makeModel(tpts, paramSpecs[[i]], log_shift, 
-					time_transf, ode, .rxnrate),error=function(e){cbind(time=rep(NaN,length(tpts))
-																		  ,preMRNA=rep(NaN,length(tpts))
-																		  ,total=rep(NaN,length(tpts))
-																		  ,alpha=rep(NaN,length(tpts))
-																		  ,beta=rep(NaN,length(tpts))
-																		  ,gamma=rep(NaN,length(tpts)))})})
+				### Time transformation
+				#
+				# .makeModel(tpts, paramSpecs[[i]], log_shift, 
+				# 	time_transf, ode, .rxnrate),error=function(e){cbind(time=rep(NaN,length(tpts))
+				# 														  ,preMRNA=rep(NaN,length(tpts))
+				# 														  ,total=rep(NaN,length(tpts))
+				# 														  ,alpha=rep(NaN,length(tpts))
+				# 														  ,beta=rep(NaN,length(tpts))
+				# 														  ,gamma=rep(NaN,length(tpts)))})})
+
+				.makeModel(tpts, paramSpecs[[i]], nascent = FALSE)
+			,error=function(e){cbind(time=rep(NaN,length(tpts))
+									,preMRNA=rep(NaN,length(tpts))
+									,total=rep(NaN,length(tpts))
+									,alpha=rep(NaN,length(tpts))
+									,beta=rep(NaN,length(tpts))
+									,gamma=rep(NaN,length(tpts)))})})
 
 	okGenes <- which(sapply(out,function(i)all(is.finite(unlist(i)))))
 	out <- out[okGenes]

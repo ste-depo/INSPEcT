@@ -6,10 +6,11 @@
 \alias{plotGene,INSPEcT-method}
 \title{Plot the pre-modeled and modeled profiles for one gene}
 \usage{
-plotGene(object, ix, fix.yaxis = FALSE, priors = TRUE)
+plotGene(object, ix, fix.yaxis = FALSE, priors = TRUE,
+  constantModel = FALSE)
 
 \S4method{plotGene}{INSPEcT}(object, ix, fix.yaxis = FALSE,
-  priors = TRUE)
+  priors = TRUE, constantModel = FALSE)
 }
 \arguments{
 \item{object}{An object of class INSPEcT}
@@ -20,6 +21,8 @@ plotGene(object, ix, fix.yaxis = FALSE, priors = TRUE)
 relative to their distributions}
 
 \item{priors}{A logical, if true the priors of the rates are plotted}
+
+\item{constantModel}{A logical, if true the constant model for the + nascent modeling are shown}
 }
 \value{
 A list containing total RNA levels and their confidence interval (levels plus and minus

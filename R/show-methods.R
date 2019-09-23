@@ -13,12 +13,46 @@ setMethod('show', 'INSPEcT_model', function(object) {
 #' of the slots ratesFirstGuess, model and modelRates
 setMethod('show', 'INSPEcT', function(object) {
 
-	message('\nslot @ratesFirstGuess:')
-	print(object@ratesFirstGuess)
-	message('\nslot @model:')
-	print(object@model)
-	message('\nslot @modelRates:')
-	print(object@modelRates)
+	# @slot params A list of parameters of the modeling part
+	# @slot ratesFirstGuess An object of class ExpressionSet that contains all the rates and concentrations guessed from the first part of INSPEcT analysis (before modeling)
+	# @slot ratesFirstGuessVar An object of class ExpressionSet that contains the variances related to rates and concentrations guessed from the first part of INSPEcT analysis (before modeling)
+	# @slot ratesFirstGuessP An object containing the rates first guess part of INSPEcT analysis (before modeling)
+	# @slot precision A matrix that contains the estimated precision of the rates. Rows represent genes, Columns represent time points.
+	# @slot model An object of class INSPEcT_model that contains the output of the mdoeling.
+	# @slot modelRates An object of class ExpressionSet that contains all modeled the rates and concentrations.
+	# @slot confidenceIntervals An object of class ExpressionSet that contains the confidence intervals.
+	# @slot tpts A numeric vector of the time-points.
+	# @slot labeledSF A numeric vector of the scaling factor used for inter time-point normalization of Nascent-seq libraries.
+	# @slot tL A numeric containing the length of the Nascent pulse.
+	# @slot NoNascent A logical indicating if the nascent RNA was included into the analysis.
+	# @slot NF A logical indicating if the modeling approach is Non-Functional
+	# @slot degDuringPulse A logical indicating if degradation of RNA during the 4sU pulse was considered.
+	# @details Methods that apply to INSPEcT class are
+	
+	tpts <- tpts(object)
+	
+	if( object@NoNascent ) {
+		message("No Nascent RNA mode.")
+	} else {
+		message("Nascent RNA mode.")
+	}
+	
+	if( is.numeric(tpts) ) {
+		message(paste("Time-course INSPEcT object with", length(featureNames(object)), "genes and", length(tpts), "time points."))
+	} else {
+		message(paste("Steady-state INSPEcT object with", length(featureNames(object)), "genes and", length(tpts), "conditions."))
+	}
+	
+	if( object@NF ) {
+		message("Rates first guess and confidence intervals were computed (non-functional framework).")
+		message("Access complete rates with the method ratesFirstGuess.")
+	} else if( length(object@model@ratesSpecs)>0 ) {
+		message("Rates were modeled with either constant, sigmoid or impulse functions.")
+		message("Access complete rates with the method viewModelRates.")
+	} else {
+		message("Only Rates first guess were computed.")
+		message("Access complete rates with the method ratesFirstGuess.")
+	}
 
 	})
 

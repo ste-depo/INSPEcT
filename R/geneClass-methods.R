@@ -26,28 +26,61 @@ setMethod('geneClass', 'INSPEcT_model',
 		# choose one using "bestModel" method
 		if( any(sapply(ratesSpecs, length)!=1) )
 			ratesSpecs <- .bestModel(object, bTsh, cTsh)@ratesSpecs
-		## get a logical matrix with 3 colums per gene stating wheter
-		# alpha, beta or gamma are varible or not
-		acceptedVarModels <- do.call('rbind', lapply(ratesSpecs, function(geneRates) 
-			sapply(geneRates[[1]][c('alpha','beta','gamma')], '[[', 'df')>1))
-		## transform the previous information into a string character per gene
-		# where the presence of the letter means that the rate is variable
-		geneClass <- apply(acceptedVarModels, 1, 
-			function(accepted) paste(c('a','b','c')[accepted],collapse=''))
-		geneClass[geneClass==''] <- '0'
-		names(geneClass) <- names(object@ratesSpecs)
+		geneClass <- sapply(ratesSpecs,names)
+		if(all(is.null(unlist(sapply(ratesSpecs,names)))))
+		{
+			# Standard names: alpha, beta and gamma for all
+			#
+			
+			## get a logical matrix with 3 colums per gene stating wheter
+			# alpha, beta or gamma are varible or not
+	
+			acceptedVarModels <- do.call('rbind', lapply(ratesSpecs, function(geneRates) 
+				sapply(geneRates[[1]][c('alpha','beta','gamma')], '[[', 'df')>1))
+			## transform the previous information into a string character per gene
+			# where the presence of the letter means that the rate is variable
+			geneClass <- apply(acceptedVarModels, 1, 
+				function(accepted) paste(c('a','b','c')[accepted],collapse=''))
+			geneClass[geneClass==''] <- '0'
+		}
+		names(geneClass) <- if( !is.null(names(object@ratesSpecs)) ) names(object@ratesSpecs) else 
+			seq_along(object@ratesSpecs)
 		## return
+		# names(geneClass) <- seq_along(geneClass)
 		return(geneClass)
 	})
 
 #' @rdname geneClass
-setMethod('geneClass', 'INSPEcT', 
-	function(object, bTsh=NULL, cTsh=NULL) {
-		return(geneClass(object@model, bTsh=bTsh, cTsh=cTsh))
+setMethod('geneClass', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL)
+{
+	if(object@NoNascent & !object@NF){return(geneClass(object@model, bTsh=bTsh, cTsh=cTsh))}
+	else{.bestModel_confidenceIntervals(object, bTsh = modelSelection(object)$thresholds$brown)}
+
+})
+
+.bestModel_confidenceIntervals <- function(object,bTsh=NULL)
+{
+	if(is.null(bTsh)){bTsh <- modelSelection(object)$thresholds$brown}
+
+	ratePvalsTmp <- ratePvals(object)
+	geneClass <- apply(ratePvalsTmp,1,function(r)
+	{
+		r <- r < unlist(bTsh)
+		if(all(is.na(r))) return(NA)
+		if(!r[1]&!r[2]&!r[3]) return("0")
+		if(r[1]&!r[2]&!r[3]) return("a")
+		if(!r[1]&r[2]&!r[3]) return("c")
+		if(!r[1]&!r[2]&r[3]) return("b")
+		if(r[1]&!r[2]&r[3]) return("ab")
+		if(r[1]&r[2]&!r[3]) return("ac")
+		if(!r[1]&r[2]&r[3]) return("bc")
+		if(r[1]&r[2]&r[3]) return("abc")
 	})
+	return(geneClass)
+}
 
-.bestModel <- function(object, bTsh=NULL, cTsh=NULL) {
-
+.bestModel <- function(object, bTsh=NULL, cTsh=NULL, Nascent = FALSE) {
+	
 	preferPValue <- object@params$preferPValue
 	
 	## in case bTsh or bTsh are provided set them as
@@ -56,90 +89,37 @@ setMethod('geneClass', 'INSPEcT',
 		bTsh <- object@params$thresholds$brown
 	if( is.null(cTsh) )
 		cTsh <- object@params$thresholds$chisquare
-	## calculate ratePvals
-	ratePvals <- ratePvals(object, bTsh, cTsh)
-	ratePvals <- replace(ratePvals,is.na(ratePvals),1)
 
-	if(preferPValue)
+	if(Nascent) # It must be always VVV, just for makeModelRates
 	{
-		pValues <- chisqtest(object)
-		rownames(pValues) <- rownames(ratePvals)
-
-		geneClass <- sapply(rownames(ratePvals),function(i)
-		{
-
-			acceptableModelsTemp <- which(pValues[i,] <= cTsh)
-			if(length(acceptableModelsTemp)==0){return("0")}
-			if(length(acceptableModelsTemp)==1){return(colnames(pValues)[acceptableModelsTemp])}    
-
-			nameTemp <- rep("K",3)
-			if(ratePvals[i,"synthesis"] <= bTsh["synthesis"]){nameTemp[[1]] <- "V"}
-			if(ratePvals[i,"processing"] <= bTsh["processing"]){nameTemp[[2]] <- "V"}
-			if(ratePvals[i,"degradation"] <= bTsh["degradation"]){nameTemp[[3]] <- "V"}
-
-			nameTemp <- paste0(nameTemp[[1]],nameTemp[[2]],nameTemp[[3]])
-			nameTemp <- c("KKK" = "0"
-						 ,"VKK" = "a"
-						 ,"KVK" = "c"
-						 ,"KKV" = "b"
-						 ,"VVK" = "ac"
-						 ,"VKV" = "ab"
-						 ,"KVV" = "bc"
-						 ,"VVV" = "abc")[nameTemp]
-
-			if(pValues[i,nameTemp]<=cTsh|!is.finite(pValues[i,nameTemp])){return(nameTemp)}else{
-				return(names(which.min(pValues[i,])))}
-    	})
-
-		ratesSpecs <- object@ratesSpecs
-		## select the best model (according to geneClass) per gene
-		nGenes <- length(ratesSpecs)
-		object@ratesSpecs <- lapply(1:nGenes, 
-			function(i) ratesSpecs[[i]][geneClass[i]])
-		return(object)
-
+		ratePvals <- matrix(rep(0,length(object@ratesSpecs)*3),ncol=3)
+		rownames(ratePvals) <- names(object@ratesSpecs)
+		colnames(ratePvals) <- c("synthesis","processing","degradation")
 	}else{
-
-		if( modelSelection(object)$modelSelection == 'llr' ) {
-
-			## give a discrete classification per each rate per each gene
-			# according to the brown's threshold for the pvalues
-			acceptedVarModels <- sapply(c('synthesis','processing','degradation'), 
-				function(i) ratePvals[,i]<bTsh[i])
-			if( !is.matrix(acceptedVarModels) )
-				acceptedVarModels <- t(as.matrix(acceptedVarModels))
-			acceptedVarModels[is.na(acceptedVarModels)] <- FALSE
-			rownames(acceptedVarModels) <- rownames(ratePvals)
-			colnames(acceptedVarModels) <- colnames(ratePvals)
-			geneClass <- apply(acceptedVarModels, 1, 
-				function(accepted) paste(sort(c('a','c','b')[accepted]),collapse=''))
-			geneClass[geneClass==''] <- '0'
-			## retrive all the models
-			ratesSpecs <- object@ratesSpecs
-			## select the best model (according to geneClass) per gene
-			nGenes <- length(ratesSpecs)
-			object@ratesSpecs <- lapply(1:nGenes, 
-				function(i) ratesSpecs[[i]][geneClass[i]])
-			return(object)
-
-		} else if( modelSelection(object)$modelSelection == 'aic' ) {
-
-			aictest = AIC(object)
-			# any rate not to consider?
-			rates_to_aviod <- names(bTsh)[bTsh == 0]
-			rates_to_aviod <- c('synthesis'='a','degradation'='b','processing'='c')[rates_to_aviod]
-			if( length(rates_to_aviod)>0 )
-				aictest = aictest[,grep(rates_to_aviod, colnames(aictest), invert=TRUE)]
-			geneClass <- colnames(aictest)[apply(aictest, 1, which.min)]
-			ratesSpecs <- object@ratesSpecs
-			## select the best model (according to geneClass) per gene
-			nGenes <- length(ratesSpecs)
-			object@ratesSpecs <- lapply(1:nGenes, 
-				function(i) ratesSpecs[[i]][geneClass[i]])
-			return(object)
-
-		}
-
+		## calculate ratePvals
+		ratePvals <- ratePvals(object, bTsh, cTsh)
+		ratePvals <- replace(ratePvals,is.na(ratePvals),1)
 	}
+
+	geneClass <- apply(ratePvals,1,function(r)
+	{
+		r <- r < unlist(bTsh)
+		if(all(is.na(r))) return(NA)
+		if(!r[1]&!r[2]&!r[3]) return("0")
+		if(r[1]&!r[2]&!r[3]) return("a")
+		if(!r[1]&r[2]&!r[3]) return("c")
+		if(!r[1]&!r[2]&r[3]) return("b")
+		if(r[1]&!r[2]&r[3]) return("ab")
+		if(r[1]&r[2]&!r[3]) return("ac")
+		if(!r[1]&r[2]&r[3]) return("bc")
+		if(r[1]&r[2]&r[3]) return("abc")
+	})
+
+	ratesSpecs <- object@ratesSpecs
+	nGenes <- length(ratesSpecs)
+
+	object@ratesSpecs <- lapply(1:nGenes, function(i) ratesSpecs[[i]][geneClass[i]])
+	return(object)
+	
 }
 
