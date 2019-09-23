@@ -6,6 +6,9 @@
 #' @param inspectIds An object of class INSPEcT.
 #' @param expressionThreshold A parameter which sets how many log2 fold changes of distance from the median behaviour are imputable to noise.
 #' @param log2FCThreshold A parameter which sets the log2 fold change distance from the median behaviour that is imputable to noise.
+#' @param trivialAngle A numeric between 0 and 90 to define the standard behavior, if NULL (default) it is computed internally from the data.
+#' @param returnNormScores A logical, if TRUE returned the deviations from the standard behavior normalized by the sd.
+#' @param referenceCondition The label of the condition to use as reference, if NULL (default) the medians are used.
 #' @examples
 #' data('allcounts', package='INSPEcT')
 #' data('featureWidths', package='INSPEcT')
@@ -27,7 +30,7 @@
 #' 
 #' regGenes<-compareSteadyNoNascent(inspectIds=matureInspObj
 #' 								   ,expressionThreshold=0.25
-#'								   ,log2FCThreshold=2.)
+#'								   ,log2FCThreshold=.5)
 #' head(regGenes)
 #' table(regGenes)
 setMethod('compareSteadyNoNascent', 'INSPEcT', function(inspectIds,

@@ -20,9 +20,7 @@ viewConfidenceIntervals(object, feature)
 A numeric matrix containing the values for the selected feature
 }
 \description{
-Retrieve the modeled Confidence Intervals
-
-A method to access the modeld confidence intervals via the method \code{\link{confidenceIntervals}}
+A method to access the modeld confidence intervals computed via the method \code{\link{computeConfidenceIntervals}}
 }
 \examples{
 nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))

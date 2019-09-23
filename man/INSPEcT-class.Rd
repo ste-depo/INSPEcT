@@ -75,6 +75,8 @@ Methods that apply to INSPEcT class are
 
 \item{\code{modelRates}}{An object of class ExpressionSet that contains all modeled the rates and concentrations.}
 
+\item{\code{confidenceIntervals}}{An object of class ExpressionSet that contains the confidence intervals.}
+
 \item{\code{tpts}}{A numeric vector of the time-points.}
 
 \item{\code{labeledSF}}{A numeric vector of the scaling factor used for inter time-point normalization of Nascent-seq libraries.}
@@ -82,6 +84,8 @@ Methods that apply to INSPEcT class are
 \item{\code{tL}}{A numeric containing the length of the Nascent pulse.}
 
 \item{\code{NoNascent}}{A logical indicating if the nascent RNA was included into the analysis.}
+
+\item{\code{NF}}{A logical indicating if the modeling approach is Non-Functional}
 
 \item{\code{degDuringPulse}}{A logical indicating if degradation of RNA during the 4sU pulse was considered.}
 }}

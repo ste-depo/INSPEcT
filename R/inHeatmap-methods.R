@@ -12,9 +12,7 @@
 #'   total-RNA (default: FALSE)
 #' @param absoluteExpression A logical. If set to FALSE, the plot representing the 
 #'   intensity of expression is omitted. (default=TRUE)
-#' @param show_rowLabels A character that represent the label names that will be
-#'   shown on the y-axis of the heatmap. If NULL featureNames(object) will be shown
-#'   (default is NULL)
+#' @param show_rowLabels A logical defining whether rownames are reported or not. (default=TRUE)
 #' @param clustering A logical. If set to FALSE, it displys genes the order they are, 
 #'   with no clustering (default: TRUE)
 #' @param clustIdx A numeric. Indicates which of the features are used for the 

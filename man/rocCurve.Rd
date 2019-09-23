@@ -3,14 +3,11 @@
 \docType{methods}
 \name{rocCurve}
 \alias{rocCurve}
-\alias{rocCurve,INSPEcT_model,INSPEcT_model-method}
 \alias{rocCurve,INSPEcT_model,INSPEcT-method}
 \title{Display rate classification performance}
 \usage{
-rocCurve(object, object2, cTsh = NULL, plot = TRUE, comparative = FALSE)
-
-\S4method{rocCurve}{INSPEcT_model,INSPEcT_model}(object, object2, cTsh = NULL,
-  plot = TRUE, comparative = FALSE)
+rocCurve(object, object2, cTsh = NULL, plot = TRUE,
+  comparative = FALSE)
 
 \S4method{rocCurve}{INSPEcT_model,INSPEcT}(object, object2, cTsh = NULL,
   plot = TRUE, comparative = FALSE)
@@ -18,19 +15,21 @@ rocCurve(object, object2, cTsh = NULL, plot = TRUE, comparative = FALSE)
 \arguments{
 \item{object}{An object of class INSPEcT_model, with true rates}
 
-\item{object2}{An object of class INSPEcT or INSPEcT_model, with modeled rates}
+\item{object2}{An modeled object of class INSPEcT}
 
 \item{cTsh}{A numeric representing the threshold for the chi-squared test to consider a model as valid;
 if NULL the value is taken from the INSPEcT_model object}
 
 \item{plot}{A logical indicating whether ROC curves should be plotted or not}
+
+\item{comparative}{A logical indicating whether the cross-prediction should be visualized. When this mode is selected, 
+the p-values assigned to the variability of one rate (e.g. synthesis) are tested against the variability the other rates 
+(e.g. processing and degradation). Cross-prediction ROC curves are plotted with dashed lines.}
 }
 \value{
 A list of objects of class pROC with summary of each roc curve
 }
 \description{
-Display rate classification performance
-
 A method to visualize the performance in the classification of synthesis, degradation
 and processing rates based on the comparison of the original simulated rates and the one
 obtained by the function \code{\link{modelRates}}. For each rate, classification performance is measured 

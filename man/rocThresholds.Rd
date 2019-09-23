@@ -3,18 +3,14 @@
 \docType{methods}
 \name{rocThresholds}
 \alias{rocThresholds}
-\alias{rocThresholds,INSPEcT_model,INSPEcT_model-method}
 \alias{rocThresholds,INSPEcT_model,INSPEcT-method}
 \title{Display rate classification performance with thresholds visible at x-axis}
 \usage{
-rocThresholds(object, object2, cTsh = NULL, bTsh = NULL, xlim = c(1e-05,
-  1), plot = TRUE)
+rocThresholds(object, object2, cTsh = NULL, bTsh = NULL,
+  xlim = c(1e-05, 1), plot = TRUE)
 
-\S4method{rocThresholds}{INSPEcT_model,INSPEcT_model}(object, object2,
+\S4method{rocThresholds}{INSPEcT_model,INSPEcT}(object, object2,
   cTsh = NULL, bTsh = NULL, xlim = c(1e-05, 1), plot = TRUE)
-
-\S4method{rocThresholds}{INSPEcT_model,INSPEcT}(object, object2, cTsh = NULL,
-  bTsh = NULL, xlim = c(1e-05, 1), plot = TRUE)
 }
 \arguments{
 \item{object}{An object of class INSPEcT_model, with true rates}
@@ -26,13 +22,13 @@ rocThresholds(object, object2, cTsh = NULL, bTsh = NULL, xlim = c(1e-05,
 \item{bTsh}{A numeric representing the threshold for the Brown's method to consider a rate as varying}
 
 \item{xlim}{A numeric representing limits for the x-axis (default is c(1-e-5,1))}
+
+\item{plot}{A logical that indicates whether to plot or not. (default=TRUE)}
 }
 \value{
-None
+The thresholds that maximize both sensitivity and specificity
 }
 \description{
-Display rate classification performance with thresholds visible at x-axis
-
 A method to visualize the performance in the classification of synthesis, degradation
 and processing rates based on the comparison of the original simulated rates and the one
 obtained by the function \code{\link{modelRates}}. For each rate, classification performance is measured 

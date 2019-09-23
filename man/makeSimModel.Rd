@@ -9,15 +9,17 @@
 makeSimModel(object, nGenes, newTpts = NULL, probs = c(constant = 0.5,
   sigmoid = 0.3, impulse = 0.2), na.rm = TRUE, seed = NULL)
 
-\S4method{makeSimModel}{INSPEcT}(object, nGenes, probs = rbind(synthesis =
-  c(constant = 0.5, sigmoid = 0.3, impulse = 0.2), processing = c(constant =
-  0.5, sigmoid = 0.3, impulse = 0.2), degradation = c(constant = 0.5, sigmoid =
-  0.3, impulse = 0.2)), na.rm = TRUE, seed = NULL)
+\S4method{makeSimModel}{INSPEcT}(object, nGenes, probs = rbind(synthesis
+  = c(constant = 0.5, sigmoid = 0.3, impulse = 0.2), processing =
+  c(constant = 0.5, sigmoid = 0.3, impulse = 0.2), degradation = c(constant
+  = 0.5, sigmoid = 0.3, impulse = 0.2)), na.rm = TRUE, seed = NULL)
 }
 \arguments{
 \item{object}{An object of class INSPEcT}
 
 \item{nGenes}{A numeric with the number of synthtic genes to be created}
+
+\item{newTpts}{A numeric verctor with time points of the synthtic dataset, if NULL the time points of the real dataset will be used}
 
 \item{probs}{A numeric matrix wich describes the probability of each rate (rows) to be constant, shaped like a sigmoid or like an impulse model (columns)}
 
@@ -29,8 +31,6 @@ makeSimModel(object, nGenes, newTpts = NULL, probs = c(constant = 0.5,
 An object of class INSPEcT_model with synthetic rates
 }
 \description{
-Build the synthetic rates shaped on a dataset
-
 This method allow the creation of synthesis, degradation and processing rates for a certain number of genes.
 The rates are created according to the distributions of the real data-set which is given as an input of the
 method. Different proportions of constant varying rates can be set and a new vector of time points can be

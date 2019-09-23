@@ -30,8 +30,6 @@ makeOscillatorySimModel(object, nGenes, oscillatoryk3 = FALSE,
 An object of class INSPEcT_model with synthetic rates
 }
 \description{
-Build the synthetic rates with oscillatory pattern
-
 This method allow the creation of synthesis, degradation and processing rates that generate
 an oscillatory expression with a period of 24 hours. Two modes are available: one where 
 oscillations arise just by oscillations in the synthesis of the genes (oscillatoryk3=FALSE, default) and

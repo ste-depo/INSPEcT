@@ -1,3 +1,24 @@
+#' @rdname modelRatesNF
+#'
+#' @description
+#' This method compute confidence intervals for the rates of synthesis, degradation and processing estimated by 
+#' \code{\link{newINSPEcT}} that will be used to estimate the variability of each rate in \code{\link{ratePvals}}
+#' method.
+#' @param object An object of class INSPEcT
+#' @param BPPARAM Parallelization parameters for bplapply. By default bpparam()
+#' @return An object of class INSPEcT with modeled rates
+#' @examples
+#' if( Sys.info()["sysname"] != "Windows" ) {
+#' 	nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+#' 	## models removal
+#' 	nascentInspObjThreeGenes <- removeModel(nascentInspObj10[1:3])
+#' 	nascentInspObjThreeGenes <- modelRatesNF(nascentInspObjThreeGenes, 
+#' 	  BPPARAM=SerialParam())
+#' 	## view modeled synthesis rates
+#' 	viewModelRates(nascentInspObjThreeGenes, 'synthesis')
+#' 	## view gene classes
+#' 	geneClass(nascentInspObjThreeGenes)
+#' }
 setMethod('modelRatesNF', 'INSPEcT', function(object, BPPARAM=SerialParam())
 {
 	if( length(object@model@ratesSpecs) > 0 )
@@ -293,14 +314,14 @@ piecedFunctionLogLikelihoodManyNA <- function(parameters, tpts, experimentalP, e
 						  variance = c(varianceM, varianceP))		
 }
 
-piecedFunctionLogLikelihoodOneNA <- function(parameters, tpts, experimentalP, experimentalM, varianceP, varianceM, na_id, N)
-{
-	modeledProfiles <- expressionProfilesFromPiecedFunctionsOneNA(parameters = parameters, tpts = tpts, na_id=na_id, N=N)
-
-	logLikelihoodFunction(experiment = c(experimentalM, experimentalP),
-						  model = modeledProfiles,
-						  variance = c(varianceM, varianceP))		
-}
+# piecedFunctionLogLikelihoodOneNA <- function(parameters, tpts, experimentalP, experimentalM, varianceP, varianceM, na_id, N)
+# {
+# 	modeledProfiles <- expressionProfilesFromPiecedFunctionsOneNA(parameters = parameters, tpts = tpts, na_id=na_id, N=N)
+# 
+# 	logLikelihoodFunction(experiment = c(experimentalM, experimentalP),
+# 						  model = modeledProfiles,
+# 						  variance = c(varianceM, varianceP))		
+# }
 
 piecedFunctionLogLikelihood <- function(parameters, tpts, experimentalP, experimentalM, varianceP, varianceM, N)
 {

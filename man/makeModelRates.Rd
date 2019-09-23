@@ -23,8 +23,6 @@ tpts : A vector of time points where rates and concentrations have to be evaluat
 An object of class ExpressionSet containing the modeled rates and concentrations
 }
 \description{
-Calculate modeled rates and concentrations
-
 This function is used to evaluate rates and concentrations after modeling of the 
 rates has been run with \code{\link{modelRates}}. The modeled rates are in functional 
 form and can be evaluated at any time points.
@@ -34,13 +32,10 @@ some testing parameters has changed.
 }
 \examples{
 nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
-tpts <- tpts(nascentInspObj10)
-eSet <- makeModelRates(getModel(nascentInspObj10), tpts=tpts)
-exprs(eSet)
-nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 viewModelRates(nascentInspObj10, 'degradation')
 ## force every degradation rate to be accepted as variable
-modelSelection(getModel(nascentInspObj10))$thresholds$brown <- c(synthesis=.01, degradation=1, processing=.01)
+modelSelection(getModel(nascentInspObj10))$thresholds$brown <- 
+  c(synthesis=.01, degradation=1, processing=.01)
 nascentInspObj10 <- makeModelRates(nascentInspObj10)
 viewModelRates(nascentInspObj10, 'degradation')
 }

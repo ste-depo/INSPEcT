@@ -242,7 +242,7 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 				, col=1, main='total RNA', xaxt='n', xlab='time', ylab='')
 			axis(1, at=x, labels=signif(tpts, 2), las=3)
 			
-			functionTmp() <- function()
+			functionTmp <- function()
 			{
 			matplot(x, preMRNA, type='l', lty=c(1,2,2), lwd=c(1,1,1)
 				, col=2, main='pre-RNA', xaxt='n', xlab='time', ylab='')

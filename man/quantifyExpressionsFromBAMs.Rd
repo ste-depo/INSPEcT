@@ -4,11 +4,12 @@
 \alias{quantifyExpressionsFromBAMs}
 \title{Evaluate introns and exons expressions from BAM or SAM files}
 \usage{
-quantifyExpressionsFromBAMs(txdb, BAMfiles, experimentalDesign, by = c("gene",
-  "tx"), countMultiMappingReads = FALSE, allowMultiOverlap = FALSE,
-  prioritizeExons = TRUE, libsize = c("assigned", "all"),
-  strandSpecific = 0, isPairedEnd = FALSE, DESeq2 = TRUE,
-  varSamplingCondition = NULL)
+quantifyExpressionsFromBAMs(txdb, BAMfiles, experimentalDesign,
+  by = c("gene", "tx"), countMultiMappingReads = FALSE,
+  allowMultiOverlap = FALSE, prioritizeExons = TRUE,
+  libsize = c("assigned", "all"), strandSpecific = 0,
+  isPairedEnd = FALSE, DESeq2 = TRUE, varSamplingCondition = NULL,
+  BPPARAM = SerialParam())
 }
 \arguments{
 \item{txdb}{A TranscriptDB object}
@@ -43,7 +44,9 @@ mapped reads or only the reads assigned to any of the features. By default, "ass
 
 \item{DESeq2}{A logical, if TRUE exons and introns variances are evaluated through the package DESeq2, if FALSE through plgem}
 
-\item{varSamplingCondition}{A character reporting which experimental condition should be used to sample the variance if DESeq2 = FALSE. 
+\item{varSamplingCondition}{A character reporting which experimental condition should be used to sample the variance if DESeq2 = FALSE.}
+
+\item{BPPARAM}{Parallelization parameters for bplapply. By default SerialParam()
 By default, the first element of "experimentalDesign" with replicates.}
 }
 \value{

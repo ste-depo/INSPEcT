@@ -19,8 +19,6 @@ ratesFirstGuess(object, feature)
 A numeric matrix containing the values for the selected feature
 }
 \description{
-Retrieve pre-modeling rates and concentrations
-
 This method allow to access to the estimated synthesis, degradation, processing rates and pre mRNA and total mRNA 
 concentrations the way they were calculated by the constructor function \code{\link{newINSPEcT}}.
 }

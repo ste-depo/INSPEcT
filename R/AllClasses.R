@@ -36,6 +36,7 @@ NULL
 #' @slot params A list that defines thresholds and how to perform log likelihood ratio tests
 #' @slot ratesSpecs A list containing the modeling output
 #' @slot simple A logical that indicates whether the mode of INSPEcT is simple (no pre-mRNA and degradation rates) or not.
+#' @slot modeledGenes A numeric that indicates the number of modeled genes (for multiple testing purpouses).
 #' @details Methods that apply to INSPEcT_model class are
 #'
 #'	\code{\link{[}} \cr
@@ -101,6 +102,7 @@ setClass('INSPEcT_model',
 #' @slot precision A matrix that contains the estimated precision of the rates. Rows represent genes, Columns represent time points.
 #' @slot model An object of class INSPEcT_model that contains the output of the mdoeling.
 #' @slot modelRates An object of class ExpressionSet that contains all modeled the rates and concentrations.
+#' @slot confidenceIntervals An object of class ExpressionSet that contains the confidence intervals.
 #' @slot tpts A numeric vector of the time-points.
 #' @slot labeledSF A numeric vector of the scaling factor used for inter time-point normalization of Nascent-seq libraries.
 #' @slot tL A numeric containing the length of the Nascent pulse.

@@ -4,7 +4,6 @@
 \name{modelSelection}
 \alias{modelSelection}
 \alias{modelSelection<-}
-\alias{modelSelection}
 \alias{modelSelection,INSPEcT-method}
 \alias{modelSelection<-,INSPEcT-method}
 \alias{modelSelection,INSPEcT_model-method}

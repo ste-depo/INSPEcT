@@ -18,7 +18,7 @@ vignette: >
 
 # Introduction
 
-INSPEcT is an R/Bioconductor compliant solution for the study of RNA transcriptional dynamics from RNA-seq data [@de2015inspect, @Furlan520155]. It is based on a system two of ordinary differential equations (ODEs) that describes the synthesis ($k_1$) and processing ($k_2$) of premature RNA ($P$) and the degradation ($k_3$) of mature RNA ($M=T-P$): 
+<i>INSPEcT</i> is an R/Bioconductor compliant solution for the study of RNA transcriptional dynamics from RNA-seq data [@de2015inspect, @Furlan520155]. It is based on a system of two ordinary differential equations (ODEs) that describes the synthesis ($k_1$) and processing ($k_2$) of premature RNA ($P$) and the degradation ($k_3$) of mature RNA ($M=T-P$): 
 
 \begin{equation}
   \left\{
@@ -30,9 +30,9 @@ INSPEcT is an R/Bioconductor compliant solution for the study of RNA transcripti
   (\#eq:modelsystem)
 \end{equation}
 
-The total RNA ($T$) is measured from the exonic quantification of transcripts in RNA-seq experiment, while premature RNA ($P$) is measured by the intronic quantification. The model is based on two commonly accepted assumptions: premature RNAs are not degraded, but only converted to mature RNA, and nuclear export occurs at a rate considerably faster than other rates and can be disregarded.
+The total RNA ($T$) is measured from the exonic quantification of transcripts in RNA-seq experiment, while premature RNA ($P$) is measured by the intronic quantification. The model is based on two commonly accepted assumptions: nuclear degradation is deniable, and nuclear export occurs at a rate considerably faster than other rates and can be disregarded.
 
-The package supports the analysis of several experimental designs, such as steady-state conditions or time-course data, and the presence or absence of the nascent RNA library. According to the experimental design, the software returns different outputs. In particular, when the nascent RNA is present (INSPEcT+), the rates of synthesis, processing and degradation can be calculated both in time-course and in steady-state state conditions and tested for differential regulation. Without the information from the nascent RNA (INSPEcT-), the rates of synthesis, processing and degradation, as well as their significant variation, can be calculated only in time-course, while only a variation in the ratio between processing and degradation (post-transcriptional ratio) can assessed between steady states. A schema of the possible configurations and related outputs is reported in Table \@ref(tab:s4Udesign) and \@ref(tab:Nos4Udesign).
+The package supports the analysis of several experimental designs, such as steady-state conditions or time-course data, and the presence or absence of the nascent RNA library. According to the experimental design, the software returns different outputs. In particular, when the nascent RNA is present (INSPEcT+), the rates of synthesis, processing and degradation can be calculated both in time-course and in steady-state state conditions and tested for differential regulation. Without the information from the nascent RNA (INSPEcT-), the rates of synthesis, processing and degradation, as well as their significant variation, can be calculated only in time-course, while only a variation in the ratio between processing and degradation (post-transcriptional ratio) can be assessed between steady states. A schema of the possible configurations and related outputs is reported in Table \@ref(tab:s4Udesign) and \@ref(tab:Nos4Udesign).
 
 Design       | Synthesis | Processing | Degradation
 -------------| --------- | ---------- | -----------
@@ -50,7 +50,7 @@ Time-course  | Yes       | Yes        | Yes
 
 # Quantification of Exon and Intron features
 
-The INSPEcT analysis starts with the quantification of exonic and intronic quantifications and the estimation of their variance from the replicates in the different conditions of the analysis. INSPEcT can estimate transcripts abundances and associated variances starting from different entry points according to the source of data available: SAM (or BAM) files, read counts or transcripts abundances. The user can choose to estimate the variance by means of two different softwares: `r BiocStyle::Biocpkg("DESeq2")` or `r BiocStyle::Biocpkg("plgem")`. By default, <i>DESeq2</i> is used when starting from BAM or read counts, while <i>plgem</i> is used when starting from transcripts abundances.
+The <i>INSPEcT</i> analysis starts with the quantification of exonic and intronic quantifications and the estimation of their variance from the replicates in the different conditions of the analysis. <i>INSPEcT</i> can estimate transcripts abundances and associated variances starting from different entry points according to the source of data available: SAM (or BAM) files, read counts or transcripts abundances. The user can choose to estimate the variance by means of two different softwares: `r BiocStyle::Biocpkg("DESeq2")` or `r BiocStyle::Biocpkg("plgem")`. By default, <i>DESeq2</i> is used when starting from BAM or read counts, while <i>plgem</i> is used when starting from transcripts abundances.
 
 ```{r INSPEcT_loading,eval=TRUE,echo=TRUE,message=FALSE,warnings=FALSE}
 library(INSPEcT)
@@ -58,7 +58,7 @@ library(INSPEcT)
 
 ## From BAM or SAM files
 
-INSPEcT can quantify transcripts abundaces and variances directly from SAM or BAM files. In this case, transcrips annotations are retrieved from a <i>TxDb</i> object. By default, INSPEcT collapses the exons of the transcripts that belong to the same gene (argument <i>by="gene"</i>). Alternatively, it can work also at the transcript level (argument <i>by='tx</i>). When working at the transcript level, INSPEcT cannot discriminate betweeen transcript, therefore we suggest to assign reads to all the overlapping features by setting the argument <i>allowMultiOverlap</i> to <i>TRUE</i>. INSPEcT manage strandness of the reads with the argument <i>strandSpecific</i>, which can be set to <i>0</i> in case of unstranded reads, <i>1</i> for stranded and <i>2</i> for reverse-stranded experiments. INSPEcT prioritizes the exon annotation, meaning that only the reads that do not overlap with any of the annotated exon are eventually accounted for introns. Here we report an  example where the data from 4 sample BAM files (2 time points, 2 replicates each, as specified with the argument <i>experimentalDesign</i>) is quantified in a non-stranded specific way, at the gene level, not assigning the reads mapping to more than one feature.
+<i>INSPEcT</i> can quantify transcripts abundaces and variances directly from SAM or BAM files. In this case, transcrips annotations are retrieved from a <i>TxDb</i> object. By default, <i>INSPEcT</i> collapses the exons of the transcripts that belong to the same gene (argument <i>by="gene"</i>). Alternatively, it can work also at the transcript level (argument <i>by='tx</i>). When working at the transcript level, <i>INSPEcT</i> cannot discriminate betweeen transcript, therefore we suggest to assign reads to all the overlapping features by setting the argument <i>allowMultiOverlap</i> to <i>TRUE</i>. <i>INSPEcT</i> manage strandness of the reads with the argument <i>strandSpecific</i>, which can be set to <i>0</i> in case of unstranded reads, <i>1</i> for stranded and <i>2</i> for reverse-stranded experiments. <i>INSPEcT</i> prioritizes the exon annotation, meaning that only the reads that do not overlap with any of the annotated exon are eventually accounted for introns. Here we report an  example where the data from 4 sample BAM files (2 time points, 2 replicates each, as specified with the argument <i>experimentalDesign</i>) is quantified in a non-stranded specific way, at the gene level, not assigning the reads mapping to more than one feature.
 
 ```{r quantifyExpressionsFromBAMs,eval=TRUE,message=FALSE,warnings=FALSE}
 
@@ -119,7 +119,7 @@ matExp_DESeq2<-quantifyExpressionsFromTrCounts(
 
 ## From transcripts abundances
 
-In order to exemplify the quantification of mean transcripts abundances and variances starting from their replicated quantification, we transform the read counts loaded from the package in the section above into RPKMs using the width of intron and exon and the library sizes.
+In order to exemplify the quantification of mean transcripts abundances and variances starting from their replicated quantification, we transform the read counts loaded from the package in the section above into RPKMs using the width of introns and exons and the library sizes.
 
 ```{r createExpressions,eval=TRUE,message=FALSE,warnings=FALSE}
     
@@ -146,7 +146,7 @@ nasExp_plgem<-quantifyExpressionsFromTrAbundance(
 
 ## Analysis of Total and Nascent RNA (INSPEcT+)
 
-In case of the joint analysis of total and nascent RNA data, for each transcript with at least one intron, the exonic and intronic quantifications are available in the Total and in the Nascent RNA libraries. The system of equations \@ref(eq:modelsystem) describes the dynamics of the total RNA population, but when integrated between zero and the time of labeling ($t_L$) it can be used to describe nascent RNA. For matter of simplicity <i>INSPEcT</i> assumes that, during the labeling time, synthesis and processing rates are constantand and nascent transcripts are not degradaed. The set of equations to describe Total and Nascent RNA is:
+In case of the joint analysis of total and nascent RNA data, for each transcript with at least one intron, the exonic and intronic quantifications are available in the Total and in the Nascent RNA libraries. The system of equations \@ref(eq:modelsystem) describes the dynamics of the total RNA population, but when integrated between zero and the time of labeling ($t_L$) it can be used to describe nascent RNA. For matter of simplicity <i>INSPEcT</i> assumes that, during the labeling time, synthesis and processing rates are constant and nascent transcripts are not degradaed. The set of equations to describe Total and Nascent RNA is:
 
 \begin{equation}
 \left\{
@@ -210,7 +210,7 @@ In case of a long $t_L$ (more than 30 minutes), it can be useful to set the argu
                             ,degDuringPulse=TRUE)
 ```
 
-For short labeling times, as 10 minutes can be considered, the absence of degradation during the pulse is a good assumption and similar rates are estimated in both cases. In Figure \@ref(firstGuessCompareDDP) we compared the degradation rates estimated with or without the assumption that degradation of mature RNA occurs during the labeling time.
+For short labeling times, as 10 minutes can be considered, the absence of degradation during the pulse is a good assumption and similar rates are estimated in both cases. In Figure \@ref(fig:firstGuessCompareDDP) we compared the degradation rates estimated with or without the assumption that degradation of mature RNA occurs during the labeling time.
 
 ```{r firstGuessCompareDDP,eval=TRUE,message=FALSE,warnings=FALSE, fig.width=6, fig.height=6, hold=TRUE, fig.cap="Dotplot of degradation rates calculated with or without the assumption of no degradation during pulse. First guess of the degradation rates was calcualted with or without degDuringPulse option. In red is represented the line of equation y = x.", fig.align="center"}
 
@@ -225,7 +225,7 @@ abline(0,1,col='red')
 
 ```
 
-### Modeling with sigmoid and impulsive functions
+### Modeling with sigmoid and impulse functions
 
 The rates evaluated during the "first guess" are highly exposed to the experimental noise. In particular, processing and degradation rates sum up the noise coming from different experimental data (i.e. the Total and the Nascent libraries), and could be challenging to distinguish real variations from noise. For this reason, the method <i>modelRates</i> fits either sigmoid or impulse functions to total RNA, processing and degradation rates, that minimize the error on experimental data. In this approach, premature RNA and synthesis rate functional forms direclty result from the system of equations in \@ref(eq:modelsystem).
 
@@ -256,7 +256,7 @@ The metohd <i>plotGene</i> can be used to fully investigate the profiles of RNA 
 plotGene(nascentInspObj10, ix="101206")
 ```
 
-### Quality of the model fitting
+### Quality of the model fit
 
 The global quality of each model is evaluated through chi-squared goodness-of-fit test, where the number of degrees of freedom equals the difference between the experimental observations and the number of parameters used for the modelling. The results of this test can be accessed via the method <i>chisqmodel</i>. Here we visualized them as a histogram (Figure \@ref(fig:chi2NascentTimeCourse)) and eventually used to discard badly fitted genes.
 
@@ -296,7 +296,7 @@ Without assumptions on the functional form, the quality of each model in describ
 
 ## Analysis of Total RNA without Nascent (INSPEcT-)
 
-The absence of the nascent RNA component makes the identification of a unique solution of the system more difficult. Nonetheless, the joint analysis of premature and mature RNA time-course RNA-seq analysis is an important source of information in regards of RNA dynamics. The main idea behind this relies in the fact that genes that are modulated transcriptionally (i.e. by the synthesis rate) respond in their RNA levels following a precise pattern, that is premature RNA and mature RNA are modulated to the same extent (same fold change compared to unperturbed condition) but with different timing. In fact, the mature RNA follow the modulation of the premature RNA by a delay that is indicative to the mature RNA stability (i.e. degradation rate). Deviations from this behavior are signs of post-transcriptional regulation. We developed a computational approach that explots these concepts and is able to quantify RNA dynamics based on time-course profiling of total RNA-seq data with good approximation. Without nascent RNA, the sole information of total ($T$, exonic quantification) and premature ($P$, intronic quantification) from the Total library is available and used to model the RNA dynamics. In particular, we model premature RNA ($P$) and mature RNA ($M=T-P$), using the equation:
+The absence of the nascent RNA component makes the identification of a unique solution of the system more difficult. Nonetheless, the joint analysis of premature and mature RNA time-course RNA-seq analysis is an important source of information in regards of RNA dynamics. The main idea behind this relies in the fact that genes that are modulated transcriptionally (i.e. by the synthesis rate) respond in their RNA levels following a precise pattern, that is premature RNA and mature RNA are modulated to the same extent (same fold change compared to unperturbed condition) but with different timing. In fact, the mature RNA follow the modulation of the premature RNA by a delay that is indicative to the mature RNA stability (i.e. degradation rate). Deviations from this behavior are signs of post-transcriptional regulation. We developed a computational approach that exploits these concepts and is able to quantify RNA dynamics based on time-course profiling of total RNA-seq data with good approximation. Without nascent RNA, the sole information of total ($T$, exonic quantification) and premature ($P$, intronic quantification) from the Total library is available and used to model the RNA dynamics. In particular, we model premature RNA ($P$) and mature RNA ($M=T-P$), using the equation:
 
 \begin{equation}
     \begin{array}{l l}
@@ -329,7 +329,7 @@ matureInspObj<-newINSPEcT(tpts=tpts
                         ,matureExpressions=matExp_DESeq2)
 ```
 
-All the methods that apply to the <i>INSPEcT</i> object created with the nascent RNA apply also to the object created with the sole total RNA. For example, we can compare the time-averaged rates of synthesis estimated in this first step of modeling with or without the nascent RNA, by extracting themwith the <i>ratesFirstGuess</i> (Figure \@ref(firstGuessCompare)).
+All the methods that apply to the <i>INSPEcT</i> object created with the nascent RNA apply also to the object created with the sole total RNA. For example, we can compare the time-averaged rates of synthesis estimated in this first step of modeling with or without the nascent RNA, by extracting themwith the <i>ratesFirstGuess</i> (Figure \@ref(fig:firstGuessCompare)).
 
 ```{r firstGuessCompare,eval=TRUE,message=FALSE,warnings=FALSE, fig.width=6, fig.height=6, hold=TRUE, fig.cap="Dotplot of synthesis rates calculated with or without nascent RNA. First guess of the synthesis rates calcualted on the same set of genes with or without the nascent RNA information. In red is represented the line of equation y = x.", fig.align="center"}
 
@@ -345,16 +345,16 @@ smoothScatter(log10(rowMeans(k1Nascent)),
 abline(0,1,col='red')
 ```
 
-### Modeling of the rates with constant, sigmoid and impulsive functions
+### Modeling of the rates with constant, sigmoid and impulse functions
 
-Similarly to the procedure with the nascent RNA, inspect provide an additional step of modeling, where the software assigns to the rates of the RNA cycle a sigmoid or impulse form to describe their behavior over time (see the corresponding section in "Analysis of Total and Nascent RNA"). During this procedure 8 independent models for each gene are tested (all the combinations of constant/(sigmoid OR impulsive) functions for each of the three rates), and the best model is chosen based on the trade-off between the goodness of fit and the simplicity. This modeling procedure refines the estimation of the rates and gives a statistical confidence about the variation of each rate during the time-course.
+Similarly to the procedure with the nascent RNA, <i>INSPEcT</i> provides an additional step of modeling, where the software assigns to the rates of the RNA cycle a sigmoid or impulse form to describe their behavior over time (see the corresponding section in "Analysis of Total and Nascent RNA"). During this procedure 8 independent models for each gene are tested (all the combinations of constant/non-constant functions for each of the three rates), and the best model is chosen based on the trade-off between the goodness of fit and the simplicity. This modeling procedure refines the estimation of the rates and gives a statistical confidence about the variation of each rate during the time-course.
 
 ```{r modelRatesMatureTimeCourse,eval=TRUE,message=FALSE,warnings=FALSE}
 matureInspObj10 <- matureInspObj[1:10, ]
 matureInspObj10 <- modelRates(matureInspObj10, seed=1)
 ```
 
-In figure \@ref(plotGeneMatureTimeCourse), the same gene represented in figure \@ref(plotGeneNascentTimeCourse) is plotted. Also in this case, estimated synthesis, degradation and processing rates, premature RNA and total RNA concentrations are displayed with solid thin lines, while their standard deviations are in dashed lines and the modelled rates and concentrations are in thick solid lines.
+In figure \@ref(fig:plotGeneMatureTimeCourse), the same gene represented in figure \@ref(fig:plotGeneNascentTimeCourse) is plotted. Also in this case, estimated synthesis, degradation and processing rates, premature RNA and total RNA concentrations are displayed with solid thin lines, while their standard deviations are in dashed lines and the modelled rates and concentrations are in thick solid lines.
 
 ```{r plotGeneMatureTimeCourse,eval=TRUE,message=TRUE,warnings=FALSE, fig.width=10, fig.height=3, fig.cap="Plot of a single gene resolved using only total RNA. Plot of concentrations and rates over time for the given gene 101206. Only total RNA was used to resolve the whole set of rates and concentrations.", fig.align="center"}
 plotGene(matureInspObj10, ix="101206")
@@ -377,11 +377,11 @@ Rates estimates with their confidence intervals are then used to assess the regu
 
 ## Performance evaluation with simulated data
 
-<i>INSPEcT</i> offers functionalities to build a synthetic dataset that can be used to evaluate the performance of a tool in classifying rates as constant or variable over time, to configure the model selection parameters, and to predict the number of time points and replicates necessary to achieve a given classification performance.
+<i>INSPEcT</i> offers functionalities to build a synthetic dataset that can be used to evaluate the performance of the tool in classifying rates as constant or variable over time, to configure the model selection parameters, and to predict the number of time points and replicates necessary to achieve a given classification performance.
 
 ### Generate simulated data with sigmoid and implulsive rates
 
-The method <i>makeSimModel</i> samples from an <i>INSPEcT</i> object the absolute values of the rates, their fold changes compared to time zero, the correlations between rates and fold-changes and the variance associated to experimental observations. These distributions estimated estimated from real data are then used to simulate a given number of genes (set with <i>nGenes</i> parameter) with specified probability to have each rate as a constant, sigmoid or impulse function; by default these values are 50% constant, 20% sigmoid and 30% impulsive.
+The method <i>makeSimModel</i> samples from an <i>INSPEcT</i> object the absolute values of the rates, their fold changes compared to time zero, the correlations between rates and fold-changes and the variance associated to experimental observations. These distributions estimated from real data are then used to simulate a given number of genes (set with <i>nGenes</i> parameter) with specified probability to have each rate as a constant, sigmoid or impulse function; by default these values are 50% constant, 20% sigmoid and 30% impulse.
 
 ```{r generateSimModel,eval=TRUE,message=FALSE,warnings=FALSE}
 simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
@@ -442,10 +442,10 @@ matureSim3replicates<-modelRates(matureSim3replicates[1:100]
 
 Once the simulated data have been produced and analysed, it is possible to compare the results obtained by the method <i>modelRates</i> and the object <i>simRates</i>, which contains the ground truth of rates.
 
-The method <i>rocCurve</i>, for example, measures the performace of the constant/variable classification individually for the rates of synthesis, processing and degradation, using the receiver operating characteristic (ROC) curve (Figure \@ref(ROCs)).
+The method <i>rocCurve</i>, for example, measures the performace of the constant/variable classification individually for the rates of synthesis, processing and degradation, using the receiver operating characteristic (ROC) curve (Figure \@ref(fig:ROCs)).
 
 
-```{r ROCs, message=FALSE, warnings=FALSE, eval=TRUE, fig.width=10, fig.height=10, fig.cap="ROC analysis of INSPEcT classification. For each rate, INSPEcT classification performance is measured in terms of sensitivity, TP / (TP + FN), and specificity, TN / (TN + FP), using a ROC curve analysis; false negatives (FN) represent cases where the rate is identified as constant while it was simulated as varying; false positives (FP) represent cases where INSPEcT identified a rate as varying while it was simulated as constant; on the contrary, true positives (TP) and negatives (TN) are cases of correct classification of varying and constant rates, respectively; sensitivity and specificity are computed using increasing thresholds for the Brown method used to combine multiple p-values derived from the log-likelihood ratio tests", fig.align="center"}
+```{r ROCs, message=FALSE, warnings=FALSE, eval=TRUE, fig.width=10, fig.height=10, fig.cap="ROC analysis of <i>INSPEcT</i> classification. For each rate, <i>INSPEcT</i> classification performance is measured in terms of sensitivity, TP / (TP + FN), and specificity, TN / (TN + FP), using a ROC curve analysis; false negatives (FN) represent cases where the rate is identified as constant while it was simulated as varying; false positives (FP) represent cases where <i>INSPEcT</i> identified a rate as varying while it was simulated as constant; on the contrary, true positives (TP) and negatives (TN) are cases of correct classification of varying and constant rates, respectively; sensitivity and specificity are computed using increasing thresholds for the Brown method used to combine multiple p-values derived from the log-likelihood ratio tests", fig.align="center"}
 
 data("nascentSim2replicates","nascentSim3replicates",
   "matureSim2replicates","matureSim3replicates",package='INSPEcT')
@@ -465,9 +465,9 @@ title("3rep. 12t.p. Total RNA", line=3)
 
 ```
 
-Further, the method <i>rocThresholds</i> can be used to assess the sensitivity and specificity that is achieved with different thresholds of the chi-squared and Brown tests (Figure \@ref(ROCsThresholds)).
+Further, the method <i>rocThresholds</i> can be used to assess the sensitivity and specificity that is achieved with different thresholds of the chi-squared and Brown tests (Figure \@ref(fig:ROCsThresholds)) and returns the thresholds that maximize both sensitivity and specificity.
 
-```{r ROCsThresholds, message=FALSE, warnings=FALSE, eval=TRUE, fig.width=8, fig.height=4, fig.cap="Effect of chi-squared and Brown tests thresholds in INSPEcT classification. Plot of the sensitivity (black curve) and specificity (red curve) that is achieved after performing the log-likelihood ratio and Brown method for combining p-values with selected thresholds; thresholds that can be set for chi-squared test to accept models that will undergo the log-likelihood ratio test and for Brown p-value to assess variability of rates"}
+```{r ROCsThresholds, message=FALSE, warnings=FALSE, eval=TRUE, fig.width=8, fig.height=4, fig.cap="Effect of chi-squared and Brown tests thresholds in <i>INSPEcT</i> classification. Plot of the sensitivity (black curve) and specificity (red curve) that is achieved after performing the log-likelihood ratio and Brown method for combining p-values with selected thresholds; thresholds that can be set for chi-squared test to accept models that will undergo the log-likelihood ratio test and for Brown p-value to assess variability of rates"}
 
 rocThresholds(simRates[1:100],nascentSim2replicates,
   bTsh=c(.01,.01,.05),cTsh=.1)
@@ -476,7 +476,7 @@ rocThresholds(simRates[1:100],nascentSim2replicates,
 
 ### Generate simulated data with oscillatory rates
 
-<i>INSPEcT</i> also offer the possibility to generate a dataset with oscillatory rates. In this case, the method <i>makeOscillatorySimModel</i> can generate two types of simulated datasets: one where 50% of the genes have oscillatory synthesis rates (while processing and degradation are always constant), and one where 50% of the genes have both synthesis and degradation oscillatory rates (and processing always constant). In the latter case, the oscillation phase of synthesis and degradation can be coordinated. To resemble circadian rithms, the oscillation frequencies is about 24 hours, while oscillation intensities are randomly sampled.
+<i>INSPEcT</i> also offers the possibility to generate a dataset with oscillatory rates. In this case, the method <i>makeOscillatorySimModel</i> can generate two types of simulated datasets: one where 50% of the genes have oscillatory synthesis rates (while processing and degradation are always constant), and one where 50% of the genes have both synthesis and degradation oscillatory rates (and processing always constant). In the latter case, the oscillation phase of synthesis and degradation can be coordinated. To resemble circadian rithms, the oscillation frequencies is about 24 hours, while oscillation intensities are randomly sampled.
 
 ```{r makeOscillatorySimModel, message=FALSE, warnings=FALSE, eval=FALSE}
 oscillatorySimRates<-makeOscillatorySimModel(nascentInspObj, 1000
@@ -560,7 +560,7 @@ head(round(processing(diffrates),2))
 head(round(degradation(diffrates),2))
 ```
 
-Following this, the method <i>plotMA</i> can be used to plot the results of the comparison for each indiviadual rate. In figure (Figure \@ref(steadyStateNascent3)), we show the results for the synthesis rate. All the points that do not lie on the line y = 0 corresponds to genes called differentially regulated by the method <i>compareSteady</i>. This method select differentially regulated genes based on the p-value of the Brown test previosly chosen. Additionally, it is possible to visualize genes that are differentially according to a certain threshold of the Benjamini and Hochberg correction of the p-values (argument \textbf{padj}). Those genes will be visualized as orange triangles.
+Following this, the method <i>plotMA</i> can be used to plot the results of the comparison for each indiviadual rate. In figure (Figure \@ref(fig:steadyStateNascent3)), we show the results for the synthesis rate. All the points that do not lie on the line y = 0 corresponds to genes called differentially regulated by the method <i>compareSteady</i>. This method select differentially regulated genes based on the p-value of the Brown test previosly chosen. Additionally, it is possible to visualize genes that are differentially according to a certain threshold of the Benjamini and Hochberg correction of the p-values (argument <i>padj</i>). Those genes will be visualized as orange triangles.
 
 ```{r steadyStateNascent3, message=TRUE, eval=TRUE, fig.width=6, fig.height=6, hold=TRUE, fig.cap="Representation of rate geometric mean adn variation between conditions. plotMA generated image. Orange triangles correspond to genes whose rates are differentially used between the two conditions, blue cloud correspond to the whole distribution of rates.", fig.align="center"}
 plotMA(diffrates, rate='synthesis', padj=1e-3)
@@ -589,7 +589,7 @@ matureInspObj <- newINSPEcT(tpts=conditions
                            ,matureExpressions=matExp_DESeq2)
 regGenes<-compareSteadyNoNascent(inspectIds=matureInspObj
                   ,expressionThreshold=0.25
-                  ,log2FCThreshold=2.)
+                  ,log2FCThreshold=.5)
 regGenes[1:6,1:5]
 table(regGenes, useNA='always')
 ```

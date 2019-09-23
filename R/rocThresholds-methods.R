@@ -14,7 +14,8 @@
 #' @param cTsh A numeric representing the threshold for the chi-squared test to consider a model as valid
 #' @param bTsh A numeric representing the threshold for the Brown's method to consider a rate as varying
 #' @param xlim A numeric representing limits for the x-axis (default is c(1-e-5,1))
-#' @return None
+#' @param plot A logical that indicates whether to plot or not. (default=TRUE)
+#' @return The thresholds that maximize both sensitivity and specificity
 #' @seealso \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}, \code{\link{rocCurve}}
 #' @examples
 #' if( Sys.info()["sysname"] != "Windows" ) {

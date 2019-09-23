@@ -22,8 +22,6 @@ logLik(object, ...)
 A matrix of log likelihood test results for all the tested model comparisons
 }
 \description{
-Retrieve results of log likelihood test
-
 This method is used to retrieve all the log likelihood ratio test results for all pairs tested for all genes.
 }
 \examples{

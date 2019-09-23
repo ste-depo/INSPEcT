@@ -3,16 +3,13 @@
 \docType{methods}
 \name{modelRates}
 \alias{modelRates}
-\alias{modelRatesNF}
 \alias{modelRates,INSPEcT-method}
 \title{Launch the modeling process}
 \usage{
 modelRates(object, seed = NULL, BPPARAM = bpparam(), verbose = NULL)
 
-modelRatesNF(object, BPPARAM = SerialParam())
-
-\S4method{modelRates}{INSPEcT}(object, seed = NULL, BPPARAM = bpparam(),
-  verbose = NULL)
+\S4method{modelRates}{INSPEcT}(object, seed = NULL,
+  BPPARAM = bpparam(), verbose = NULL)
 }
 \arguments{
 \item{object}{An object of class INSPEcT}
@@ -53,7 +50,8 @@ if( Sys.info()["sysname"] != "Windows" ) {
 	nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 	## models removal
 	nascentInspObjThreeGenes <- removeModel(nascentInspObj10[1:3])
-	nascentInspObjThreeGenes <- modelRates(nascentInspObjThreeGenes, seed=1, BPPARAM=SerialParam())
+	nascentInspObjThreeGenes <- modelRates(nascentInspObjThreeGenes, 
+	  seed=1, BPPARAM=SerialParam())
 	## view modeled synthesis rates
 	viewModelRates(nascentInspObjThreeGenes, 'synthesis')
 	## view gene classes

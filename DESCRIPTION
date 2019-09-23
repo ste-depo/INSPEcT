@@ -13,7 +13,7 @@ License: GPL-2
 Depends: R (>= 3.2), methods, Biobase, BiocParallel
 Imports: pROC, deSolve, rootSolve, compiler, preprocessCore,
         GenomicFeatures, GenomicRanges, IRanges, BiocGenerics,
-        GenomicAlignments, Rsamtools, S4Vectors, 
+        GenomicAlignments, Rsamtools, S4Vectors, GenomeInfoDb,
         DESeq2, plgem, SummarizedExperiment, 
         TxDb.Mmusculus.UCSC.mm9.knownGene, shiny
 Suggests: BiocStyle, knitr, rmarkdown

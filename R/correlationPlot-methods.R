@@ -1,3 +1,12 @@
+#' @rdname correlationPlot
+#'
+#' @description
+#' This function plot the rates of a simulated dataset against the modeled ones and compute their correlations. 
+#' @param object An object of class INSPEcT_model with simulated rates.
+#' @param object2 An object of class INSPEcT.
+#' @param plot A logical indicating whether to draw or not the plot. (default=TRUE)
+#' @return An list with the correlation values.
+
 setMethod('correlationPlot', signature(object='INSPEcT_model', object2='INSPEcT'), function(object, object2, plot=TRUE)
 {
 	k1_real <- log10(sapply(object@ratesSpecs,function(g){g[[1]][["alpha"]]$fun$value(0,g[[1]][["alpha"]]$par)}))

@@ -7,10 +7,11 @@
 \title{Generate synthetic rates and concentrations}
 \usage{
 makeSimDataset(object, tpts, nRep, NoNascent = FALSE, seed = NULL,
-  b = NULL, tL = NULL, noise_sd = 0)
+  b = 0.3, tL = 1/6, noise_sd = 4)
 
 \S4method{makeSimDataset}{INSPEcT_model}(object, tpts, nRep,
-  NoNascent = FALSE, seed = NULL, b = NULL, tL = NULL, noise_sd = 0)
+  NoNascent = FALSE, seed = NULL, b = 0.3, tL = 1/6,
+  noise_sd = 4)
 }
 \arguments{
 \item{object}{An object of class INSPEcT_model, usually the output of \code{\link{makeSimModel}}}
@@ -19,24 +20,22 @@ makeSimDataset(object, tpts, nRep, NoNascent = FALSE, seed = NULL,
 
 \item{nRep}{Number of replicates to simulate}
 
-\item{NoNascent}{A logical which, if true, makes the output of the method suitable for an analysis wothout Nascent}
+\item{NoNascent}{A logical which, if true, makes the output of the method suitable for an analysis 
+without Nascent. (default=FALSE)}
 
-\item{seed}{A numeric to obtain reproducible results}
+\item{seed}{A numeric to obtain reproducible results. When NULL (default) no seed is set.}
 
 \item{b}{A numeric which represents the probability of contamination of the unlabeled sample due to the labled one}
 
-\item{tL}{A numeric which represents the labeling time for an ideal nascent RNA profiling, it is required for the contamination analysis}
+\item{tL}{A numeric which represents the labeling time for an ideal nascent RNA profiling, it is required for 
+the contamination analysis. (default=1/6)}
 
-\item{object2}{An object of class INSPEcT_model, usually the output of \code{\link{makeSimModel}}}
-
-\item{a}{A numeric which represents the probability of contamination of the labeled sample due to the unlabled one}
+\item{noise_sd}{A numeric which represents the noise standard deviation. (default=4)}
 }
 \value{
 An object of the class ExpressionSet containing rates and concentrations
 }
 \description{
-Generate synthetic rates and concentrations
-
 This method generates rates and concentrations where noise is added according to the desired number of 
 replicates that the user set as an arguments from the INSPEcT_model object that has been created by the 
 method of the class INSPEcT \code{\link{makeSimModel}}. Rates and concentrations can be generated at the 

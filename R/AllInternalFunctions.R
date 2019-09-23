@@ -6467,42 +6467,6 @@ classificationFunction <- function(p,m,alpha,ref=NULL)
 # 	}
 # }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ### Choose among constant, sigmoid and impulsive function ###
 	.chooseModel <- function(tpts
 						   , experiment
@@ -6887,49 +6851,49 @@ classificationFunction <- function(p,m,alpha,ref=NULL)
 				 , gamma = k2Temp)
 	}
 
-	.makeModel_Derivative_Simple <- function(tpts, hyp, geneBestModel)
-	{
-		if(geneBestModel != "b")
-		{
-			params <- list()
-			params$total <- function(x) 
-				hyp$total$fun$value(x, hyp$total$par)
-			params$beta  <- function(x) 
-				hyp$beta$fun$value(x, hyp$beta$par)
-
-			totalTemp <- params$total(tpts)
-			k3Temp <- params$beta(tpts)
-
-			if(geneBestModel == "0")
-			{
-				k1Temp <- sapply(tpts,function(t)k1KKK_Der_Simple(t,c(hyp$total$params,hyp$beta$params)))
-			}else if(geneBestModel == "a")
-			{
-				k1Temp <- k1VKK_Der_Simple(tpts,c(hyp$total$params,hyp$beta$params))
-			}else if(geneBestModel == "ab")
-			{
-				k1Temp <- k1VKV_Der_Simple(tpts,c(hyp$total$params,hyp$beta$params))
-			}		
-		}else{
-			params <- list()
-			params$total <- function(x) 
-				hyp$total$fun$value(x, hyp$total$par)
-			params$alpha  <- function(x) 
-				hyp$alpha$fun$value(x, hyp$alpha$par)
-
-			totalTemp <- params$total(tpts)
-
-			k1Temp <- params$alpha(tpts)
-			k3Temp <- sapply(tpts, function(t) k3KKV_Der_Simple(t, c(hyp$total$params,hyp$alpha$params)))
-		}
-
-		data.frame(time = tpts
-		 , preMRNA = unname(rep(NaN,length(tpts)))
-		 , total = totalTemp
-		 , alpha = k1Temp
-		 , beta = k3Temp
-		 , gamma = unname(rep(NaN,length(tpts))))
-	}
+	# .makeModel_Derivative_Simple <- function(tpts, hyp, geneBestModel)
+	# {
+	# 	if(geneBestModel != "b")
+	# 	{
+	# 		params <- list()
+	# 		params$total <- function(x) 
+	# 			hyp$total$fun$value(x, hyp$total$par)
+	# 		params$beta  <- function(x) 
+	# 			hyp$beta$fun$value(x, hyp$beta$par)
+	# 
+	# 		totalTemp <- params$total(tpts)
+	# 		k3Temp <- params$beta(tpts)
+	# 
+	# 		if(geneBestModel == "0")
+	# 		{
+	# 			k1Temp <- sapply(tpts,function(t)k1KKK_Der_Simple(t,c(hyp$total$params,hyp$beta$params)))
+	# 		}else if(geneBestModel == "a")
+	# 		{
+	# 			k1Temp <- k1VKK_Der_Simple(tpts,c(hyp$total$params,hyp$beta$params))
+	# 		}else if(geneBestModel == "ab")
+	# 		{
+	# 			k1Temp <- k1VKV_Der_Simple(tpts,c(hyp$total$params,hyp$beta$params))
+	# 		}		
+	# 	}else{
+	# 		params <- list()
+	# 		params$total <- function(x) 
+	# 			hyp$total$fun$value(x, hyp$total$par)
+	# 		params$alpha  <- function(x) 
+	# 			hyp$alpha$fun$value(x, hyp$alpha$par)
+	# 
+	# 		totalTemp <- params$total(tpts)
+	# 
+	# 		k1Temp <- params$alpha(tpts)
+	# 		k3Temp <- sapply(tpts, function(t) k3KKV_Der_Simple(t, c(hyp$total$params,hyp$alpha$params)))
+	# 	}
+	# 
+	# 	data.frame(time = tpts
+	# 	 , preMRNA = unname(rep(NaN,length(tpts)))
+	# 	 , total = totalTemp
+	# 	 , alpha = k1Temp
+	# 	 , beta = k3Temp
+	# 	 , gamma = unname(rep(NaN,length(tpts))))
+	# }
 
 #############################################################################
 ### NEW INSPEcT FUNCTIONS FOR THE COMPUTATION ON THE CONFIDENCE INTERVALS ###

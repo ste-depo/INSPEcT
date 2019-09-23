@@ -24,8 +24,6 @@ ratePvals(object, bTsh = NULL, cTsh = NULL)
 A matrix containing p-values calculated for each rate
 }
 \description{
-Retrieve a single p-value for each rate
-
 This method is used to retrieve all the p-values combined with Brown's method that combines the results of the 
 log likelihood ratio test results for all pairs tested for each rate and all genes. P-values will change 
 according to the threshold set for the chi-squared test because it influences the model that will be taken into 

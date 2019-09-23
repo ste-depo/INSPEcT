@@ -8,10 +8,13 @@
 \title{Compare mature RNA steady state data from an object of class INSPEcT}
 \usage{
 compareSteadyNoNascent(inspectIds, expressionThreshold = 0.25,
-  log2FCThreshold = 2)
+  log2FCThreshold = 2, trivialAngle = NULL, returnNormScores = FALSE,
+  referenceCondition = NULL)
 
 \S4method{compareSteadyNoNascent}{INSPEcT}(inspectIds,
-  expressionThreshold = 0.25, log2FCThreshold = 2)
+  expressionThreshold = 0.25, log2FCThreshold = 2,
+  trivialAngle = NULL, returnNormScores = FALSE,
+  referenceCondition = NULL)
 }
 \arguments{
 \item{inspectIds}{An object of class INSPEcT.}
@@ -19,10 +22,14 @@ compareSteadyNoNascent(inspectIds, expressionThreshold = 0.25,
 \item{expressionThreshold}{A parameter which sets how many log2 fold changes of distance from the median behaviour are imputable to noise.}
 
 \item{log2FCThreshold}{A parameter which sets the log2 fold change distance from the median behaviour that is imputable to noise.}
+
+\item{trivialAngle}{A numeric between 0 and 90 to define the standard behavior, if NULL (default) it is computed internally from the data.}
+
+\item{returnNormScores}{A logical, if TRUE returned the deviations from the standard behavior normalized by the sd.}
+
+\item{referenceCondition}{The label of the condition to use as reference, if NULL (default) the medians are used.}
 }
 \description{
-Compare mature RNA steady state data from an object of class INSPEcT
-
 This function compare exons and introns expression level matrices, from two up to an arbitrary number of samples, in order
 to identify genes which are oddly regluated, compared to an expected standard behaviour, from the post transcriptional point of view.
 }
@@ -47,7 +54,7 @@ matureInspObj <- newINSPEcT(tpts=conditions,matureExpressions=matExp_DESeq2)
 
 regGenes<-compareSteadyNoNascent(inspectIds=matureInspObj
 								   ,expressionThreshold=0.25
-							   ,log2FCThreshold=2.)
+							   ,log2FCThreshold=.5)
 head(regGenes)
 table(regGenes)
 }

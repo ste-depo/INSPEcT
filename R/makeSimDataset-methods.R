@@ -8,14 +8,15 @@
 #' be modeled and the performance of the modeling can be tested directly aginst the INSPEcT_model object
 #' created by \code{\link{makeSimModel}}.
 #' @param object An object of class INSPEcT_model, usually the output of \code{\link{makeSimModel}}
-#' @param object2 An object of class INSPEcT_model, usually the output of \code{\link{makeSimModel}}
 #' @param tpts A numeric vector of time points where rates and concentrations have to be evaluated
 #' @param nRep Number of replicates to simulate
-#' @param NoNascent A logical which, if true, makes the output of the method suitable for an analysis wothout Nascent
-#' @param seed A numeric to obtain reproducible results
-#' @param a A numeric which represents the probability of contamination of the labeled sample due to the unlabled one
+#' @param NoNascent A logical which, if true, makes the output of the method suitable for an analysis 
+#' without Nascent. (default=FALSE)
+#' @param seed A numeric to obtain reproducible results. When NULL (default) no seed is set.
 #' @param b A numeric which represents the probability of contamination of the unlabeled sample due to the labled one
-#' @param tL A numeric which represents the labeling time for an ideal nascent RNA profiling, it is required for the contamination analysis
+#' @param tL A numeric which represents the labeling time for an ideal nascent RNA profiling, it is required for 
+#' the contamination analysis. (default=1/6)
+#' @param noise_sd A numeric which represents the noise standard deviation. (default=4)
 #' @return An object of the class ExpressionSet containing rates and concentrations
 #' @seealso \code{\link{makeSimModel}}
 #' @examples

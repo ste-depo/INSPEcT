@@ -42,8 +42,6 @@ List of parameters and their values
 }
 }
 \description{
-Get and set number parameters for the modeling
-
 A method to get and set the parameters that will be used in the modeling of estimated rates and 
 concentrations by the method \code{\link{modelRates}}
 }

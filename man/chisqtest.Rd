@@ -22,8 +22,6 @@ chisqtest(object, ...)
 A matrix of chi-squared test results for all the tested models
 }
 \description{
-Retrieve all results of chi-squared test
-
 This method is used to retrieve all the chi-squared test results for all models tested for all genes.
 }
 \examples{

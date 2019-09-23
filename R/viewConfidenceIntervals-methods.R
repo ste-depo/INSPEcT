@@ -1,7 +1,7 @@
 #' @rdname viewConfidenceIntervals
 #'
 #' @description
-#' A method to access the modeld confidence intervals via the method \code{\link{confidenceIntervals}}
+#' A method to access the modeld confidence intervals computed via the method \code{\link{computeConfidenceIntervals}}
 #' @param object An object of class INSPEcT
 #' @param feature A character indicating the feature to retireve: "synthesis", "degradation", "processing".
 #' @return A numeric matrix containing the values for the selected feature

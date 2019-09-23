@@ -24,6 +24,7 @@
 #' @param isPairedEnd A logical, if paired-end reads are used, FALSE by default
 #' @param DESeq2 A logical, if TRUE exons and introns variances are evaluated through the package DESeq2, if FALSE through plgem
 #' @param varSamplingCondition A character reporting which experimental condition should be used to sample the variance if DESeq2 = FALSE. 
+#' @param BPPARAM Parallelization parameters for bplapply. By default SerialParam()
 #' By default, the first element of "experimentalDesign" with replicates.
 #' @return A list containing expressions and associated variances for exons and introns.
 #' @examples
@@ -54,7 +55,7 @@ quantifyExpressionsFromBAMs <- function(txdb
 					, isPairedEnd = FALSE
 					, DESeq2 = TRUE
 					, varSamplingCondition = NULL
-					, BPPARAM = MulticoreParam(1))
+					, BPPARAM = SerialParam())
 {
 
 	############################################

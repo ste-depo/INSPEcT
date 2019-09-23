@@ -6,15 +6,16 @@
 \alias{inHeatmap,INSPEcT-method}
 \title{Heatmap that represent the fold changes of all the five features}
 \usage{
-inHeatmap(object, type = "pre-model", breaks = seq(-1, 1, length.out = 51),
-  palette = colorRampPalette(c("green", "black", "firebrick3")),
-  plot_matureRNA = FALSE, absoluteExpression = TRUE, rowLabels = NULL,
-  clustering = TRUE, clustIdx = 3:5)
+inHeatmap(object, type = "pre-model", breaks = seq(-1, 1, length.out =
+  51), palette = colorRampPalette(c("green", "black", "firebrick3")),
+  plot_matureRNA = FALSE, absoluteExpression = TRUE,
+  show_rowLabels = TRUE, clustering = TRUE, clustIdx = 3:5)
 
-\S4method{inHeatmap}{INSPEcT}(object, type = "pre-model", breaks = seq(-1,
-  1, length.out = 51), palette = colorRampPalette(c("green", "black",
-  "firebrick3")), plot_matureRNA = FALSE, absoluteExpression = TRUE,
-  rowLabels = NULL, clustering = TRUE, clustIdx = 3:5)
+\S4method{inHeatmap}{INSPEcT}(object, type = "pre-model",
+  breaks = seq(-1, 1, length.out = 51),
+  palette = colorRampPalette(c("green", "black", "firebrick3")),
+  plot_matureRNA = FALSE, absoluteExpression = TRUE,
+  show_rowLabels = TRUE, clustering = TRUE, clustIdx = 3:5)
 }
 \arguments{
 \item{object}{An object of class INSPEcT}
@@ -31,9 +32,7 @@ total-RNA (default: FALSE)}
 \item{absoluteExpression}{A logical. If set to FALSE, the plot representing the 
 intensity of expression is omitted. (default=TRUE)}
 
-\item{rowLabels}{A character that represent the label names that will be
-shown on the y-axis of the heatmap. If NULL featureNames(object) will be shown
-(default is NULL)}
+\item{show_rowLabels}{A logical defining whether rownames are reported or not. (default=TRUE)}
 
 \item{clustering}{A logical. If set to FALSE, it displys genes the order they are, 
 with no clustering (default: TRUE)}
@@ -49,8 +48,6 @@ synthesis rates, degradation rates and processing rates. Matrices are ordered ac
 the clustering.
 }
 \description{
-Heatmap that represent the fold changes of all the five features
-
 A method to see as an heatmap the logRatios of synthesis, degradation and processing rates and 
 pre-RNA and total RNA concentration of a population of genes, either at the level of 
 etimated or modeled rates.

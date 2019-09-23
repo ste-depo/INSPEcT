@@ -29,7 +29,8 @@
 #' 	nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' 	## models removal
 #' 	nascentInspObjThreeGenes <- removeModel(nascentInspObj10[1:3])
-#' 	nascentInspObjThreeGenes <- modelRates(nascentInspObjThreeGenes, seed=1, BPPARAM=SerialParam())
+#' 	nascentInspObjThreeGenes <- modelRates(nascentInspObjThreeGenes, 
+#' 	  seed=1, BPPARAM=SerialParam())
 #' 	## view modeled synthesis rates
 #' 	viewModelRates(nascentInspObjThreeGenes, 'synthesis')
 #' 	## view gene classes
@@ -196,7 +197,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 		eiGenes <- rownames(concentrations$preMRNA[is.finite(concentrations$preMRNA[,1]),])
 		eGenes <- NULL # rownames(concentrations$preMRNA[!is.finite(concentrations$preMRNA[,1]),])
 		message("Simple methods still to setup")
-		
+
 		if(!is.null(eiGenes))
 		{
 			eiConcentrations <- lapply(concentrations,function(o){o[eiGenes,]})
@@ -267,8 +268,10 @@ setMethod('modelRates', 'INSPEcT', function(object
 			# 																   , computeDerivatives=computeDerivatives
 			# 																   , useSigmoidFun=sigmoid)
 			# 			names(eRatesSpecs) <- eGenes
+			eRatesSpecs <- NULL
+			econfidenceIntervals <- NULL
 		}
-
+		
 		if(!is.null(eiGenes)&!is.null(eGenes)){
 			ratesSpecs <- c(eiRatesSpecs,eRatesSpecs)
 		}else if(!is.null(eiGenes)){
