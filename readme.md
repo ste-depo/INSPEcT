@@ -1,17 +1,8 @@
----
-title: "INSPEcT readme"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 ## Install the package
 
 The current version of the INSPEcT package can be installed by using ***devtools*** and typing the following code into the R command line.
 
-```{r install, eval=FALSE}
+```
 library(devtools)
 install_github('mfurla/INSPEcT')
 ```
@@ -20,7 +11,7 @@ install_github('mfurla/INSPEcT')
 
 In order to run the INSPEcT graphical user interface (GUI), just run the command:
 
-```{r GUI, eval=FALSE}
+```
 runINSPEcT_GUI()
 ```
 
