@@ -47,7 +47,11 @@ setMethod('show', 'INSPEcT', function(object) {
 		message("Rates first guess and confidence intervals were computed (non-functional framework).")
 		message("Access complete rates with the method ratesFirstGuess.")
 	} else if( length(object@model@ratesSpecs)>0 ) {
-		message("Rates were modeled with either constant, sigmoid or impulse functions.")
+		if( modelingParams(object)$estimateRatesWith == 'int' ) {
+			message("Rates were modeled using the integrative framework with either constant, sigmoid or impulse functions.")	
+		} else {
+			message("Rates were modeled using the derivative framework with either constant, sigmoid or impulse functions.")	
+		}
 		message("Access complete rates with the method viewModelRates.")
 	} else {
 		message("Only Rates first guess were computed.")

@@ -17,7 +17,7 @@ runProcessingRateDelay = function() {
 }
 #' @rdname INSPEcT-shinyApps
 #' @examples
-#' # runRNAdynamics()
-runRNAdynamics = function() {
+#' # runINSPEcT_GUI()
+runINSPEcT_GUI = function() {
 	shiny::runApp(system.file(package='INSPEcT', 'RNAdynamics'))
 }

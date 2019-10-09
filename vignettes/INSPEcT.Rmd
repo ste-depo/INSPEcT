@@ -43,7 +43,7 @@ Time-course  | Yes       | Yes        | Yes
 
 Design       | Synthesis | Processing | Degradation
 -------------| --------- | ---------- | -----------
-Steady-state | Yes       | Ratio      | Ratio
+Steady-state | No        | Ratio      | Ratio
 Time-course  | Yes       | Yes        | Yes
   
 : (\#tab:Nos4Udesign) INSPEcT-  experimental design

@@ -18,7 +18,7 @@ importFrom("S4Vectors","subjectHits","queryHits","subjectLength","elementNROWS")
 importFrom("stats", "approx", "dist", "ecdf", "hclust", "lm","na.omit", "optim", "optimize", "pchisq", "pnorm", "predict", "quantile", "rnorm", "runif", "splinefun", "uniroot", "p.adjust", "pt")
 importFrom("utils", "capture.output", "read.table", "write.table", "head", "tail")
 
-export("newINSPEcT", "runProcessingRateDelay", "runRNAdynamics", "compareSteadyNoNascent", 
+export("newINSPEcT", "runProcessingRateDelay", "runINSPEcT_GUI", "compareSteadyNoNascent", 
 	"quantifyExpressionsFromBAMs", "quantifyExpressionsFromTrCounts", "quantifyExpressionsFromTrAbundance")
 exportMethods( "[", "AIC", "calculateDelta", "calculateTau", "chisqmodel", "chisqtest", "combine", 
     "compareSteady", "computeConfidenceIntervals", "correlationPlot", "degradation", "dim", "featureNames", 

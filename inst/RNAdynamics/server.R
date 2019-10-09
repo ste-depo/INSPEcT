@@ -8,7 +8,7 @@ shinyServer(function(input, output, session) {
 	inspect <- reactiveValues(loaded=FALSE)
 	function_types <- reactiveValues()
 	modeling <- reactiveValues()
-
+	
 	######################################################################
 	######################################################################
 	### import of the INSPEcT dataset and update of the imported values
@@ -30,7 +30,7 @@ shinyServer(function(input, output, session) {
 				return(NULL)
 
 			} else { # (the loaded object is of class INSPEcT
-
+				
 				## store inspect global values
 				experiment$tpts <- tpts(ids)
 				experiment$no_nascent <- ids@NoNascent
@@ -41,17 +41,29 @@ shinyServer(function(input, output, session) {
 
 				if( !experiment$steady_state ) {
 
+					inspect$mod_method <- modelingParams(ids)$estimateRatesWith ## either "der" or "int"
 					inspect$classes <- geneClass(ids)
 					inspect$logshift <- find_tt_par(experiment$tpts)
 					inspect$linshift <- ifelse( experiment$no_nascent,
 						abs(min(time_transf(experiment$tpts,inspect$logshift))),0)
 
-					## remove models from other classes
-					ids@model@ratesSpecs <- 
-						lapply(seq_along(inspect$classes), function(i) 
-							list(ids@model@ratesSpecs[[i]][[inspect$classes[i]]]))
-					names(ids@model@ratesSpecs) <- featureNames(ids)
-
+					# ... optionally throw a warning and consider as steady-state
+					if( ids@NF ) stop("The RNAdynamics app doesn't work with non-functional(NF) INSPEcT models")
+					
+					## select only the best model
+					
+					if( ids@NoNascent ){ # (based on the class)
+						ids@model@ratesSpecs <-
+							lapply(seq_along(inspect$classes), function(i)
+								list(ids@model@ratesSpecs[[i]][[inspect$classes[i]]]))
+						names(ids@model@ratesSpecs) <- featureNames(ids)
+					} else{ # Nascent RNA object (always VVV)
+						ids@model@ratesSpecs <-
+							lapply(seq_along(inspect$classes), function(i)
+								list(ids@model@ratesSpecs[[i]][['abc']]))
+						names(ids@model@ratesSpecs) <- featureNames(ids)
+					}
+					
 					## update (converted) gene classes in the select input box
 					classes_table <- table(isolate(inspect$classes))
 					names(classes_table) <- convert_gene_classes( names(classes_table) )
@@ -64,8 +76,9 @@ shinyServer(function(input, output, session) {
 					ranges$time_min <- min(experiment$tpts)
 					ranges$time_max <- max(experiment$tpts)
 
-				} else {
+				} else { ## steady state
 
+					inspect$mod_method <- 'int'
 					inspect$logshift <- 1
 					inspect$linshift <- 0
 
@@ -82,16 +95,16 @@ shinyServer(function(input, output, session) {
 
 				}
 
-				## predifined logtime 
+				## predifined  
 
 				values$logtime <- FALSE
-
+				values$confint <- FALSE
+				
 				return(ids)
 				
 			}
 		} else { # (if the file name does not exist)
 			return(NULL)
-
 		}
 
 	})
@@ -112,39 +125,73 @@ shinyServer(function(input, output, session) {
 	
 	############################################################################
 	## select parameters of each rate (synthesis, processing and degradation) #####
-	## and experimental values for the selected gene ###########################
+	## and experimental values for the selected gene ###########################
 	####################################################
 	
 	observe({
 
 		ids <- contentsrea()
 				
-		if( input$select != "" & !is.null(ids) &
+		if(
+			input$select != "" & !is.null(ids) &
 			input$select %in% featureNames(ids) & 
-			!(is.null(input$select_condition) & experiment$steady_state ) ) {
+			!(is.null(input$select_condition) & experiment$steady_state ) 
+			) {
 
+			## define the modeling strategy
+			
+			gene_class <- strsplit( input$select_class , ' ')[[1]][1]
+			if( inspect$mod_method == 'int' ) {
+				modeling_type <- 'K123'
+				model_names <- c('alpha','gamma','beta')
+			} else { # inspect$mod_method == 'der'
+				if( experiment$no_nascent & (gene_class  %in% c('KVK','KKV','KVV') ) ) {
+					if( gene_class %in% c('KVK','KVV') ) {
+						modeling_type <- 'TK13'
+						model_names <- c('total','alpha','beta')
+					} else {
+						modeling_type <- 'TK12'
+						model_names <- c('total','alpha','gamma')
+					}
+				} else {
+					modeling_type <- 'MK23'
+					model_names <- c('mature','gamma','beta')
+				}
+			}
+			
+			## assign to global variable
+			values$modeling_type <- modeling_type
+			values$model_names <- model_names
+			
 			if( !experiment$steady_state ) {
 
-				experiment$synthesis <- ratesFirstGuess(ids[input$select], 'synthesis')
+				experiment$synthesis <- if( !experiment$no_nascent ) {
+					ratesFirstGuess(ids[input$select], 'synthesis')	
+				} else NULL
 				experiment$mRNA <- ratesFirstGuess(ids[input$select], 'total') - ratesFirstGuess(ids[input$select], 'preMRNA')
 				experiment$preMRNA <- ratesFirstGuess(ids[input$select], 'preMRNA')
 				
-				## test on smooth experiment data???
-				experiment$synthesis_smooth <- smoothModel(ids@tpts, ratesFirstGuess(ids[input$select], 'synthesis'))
+				## smooth experiment data
+				experiment$synthesis_smooth <- if( !experiment$no_nascent ) {
+					smoothModel(ids@tpts, ratesFirstGuess(ids[input$select], 'synthesis'))
+				} else NULL
 				experiment$mRNA_smooth <- smoothModel(ids@tpts, ratesFirstGuess(ids[input$select], 'total') - ratesFirstGuess(ids[input$select], 'preMRNA'))
 				experiment$preMRNA_smooth <- smoothModel(ids@tpts, ratesFirstGuess(ids[input$select], 'preMRNA'))
 
-				experiment$synthesissd <- sqrt(ratesFirstGuessVar(ids[input$select], 'synthesis'))
+				experiment$synthesissd <- if( !experiment$no_nascent ) {
+					sqrt(ratesFirstGuessVar(ids[input$select], 'synthesis'))
+				} else NULL
 				experiment$mRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select], 'total') + ratesFirstGuessVar(ids[input$select], 'preMRNA'))
 				experiment$preMRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select], 'preMRNA'))
 
-				out <- define_parameter_ranges( ids, isolate(inspect$logshift), isolate(inspect$linshift) )	
+				out <- define_parameter_ranges( ids, model_names )
+
 				gene_model <- ids@model@ratesSpecs[[input$select]][[1]]
 				modeling$counts <- gene_model$counts[1]
 				modeling$convergence <- gene_model$convergence
 
-			} else {
-
+			} else { ## steady state experiment
+				
 				condition_id <- which(experiment$tpts == input$select_condition)
 
 				experiment$synthesis_smooth <- experiment$synthesis <- 
@@ -159,7 +206,7 @@ shinyServer(function(input, output, session) {
 				experiment$mRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select,condition_id], 'total') + 
 					ratesFirstGuessVar(ids[input$select,condition_id], 'preMRNA'))
 				experiment$preMRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select,condition_id], 'preMRNA'))
-
+				
 				rateRange <- function(rate) {
 					rate_vals = ratesFirstGuess(ids, rate)
 					rate_range = range(rate_vals[is.finite(rate_vals)])
@@ -175,162 +222,739 @@ shinyServer(function(input, output, session) {
 					)
 
 				gene_model <- list(
-					alpha=list(type='constant',
-						params=ratesFirstGuess(ids[input$select,condition_id], 'synthesis')),
-					beta=list(type='constant',
-						params=ratesFirstGuess(ids[input$select,condition_id], 'degradation')),
-					gamma=list(type='constant',
-						params=ratesFirstGuess(ids[input$select,condition_id], 'processing'))
-					)
-
+					alpha=list(type='constant', fun=newPointer(constantModel),
+						params=ratesFirstGuess(ids[input$select,condition_id], 'synthesis'), df=1),
+					gamma=list(type='constant', fun=newPointer(constantModel),
+						params=ratesFirstGuess(ids[input$select,condition_id], 'processing'), df=1),
+					beta=list(type='constant', fun=newPointer(constantModel),
+										params=ratesFirstGuess(ids[input$select,condition_id], 'degradation'), df=1)
+				)
+				
+				model_names <- names(gene_model)
+				
 				modeling$counts <- NA
 				modeling$convergence <- NA
 
 			}
 
-			function_types$k1 <- switch(
-				gene_model[['alpha']][['type']],
-				"constant" = "Constant",
-				"sigmoid" = "Sigmoidal",
-				"impulse" = "Impulsive"
-			)
-
-			function_types$k2 <- switch(
-				gene_model[['gamma']][['type']],
-				"constant" = "Constant",
-				"sigmoid" = "Sigmoidal",
-				"impulse" = "Impulsive"
-			)
-
-			function_types$k3 <- switch(
-				gene_model[['beta']][['type']],
-				"constant" = "Constant",
-				"sigmoid" = "Sigmoidal",
-				"impulse" = "Impulsive"
-			)
-
-			updateRadioButtons(session, 'k1_function',
-				selected = function_types$k1)
-			updateRadioButtons(session, 'k2_function',
-				selected = function_types$k2)
-			updateRadioButtons(session, 'k3_function',
-				selected = function_types$k3)
-
-			if( function_types$k1 == "Constant" ) {
-				values$k1_h0 = round(gene_model[["alpha"]][["params"]][1],2)
-				values$k1_h1 = round(gene_model[["alpha"]][["params"]][1],2)
-				values$k1_h2 = round(gene_model[["alpha"]][["params"]][1],2)
-				values$k1_t1 = round(mean(out$t_pars))
-				values$k1_t2 = round(mean(out$t_pars))
-				values$k1_beta = round(mean(out$beta_pars))
-			}
-			if( function_types$k1 == "Sigmoidal" ) {
-				values$k1_h0 = round(gene_model[["alpha"]][["params"]][1],2)
-				values$k1_h1 = round(gene_model[["alpha"]][["params"]][2],2)
-				values$k1_h2 = round(gene_model[["alpha"]][["params"]][2],2)
-				values$k1_t1 = round(time_transf_inv(gene_model[["alpha"]][["params"]][3], inspect$logshift, inspect$linshift),2)
-				values$k1_t2 = round(time_transf_inv(gene_model[["alpha"]][["params"]][3], inspect$logshift, inspect$linshift),2)
-				values$k1_beta = round(gene_model[["alpha"]][["params"]][4],2)
-			}
-			if( function_types$k1 == "Impulsive" ) {
-				values$k1_h0 = round(gene_model[["alpha"]][["params"]][1],2)
-				values$k1_h1 = round(gene_model[["alpha"]][["params"]][2],2)
-				values$k1_h2 = round(gene_model[["alpha"]][["params"]][3],2)
-				values$k1_t1 = round(time_transf_inv(gene_model[["alpha"]][["params"]][4], inspect$logshift, inspect$linshift),2)
-				values$k1_t2 = round(time_transf_inv(gene_model[["alpha"]][["params"]][5], inspect$logshift, inspect$linshift),2)
-				values$k1_beta = round(gene_model[["alpha"]][["params"]][6],2)
-			}
-			
-			if( function_types$k2 == "Constant" ) {
-				values$k2_h0 = round(gene_model[["gamma"]][["params"]][1],2)
-				values$k2_h1 = round(gene_model[["gamma"]][["params"]][1],2)
-				values$k2_h2 = round(gene_model[["gamma"]][["params"]][1],2)
-				values$k2_t1 = round(mean(out$t_pars))
-				values$k2_t2 = round(mean(out$t_pars))
-				values$k2_beta = round(mean(out$beta_pars))
-			}
-			if( function_types$k2 == "Sigmoidal" ) {
-				values$k2_h0 = round(gene_model[["gamma"]][["params"]][1],2)
-				values$k2_h1 = round(gene_model[["gamma"]][["params"]][2],2)
-				values$k2_h2 = round(gene_model[["gamma"]][["params"]][2],2)
-				values$k2_t1 = round(time_transf_inv(gene_model[["gamma"]][["params"]][3], inspect$logshift, inspect$linshift),2)
-				values$k2_t2 = round(time_transf_inv(gene_model[["gamma"]][["params"]][3], inspect$logshift, inspect$linshift),2)
-				values$k2_beta = round(gene_model[["gamma"]][["params"]][4],2)
-			}
-			if( function_types$k2 == "Impulsive" ) {
-				values$k2_h0 = round(gene_model[["gamma"]][["params"]][1],2)
-				values$k2_h1 = round(gene_model[["gamma"]][["params"]][2],2)
-				values$k2_h2 = round(gene_model[["gamma"]][["params"]][3],2)
-				values$k2_t1 = round(time_transf_inv(gene_model[["gamma"]][["params"]][4], inspect$logshift, inspect$linshift),2)
-				values$k2_t2 = round(time_transf_inv(gene_model[["gamma"]][["params"]][5], inspect$logshift, inspect$linshift),2)
-				values$k2_beta = round(gene_model[["gamma"]][["params"]][6],2)
-			}
-			
-			if( function_types$k3 == "Constant" ) {
-				values$k3_h0 = round(gene_model[["beta"]][["params"]][1],2)
-				values$k3_h1 = round(gene_model[["beta"]][["params"]][1],2)
-				values$k3_h2 = round(gene_model[["beta"]][["params"]][1],2)
-				values$k3_t1 = round(mean(out$t_pars))
-				values$k3_t2 = round(mean(out$t_pars))
-				values$k3_beta = round(mean(out$beta_pars))
-			}
-			if( function_types$k3 == "Sigmoidal" ) {
-				values$k3_h0 = round(gene_model[["beta"]][["params"]][1],2)
-				values$k3_h1 = round(gene_model[["beta"]][["params"]][2],2)
-				values$k3_h2 = round(gene_model[["beta"]][["params"]][2],2)
-				values$k3_t1 = round(time_transf_inv(gene_model[["beta"]][["params"]][3], inspect$logshift, inspect$linshift),2)
-				values$k3_t2 = round(time_transf_inv(gene_model[["beta"]][["params"]][3], inspect$logshift, inspect$linshift),2)
-				values$k3_beta = round(gene_model[["beta"]][["params"]][4],2)
-			}
-			if( function_types$k3 == "Impulsive" ) {
-				values$k3_h0 = round(gene_model[["beta"]][["params"]][1],2)
-				values$k3_h1 = round(gene_model[["beta"]][["params"]][2],2)
-				values$k3_h2 = round(gene_model[["beta"]][["params"]][3],2)
-				values$k3_t1 = round(time_transf_inv(gene_model[["beta"]][["params"]][4], inspect$logshift, inspect$linshift),2)
-				values$k3_t2 = round(time_transf_inv(gene_model[["beta"]][["params"]][5], inspect$logshift, inspect$linshift),2)
-				values$k3_beta = round(gene_model[["beta"]][["params"]][6],2)
-			}
-
-			gene_h_vals <- c(isolate(values$k1_h0),isolate(values$k1_h1),isolate(values$k1_h2),
-				isolate(values$k2_h0),isolate(values$k2_h1),isolate(values$k2_h2),
-				isolate(values$k3_h0),isolate(values$k3_h1),isolate(values$k3_h2))
-			gene_t_vals <- c(isolate(values$k1_t1),isolate(values$k1_t2),isolate(values$k2_t1),
-				isolate(values$k2_t2),isolate(values$k3_t1),isolate(values$k3_t2))
-			gene_beta_vals <- c(isolate(values$k1_beta),isolate(values$k2_beta),isolate(values$k3_beta))
+			try({ 
+				## this try is necessary because the class is updated before the gene, then the model_name
+				## corresponding to the new class can also not correspond to the currently selected gene
 				
-			ranges$k1_h0_min <- ranges$k1_h1_min <- ranges$k1_h2_min <- min(c(gene_h_vals,out$k1_h_pars[1]))
-			ranges$k1_h0_max <- ranges$k1_h1_max <- ranges$k1_h2_max <- max(c(gene_h_vals,out$k1_h_pars[2]))
-			ranges$k2_h0_min <- ranges$k2_h1_min <- ranges$k2_h2_min <- min(c(gene_h_vals,out$k2_h_pars[1]))
-			ranges$k2_h0_max <- ranges$k2_h1_max <- ranges$k2_h2_max <- max(c(gene_h_vals,out$k2_h_pars[2]))
-			ranges$k3_h0_min <- ranges$k3_h1_min <- ranges$k3_h2_min <- min(c(gene_h_vals,out$k3_h_pars[1]))
-			ranges$k3_h0_max <- ranges$k3_h1_max <- ranges$k3_h2_max <- max(c(gene_h_vals,out$k3_h_pars[2]))
-			ranges$t_min     <- min(c(gene_t_vals,out$t_pars[1]))
-			ranges$t_max     <- max(c(gene_t_vals,out$t_pars[2]))
-			ranges$beta_min  <- min(c(gene_beta_vals,out$beta_pars[1]))
-			ranges$beta_max  <- max(c(gene_beta_vals,out$beta_pars[2]))
-			
+				function_types$k1 <- switch(
+					gene_model[[ model_names[1] ]][['type']],
+					"constant" = "Constant",
+					"sigmoid" = "Sigmoidal",
+					"impulse" = "Impulsive"
+				)
+				
+				function_types$k2 <- switch(
+					gene_model[[ model_names[2] ]][['type']],
+					"constant" = "Constant",
+					"sigmoid" = "Sigmoidal",
+					"impulse" = "Impulsive"
+				)
+				
+				function_types$k3 <- switch(
+					gene_model[[ model_names[3] ]][['type']],
+					"constant" = "Constant",
+					"sigmoid" = "Sigmoidal",
+					"impulse" = "Impulsive"
+				)
+				
+				updateRadioButtons(session, 'k1_function',
+													 selected = function_types$k1)
+				updateRadioButtons(session, 'k2_function',
+													 selected = function_types$k2)
+				updateRadioButtons(session, 'k3_function',
+													 selected = function_types$k3)
+				
+				if( function_types$k1 == "Constant" ) {
+					values$k1_h0 = round(gene_model[[ model_names[1] ]][["params"]][1],2)
+					values$k1_h1 = round(gene_model[[ model_names[1] ]][["params"]][1],2)
+					values$k1_h2 = round(gene_model[[ model_names[1] ]][["params"]][1],2)
+					values$k1_t1 = round(mean(out$t_pars))
+					values$k1_t2 = round(mean(out$t_pars))
+					values$k1_beta = round(mean(out$beta_pars))
+				}
+				if( function_types$k1 == "Sigmoidal" ) {
+					values$k1_h0 = round(gene_model[[ model_names[1] ]][["params"]][1],2)
+					values$k1_h1 = round(gene_model[[ model_names[1] ]][["params"]][2],2)
+					values$k1_h2 = round(gene_model[[ model_names[1] ]][["params"]][2],2)
+					values$k1_t1 = round(gene_model[[ model_names[1] ]][["params"]][3],2)
+					values$k1_t2 = round(gene_model[[ model_names[1] ]][["params"]][3],2)
+					values$k1_beta = round(gene_model[[ model_names[1] ]][["params"]][4],2)
+				}
+				if( function_types$k1 == "Impulsive" ) {
+					values$k1_h0 = round(gene_model[[ model_names[1] ]][["params"]][1],2)
+					values$k1_h1 = round(gene_model[[ model_names[1] ]][["params"]][2],2)
+					values$k1_h2 = round(gene_model[[ model_names[1] ]][["params"]][3],2)
+					values$k1_t1 = round(gene_model[[ model_names[1] ]][["params"]][4],2)
+					values$k1_t2 = round(gene_model[[ model_names[1] ]][["params"]][5],2)
+					values$k1_beta = round(gene_model[[ model_names[1] ]][["params"]][6],2)
+				}
+				
+				if( function_types$k2 == "Constant" ) {
+					values$k2_h0 = round(gene_model[[ model_names[2] ]][["params"]][1],2)
+					values$k2_h1 = round(gene_model[[ model_names[2] ]][["params"]][1],2)
+					values$k2_h2 = round(gene_model[[ model_names[2] ]][["params"]][1],2)
+					values$k2_t1 = round(mean(out$t_pars))
+					values$k2_t2 = round(mean(out$t_pars))
+					values$k2_beta = round(mean(out$beta_pars))
+				}
+				if( function_types$k2 == "Sigmoidal" ) {
+					values$k2_h0 = round(gene_model[[ model_names[2] ]][["params"]][1],2)
+					values$k2_h1 = round(gene_model[[ model_names[2] ]][["params"]][2],2)
+					values$k2_h2 = round(gene_model[[ model_names[2] ]][["params"]][2],2)
+					values$k2_t1 = round(gene_model[[ model_names[2] ]][["params"]][3],2)
+					values$k2_t2 = round(gene_model[[ model_names[2] ]][["params"]][3],2)
+					values$k2_beta = round(gene_model[[ model_names[2] ]][["params"]][4],2)
+				}
+				if( function_types$k2 == "Impulsive" ) {
+					values$k2_h0 = round(gene_model[[ model_names[2] ]][["params"]][1],2)
+					values$k2_h1 = round(gene_model[[ model_names[2] ]][["params"]][2],2)
+					values$k2_h2 = round(gene_model[[ model_names[2] ]][["params"]][3],2)
+					values$k2_t1 = round(gene_model[[ model_names[2] ]][["params"]][4],2)
+					values$k2_t2 = round(gene_model[[ model_names[2] ]][["params"]][5],2)
+					values$k2_beta = round(gene_model[[ model_names[2] ]][["params"]][6],2)
+				}
+				
+				if( function_types$k3 == "Constant" ) {
+					values$k3_h0 = round(gene_model[[ model_names[3] ]][["params"]][1],2)
+					values$k3_h1 = round(gene_model[[ model_names[3] ]][["params"]][1],2)
+					values$k3_h2 = round(gene_model[[ model_names[3] ]][["params"]][1],2)
+					values$k3_t1 = round(mean(out$t_pars))
+					values$k3_t2 = round(mean(out$t_pars))
+					values$k3_beta = round(mean(out$beta_pars))
+				}
+				if( function_types$k3 == "Sigmoidal" ) {
+					values$k3_h0 = round(gene_model[[ model_names[3] ]][["params"]][1],2)
+					values$k3_h1 = round(gene_model[[ model_names[3] ]][["params"]][2],2)
+					values$k3_h2 = round(gene_model[[ model_names[3] ]][["params"]][2],2)
+					values$k3_t1 = round(gene_model[[ model_names[3] ]][["params"]][3],2)
+					values$k3_t2 = round(gene_model[[ model_names[3] ]][["params"]][3],2)
+					values$k3_beta = round(gene_model[[ model_names[3] ]][["params"]][4],2)
+				}
+				if( function_types$k3 == "Impulsive" ) {
+					values$k3_h0 = round(gene_model[[ model_names[3] ]][["params"]][1],2)
+					values$k3_h1 = round(gene_model[[ model_names[3] ]][["params"]][2],2)
+					values$k3_h2 = round(gene_model[[ model_names[3] ]][["params"]][3],2)
+					values$k3_t1 = round(gene_model[[ model_names[3] ]][["params"]][4],2)
+					values$k3_t2 = round(gene_model[[ model_names[3] ]][["params"]][5],2)
+					values$k3_beta = round(gene_model[[ model_names[3] ]][["params"]][6],2)
+				}
+				
+				## convert the models into MK23
+				if( modeling_type == 'TK13' ) {
+					if( gene_class == 'KVK') {
+						parameters <- unname(unlist(lapply(gene_model[1:3], '[[', 'params')))
+						processingfit <- k2KVK_Der(ids@tpts, parameters)
+						processingmodel <- .chooseModel(ids@tpts, experiment = processingfit, variance = 1, 
+																						sigmoid = TRUE, impulse = TRUE, polynomial = FALSE,
+																						nInit = 10, nIter = 300, sigmoidModel=sigmoidModel, impulseModel=impulseModel,
+																						sigmoidModelP=sigmoidModelP, impulseModelP=impulseModelP, .polynomialModelP=.polynomialModelP,
+																						computeDerivatives = TRUE)
+						maturefit <- matureKVK_Der(ids@tpts, parameters)
+						maturemodel <- .chooseModel(ids@tpts, experiment = maturefit, variance = 1, 
+																				sigmoid = processingmodel$type == 'sigmoid', impulse = processingmodel$type == 'impulse', polynomial = FALSE,
+																				nInit = 10, nIter = 300, sigmoidModel=sigmoidModel, impulseModel=impulseModel,
+																				sigmoidModelP=sigmoidModelP, impulseModelP=impulseModelP, .polynomialModelP=.polynomialModelP,
+																				computeDerivatives = TRUE)
+						k1_rate <- switch(processingmodel$type, 
+															"sigmoid" = list(type='sigmoid',fun=newPointer(sigmoidModel),
+																								 params=maturemodel$params,df=4),
+															"impulse" = list(type='impulse',fun=newPointer(impulseModel),
+																								 params=maturemodel$params,df=6)
+						)
+						k2_rate <- switch(processingmodel$type, 
+															"sigmoid" = list(type='sigmoid',fun=newPointer(sigmoidModel),
+																								 params=processingmodel$params,df=4),
+															"impulse" = list(type='impulse',fun=newPointer(impulseModel),
+																								 params=processingmodel$params,df=6)
+						)
+						k3_rate <- list(type='constant',fun=newPointer(constantModel),
+														params=gene_model[[3]]$params,df=1)
+						params <- list(alpha=k1_rate, gamma=k2_rate, beta=k3_rate)
+						gene_model <- optimParamsMatureRNA(params, ids@tpts
+																							 , if(input$data_selection == 'Smooth data') isolate(experiment$synthesis_smooth) else isolate(experiment$synthesis)
+																							 , isolate(experiment$synthesissd)^2
+																							 , if(input$data_selection == 'Smooth data') isolate(experiment$mRNA_smooth) else isolate(experiment$mRNA)
+																							 , isolate(experiment$mRNAsd)^2
+																							 , if(input$data_selection == 'Smooth data') isolate(experiment$preMRNA_smooth) else isolate(experiment$preMRNA)
+																							 , isolate(experiment$preMRNAsd)^2
+																							 , maxit=300, method=isolate(input$opt_method)
+																							 , isolate(experiment$no_nascent), mod_method = isolate(inspect$mod_method))
+						## update mature values
+						if( processingmodel$type == 'sigmoid' ) {
+							values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],2)
+							values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],2)
+							values$k1_h2 = round(gene_model[[ 1 ]][["params"]][2],2)
+							values$k1_t1 = round(gene_model[[ 1 ]][["params"]][3],2)
+							values$k1_t2 = round(gene_model[[ 1 ]][["params"]][3],2)
+							values$k1_beta = round(gene_model[[ 1 ]][["params"]][4],2)
+						} else {
+							values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],2)
+							values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],2)
+							values$k1_h2 = round(gene_model[[ 1 ]][["params"]][3],2)
+							values$k1_t1 = round(gene_model[[ 1 ]][["params"]][4],2)
+							values$k1_t2 = round(gene_model[[ 1 ]][["params"]][5],2)
+							values$k1_beta = round(gene_model[[ 1 ]][["params"]][6],2)
+						}
+						## update k2 values
+						if( processingmodel$type == 'sigmoid' ) {
+							values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],2)
+							values$k2_h1 = round(gene_model[[ 3 ]][["params"]][2],2)
+							values$k2_h2 = round(gene_model[[ 3 ]][["params"]][2],2)
+							values$k2_t1 = round(gene_model[[ 3 ]][["params"]][3],2)
+							values$k2_t2 = round(gene_model[[ 3 ]][["params"]][3],2)
+							values$k2_beta = round(gene_model[[ 3 ]][["params"]][4],2)
+						} else {
+							values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],2)
+							values$k2_h1 = round(gene_model[[ 3 ]][["params"]][2],2)
+							values$k2_h2 = round(gene_model[[ 3 ]][["params"]][3],2)
+							values$k2_t1 = round(gene_model[[ 3 ]][["params"]][4],2)
+							values$k2_t2 = round(gene_model[[ 3 ]][["params"]][5],2)
+							values$k2_beta = round(gene_model[[ 3 ]][["params"]][6],2)
+						}
+						values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],2)
+						values$k3_h1 = round(gene_model[[ 2 ]][["params"]][1],2)
+						values$k3_h2 = round(gene_model[[ 2 ]][["params"]][1],2)
+						values$k3_t1 = round(mean(out$t_pars))
+						values$k3_t2 = round(mean(out$t_pars))
+						values$k3_beta = round(mean(out$beta_pars))
+						## update functional forms
+						updateRadioButtons(session, 'k1_function',
+															 selected = if(maturemodel$type == 'impulse') "Impulsive" else "Sigmoidal")
+						updateRadioButtons(session, 'k2_function',
+															 selected = if(processingmodel$type == 'impulse') "Impulsive" else "Sigmoidal")
+						updateRadioButtons(session, 'k3_function',
+															 selected = "Constant")
+					} else { # KVV
+						modeling_fun <- gene_model[[3]]$type
+						parameters <- unname(unlist(lapply(gene_model[1:3], '[[', 'params')))
+						processingfit <- k2KVV_Der(ids@tpts, parameters)
+						processingmodel <- .chooseModel(ids@tpts, experiment = processingfit, variance = 1, 
+																						sigmoid = modeling_fun == 'sigmoid', impulse = modeling_fun == 'impulse', polynomial = FALSE,
+																						nInit = 10, nIter = 300, sigmoidModel=sigmoidModel, impulseModel=impulseModel,
+																						sigmoidModelP=sigmoidModelP, impulseModelP=impulseModelP, .polynomialModelP=.polynomialModelP,
+																						computeDerivatives = TRUE)
+						maturefit <- matureKVV_Der(ids@tpts, parameters)
+						maturemodel <- .chooseModel(ids@tpts, experiment = maturefit, variance = 1, 
+																				sigmoid = modeling_fun == 'sigmoid', impulse = modeling_fun == 'impulse', polynomial = FALSE,
+																				nInit = 10, nIter = 300, sigmoidModel=sigmoidModel, impulseModel=impulseModel,
+																				sigmoidModelP=sigmoidModelP, impulseModelP=impulseModelP, .polynomialModelP=.polynomialModelP,
+																				computeDerivatives = TRUE)
+						k1_rate <- switch(modeling_fun, 
+															"sigmoid" = list(type='sigmoid',fun=newPointer(sigmoidModel),
+																							 params=maturemodel$params,df=4),
+															"impulse" = list(type='impulse',fun=newPointer(impulseModel),
+																							 params=maturemodel$params,df=6)
+						)
+						k2_rate <- switch(modeling_fun, 
+															"sigmoid" = list(type='sigmoid',fun=newPointer(sigmoidModel),
+																							 params=processingmodel$params,df=4),
+															"impulse" = list(type='impulse',fun=newPointer(impulseModel),
+																							 params=processingmodel$params,df=6)
+						)
+						k3_rate <- switch(modeling_fun, 
+															"sigmoid" = list(type='sigmoid',fun=newPointer(sigmoidModel),
+																							 params=gene_model[[3]]$params,df=4),
+															"impulse" = list(type='impulse',fun=newPointer(impulseModel),
+																							 params=gene_model[[3]]$params,df=6)
+						)
+						params <- list(alpha=k1_rate, gamma=k2_rate, beta=k3_rate)
+						gene_model <- optimParamsMatureRNA(params, ids@tpts
+																							 , if(input$data_selection == 'Smooth data') isolate(experiment$synthesis_smooth) else isolate(experiment$synthesis)
+																							 , isolate(experiment$synthesissd)^2
+																							 , if(input$data_selection == 'Smooth data') isolate(experiment$mRNA_smooth) else isolate(experiment$mRNA)
+																							 , isolate(experiment$mRNAsd)^2
+																							 , if(input$data_selection == 'Smooth data') isolate(experiment$preMRNA_smooth) else isolate(experiment$preMRNA)
+																							 , isolate(experiment$preMRNAsd)^2
+																							 , maxit=300, method=isolate(input$opt_method)
+																							 , isolate(experiment$no_nascent), mod_method = isolate(inspect$mod_method))
+						## update mature values
+						if( modeling_fun == 'sigmoid' ) {
+							values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],2)
+							values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],2)
+							values$k1_h2 = round(gene_model[[ 1 ]][["params"]][2],2)
+							values$k1_t1 = round(gene_model[[ 1 ]][["params"]][3],2)
+							values$k1_t2 = round(gene_model[[ 1 ]][["params"]][3],2)
+							values$k1_beta = round(gene_model[[ 1 ]][["params"]][4],2)
+						} else {
+							values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],2)
+							values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],2)
+							values$k1_h2 = round(gene_model[[ 1 ]][["params"]][3],2)
+							values$k1_t1 = round(gene_model[[ 1 ]][["params"]][4],2)
+							values$k1_t2 = round(gene_model[[ 1 ]][["params"]][5],2)
+							values$k1_beta = round(gene_model[[ 1 ]][["params"]][6],2)
+						}
+						## update k2 values
+						if( modeling_fun == 'sigmoid' ) {
+							values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],2)
+							values$k2_h1 = round(gene_model[[ 3 ]][["params"]][2],2)
+							values$k2_h2 = round(gene_model[[ 3 ]][["params"]][2],2)
+							values$k2_t1 = round(gene_model[[ 3 ]][["params"]][3],2)
+							values$k2_t2 = round(gene_model[[ 3 ]][["params"]][3],2)
+							values$k2_beta = round(gene_model[[ 3 ]][["params"]][4],2)
+						} else {
+							values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],2)
+							values$k2_h1 = round(gene_model[[ 3 ]][["params"]][2],2)
+							values$k2_h2 = round(gene_model[[ 3 ]][["params"]][3],2)
+							values$k2_t1 = round(gene_model[[ 3 ]][["params"]][4],2)
+							values$k2_t2 = round(gene_model[[ 3 ]][["params"]][5],2)
+							values$k2_beta = round(gene_model[[ 3 ]][["params"]][6],2)
+						}
+						## update k3 values
+						if( modeling_fun == 'sigmoid' ) {
+							values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],2)
+							values$k3_h1 = round(gene_model[[ 2 ]][["params"]][2],2)
+							values$k3_h2 = round(gene_model[[ 2 ]][["params"]][2],2)
+							values$k3_t1 = round(gene_model[[ 2 ]][["params"]][3],2)
+							values$k3_t2 = round(gene_model[[ 2 ]][["params"]][3],2)
+							values$k3_beta = round(gene_model[[ 2 ]][["params"]][4],2)
+						} else {
+							values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],2)
+							values$k3_h1 = round(gene_model[[ 2 ]][["params"]][2],2)
+							values$k3_h2 = round(gene_model[[ 2 ]][["params"]][3],2)
+							values$k3_t1 = round(gene_model[[ 2 ]][["params"]][4],2)
+							values$k3_t2 = round(gene_model[[ 2 ]][["params"]][5],2)
+							values$k3_beta = round(gene_model[[ 2 ]][["params"]][6],2)
+						}
+						## update functional forms
+						updateRadioButtons(session, 'k1_function',
+															 selected = if(modeling_fun == 'impulse') "Impulsive" else "Sigmoidal")
+						updateRadioButtons(session, 'k2_function',
+															 selected = if(modeling_fun == 'impulse') "Impulsive" else "Sigmoidal")
+						updateRadioButtons(session, 'k3_function',
+															 selected = if(modeling_fun == 'impulse') "Impulsive" else "Sigmoidal")
+					}
+				} else if( modeling_type == 'TK12' ) { # KKV
+					
+					parameters <- unname(unlist(lapply(gene_model[1:3], '[[', 'params')))
+					degradationfit <- k3KKV_Der(ids@tpts, parameters)
+					degradationmodel <- .chooseModel(ids@tpts, experiment = degradationfit, variance = 1, 
+																					sigmoid = TRUE, impulse = TRUE, polynomial = FALSE,
+																					nInit = 10, nIter = 300, sigmoidModel=sigmoidModel, impulseModel=impulseModel,
+																					sigmoidModelP=sigmoidModelP, impulseModelP=impulseModelP, .polynomialModelP=.polynomialModelP,
+																					computeDerivatives = TRUE)
+					maturefit <- matureKVK_Der(ids@tpts, parameters)
+					maturemodel <- .chooseModel(ids@tpts, experiment = maturefit, variance = 1, 
+																			sigmoid = degradationmodel$type == 'sigmoid', impulse = degradationmodel$type == 'impulse', polynomial = FALSE,
+																			nInit = 10, nIter = 300, sigmoidModel=sigmoidModel, impulseModel=impulseModel,
+																			sigmoidModelP=sigmoidModelP, impulseModelP=impulseModelP, .polynomialModelP=.polynomialModelP,
+																			computeDerivatives = TRUE)
+					k1_rate <- switch(degradationmodel$type, 
+														"sigmoid" = list(type='sigmoid',fun=newPointer(sigmoidModel),
+																						 params=maturemodel$params,df=4),
+														"impulse" = list(type='impulse',fun=newPointer(impulseModel),
+																						 params=maturemodel$params,df=6)
+					)
+					k2_rate <- list(type='constant',fun=newPointer(constantModel),
+													params=gene_model[[3]]$params,df=1)
+					k3_rate <- switch(degradationmodel$type, 
+														"sigmoid" = list(type='sigmoid',fun=newPointer(sigmoidModel),
+																						 params=degradationmodel$params,df=4),
+														"impulse" = list(type='impulse',fun=newPointer(impulseModel),
+																						 params=degradationmodel$params,df=6)
+					)
+					params <- list(alpha=k1_rate, gamma=k2_rate, beta=k3_rate)
+					gene_model <- optimParamsMatureRNA(params, ids@tpts
+																						 , if(input$data_selection == 'Smooth data') isolate(experiment$synthesis_smooth) else isolate(experiment$synthesis)
+																						 , isolate(experiment$synthesissd)^2
+																						 , if(input$data_selection == 'Smooth data') isolate(experiment$mRNA_smooth) else isolate(experiment$mRNA)
+																						 , isolate(experiment$mRNAsd)^2
+																						 , if(input$data_selection == 'Smooth data') isolate(experiment$preMRNA_smooth) else isolate(experiment$preMRNA)
+																						 , isolate(experiment$preMRNAsd)^2
+																						 , maxit=300, method=isolate(input$opt_method)
+																						 , isolate(experiment$no_nascent), mod_method = isolate(inspect$mod_method))
+					## update mature values
+					if( degradationmodel$type == 'sigmoid' ) {
+						values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],2)
+						values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],2)
+						values$k1_h2 = round(gene_model[[ 1 ]][["params"]][2],2)
+						values$k1_t1 = round(gene_model[[ 1 ]][["params"]][3],2)
+						values$k1_t2 = round(gene_model[[ 1 ]][["params"]][3],2)
+						values$k1_beta = round(gene_model[[ 1 ]][["params"]][4],2)
+					} else {
+						values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],2)
+						values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],2)
+						values$k1_h2 = round(gene_model[[ 1 ]][["params"]][3],2)
+						values$k1_t1 = round(gene_model[[ 1 ]][["params"]][4],2)
+						values$k1_t2 = round(gene_model[[ 1 ]][["params"]][5],2)
+						values$k1_beta = round(gene_model[[ 1 ]][["params"]][6],2)
+					}
+					## update k2 values
+					values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],2)
+					values$k2_h1 = round(gene_model[[ 3 ]][["params"]][1],2)
+					values$k2_h2 = round(gene_model[[ 3 ]][["params"]][1],2)
+					values$k2_t1 = round(mean(out$t_pars))
+					values$k2_t2 = round(mean(out$t_pars))
+					values$k2_beta = round(mean(out$beta_pars))
+					## update k3 values
+					if( degradationmodel$type == 'sigmoid' ) {
+						values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],2)
+						values$k3_h1 = round(gene_model[[ 2 ]][["params"]][2],2)
+						values$k3_h2 = round(gene_model[[ 2 ]][["params"]][2],2)
+						values$k3_t1 = round(gene_model[[ 2 ]][["params"]][3],2)
+						values$k3_t2 = round(gene_model[[ 2 ]][["params"]][3],2)
+						values$k3_beta = round(gene_model[[ 2 ]][["params"]][4],2)
+					} else {
+						values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],2)
+						values$k3_h1 = round(gene_model[[ 2 ]][["params"]][2],2)
+						values$k3_h2 = round(gene_model[[ 2 ]][["params"]][3],2)
+						values$k3_t1 = round(gene_model[[ 2 ]][["params"]][4],2)
+						values$k3_t2 = round(gene_model[[ 2 ]][["params"]][5],2)
+						values$k3_beta = round(gene_model[[ 2 ]][["params"]][6],2)
+					}
+					## update functional forms
+					updateRadioButtons(session, 'k1_function',
+														 selected = if(maturemodel$type == 'impulse') "Impulsive" else "Sigmoidal")
+					updateRadioButtons(session, 'k2_function',
+														 selected = "Constant")
+					updateRadioButtons(session, 'k3_function',
+														 selected = if(degradationmodel$type == 'impulse') "Impulsive" else "Sigmoidal")
+				}
+				
+				# gene_h_vals <- c(isolate(values$k1_h0),isolate(values$k1_h1),isolate(values$k1_h2),
+				# 	isolate(values$k2_h0),isolate(values$k2_h1),isolate(values$k2_h2),
+				# 	isolate(values$k3_h0),isolate(values$k3_h1),isolate(values$k3_h2))
+				gene_t_vals <- c(isolate(values$k1_t1),isolate(values$k1_t2),isolate(values$k2_t1),
+												 isolate(values$k2_t2),isolate(values$k3_t1),isolate(values$k3_t2))
+				gene_beta_vals <- c(isolate(values$k1_beta),isolate(values$k2_beta),isolate(values$k3_beta))
+				
+				ranges$k1_h_min <- min(c(isolate(values$k1_h0),isolate(values$k1_h1),isolate(values$k1_h2),out$k1_h_pars[1]))
+				ranges$k1_h_max <- max(c(isolate(values$k1_h0),isolate(values$k1_h1),isolate(values$k1_h2),out$k1_h_pars[2]))
+				ranges$k2_h_min <- min(c(isolate(values$k2_h0),isolate(values$k2_h1),isolate(values$k2_h2),out$k2_h_pars[1]))
+				ranges$k2_h_max <- max(c(isolate(values$k2_h0),isolate(values$k2_h1),isolate(values$k2_h2),out$k2_h_pars[2]))
+				ranges$k3_h_min <- min(c(isolate(values$k3_h0),isolate(values$k3_h1),isolate(values$k3_h2),out$k3_h_pars[1]))
+				ranges$k3_h_max <- max(c(isolate(values$k3_h0),isolate(values$k3_h1),isolate(values$k3_h2),out$k3_h_pars[2]))
+				ranges$t_min    <- min(c(gene_t_vals,out$t_pars[1]))
+				ranges$t_max    <- max(c(gene_t_vals,out$t_pars[2]))
+				ranges$beta_min <- min(c(gene_beta_vals,out$beta_pars[1]))
+				ranges$beta_max <- max(c(gene_beta_vals,out$beta_pars[2]))
+				
+			}, silent=TRUE)
 		}
 		
 	})
 	
+	## in case of derivative modeling, when one functional form is changed also the 
+	## others must be updated
+
+	## on change of k1
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) & !is.null(input$k1_function) )
+			if( inspect$mod_method == 'der' & input$data_selection != 'User defined' ) {
+				updateRadioButtons(session, 'k2_function',
+													 selected = if( input$k1_function == "Impulsive" & isolate(input$k2_function) == "Sigmoidal" ) "Impulsive" else
+													 	if( input$k1_function == "Sigmoidal" & isolate(input$k2_function) == "Impulsive") "Sigmoidal")
+				updateRadioButtons(session, 'k3_function',
+													 selected = if( input$k1_function == "Impulsive" & isolate(input$k3_function) == "Sigmoidal" ) "Impulsive" else
+													 	if( input$k1_function == "Sigmoidal" & isolate(input$k3_function) == "Impulsive") "Sigmoidal")
+			}
+	})
+
+	## on change of k2
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) & !is.null(input$k2_function) )
+			if( inspect$mod_method == 'der' & input$data_selection != 'User defined' ) {
+				updateRadioButtons(session, 'k1_function',
+													 selected = if( input$k2_function == "Impulsive" & isolate(input$k1_function) == "Sigmoidal" ) "Impulsive" else
+													 	if( input$k2_function == "Sigmoidal" & isolate(input$k1_function) == "Impulsive") "Sigmoidal")
+				updateRadioButtons(session, 'k3_function',
+													 selected = if( input$k2_function == "Impulsive" & isolate(input$k3_function) == "Sigmoidal" ) "Impulsive" else
+													 	if( input$k2_function == "Sigmoidal" & isolate(input$k3_function) == "Impulsive") "Sigmoidal")
+				output$convergence <- renderPrint({"not converged"})
+			}
+	})
+
+	## on change of k3
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) & !is.null(input$k3_function) )
+			if( inspect$mod_method == 'der' & input$data_selection != 'User defined' ) {
+				updateRadioButtons(session, 'k1_function',
+													 selected = if( input$k3_function == "Impulsive" & isolate(input$k1_function) == "Sigmoidal" ) "Impulsive" else
+													 	if( input$k3_function == "Sigmoidal" & isolate(input$k1_function) == "Impulsive") "Sigmoidal")
+				updateRadioButtons(session, 'k2_function',
+													 selected = if( input$k3_function == "Impulsive" & isolate(input$k2_function) == "Sigmoidal" ) "Impulsive" else
+													 	if( input$k3_function == "Sigmoidal" & isolate(input$k2_function) == "Impulsive") "Sigmoidal")
+			}
+	})
+
 	## update convergence data
 
 	observe({
 		if( !is.null(modeling$counts) & !is.null(modeling$convergence) )
 		output$convergence <- renderPrint({
-			paste(modeling$counts,'iters (', switch(as.character(modeling$convergence),
-				"0"="converged",
-				"1"="not converged",
-				"10"="degenerated"), ')')
-			})
+			# paste(modeling$counts,'iters (', switch(as.character(modeling$convergence),
+			# 	"0"="converged",
+			# 	"1"="not converged",
+			# 	"10"="degenerated"), ')')
+			switch(as.character(modeling$convergence),
+						 "0"="converged",
+						 "1"="not converged",
+						 "10"="degenerated",
+						 "error")
 		})
+		})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$opt_method)) {
+				output$convergence <- renderPrint({"not converged"})
+			}
+		}
+	})
 
+	###########################################
+	## observe_parameters_change_by_user #########
+	###########################################
+	
+	# observe({
+	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+	# 		if(!is.null(input$k1_function) & !is.null(isolate(function_types$k1)))
+	# 		{
+	# 			if(input$k1_function != isolate(function_types$k1)) {
+	# 				output$convergence <- renderPrint({"not converged"})
+	# 				function_types$k1 <- input$k1_function
+	# 			}
+	# 		}
+	# 	}
+	# })
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k1_h0) & !is.null(isolate(values$k1_h0)))
+			{
+				if(input$k1_h0 != isolate(values$k1_h0)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k1_h0 <- input$k1_h0
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k1_h1) & !is.null(isolate(values$k1_h1)))
+			{
+				if(input$k1_h1 != isolate(values$k1_h1)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k1_h1 <- input$k1_h1
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k1_h2) & !is.null(isolate(values$k1_h2)))
+			{
+				if(input$k1_h2 != isolate(values$k1_h2)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k1_h2 <- input$k1_h2
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k1_t1) & !is.null(isolate(values$k1_t1)))
+			{
+				if(input$k1_t1 != isolate(values$k1_t1)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k1_t1 <- input$k1_t1
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k1_t2) & !is.null(isolate(values$k1_t2)))
+			{
+				if(input$k1_t2 != isolate(values$k1_t2)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k1_t2 <- input$k1_t2
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k1_beta) & !is.null(isolate(values$k1_beta)))
+			{
+				if(input$k1_beta != isolate(values$k1_beta)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k1_beta <- input$k1_beta
+				}
+			}
+		}
+	})	
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k2_h0) & !is.null(isolate(values$k2_h0)))
+			{
+				if(input$k2_h0 != isolate(values$k2_h0)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k2_h0 <- input$k2_h0
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k2_h1) & !is.null(isolate(values$k2_h1)))
+			{
+				if(input$k2_h1 != isolate(values$k2_h1)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k2_h1 <- input$k2_h1
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k2_h2) & !is.null(isolate(values$k2_h2)))
+			{
+				if(input$k2_h2 != isolate(values$k2_h2)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k2_h2 <- input$k2_h2
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k2_t1) & !is.null(isolate(values$k2_t1)))
+			{
+				if(input$k2_t1 != isolate(values$k2_t1)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k2_t1 <- input$k2_t1
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k2_t2) & !is.null(isolate(values$k2_t2)))
+			{
+				if(input$k2_t2 != isolate(values$k2_t2)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k2_t2 <- input$k2_t2
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k2_beta) & !is.null(isolate(values$k2_beta)))
+			{
+				if(input$k2_beta != isolate(values$k2_beta)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k2_beta <- input$k2_beta
+				}
+			}
+		}
+	})	
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k3_h0) & !is.null(isolate(values$k3_h0)))
+			{
+				if(input$k3_h0 != isolate(values$k3_h0)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k3_h0 <- input$k3_h0
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k3_h1) & !is.null(isolate(values$k3_h1)))
+			{
+				if(input$k3_h1 != isolate(values$k3_h1)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k3_h1 <- input$k3_h1
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k3_h2) & !is.null(isolate(values$k3_h2)))
+			{
+				if(input$k3_h2 != isolate(values$k3_h2)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k3_h2 <- input$k3_h2
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k3_t1) & !is.null(isolate(values$k3_t1)))
+			{
+				if(input$k3_t1 != isolate(values$k3_t1)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k3_t1 <- input$k3_t1
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k3_t2) & !is.null(isolate(values$k3_t2)))
+			{
+				if(input$k3_t2 != isolate(values$k3_t2)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k3_t2 <- input$k3_t2
+				}
+			}
+		}
+	})
+	
+	observe({
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k3_beta) & !is.null(isolate(values$k3_beta)))
+			{
+				if(input$k3_beta != isolate(values$k3_beta)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k3_beta <- input$k3_beta
+				}
+			}
+		}
+	})	
+
+	##############################################
+	## observe_parameters_change_by_user (end) #########
+	##############################################
+	
 	## modeling checkbox
 
+	# observe({
+	# 	if( input$data_selection == 'User defined' ) {
+	# 		updateCheckboxInput(session, "confint_checkbox", value = FALSE)
+	# 		values$confint <- FALSE
+	# 	}
+	# })
+	
 	output$modeling_box <- renderUI({
 		if( input$data_selection != 'User defined' & !experiment$steady_state ) {
 			list(
-				h5("pvalue of the chi-squared statistic:"),
+				h5("goodness of fit (p-value):"),
 				verbatimTextOutput("pchisq", TRUE),
 				h5("Akaike information criterion:"),
 				verbatimTextOutput("aic", TRUE),
@@ -346,6 +970,14 @@ shinyServer(function(input, output, session) {
 		}
 		})
 
+	output$modeling_type <- renderUI({
+		if( inspect$mod_method == 'int' | input$data_selection == 'User defined' ) {
+			h4('Integrative framework')
+		} else {
+			h4('Derivative framework')
+		}
+	})
+	
 	output$select_condition <- renderUI({
 		if( experiment$steady_state ) {
 			selectInput("select_condition", label = "Select condition", 
@@ -368,6 +1000,39 @@ shinyServer(function(input, output, session) {
 	######################################################################
 	######################################################################
 	
+	## rate pvalues 
+	
+	output$rate_pvals <- renderUI({
+		ids <- contentsrea()
+		if( !is.null(ids) & !is.null(values$confint) ) {
+			if( input$data_selection != 'User defined' & values$confint ) {
+				# fluidRow(
+				# 	column(2,h5("variability of k1 (p):")),
+				# 	column(2,verbatimTextOutput("k1_p", TRUE)),
+				# 	column(2,h5("k2 (p):")),
+				# 	column(2,verbatimTextOutput("k2_p", TRUE)),
+				# 	column(2,h5("k3 (p):")),
+				# 	column(2,verbatimTextOutput("k3_p", TRUE))
+				# )
+				fluidRow(
+					column(6,h5('Rate variablity (p-value)')),
+					column(6,h5(paste(
+						'k1:',
+						signif(values$rate_p['k1'],2), 
+						'k2:',
+						signif(values$rate_p['k2'],2),
+						'k3:',
+						signif(values$rate_p['k3'],2)
+						)))
+				)
+			} else {
+				NULL
+			}
+		}
+	})	
+	
+	## logarithmic time axis
+	
 	output$logtime_checkbox_ui <- renderUI({
 		if( input$data_selection != 'User defined' & !experiment$steady_state ) {
 			checkboxInput("logtime_checkbox", 
@@ -375,9 +1040,6 @@ shinyServer(function(input, output, session) {
 					value = values$logtime)
 		} else {
 			NULL
-			# checkboxInput("logtime_checkbox", 
-			# 		label = "Space time logarithmically", 
-			# 		value = FALSE)
 		}
 		})
 
@@ -385,11 +1047,65 @@ shinyServer(function(input, output, session) {
 		ids <- contentsrea()
 		if( !is.null(ids) )
 			values$logtime <- input$logtime_checkbox
-		})
+	})
+	
+	## view/compute confidence intervals
+
+	output$confint_checkbox_ui <- renderUI({
+		if( input$data_selection != 'User defined' & !experiment$steady_state ) {
+			checkboxInput("confint_checkbox",
+										label = "Evaluate confidence intervals",
+										value = values$confint)
+		} else {
+			NULL
+		}
+	})
+
+	observe({
+		ids <- contentsrea()
+		if( !is.null(ids) )
+			values$confint <- input$confint_checkbox
+	})
 
 	################################  
 	# widgets for for k1
 	################################
+
+	convert_model_name <- function(model_name) {
+		if(is.null(model_name)) {
+			return('')
+		} else {
+			switch(model_name,
+						 'total'='total',
+						 'mature'='mature',
+						 'alpha'='synthesis',
+						 'gamma'='processing',
+						 'beta'='degradation'
+			)
+		}
+	}
+	
+	output$fun1_name <- renderUI({
+		ids <- contentsrea()
+		if( !is.null(ids) ) {
+			if( input$data_selection == 'User defined' | inspect$mod_method == 'int' )	{
+				h3("synthesis")
+			} else {
+				h3("mature")
+			}
+		}
+	})
+	
+	output$fun1_unit <- renderUI({
+		ids <- contentsrea()
+		if( !is.null(ids) & !is.null(values$model_names) ) {
+			if( input$data_selection == 'User defined' | inspect$mod_method == 'int' )	{
+				h4("(RPKMs/hour)")
+			} else {
+				h4("(RPKMs)")
+			}
+		}
+	})
 	
 	output$function_type_k1 <- renderUI({
 		ids <- contentsrea()
@@ -403,28 +1119,26 @@ shinyServer(function(input, output, session) {
 		ids <- contentsrea()
 		if( input$select != "" & !is.null(ids) )
 			numericInput("min_h_k1", label = h5("set min"), 
-				value = ranges$k1_h0_min, width='200px')
+				value = ranges$k1_h_min, width='200px')
 	})
 
 	observe({
 		ids <- contentsrea()
 		if( !is.null(ids) & !is.null(input$min_h_k1) )
-			ranges$k1_h2_min <- ranges$k1_h1_min <- 
-				ranges$k1_h0_min <- input$min_h_k1 
+			ranges$k1_h_min <- input$min_h_k1 
 		})
 	
 	output$max_h_vals_k1 <- renderUI({
 		ids <- contentsrea()
 		if( input$select != "" & !is.null(ids) )
 			numericInput("max_h_k1", label = h5("set max"), 
-				value = ranges$k1_h0_max, width='200px')
+				value = ranges$k1_h_max, width='200px')
 	})
 
 	observe({
 		ids <- contentsrea()
 		if( !is.null(ids) & !is.null(input$max_h_k1) )
-			ranges$k1_h2_max <- ranges$k1_h1_max <- 
-				ranges$k1_h0_max <- input$max_h_k1 
+			ranges$k1_h_max <- input$max_h_k1 
 		})
 	
 	output$ui_k1 <- renderUI({
@@ -435,22 +1149,22 @@ shinyServer(function(input, output, session) {
 				"Constant" = list(
 					sliderInput("k1_h0",
 						"starting levels:",
-						min = ranges$k1_h0_min,
-						max = ranges$k1_h0_max,
+						min = ranges$k1_h_min,
+						max = ranges$k1_h_max,
 						value = values$k1_h0,
 						step = 0.01)
 				),
 				"Sigmoidal" = list(
 					sliderInput("k1_h0",
 						"starting levels:",
-						min = ranges$k1_h1_min,
-						max = ranges$k1_h1_max,
+						min = ranges$k1_h_min,
+						max = ranges$k1_h_max,
 						value = values$k1_h0,
 						step = 0.01),
 					sliderInput("k1_h1",
 						"final levels:",
-						min = ranges$k1_h1_min,
-						max = ranges$k1_h1_max,
+						min = ranges$k1_h_min,
+						max = ranges$k1_h_max,
 						value = values$k1_h1,
 						step = 0.01),
 					sliderInput("k1_t1",
@@ -469,20 +1183,20 @@ shinyServer(function(input, output, session) {
 				"Impulsive" = list(
 					sliderInput("k1_h0",
 						"starting levels:",
-						min = ranges$k1_h0_min,
-						max = ranges$k1_h0_max,
+						min = ranges$k1_h_min,
+						max = ranges$k1_h_max,
 						value = values$k1_h0,
 						step = 0.01),
 					sliderInput("k1_h1",
 						"intermediate levels:",
-						min = ranges$k1_h1_min,
-						max = ranges$k1_h1_max,
+						min = ranges$k1_h_min,
+						max = ranges$k1_h_max,
 						value = values$k1_h1,
 						step = 0.01),
 					sliderInput("k1_h2",
 						"end levels:",
-						min = ranges$k1_h2_min,
-						max = ranges$k1_h2_max,
+						min = ranges$k1_h_min,
+						max = ranges$k1_h_max,
 						value = values$k1_h2,
 						step = 0.01),
 					sliderInput("k1_t1",
@@ -513,6 +1227,17 @@ shinyServer(function(input, output, session) {
 	# widgets for for k2
 	################################
 	
+	# output$fun2_name <- renderUI({
+	# 	ids <- contentsrea()
+	# 	if( !is.null(ids) ) {
+	# 		if( input$data_selection == 'User defined' )	{
+	# 			h3("processing")
+	# 		} else {
+	# 			h3( convert_model_name(values$model_names[2]) )
+	# 		}
+	# 	}
+	# })
+	
 	output$function_type_k2 <- renderUI({
 		ids <- contentsrea()
 		if( !is.null(ids) )
@@ -525,28 +1250,26 @@ shinyServer(function(input, output, session) {
 		ids <- contentsrea()
 		if( !is.null(ids) )
 			numericInput("min_h_k2", label = h5("set min"), 
-				value = ranges$k2_h0_min, width='200px')
+				value = ranges$k2_h_min, width='200px')
 	})
 
 	observe({
 		ids <- contentsrea()
 		if( !is.null(ids) & !is.null(input$min_h_k2) )
-			ranges$k2_h2_min <- ranges$k2_h1_min <- 
-				ranges$k2_h0_min <- input$min_h_k2 
+			ranges$k2_h_min <- input$min_h_k2 
 		})
 
 	output$max_h_vals_k2 <- renderUI({
 		ids <- contentsrea()
 		if( !is.null(ids) )
 			numericInput("max_h_k2", label = h5("set max"), 
-				value = ranges$k2_h0_max, width='200px')
+				value = ranges$k2_h_max, width='200px')
 	})
 
 	observe({
 		ids <- contentsrea()
 		if( !is.null(ids) & !is.null(input$max_h_k2) )
-			ranges$k2_h2_max <- ranges$k2_h1_max <- 
-				ranges$k2_h0_max <- input$max_h_k2 
+				ranges$k2_h_max <- input$max_h_k2 
 		})
 	
 	output$ui_k2 <- renderUI({
@@ -557,22 +1280,22 @@ shinyServer(function(input, output, session) {
 				"Constant" = list(
 					sliderInput("k2_h0",
 						"starting levels:",
-						min = ranges$k2_h0_min,
-						max = ranges$k2_h0_max,
+						min = ranges$k2_h_min,
+						max = ranges$k2_h_max,
 						value = values$k2_h0,
 						step = 0.01)
 				),
 				"Sigmoidal" = list(
 					sliderInput("k2_h0",
 						"starting levels:",
-						min = ranges$k2_h0_min,
-						max = ranges$k2_h0_max,
+						min = ranges$k2_h_min,
+						max = ranges$k2_h_max,
 						value = values$k2_h0,
 						step = 0.01),
 					sliderInput("k2_h1",
 						"final levels:",
-						min = ranges$k2_h1_min,
-						max = ranges$k2_h1_max,
+						min = ranges$k2_h_min,
+						max = ranges$k2_h_max,
 						value = values$k2_h1,
 						step = 0.01),
 					sliderInput("k2_t1",
@@ -591,20 +1314,20 @@ shinyServer(function(input, output, session) {
 				"Impulsive" = list(
 					sliderInput("k2_h0",
 						"starting levels:",
-						min = ranges$k2_h0_min,
-						max = ranges$k2_h0_max,
+						min = ranges$k2_h_min,
+						max = ranges$k2_h_max,
 						value = values$k2_h0,
 						step = 0.01),
 					sliderInput("k2_h1",
 						"intermediate levels:",
-						min = ranges$k2_h1_min,
-						max = ranges$k2_h1_max,
+						min = ranges$k2_h_min,
+						max = ranges$k2_h_max,
 						value = values$k2_h1,
 						step = 0.01),
 					sliderInput("k2_h2",
 						"end levels:",
-						min = ranges$k2_h2_min,
-						max = ranges$k2_h2_max,
+						min = ranges$k2_h_min,
+						max = ranges$k2_h_max,
 						value = values$k2_h2,
 						step = 0.01),
 					sliderInput("k2_t1",
@@ -636,6 +1359,17 @@ shinyServer(function(input, output, session) {
 	# widgets for for k3
 	################################
 	
+	# output$fun3_name <- renderUI({
+	# 	ids <- contentsrea()
+	# 	if( !is.null(ids) ) {
+	# 		if( input$data_selection == 'User defined' )	{
+	# 			h3("degradation")
+	# 		} else {
+	# 			h3( convert_model_name(values$model_names[3]) )
+	# 		}
+	# 	}
+	# })
+	
 	output$function_type_k3 <- renderUI({
 		ids <- contentsrea()
 		if( !is.null(ids) )
@@ -648,28 +1382,26 @@ shinyServer(function(input, output, session) {
 		ids <- contentsrea()
 		if( !is.null(ids) )
 			numericInput("min_h_k3", label = h5("set min"), 
-				value = ranges$k3_h0_min, width='200px')
+				value = ranges$k3_h_min, width='200px')
 	})
 
 	observe({
 		ids <- contentsrea()
 		if( !is.null(ids) & !is.null(input$min_h_k3) )
-			ranges$k3_h2_min <- ranges$k3_h1_min <- 
-				ranges$k3_h0_min <- input$min_h_k3 
+				ranges$k3_h_min <- input$min_h_k3 
 		})
 	
 	output$max_h_vals_k3 <- renderUI({
 		ids <- contentsrea()
 		if( !is.null(ids) )
 			numericInput("max_h_k3", label = h5("set max"), 
-				value = ranges$k3_h0_max, width='200px')
+				value = ranges$k3_h_max, width='200px')
 	})
 
 	observe({
 		ids <- contentsrea()
 		if( !is.null(ids) & !is.null(input$max_h_k3) )
-			ranges$k3_h2_max <- ranges$k3_h1_max <- 
-				ranges$k3_h0_max <- input$max_h_k3 
+				ranges$k3_h_max <- input$max_h_k3 
 		})
 
 	output$ui_k3 <- renderUI({
@@ -680,22 +1412,22 @@ shinyServer(function(input, output, session) {
 				"Constant" = list(
 					sliderInput("k3_h0",
 						"starting levels:",
-						min = ranges$k3_h0_min,
-						max = ranges$k3_h0_max,
+						min = ranges$k3_h_min,
+						max = ranges$k3_h_max,
 						value = values$k3_h0,
 						step = 0.01)
 				),
 				"Sigmoidal" = list(
 					sliderInput("k3_h0",
 						"starting levels:",
-						min = ranges$k3_h0_min,
-						max = ranges$k3_h0_max,
+						min = ranges$k3_h_min,
+						max = ranges$k3_h_max,
 						value = values$k3_h0,
 						step = 0.01),
 					sliderInput("k3_h1",
 						"final levels:",
-						min = ranges$k3_h1_min,
-						max = ranges$k3_h1_max,
+						min = ranges$k3_h_min,
+						max = ranges$k3_h_max,
 						value = values$k3_h1,
 						step = 0.01),
 					sliderInput("k3_t1",
@@ -714,20 +1446,20 @@ shinyServer(function(input, output, session) {
 				"Impulsive" = list(
 					sliderInput("k3_h0",
 						"starting levels:",
-						min = ranges$k3_h0_min,
-						max = ranges$k3_h0_max,
+						min = ranges$k3_h_min,
+						max = ranges$k3_h_max,
 						value = values$k3_h0,
 						step = 0.01),
 					sliderInput("k3_h1",
 						"intermediate levels:",
-						min = ranges$k3_h1_min,
-						max = ranges$k3_h1_max,
+						min = ranges$k3_h_min,
+						max = ranges$k3_h_max,
 						value = values$k3_h1,
 						step = 0.01),
 					sliderInput("k3_h2",
 						"end levels:",
-						min = ranges$k3_h2_min,
-						max = ranges$k3_h2_max,
+						min = ranges$k3_h_min,
+						max = ranges$k3_h_max,
 						value = values$k3_h2,
 						step = 0.01),
 					sliderInput("k3_t1",
@@ -759,6 +1491,41 @@ shinyServer(function(input, output, session) {
 	### PLOT of the gene (and update of some parameters if succeded)
 	######################################################################
 	######################################################################
+
+	## call the plot function when downloading the image
+	output$saveRNAdynamicsPlotButton <- downloadHandler(
+		filename =  function() {
+			"RNAdynamics.pdf"
+		},
+		# content is a function with argument file. content writes the plot to the device
+		content = function(file) {
+			pdf(file) # open the pdf device
+			RNAdynamicsAppPlot(
+				data_selection = input$data_selection,
+				show_logtime = input$logtime_checkbox,
+				show_confint = input$confint_checkbox,
+				logshift = inspect$logshift,
+				linshift = inspect$linshift,
+				time_min = ranges$time_min,
+				time_max = ranges$time_max,
+				experiment = experiment,
+				simdata = modeling$simdata#,
+				#mod_method = if( input$data_selection != 'User defined' ) inspect$mod_method else 'int'
+			)
+			dev.off()  # turn the device off
+		}
+	)
+
+	## call the plot function when downloading the image
+	output$saveRNAdynamicsDataButton <- downloadHandler(
+		filename =  function() {
+			"RNAdynamics.xls"
+		},
+		# content is a function with argument file. content writes the plot to the device
+		content = function(file) {
+			write.table(modeling$simdata$sim, file=file, row.names = FALSE, quote = FALSE, sep = '\t')
+		}
+	)
 	
 	output$gene <- renderPlot({
 		
@@ -766,7 +1533,7 @@ shinyServer(function(input, output, session) {
 		if( input$select != "" & !is.null(ids) & !is.null(input$k1_function) &
 			!is.null(input$k2_function) & !is.null(input$k3_function) )
 
-			try({
+			suppressWarnings(try({
 
 				k1_params <- switch(input$k1_function,
 						"Constant" = input$k1_h0,
@@ -800,11 +1567,15 @@ shinyServer(function(input, output, session) {
 					length(k3_params) == expected_length_k3_params )
 				{
 
-					scores <- RNAdynamicsAppPlot(
+					if( input$data_selection != 'User defined' ) {
+						mod_method <- inspect$mod_method
+					} else {
+						mod_method <- 'int'
+					}
+
+					simdata <- RNAdynamicsAppMake(
 						data_selection = input$data_selection,
-						show_logtime = input$logtime_checkbox,
-						logshift = inspect$logshift,
-						linshift = inspect$linshift,
+						show_confint = input$confint_checkbox,
 						time_min = ranges$time_min,
 						time_max = ranges$time_max,
 						experiment = experiment,
@@ -813,14 +1584,28 @@ shinyServer(function(input, output, session) {
 						k3_function = input$k3_function,
 						k1_params = k1_params,
 						k2_params = k2_params,
-						k3_params = k3_params
+						k3_params = k3_params,
+						mod_method = mod_method
+						)
+					RNAdynamicsAppPlot(
+						data_selection = input$data_selection,
+						show_logtime = input$logtime_checkbox,
+						show_confint = input$confint_checkbox,
+						logshift = inspect$logshift,
+						linshift = inspect$linshift,
+						time_min = ranges$time_min,
+						time_max = ranges$time_max,
+						experiment = experiment,
+						simdata = simdata
 					)
+					modeling$simdata <- simdata
+					output$pchisq <- renderPrint({signif(modeling$simdata$scores$pchisq,3)})
+					output$aic <- renderPrint({signif(modeling$simdata$scores$aic,3)})
+					values$rate_p <- modeling$simdata$scores$rate_p # put into a global variable
 					
-					output$pchisq <- renderPrint({signif(scores$pchisq,3)})
-					output$aic <- renderPrint({signif(scores$aic,3)})
 				}
 
-			}, silent = FALSE)
+			}, silent = TRUE))
 		
 	})
 
@@ -832,8 +1617,8 @@ shinyServer(function(input, output, session) {
 
 		# print('optimization started')
 
-		log_shift <- inspect$logshift
-		lin_shift <- inspect$linshift
+		# log_shift <- inspect$logshift
+		# lin_shift <- inspect$linshift
 		no_nascent <- experiment$no_nascent
 		tpts_exp <- experiment$tpts
 		alpha_exp <- if( input$data_selection == 'Experimental data' ) 
@@ -847,75 +1632,37 @@ shinyServer(function(input, output, session) {
 		preMRNA_var <- experiment$preMRNAsd^2
 
 		k1_rate <- switch(input$k1_function, 
-			"Constant" = list(
-				type='constant',
-				fun=newPointer(constantModelRNApp),
-				params=input$k1_h0,
-				df=1
-				),
-			"Sigmoidal" = list(
-				type='sigmoid',
-				fun=newPointer(sigmoidModelRNApp),
-				params=c(input$k1_h0, input$k1_h1, input$k1_t1, input$k1_beta),
-				df=4
-				),
-			"Impulsive" = list(
-				type='constant',
-				fun=newPointer(impulseModelRNApp),
-				params=c(input$k1_h0, input$k1_h1, 
-						input$k1_h2, input$k1_t1, input$k1_t2, input$k1_beta),
-				df=6
-				)
-			)
-
+											"Constant" = list(type='constant',fun=newPointer(constantModel),
+																				params=input$k1_h0,df=1),
+											"Sigmoidal" = list(type='sigmoid',fun=newPointer(sigmoidModel),
+																				 params=c(input$k1_h0, input$k1_h1, input$k1_t1, input$k1_beta),df=4),
+											"Impulsive" = list(type='impulse',fun=newPointer(impulseModel),
+																				 params=c(input$k1_h0, input$k1_h1, input$k1_h2, input$k1_t1, input$k1_t2, input$k1_beta),df=6)
+		)
+		
 		k2_rate <- switch(input$k2_function, 
-			"Constant" = list(
-				type='constant',
-				fun=newPointer(constantModelRNApp),
-				params=input$k2_h0,
-				df=1
-				),
-			"Sigmoidal" = list(
-				type='sigmoid',
-				fun=newPointer(sigmoidModelRNApp),
-				params=c(input$k2_h0, input$k2_h1, input$k2_t1, input$k2_beta),
-				df=4
-				),
-			"Impulsive" = list(
-				type='constant',
-				fun=newPointer(impulseModelRNApp),
-				params=c(input$k2_h0, input$k2_h1, 
-						input$k2_h2, input$k2_t1, input$k2_t2, input$k2_beta),
-				df=6
-				)
-			)
-
+											"Constant" = list(type='constant',fun=newPointer(constantModel),
+																				params=input$k2_h0,df=1),
+											"Sigmoidal" = list(type='sigmoid',fun=newPointer(sigmoidModel),
+																				 params=c(input$k2_h0, input$k2_h1, input$k2_t1, input$k2_beta),df=4),
+											"Impulsive" = list(type='impulse',fun=newPointer(impulseModel),
+																				 params=c(input$k2_h0, input$k2_h1, input$k2_h2, input$k2_t1, input$k2_t2, input$k2_beta),df=6)
+		)
+		
 		k3_rate <- switch(input$k3_function, 
-			"Constant" = list(
-				type='constant',
-				fun=newPointer(constantModelRNApp),
-				params=input$k3_h0,
-				df=1
-				),
-			"Sigmoidal" = list(
-				type='sigmoid',
-				fun=newPointer(sigmoidModelRNApp),
-				params=c(input$k3_h0, input$k3_h1, input$k3_t1, input$k3_beta),
-				df=4
-				),
-			"Impulsive" = list(
-				type='constant',
-				fun=newPointer(impulseModelRNApp),
-				params=c(input$k3_h0, input$k3_h1, 
-						input$k3_h2, input$k3_t1, input$k3_t2, input$k3_beta),
-				df=6
-				)
-			)
+											"Constant" = list(type='constant',fun=newPointer(constantModel),
+																				params=input$k3_h0,df=1),
+											"Sigmoidal" = list(type='sigmoid',fun=newPointer(sigmoidModel),
+																				 params=c(input$k3_h0, input$k3_h1, input$k3_t1, input$k3_beta),df=4),
+											"Impulsive" = list(type='impulse',fun=newPointer(impulseModel),
+																				 params=c(input$k3_h0, input$k3_h1, input$k3_h2, input$k3_t1, input$k3_t2, input$k3_beta),df=6)
+		)
 
-		params <- list(alpha=k1_rate, beta=k3_rate, gamma=k2_rate)
+		params <- list(alpha=k1_rate, gamma=k2_rate, beta=k3_rate)
 		gene_model <- optimParamsMatureRNA(params, tpts_exp, alpha_exp, alpha_var, mature_exp
 		 	, mature_var, preMRNA_exp, preMRNA_var, maxit=input$nIter
-		 	, method=input$opt_method, log_shift, lin_shift, no_nascent)
+		 	, method=input$opt_method#, log_shift, lin_shift
+		 	, no_nascent, mod_method = inspect$mod_method)
 
 		modeling$counts <- modeling$counts + gene_model$counts[1]
 		modeling$convergence <- gene_model$convergence
@@ -925,9 +1672,10 @@ shinyServer(function(input, output, session) {
 		#########################################
 
 		if( input$k1_function == "Constant" ) {
-			values$k1_h0 = round(gene_model[["alpha"]][["params"]][1],2)
-			values$k1_h1 = round(gene_model[["alpha"]][["params"]][1],2)
-			values$k1_h2 = round(gene_model[["alpha"]][["params"]][1],2)
+			k1_h <- gene_model[["alpha"]][["params"]][1]
+			values$k1_h0 = round(k1_h,2)
+			values$k1_h1 = round(k1_h,2)
+			values$k1_h2 = round(k1_h,2)
 			values$k1_t1 = round(mean(c(ranges$t_min, ranges$t_max)))
 			values$k1_t2 = round(mean(c(ranges$t_min, ranges$t_max)))
 			values$k1_beta = round(mean(c(ranges$beta_min, ranges$beta_max)))
@@ -998,7 +1746,7 @@ shinyServer(function(input, output, session) {
 			values$k3_t2 = round(gene_model[["beta"]][["params"]][5],2)
 			values$k3_beta = round(gene_model[["beta"]][["params"]][6],2)
 		}
-
+		
 		# print('optimization finished')
 
 		})
