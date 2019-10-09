@@ -196,7 +196,6 @@ setMethod('modelRates', 'INSPEcT', function(object
 	# Split between genes with and without intronic signal
 		eiGenes <- rownames(concentrations$preMRNA[is.finite(concentrations$preMRNA[,1]),])
 		eGenes <- NULL # rownames(concentrations$preMRNA[!is.finite(concentrations$preMRNA[,1]),])
-		message("Simple methods still to setup")
 
 		if(!is.null(eiGenes))
 		{
@@ -250,7 +249,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 
 		if(!is.null(eGenes))
 		{
-			message("Simple methods still to setup")
+			message("Modeling for genes without introns to setup")
 			# 			eConcentrations <- lapply(concentrations,function(o){o[eGenes,]})
 			# 			eRates <- lapply(rates,function(o){o[eGenes,]})
 			# 
