@@ -11,7 +11,7 @@ Description: INSPEcT (INference of Synthesis, Processing and
 	or without the support of nascent RNA data.
 License: GPL-2
 Depends: R (>= 3.2), methods, Biobase, BiocParallel
-Imports: pROC, deSolve, rootSolve, compiler, preprocessCore,
+Imports: pROC, deSolve, rootSolve, 
         GenomicFeatures, GenomicRanges, IRanges, BiocGenerics,
         GenomicAlignments, Rsamtools, S4Vectors, GenomeInfoDb,
         DESeq2, plgem, SummarizedExperiment, 
