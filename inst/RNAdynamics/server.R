@@ -1,5 +1,7 @@
 shinyServer(function(input, output, session) {
 	
+	source('RNAdynamicsAPP-functions.R')
+	
 	# global variables
 	
 	ranges <- reactiveValues()
