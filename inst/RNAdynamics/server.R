@@ -236,6 +236,9 @@ shinyServer(function(input, output, session) {
 				modeling$convergence <- NA
 
 			}
+			
+			## set to false the evaluation of CI on load of a new dataset
+			updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 
 			try({ 
 				## this try is necessary because the class is updated before the gene, then the model_name
@@ -1763,6 +1766,49 @@ shinyServer(function(input, output, session) {
 			values$k3_t1 = round(gene_model[["beta"]][["params"]][4],2)
 			values$k3_t2 = round(gene_model[["beta"]][["params"]][5],2)
 			values$k3_beta = round(gene_model[["beta"]][["params"]][6],2)
+		}
+		
+		## update the ranges
+		
+		k1_h_pars <- c(isolate(values$k1_h0),isolate(values$k1_h1),isolate(values$k1_h2))
+		if( min(k1_h_pars) < isolate(ranges$k1_h_min) ) {
+			ranges$k1_h_min <- min(k1_h_pars)
+		}
+		if( max(k1_h_pars) > isolate(ranges$k1_h_max) ) {
+			ranges$k1_h_max <- max(k1_h_pars)
+		}
+		
+		k2_h_pars <- c(isolate(values$k2_h0),isolate(values$k2_h1),isolate(values$k2_h2))
+		if( min(k2_h_pars) < isolate(ranges$k2_h_min) ) {
+			ranges$k2_h_min <- min(k2_h_pars)
+		}
+		if( max(k2_h_pars) > isolate(ranges$k2_h_max) ) {
+			ranges$k2_h_max <- max(k2_h_pars)
+		}
+		
+		k3_h_pars <- c(isolate(values$k3_h0),isolate(values$k3_h1),isolate(values$k3_h2))
+		if( min(k3_h_pars) < isolate(ranges$k3_h_min) ) {
+			ranges$k3_h_min <- min(k3_h_pars)
+		}
+		if( max(k3_h_pars) > isolate(ranges$k3_h_max) ) {
+			ranges$k3_h_max <- max(k3_h_pars)
+		}
+		
+		t_pars <- c(isolate(values$k1_t1),isolate(values$k1_t2),isolate(values$k2_t1),
+								isolate(values$k2_t2),isolate(values$k3_t1),isolate(values$k3_t2))
+		if( min(t_pars) < isolate(ranges$t_min) ) {
+			ranges$t_min <- min(t_pars)
+		}
+		if( max(t_pars) > isolate(ranges$t_max) ) {
+			ranges$t_max <- max(t_pars)
+		}
+		
+		beta_pars <- c(isolate(values$k1_beta),isolate(values$k2_beta),isolate(values$k3_beta))
+		if( min(beta_pars) < isolate(ranges$beta_min) ) {
+			ranges$beta_min <- min(beta_pars)
+		}
+		if( max(beta_pars) > isolate(ranges$beta_max) ) {
+			ranges$beta_max <- max(beta_pars)
 		}
 		
 		# print('optimization finished')

@@ -7,6 +7,12 @@ library(devtools)
 install_github('mfurla/INSPEcT')
 ```
 
+## Load the package
+
+```
+library(INSPEcT)
+```
+
 ## Run the INSPEcT-GUI
 
 In order to run the INSPEcT graphical user interface (GUI), just run the command:

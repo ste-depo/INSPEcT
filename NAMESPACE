@@ -17,8 +17,8 @@ importFrom("stats", "approx", "dist", "ecdf", "hclust", "lm","na.omit", "optim",
 importFrom("utils", "capture.output", "read.table", "write.table", "head", "tail")
 
 export("newINSPEcT", "runProcessingRateDelay", "runINSPEcT_GUI", "compareSteadyNoNascent", 
-	"quantifyExpressionsFromBAMs", "quantifyExpressionsFromTrCounts", "quantifyExpressionsFromTrAbundance",
-	"time_transf", "find_tt_par")
+    "quantifyExpressionsFromBAMs", "quantifyExpressionsFromTrCounts", "quantifyExpressionsFromTrAbundance",
+    "time_transf", "find_tt_par")
 exportMethods( "[", "AIC", "calculateDelta", "calculateTau", "chisqmodel", "chisqtest", "combine", 
     "compareSteady", "computeConfidenceIntervals", "correlationPlot", "degradation", "dim", "featureNames", 
     "featureNames<-", "geneClass", "getModel", "getModel<-", "inHeatmap", "labeledSF", "logLik", 
