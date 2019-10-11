@@ -10,8 +10,8 @@
 #' sfPlot(nascentInspObj10)
 setMethod('sfPlot', 'INSPEcT', function(object) {
 	tpts <- tpts(object)
-	log_shift <- find_tt_par(tpts)
-	x <- time_transf(tpts, log_shift)
+	log_shift <- findttpar(tpts)
+	x <- timetransf(tpts, log_shift)
 	plot(x, labeledSF(object), type='b', lty=1, pch=1, xlab='time', ylab='labeled RNA scaling factor')
 	axis(1, at=x, labels=signif(tpts, 2), las=3)
 	})

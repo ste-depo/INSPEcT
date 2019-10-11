@@ -183,7 +183,7 @@ grepLogic <- function(text,obj,...){seq_along(obj)%in%grep(text,obj,...)}
 # 	return(optTmp$par)
 # }
 
-find_tt_par <- function(tpts)
+findttpar <- function(tpts)
 {
 	cvLogTpts <- function(a , tpts)
 	{
@@ -194,16 +194,16 @@ find_tt_par <- function(tpts)
 	else{return(1)}
 }
 
-time_transf <- function(t, log_shift, lin_shift = 0) 
+timetransf <- function(t, log_shift, lin_shift = 0) 
 {
 	t[ t <= (-log_shift) ] <- NaN
 	newtime <- log2(t+log_shift) + lin_shift
 	return(newtime)
 } 
 
-time_transf_inv <- function(t, log_shift, lin_shift=0) 2^(t - lin_shift) - log_shift
+timetransf_inv <- function(t, log_shift, lin_shift=0) 2^(t - lin_shift) - log_shift
 
-time_transf_NoNascent <- function(t, log_shift, c) 
+timetransf_NoNascent <- function(t, log_shift, c) 
 {
 	newtime <- log2(t+log_shift) + c
 	return(newtime)
@@ -284,13 +284,13 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 	return(list(r))
 }
 
-.makeSimpleModel <- function(tpts, hyp, log_shift, time_transf, ode, .rxnrateSimple)
+.makeSimpleModel <- function(tpts, hyp, log_shift, timetransf, ode, .rxnrateSimple)
 {
 	params <- list()
 	params$alpha <- function(x) 
-		hyp$alpha$fun$value(time_transf(x, log_shift), hyp$alpha$params)
+		hyp$alpha$fun$value(timetransf(x, log_shift), hyp$alpha$params)
 	params$beta  <- function(x)
-		hyp$beta$fun$value(time_transf(x, log_shift), hyp$beta$params)
+		hyp$beta$fun$value(timetransf(x, log_shift), hyp$beta$params)
 	#
 	cinit <- c(t = params$alpha(tpts[1]) / params$beta(tpts[1]))
 	names(cinit) <- 't'
@@ -344,7 +344,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 	
 	optimParamsSimple <- function(interpRates, tpts_exp, alpha_exp, alpha_var
 																, total_exp, total_var, maxit=500
-																, log_shift, time_transf, .rxnrateSimple, ode, .makeSimpleModel, logLikelihoodFunction
+																, log_shift, timetransf, .rxnrateSimple, ode, .makeSimpleModel, logLikelihoodFunction
 																, .emptyGene, limitModelComplexity)
 	{
 		
@@ -359,9 +359,9 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 			#
 			params <- list()
 			params$alpha <- function(x) 
-				fun$alpha$value(time_transf(x, log_shift), splitpar$alpha)
+				fun$alpha$value(timetransf(x, log_shift), splitpar$alpha)
 			params$beta <- function(x)
-				fun$beta$value(time_transf(x, log_shift), splitpar$beta)
+				fun$beta$value(timetransf(x, log_shift), splitpar$beta)
 			#
 			cinit <- c(params$alpha(tpts[1]) / params$beta(tpts[1]))
 			names(cinit) <- 't'
@@ -408,7 +408,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 		#
 		model <- .makeSimpleModel(tpts=tpts_exp
 															, hyp=list(alpha=interpRates$alpha, beta=interpRates$beta)
-															, log_shift, time_transf, ode, .rxnrateSimple)
+															, log_shift, timetransf, ode, .rxnrateSimple)
 		logLik <- logLikelihoodFunction(alpha_exp, model$alpha, alpha_var) + 
 			logLikelihoodFunction(total_exp, model$total, total_var)
 		if( limitModelComplexity ) {
@@ -436,7 +436,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 	}
 	
 	optimParams <- function(interpRates, tpts_exp, alpha_exp, alpha_var, total_exp
-													, total_var, preMRNA_exp, preMRNA_var, maxit=500, log_shift, time_transf, 
+													, total_var, preMRNA_exp, preMRNA_var, maxit=500, log_shift, timetransf, 
 													.rxnrate, ode, .makeModel, logLikelihoodFunction, limitModelComplexity)
 	{
 		modelChisq <- function(par, tpts, fun, df, alpha_exp, alpha_var #, pval
@@ -448,11 +448,11 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 			#
 			params <- list()
 			params$alpha <- function(x) 
-				fun$alpha$value(time_transf(x, log_shift), splitpar$alpha)
+				fun$alpha$value(timetransf(x, log_shift), splitpar$alpha)
 			params$beta  <- function(x)
-				fun$beta$value(time_transf(x, log_shift), splitpar$beta)
+				fun$beta$value(timetransf(x, log_shift), splitpar$beta)
 			params$gamma <- function(x)
-				fun$gamma$value(time_transf(x, log_shift), splitpar$gamma)
+				fun$gamma$value(timetransf(x, log_shift), splitpar$gamma)
 			#
 			cinit <- c(params$alpha(tpts[1]) / params$gamma(tpts[1])
 								 , params$alpha(tpts[1]) / params$beta(tpts[1]) + 
@@ -526,7 +526,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 		model <- .makeModel(tpts=tpts_exp
 												, hyp=list(alpha=interpRates$alpha, beta=interpRates$beta, 
 																	 gamma=interpRates$gamma)
-												, log_shift, time_transf, ode, .rxnrate)
+												, log_shift, timetransf, ode, .rxnrate)
 		logLik <- logLikelihoodFunction(alpha_exp, model$alpha, alpha_var) + 
 			logLikelihoodFunction(total_exp, model$total, total_var) +
 			logLikelihoodFunction(preMRNA_exp, model$preMRNA, preMRNA_var)
@@ -557,7 +557,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 	}
 	
 	modelOneGene <- function(i, seed=NULL,
-													 .chooseModel, time_transf, .DimpulseModel, .DsigmoidModel, constantModelP,
+													 .chooseModel, timetransf, .DimpulseModel, .DsigmoidModel, constantModelP,
 													 .emptyGene, sigmoidModel, impulseModel, sigmoidModelP, impulseModelP,
 													 .polynomialModelP, .makeModel, .makeSimpleModel, logLikelihoodFunction, .rxnrate,
 													 .rxnrateSimple, optimParams, optimParamsSimple, verbose, nAttempts,
@@ -585,7 +585,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 																								, na.rm=na.rm, sigmoid=sigmoidTotal
 																								, impulse=TRUE, polynomial=FALSE
 																								, nInit=nInit, nIter=nIter
-																								, time_transf=time_transf
+																								, timetransf=timetransf
 																								, sigmoidModel=sigmoidModel
 																								, impulseModel=impulseModel
 																								, sigmoidModelP=sigmoidModelP
@@ -599,7 +599,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 																										 , na.rm=na.rm, sigmoid=sigmoidSynthesis
 																										 , impulse=TRUE, polynomial=FALSE
 																										 , nInit=nInit, nIter=nIter
-																										 , time_transf=time_transf
+																										 , timetransf=timetransf
 																										 , sigmoidModel=sigmoidModel
 																										 , impulseModel=impulseModel
 																										 , sigmoidModelP=sigmoidModelP
@@ -609,13 +609,13 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 			modelTotalRNA <- 
 				if( testOnSmooth ) {
 					modelTotalRNAfun$fun$value(
-						time_transf(tpts, log_shift)
+						timetransf(tpts, log_shift)
 						, modelTotalRNAfun$params)
 				} else { concentrations$total[i,] }
 			modelSynthesisRate <- 
 				if( testOnSmooth ) {
 					modelSynthesisRatefun$fun$value(
-						time_transf(tpts, log_shift)
+						timetransf(tpts, log_shift)
 						, modelSynthesisRatefun$params)	
 				} else { rates$alpha[i,] }
 			if( intExMode ) {
@@ -626,7 +626,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 																								 , na.rm=na.rm, sigmoid=sigmoidPre
 																								 , impulse=TRUE, polynomial=FALSE
 																								 , nInit=nInit, nIter=nIter
-																								 , time_transf=time_transf
+																								 , timetransf=timetransf
 																								 , sigmoidModel=sigmoidModel
 																								 , impulseModel=impulseModel
 																								 , sigmoidModelP=sigmoidModelP
@@ -636,7 +636,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 				modelPreMRNA <- 
 					if( testOnSmooth ) 
 						modelPreMRNAfun$fun$value(
-							time_transf(tpts, log_shift)
+							timetransf(tpts, log_shift)
 							, modelPreMRNAfun$params) 
 				else concentrations$preMRNA[i,]
 			}
@@ -646,11 +646,11 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 					# total RNA derivative
 					if( modelTotalRNAfun$type == 'impulse' )
 						modelTotalRNAderivative <- .DimpulseModel(
-							time_transf(tpts, log_shift)
+							timetransf(tpts, log_shift)
 							, modelTotalRNAfun$params)
 					if( modelTotalRNAfun$type == 'sigmoid' )
 						modelTotalRNAderivative <- .DsigmoidModel(
-							time_transf(tpts, log_shift)
+							timetransf(tpts, log_shift)
 							, modelTotalRNAfun$params)
 					if( modelTotalRNAfun$type == 'constant' )
 						modelTotalRNAderivative <- rep(0, length(tpts))
@@ -658,11 +658,11 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 						# pre mRNA derivative
 						if( modelPreMRNAfun$type == 'impulse' )
 							modelPreMRNAderivative <- .DimpulseModel(
-								time_transf(tpts, log_shift)
+								timetransf(tpts, log_shift)
 								, modelPreMRNAfun$params)
 						if( modelPreMRNAfun$type == 'sigmoid' )
 							modelPreMRNAderivative <- .DsigmoidModel(
-								time_transf(tpts, log_shift)
+								timetransf(tpts, log_shift)
 								, modelPreMRNAfun$params)
 						if( modelPreMRNAfun$type == 'constant' )
 							modelPreMRNAderivative <- rep(0, length(tpts))
@@ -727,7 +727,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 											 , na.rm=na.rm, sigmoid=sigmoidDegradation
 											 , impulse=TRUE, polynomial=FALSE
 											 , nInit=nInit, nIter=nIter
-											 , time_transf=time_transf
+											 , timetransf=timetransf
 											 , sigmoidModel=sigmoidModel
 											 , impulseModel=impulseModel
 											 , sigmoidModelP=sigmoidModelP
@@ -743,7 +743,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 											 , na.rm=na.rm, sigmoid=sigmoidProcessing
 											 , impulse=TRUE, polynomial=FALSE
 											 , nInit=nInit, nIter=nIter
-											 , time_transf=time_transf
+											 , timetransf=timetransf
 											 , sigmoidModel=sigmoidModel
 											 , impulseModel=impulseModel
 											 , sigmoidModelP=sigmoidModelP
@@ -784,7 +784,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 												, maxit=nIter
 												, log_shift=log_shift
 												, ode=deSolve::ode
-												, time_transf=time_transf
+												, timetransf=timetransf
 												, .rxnrate=.rxnrate
 												, .makeModel=.makeModel
 												, logLikelihoodFunction=logLikelihoodFunction
@@ -805,7 +805,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 															, maxit=nIter
 															, log_shift=log_shift
 															, ode=deSolve::ode
-															, time_transf=time_transf
+															, timetransf=timetransf
 															, .rxnrateSimple=.rxnrateSimple
 															, .makeSimpleModel=.makeSimpleModel
 															, logLikelihoodFunction=logLikelihoodFunction
@@ -866,7 +866,7 @@ logLikelihoodFunction <- function(experiment, model, variance=NULL)
 	tpts <- tpts
 	paramSpecs <- bplapply(1:nGenes, modelOneGene, seed=seed, 
 												 .chooseModel=.chooseModel,
-												 time_transf=time_transf,
+												 timetransf=timetransf,
 												 .DimpulseModel=.DimpulseModel,
 												 .DsigmoidModel=.DsigmoidModel,
 												 constantModelP=constantModelP,
@@ -1019,7 +1019,7 @@ oscillatoryModelP <- newPointer(oscillatoryModel)
 
 # .chooseModel <- function(tpts, log_shift, experiment, variance=NULL, na.rm=TRUE
 # 	, sigmoid=TRUE, impulse=TRUE, polynomial=TRUE, nInit=10, nIter=500
-# 	, time_transf, impulseModel, sigmoidModel, sigmoidModelP, impulseModelP
+# 	, timetransf, impulseModel, sigmoidModel, sigmoidModelP, impulseModelP
 # 	, .polynomialModelP)
 # #### choose a functional form between impulse and sigmoid according 
 # #### to the one that has the gratest pvalue in the chi squared test
@@ -1159,7 +1159,7 @@ oscillatoryModelP <- newPointer(oscillatoryModel)
 # 	impulse <- impulse & length(experiment)>2
 # 	polynomial <- polynomial & length(experiment)>2
 
-# 	tptslog <- time_transf(tpts, log_shift)
+# 	tptslog <- timetransf(tpts, log_shift)
 
 # 	# sigmoid
 # 	if( sigmoid ) {
@@ -2787,16 +2787,16 @@ errorVVV_Der_NoNascent <- function(parameters
 # 		return(ratesSpecs)
 # }
 
-# .makeModel_Derivative <- function(tpts, hyp, log_shift, time_transf, ode, .rxnrate, c= NaN, geneBestModel = NULL)
+# .makeModel_Derivative <- function(tpts, hyp, log_shift, timetransf, ode, .rxnrate, c= NaN, geneBestModel = NULL)
 # {
 
 # 	params <- list()
 # 	params$alpha <- function(x) 
-# 		hyp$alpha$fun$value(time_transf(x, log_shift, c), hyp$alpha$par)
+# 		hyp$alpha$fun$value(timetransf(x, log_shift, c), hyp$alpha$par)
 # 	params$beta  <- function(x) 
-# 		hyp$beta$fun$value(time_transf(x, log_shift, c), hyp$beta$par)
+# 		hyp$beta$fun$value(timetransf(x, log_shift, c), hyp$beta$par)
 # 	params$gamma <- function(x) 
-# 		hyp$gamma$fun$value(time_transf(x, log_shift, c), hyp$gamma$par)
+# 		hyp$gamma$fun$value(timetransf(x, log_shift, c), hyp$gamma$par)
 
 # 	matureTemp <- params$alpha(tpts)
 
@@ -2810,35 +2810,35 @@ errorVVV_Der_NoNascent <- function(parameters
 
 # 	}else if(geneBestModel == "a")
 # 	{
-# 		prematureTemp <- prematureVKK_Der_NoNascent(time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
-# 		k1Temp <- k1VKK_Der_NoNascent(time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+# 		prematureTemp <- prematureVKK_Der_NoNascent(timetransf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+# 		k1Temp <- k1VKK_Der_NoNascent(timetransf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
 
 # 		k2Temp <- rep(hyp$gamma$params, length.out = length(tpts))
 # 		k3Temp <- rep(hyp$beta$params, length.out = length(tpts))
 
 # 	}else if(geneBestModel == "ac")
 # 	{
-# 		prematureTemp <- prematureVVK_Der_NoNascent(time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
-# 		k1Temp <- k1VVK_Der_NoNascent(time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+# 		prematureTemp <- prematureVVK_Der_NoNascent(timetransf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+# 		k1Temp <- k1VVK_Der_NoNascent(timetransf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
 
-# 		k2Temp <- impulseModel(time_transf(tpts,log_shift,c), hyp$gamma$params)
+# 		k2Temp <- impulseModel(timetransf(tpts,log_shift,c), hyp$gamma$params)
 # 		k3Temp <- rep(hyp$beta$params, length.out = length(tpts))
 
 # 	}else if(geneBestModel == "ab")
 # 	{
-# 		prematureTemp <- prematureVKV_Der_NoNascent(time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
-# 		k1Temp <- k1VKV_Der_NoNascent(time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+# 		prematureTemp <- prematureVKV_Der_NoNascent(timetransf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+# 		k1Temp <- k1VKV_Der_NoNascent(timetransf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
 
 # 		k2Temp <- rep(hyp$gamma$params, length.out = length(tpts))
-# 		k3Temp <- impulseModel(time_transf(tpts,log_shift,c), hyp$beta$params)
+# 		k3Temp <- impulseModel(timetransf(tpts,log_shift,c), hyp$beta$params)
 
 # 	}else if(geneBestModel == "abc")
 # 	{
-# 		prematureTemp <- prematureVVV_Der_NoNascent(time_transf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
-# 		k1Temp <- k1VVV_Der_NoNascent(time_transf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+# 		prematureTemp <- prematureVVV_Der_NoNascent(timetransf(tpts, log_shift, c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
+# 		k1Temp <- k1VVV_Der_NoNascent(timetransf(tpts,log_shift,c),c(hyp$alpha$params,hyp$gamma$params,hyp$beta$params),c)
 
-# 		k2Temp <- impulseModel(time_transf(tpts,log_shift,c), hyp$gamma$params)
-# 		k3Temp <- impulseModel(time_transf(tpts,log_shift,c), hyp$beta$params)
+# 		k2Temp <- impulseModel(timetransf(tpts,log_shift,c), hyp$gamma$params)
+# 		k3Temp <- impulseModel(timetransf(tpts,log_shift,c), hyp$beta$params)
 
 # 	}
 

@@ -84,7 +84,7 @@ define_parameter_ranges <- function(ids) {
 			c(k1_t, k2_t, k3_t)
 		}))
 	, probs=c(.025, .975))
-	# range_t_pars <- time_transf_inv(range_t_pars, logshift, linshift)
+	# range_t_pars <- timetransf_inv(range_t_pars, logshift, linshift)
 	range_t_pars <- c(
 		floor(range_t_pars[1]*100)/100, # (arrotonda per difetto al secondo decimale)
 		ceiling(range_t_pars[2]*100)/100
@@ -393,8 +393,8 @@ RNAdynamicsAppPlot <- function(data_selection,
 		simtimeplot <- simulation_time 
 		exptimeplot <- experiment_tpts
 	} else {
-		simtimeplot <- time_transf(simulation_time, logshift)
-		exptimeplot <- time_transf(experiment_tpts, logshift)
+		simtimeplot <- timetransf(simulation_time, logshift)
+		exptimeplot <- timetransf(experiment_tpts, logshift)
 	}
 	
 	sim <- simdata$sim
@@ -485,11 +485,11 @@ rate_var_p <- function(rate_conf_int) {
 constantModelRNApp <- function(x , par, log_shift, lin_shift) rep(par, length(x))
 
 sigmoidModelRNApp <- function(x, par, log_shift, lin_shift=0)
-	par[1]+(par[2]-par[1])*(1/(1+exp(-par[4]*(time_transf(x,log_shift,lin_shift)-time_transf(par[3],log_shift,lin_shift)))))
+	par[1]+(par[2]-par[1])*(1/(1+exp(-par[4]*(timetransf(x,log_shift,lin_shift)-timetransf(par[3],log_shift,lin_shift)))))
 
 impulseModelRNApp <- function(x, par, log_shift, lin_shift=0)
-	1/par[2]*(par[1]+(par[2]-par[1])*(1/(1+exp(-par[6]*(time_transf(x,log_shift,lin_shift)-time_transf(par[4],log_shift,lin_shift))))))*
-	(par[3]+(par[2]-par[3])*(1/(1+exp(par[6]*(time_transf(x,log_shift,lin_shift)-time_transf(par[5],log_shift,lin_shift))))))
+	1/par[2]*(par[1]+(par[2]-par[1])*(1/(1+exp(-par[6]*(timetransf(x,log_shift,lin_shift)-timetransf(par[4],log_shift,lin_shift))))))*
+	(par[3]+(par[2]-par[3])*(1/(1+exp(par[6]*(timetransf(x,log_shift,lin_shift)-timetransf(par[5],log_shift,lin_shift))))))
 
 
 #############################
@@ -689,7 +689,7 @@ smoothModel <- function(tpts, experiment, nInit=10, nIter=500, seed=1234)
 	optimFailOut <- function(e) list(par=NA, value=NA, counts=NA, convergence=1, message=e)
 
 	im.parguess <- function(tpts , values, log_shift ) {
-		tpts <- time_transf(tpts, log_shift)
+		tpts <- timetransf(tpts, log_shift)
 		ntp   <- length(tpts)
 		peaks <- which(diff(sign(diff(values)))!=0)+1
 		if( length(peaks) == 1 ) peak <- peaks
@@ -718,7 +718,7 @@ smoothModel <- function(tpts, experiment, nInit=10, nIter=500, seed=1234)
 		chisqFunction(experiment, model, 1)
 	}
 	
-	log_shift <- find_tt_par(tpts)
+	log_shift <- findttpar(tpts)
 	
 	outIM <- sapply(1:nInit, function(x) 
 			suppressWarnings(tryCatch(optim(

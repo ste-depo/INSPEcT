@@ -43,9 +43,9 @@ shinyServer(function(input, output, session) {
 
 					inspect$mod_method <- modelingParams(ids)$estimateRatesWith ## either "der" or "int"
 					inspect$classes <- geneClass(ids)
-					inspect$logshift <- find_tt_par(experiment$tpts)
+					inspect$logshift <- findttpar(experiment$tpts)
 					inspect$linshift <- ifelse( experiment$no_nascent,
-						abs(min(time_transf(experiment$tpts,inspect$logshift))),0)
+						abs(min(timetransf(experiment$tpts,inspect$logshift))),0)
 
 					# ... optionally throw a warning and consider as steady-state
 					if( ids@NF ) stop("The RNAdynamics app doesn't work with non-functional(NF) INSPEcT models")

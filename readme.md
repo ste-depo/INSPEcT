@@ -18,6 +18,6 @@ library(INSPEcT)
 In order to run the INSPEcT graphical user interface (GUI), just run the command:
 
 ```
-runINSPEcT_GUI()
+runINSPEcTGUI()
 ```
 

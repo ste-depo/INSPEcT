@@ -99,9 +99,9 @@ setMethod('modelRates', 'INSPEcT', function(object
 			stop('verbose argument must be either NULL or logical.')
 	
 								# Time transformation
-						#		a <- find_tt_par(tpts)
+						#		a <- findttpar(tpts)
 						#		tptsOriginal <- tpts
-						#		tptsLinear <- time_transf(tptsOriginal,a)
+						#		tptsLinear <- timetransf(tptsOriginal,a)
 						#		c <- abs(min(tptsLinear))
 						#		tptsLinear <- tptsLinear + abs(min(tptsLinear))
 
