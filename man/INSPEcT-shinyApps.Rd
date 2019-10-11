@@ -4,21 +4,21 @@
 \name{INSPEcT-shinyApps}
 \alias{INSPEcT-shinyApps}
 \alias{runProcessingRateDelay}
-\alias{runRNAdynamics}
+\alias{runINSPEcT_GUI}
 \title{Run shiny applications contained in the package INSPEcT}
 \usage{
 runProcessingRateDelay()
 
-runRNAdynamics()
+runINSPEcT_GUI()
 }
 \description{
 Two shiny apps are encoded into the package inspect:
 - runProcessingRateDelay: plots single genes as well as genome wide plots associated to the
   processing induced delay loading the data from an INSPEcT object.
-- runRNAdynamics: is a way to visualize and interact with the RNAdynamics at the level of 
+- runINSPEcT_GUI: is a way to visualize and interact with the RNAdynamics at the level of 
   a single gene, either loading the data from ad INSPEcT object or from scratch.
 }
 \examples{
 # runProcessingRateDelay()
-# runRNAdynamics()
+# runINSPEcT_GUI()
 }

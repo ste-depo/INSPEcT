@@ -14,7 +14,7 @@ reconvert_gene_classes <- function(gene_classes) {
 ## function for ranges ####
 ###########################
 
-define_parameter_ranges <- function(ids, model_names) {
+define_parameter_ranges <- function(ids) {
 
 	range_k1_h_pars <- quantile(
 		unlist(lapply(ids@model@ratesSpecs, function(gene) {

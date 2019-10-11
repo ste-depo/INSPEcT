@@ -184,7 +184,7 @@ shinyServer(function(input, output, session) {
 				experiment$mRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select], 'total') + ratesFirstGuessVar(ids[input$select], 'preMRNA'))
 				experiment$preMRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select], 'preMRNA'))
 
-				out <- define_parameter_ranges( ids, model_names )
+				out <- define_parameter_ranges( ids )
 
 				gene_model <- ids@model@ratesSpecs[[input$select]][[1]]
 				modeling$counts <- gene_model$counts[1]
@@ -727,6 +727,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k1_h0) & !is.null(isolate(values$k1_h0)))
 			{
 				if(input$k1_h0 != isolate(values$k1_h0)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k1_h0 <- input$k1_h0
 				}
@@ -739,6 +740,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k1_h1) & !is.null(isolate(values$k1_h1)))
 			{
 				if(input$k1_h1 != isolate(values$k1_h1)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k1_h1 <- input$k1_h1
 				}
@@ -751,6 +753,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k1_h2) & !is.null(isolate(values$k1_h2)))
 			{
 				if(input$k1_h2 != isolate(values$k1_h2)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k1_h2 <- input$k1_h2
 				}
@@ -763,6 +766,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k1_t1) & !is.null(isolate(values$k1_t1)))
 			{
 				if(input$k1_t1 != isolate(values$k1_t1)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k1_t1 <- input$k1_t1
 				}
@@ -775,6 +779,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k1_t2) & !is.null(isolate(values$k1_t2)))
 			{
 				if(input$k1_t2 != isolate(values$k1_t2)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k1_t2 <- input$k1_t2
 				}
@@ -787,6 +792,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k1_beta) & !is.null(isolate(values$k1_beta)))
 			{
 				if(input$k1_beta != isolate(values$k1_beta)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k1_beta <- input$k1_beta
 				}
@@ -799,6 +805,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k2_h0) & !is.null(isolate(values$k2_h0)))
 			{
 				if(input$k2_h0 != isolate(values$k2_h0)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k2_h0 <- input$k2_h0
 				}
@@ -811,6 +818,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k2_h1) & !is.null(isolate(values$k2_h1)))
 			{
 				if(input$k2_h1 != isolate(values$k2_h1)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k2_h1 <- input$k2_h1
 				}
@@ -823,6 +831,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k2_h2) & !is.null(isolate(values$k2_h2)))
 			{
 				if(input$k2_h2 != isolate(values$k2_h2)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k2_h2 <- input$k2_h2
 				}
@@ -835,6 +844,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k2_t1) & !is.null(isolate(values$k2_t1)))
 			{
 				if(input$k2_t1 != isolate(values$k2_t1)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k2_t1 <- input$k2_t1
 				}
@@ -847,6 +857,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k2_t2) & !is.null(isolate(values$k2_t2)))
 			{
 				if(input$k2_t2 != isolate(values$k2_t2)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k2_t2 <- input$k2_t2
 				}
@@ -859,6 +870,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k2_beta) & !is.null(isolate(values$k2_beta)))
 			{
 				if(input$k2_beta != isolate(values$k2_beta)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k2_beta <- input$k2_beta
 				}
@@ -871,6 +883,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k3_h0) & !is.null(isolate(values$k3_h0)))
 			{
 				if(input$k3_h0 != isolate(values$k3_h0)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k3_h0 <- input$k3_h0
 				}
@@ -883,6 +896,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k3_h1) & !is.null(isolate(values$k3_h1)))
 			{
 				if(input$k3_h1 != isolate(values$k3_h1)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k3_h1 <- input$k3_h1
 				}
@@ -895,6 +909,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k3_h2) & !is.null(isolate(values$k3_h2)))
 			{
 				if(input$k3_h2 != isolate(values$k3_h2)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k3_h2 <- input$k3_h2
 				}
@@ -907,6 +922,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k3_t1) & !is.null(isolate(values$k3_t1)))
 			{
 				if(input$k3_t1 != isolate(values$k3_t1)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k3_t1 <- input$k3_t1
 				}
@@ -919,6 +935,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k3_t2) & !is.null(isolate(values$k3_t2)))
 			{
 				if(input$k3_t2 != isolate(values$k3_t2)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k3_t2 <- input$k3_t2
 				}
@@ -931,6 +948,7 @@ shinyServer(function(input, output, session) {
 			if(!is.null(input$k3_beta) & !is.null(isolate(values$k3_beta)))
 			{
 				if(input$k3_beta != isolate(values$k3_beta)) {
+					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k3_beta <- input$k3_beta
 				}
@@ -1519,7 +1537,7 @@ shinyServer(function(input, output, session) {
 	## call the plot function when downloading the image
 	output$saveRNAdynamicsDataButton <- downloadHandler(
 		filename =  function() {
-			"RNAdynamics.xls"
+			"RNAdynamics.tsv"
 		},
 		# content is a function with argument file. content writes the plot to the device
 		content = function(file) {
