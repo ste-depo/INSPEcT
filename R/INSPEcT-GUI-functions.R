@@ -1,3 +1,34 @@
+#function for the indicator "Loading...". This function was taken from
+#xiaodaigh and dcurrier (https://github.com/AnalytixWare/ShinySky/blob/master/R/busy-indicator.r)
+#and corrected. Maybe the real time is inside setInterval function
+.busyIndicator <- function(text = "Processing..."
+													 , image = "http://i.giphy.com/l3V0EQrPMh1nnfbFe.gif"
+													 , wait=1000) {
+	tagList(
+		singleton(tags$head(
+			tags$link(rel = "stylesheet"
+								, type = "text/css" 
+								,href = file.path("panel","inst","extdata","busyIndicator.css")
+			)))
+		,div(class = "mybusyindicator",p(text)) #,img(src=image))
+		,tags$script(sprintf(
+			" setInterval(function(){
+			if ($('html').hasClass('shiny-busy')) {
+				setTimeout(function() {
+					if ($('html').hasClass('shiny-busy')) {
+						$('div.mybusyindicator').show()
+					}
+				}, %d)          
+			} else {
+				$('div.mybusyindicator').hide()
+			}
+		},1000)",wait)
+		)
+	) 
+}
+
+##########################
+
 convert_gene_classes <- function(gene_classes) {
 	diz <- c('0'='KKK', 'a'='VKK', 'b'='KKV', 'c'='KVK',
 		'ab'='VKV', 'ac'='VVK', 'bc'='KVV', 'abc'='VVV')
@@ -732,6 +763,18 @@ smoothModel <- function(tpts, experiment, nInit=10, nIter=500, seed=1234)
 	bestIM <- which.min(unlist(outIM[2,]))
 	impulseModelRNApp( tpts, outIM[,bestIM]$par, log_shift)
 	
+}
+
+chisqFunction <- function(experiment, model, variance=NULL)
+{
+	if( is.null(variance)) variance <- stats::var(experiment)
+	sum((experiment - model )^2/variance )
+}
+
+logLikelihoodFunction <- function(experiment, model, variance=NULL)
+{
+	if( is.null(variance)) variance <- stats::var(experiment)
+	sum(log(2*pnorm(-abs(experiment-model),mean=0,sd=sqrt(variance))))
 }
 
 ###############################
@@ -1525,4 +1568,3 @@ errorKVV_Der_App <- function(parameters, tpts
 	
 	if(clean){return(chiSquare)}else{return(chiSquare+penalty+initialPenality)}
 }
-

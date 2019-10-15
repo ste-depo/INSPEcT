@@ -1,4 +1,4 @@
-shinyServer(function(input, output, session) {
+ProcessingRateDelayshinyAppServer <- function(input, output, session) {
 
 	metrics_gene1 <- reactiveValues()
 	values  <- reactiveValues()
@@ -374,4 +374,4 @@ shinyServer(function(input, output, session) {
 		return('')
 		})
 
-})
+}

@@ -12,12 +12,18 @@ NULL
 #' @rdname INSPEcT-shinyApps
 #' @examples
 #' # runProcessingRateDelay()
+# runProcessingRateDelay = function() {
+# 	shiny::runApp(system.file(package='INSPEcT', 'ProcessingRateDelay'))
+# }
 runProcessingRateDelay = function() {
-	shiny::runApp(system.file(package='INSPEcT', 'ProcessingRateDelay'))
+	shinyApp(ui = ProcessingRateDelayshinyAppUI, server = ProcessingRateDelayshinyAppServer)
 }
 #' @rdname INSPEcT-shinyApps
 #' @examples
 #' # runINSPEcTGUI()
-runINSPEcTGUI = function() {
-	shiny::runApp(system.file(package='INSPEcT', 'RNAdynamics'))
+# runINSPEcTGUI = function() {
+# 	shiny::runApp(system.file(package='INSPEcT', 'RNAdynamics'))
+# }
+runINSPEcTGUI <- function() {
+	shinyApp(ui = INSPEcTGUIshinyAppUI, server = INSPEcTGUIshinyAppServer)
 }

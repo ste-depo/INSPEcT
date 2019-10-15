@@ -1,6 +1,4 @@
-shinyServer(function(input, output, session) {
-	
-	source('RNAdynamicsAPP-functions.R')
+INSPEcTGUIshinyAppServer <- function(input, output, session) {
 	
 	# global variables
 	
@@ -638,7 +636,7 @@ shinyServer(function(input, output, session) {
 				ranges$beta_min <- min(c(gene_beta_vals,out$beta_pars[1]))
 				ranges$beta_max <- max(c(gene_beta_vals,out$beta_pars[2]))
 				
-			}, silent=TRUE)
+			}, silent=FALSE)
 		}
 		
 	})
@@ -1628,7 +1626,7 @@ shinyServer(function(input, output, session) {
 					
 				}
 
-			}, silent = TRUE))
+			}, silent = FALSE))
 		
 	})
 
@@ -1817,4 +1815,4 @@ shinyServer(function(input, output, session) {
 
 		})
 	
-})
+}
