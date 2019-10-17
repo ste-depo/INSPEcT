@@ -57,7 +57,7 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 					.makeModel(tpts=c(t-tL,t)
 						 , ratesSpecs[[i]][[1]]
 						 # , log_shift
-						 # , time_transf
+						 # , timetransf
 						 # , deSolve::ode
 						 # , .rxnrate
 						 , nascent = TRUE)
@@ -77,13 +77,13 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 		## I solve the system for the total
 		ratesSpecs <- object@ratesSpecs
 		nGenes <- length(ratesSpecs)
-		# log_shift <- find_tt_par(tpts)
+		# log_shift <- findttpar(tpts)
 		cleanRates <- lapply(1:nGenes, function(i) {
 			tryCatch(
 				.makeModel(tpts
 						 , ratesSpecs[[i]][[1]]
 						 # , log_shift
-						 # , time_transf
+						 # , timetransf
 						 # , deSolve::ode
 						 # , .rxnrate
 						 , nascent = FALSE)
@@ -215,7 +215,7 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 				.makeModel(tpts
 						 , ratesSpecs[[i]][[1]]
 						 # , log_shift
-						 # , time_transf
+						 # , timetransf
 						 # , deSolve::ode
 						 # , .rxnrate
 						 , nascent = FALSE)

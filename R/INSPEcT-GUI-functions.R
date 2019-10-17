@@ -1,3 +1,34 @@
+#function for the indicator "Loading...". This function was taken from
+#xiaodaigh and dcurrier (https://github.com/AnalytixWare/ShinySky/blob/master/R/busy-indicator.r)
+#and corrected. Maybe the real time is inside setInterval function
+.busyIndicator <- function(text = "Processing..."
+													 , image = "http://i.giphy.com/l3V0EQrPMh1nnfbFe.gif"
+													 , wait=1000) {
+	tagList(
+		singleton(tags$head(
+			tags$link(rel = "stylesheet"
+								, type = "text/css" 
+								,href = file.path("panel","inst","extdata","busyIndicator.css")
+			)))
+		,div(class = "mybusyindicator",p(text)) #,img(src=image))
+		,tags$script(sprintf(
+			" setInterval(function(){
+			if ($('html').hasClass('shiny-busy')) {
+				setTimeout(function() {
+					if ($('html').hasClass('shiny-busy')) {
+						$('div.mybusyindicator').show()
+					}
+				}, %d)          
+			} else {
+				$('div.mybusyindicator').hide()
+			}
+		},1000)",wait)
+		)
+	) 
+}
+
+##########################
+
 convert_gene_classes <- function(gene_classes) {
 	diz <- c('0'='KKK', 'a'='VKK', 'b'='KKV', 'c'='KVK',
 		'ab'='VKV', 'ac'='VVK', 'bc'='KVV', 'abc'='VVV')
@@ -14,7 +45,7 @@ reconvert_gene_classes <- function(gene_classes) {
 ## function for ranges ####
 ###########################
 
-define_parameter_ranges <- function(ids, model_names) {
+define_parameter_ranges <- function(ids) {
 
 	range_k1_h_pars <- quantile(
 		unlist(lapply(ids@model@ratesSpecs, function(gene) {
@@ -84,7 +115,7 @@ define_parameter_ranges <- function(ids, model_names) {
 			c(k1_t, k2_t, k3_t)
 		}))
 	, probs=c(.025, .975))
-	# range_t_pars <- time_transf_inv(range_t_pars, logshift, linshift)
+	# range_t_pars <- timetransf_inv(range_t_pars, logshift, linshift)
 	range_t_pars <- c(
 		floor(range_t_pars[1]*100)/100, # (arrotonda per difetto al secondo decimale)
 		ceiling(range_t_pars[2]*100)/100
@@ -393,8 +424,8 @@ RNAdynamicsAppPlot <- function(data_selection,
 		simtimeplot <- simulation_time 
 		exptimeplot <- experiment_tpts
 	} else {
-		simtimeplot <- time_transf(simulation_time, logshift)
-		exptimeplot <- time_transf(experiment_tpts, logshift)
+		simtimeplot <- timetransf(simulation_time, logshift)
+		exptimeplot <- timetransf(experiment_tpts, logshift)
 	}
 	
 	sim <- simdata$sim
@@ -485,11 +516,11 @@ rate_var_p <- function(rate_conf_int) {
 constantModelRNApp <- function(x , par, log_shift, lin_shift) rep(par, length(x))
 
 sigmoidModelRNApp <- function(x, par, log_shift, lin_shift=0)
-	par[1]+(par[2]-par[1])*(1/(1+exp(-par[4]*(time_transf(x,log_shift,lin_shift)-time_transf(par[3],log_shift,lin_shift)))))
+	par[1]+(par[2]-par[1])*(1/(1+exp(-par[4]*(timetransf(x,log_shift,lin_shift)-timetransf(par[3],log_shift,lin_shift)))))
 
 impulseModelRNApp <- function(x, par, log_shift, lin_shift=0)
-	1/par[2]*(par[1]+(par[2]-par[1])*(1/(1+exp(-par[6]*(time_transf(x,log_shift,lin_shift)-time_transf(par[4],log_shift,lin_shift))))))*
-	(par[3]+(par[2]-par[3])*(1/(1+exp(par[6]*(time_transf(x,log_shift,lin_shift)-time_transf(par[5],log_shift,lin_shift))))))
+	1/par[2]*(par[1]+(par[2]-par[1])*(1/(1+exp(-par[6]*(timetransf(x,log_shift,lin_shift)-timetransf(par[4],log_shift,lin_shift))))))*
+	(par[3]+(par[2]-par[3])*(1/(1+exp(par[6]*(timetransf(x,log_shift,lin_shift)-timetransf(par[5],log_shift,lin_shift))))))
 
 
 #############################
@@ -689,7 +720,7 @@ smoothModel <- function(tpts, experiment, nInit=10, nIter=500, seed=1234)
 	optimFailOut <- function(e) list(par=NA, value=NA, counts=NA, convergence=1, message=e)
 
 	im.parguess <- function(tpts , values, log_shift ) {
-		tpts <- time_transf(tpts, log_shift)
+		tpts <- timetransf(tpts, log_shift)
 		ntp   <- length(tpts)
 		peaks <- which(diff(sign(diff(values)))!=0)+1
 		if( length(peaks) == 1 ) peak <- peaks
@@ -718,7 +749,7 @@ smoothModel <- function(tpts, experiment, nInit=10, nIter=500, seed=1234)
 		chisqFunction(experiment, model, 1)
 	}
 	
-	log_shift <- find_tt_par(tpts)
+	log_shift <- findttpar(tpts)
 	
 	outIM <- sapply(1:nInit, function(x) 
 			suppressWarnings(tryCatch(optim(
@@ -732,6 +763,18 @@ smoothModel <- function(tpts, experiment, nInit=10, nIter=500, seed=1234)
 	bestIM <- which.min(unlist(outIM[2,]))
 	impulseModelRNApp( tpts, outIM[,bestIM]$par, log_shift)
 	
+}
+
+chisqFunction <- function(experiment, model, variance=NULL)
+{
+	if( is.null(variance)) variance <- stats::var(experiment)
+	sum((experiment - model )^2/variance )
+}
+
+logLikelihoodFunction <- function(experiment, model, variance=NULL)
+{
+	if( is.null(variance)) variance <- stats::var(experiment)
+	sum(log(2*pnorm(-abs(experiment-model),mean=0,sd=sqrt(variance))))
 }
 
 ###############################
@@ -1525,4 +1568,3 @@ errorKVV_Der_App <- function(parameters, tpts
 	
 	if(clean){return(chiSquare)}else{return(chiSquare+penalty+initialPenality)}
 }
-

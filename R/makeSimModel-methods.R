@@ -138,8 +138,8 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 
 			n <- length(sampled_val)
 
-			log_shift <- find_tt_par(tpts)
-			tpts_log <- time_transf(tpts,log_shift) 
+			log_shift <- findttpar(tpts)
+			tpts_log <- timetransf(tpts,log_shift) 
 
 			# sample the delta of the two responses between a range that 
 			# is considered valid to reproduce the expected fold change
@@ -197,8 +197,8 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 
 			n <- length(sampled_val)
 
-			log_shift <- find_tt_par(tpts)
-			tpts_log <- time_transf(tpts,log_shift) 
+			log_shift <- findttpar(tpts)
+			tpts_log <- timetransf(tpts,log_shift) 
 
 			# sample the time uniformely
 			time_of_response <- runif( n, min=min(head(tpts_log[-1],length(tpts_log)-2)), max=max(head(tpts_log[-1],length(tpts_log)-2)))
@@ -432,7 +432,7 @@ setMethod('makeSimModel', 'INSPEcT', function(object
 				### Time transformation
 				#
 				# .makeModel(tpts, paramSpecs[[i]], log_shift, 
-				# 	time_transf, ode, .rxnrate),error=function(e){cbind(time=rep(NaN,length(tpts))
+				# 	timetransf, ode, .rxnrate),error=function(e){cbind(time=rep(NaN,length(tpts))
 				# 														  ,preMRNA=rep(NaN,length(tpts))
 				# 														  ,total=rep(NaN,length(tpts))
 				# 														  ,alpha=rep(NaN,length(tpts))
