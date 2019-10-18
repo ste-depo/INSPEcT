@@ -1548,7 +1548,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 		}
 	)
 	
-	output$gene <- renderPlot({
+	observe({
 		
 		ids <- contentsrea()
 		if( input$select != "" & !is.null(ids) & !is.null(input$k1_function) &
@@ -1608,17 +1608,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 						k3_params = k3_params,
 						mod_method = mod_method
 						)
-					RNAdynamicsAppPlot(
-						data_selection = input$data_selection,
-						show_logtime = input$logtime_checkbox,
-						show_confint = input$confint_checkbox,
-						logshift = inspect$logshift,
-						linshift = inspect$linshift,
-						time_min = ranges$time_min,
-						time_max = ranges$time_max,
-						experiment = experiment,
-						simdata = simdata
-					)
+
 					modeling$simdata <- simdata
 					output$pchisq <- renderPrint({signif(modeling$simdata$scores$pchisq,3)})
 					output$aic <- renderPrint({signif(modeling$simdata$scores$aic,3)})
@@ -1630,6 +1620,22 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 		
 	})
 
+	output$gene <- renderPlot({
+		suppressWarnings(try({
+			RNAdynamicsAppPlot(
+				data_selection = input$data_selection,
+				show_logtime = input$logtime_checkbox,
+				show_confint = input$confint_checkbox,
+				logshift = inspect$logshift,
+				linshift = inspect$linshift,
+				time_min = ranges$time_min,
+				time_max = ranges$time_max,
+				experiment = experiment,
+				simdata = modeling$simdata
+			)
+		}, silent = FALSE))
+	})
+	
 	#######################
 	## OPTIMIZE ###########
 	#######################
