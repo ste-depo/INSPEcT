@@ -28,8 +28,7 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 					 						 selected = 'Smooth data'),
 					 uiOutput('modeling_box')
 		),
-		column(4, 
-					 fluidRow(column(2,NULL), column(8,uiOutput("rate_pvals")), column(2,NULL)),
+		column(4,
 					 plotOutput("gene", height = "600px"),#, width="500px"),
 					 fluidRow(
 					 	column(2, .busyIndicator(text="Loading..." , wait=1000 , image='gif.gif')), 
@@ -39,8 +38,7 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 					 		)),
 					 	column(7, list(
 					 		checkboxInput("relativexpr_checkbox", label = "View relative expression", value = FALSE),
-					 		uiOutput("logtime_checkbox_ui"), 
-					 		uiOutput("confint_checkbox_ui")
+					 		uiOutput("logtime_checkbox_ui")
 					 	))
 					 )
 		),
