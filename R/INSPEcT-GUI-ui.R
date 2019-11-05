@@ -32,13 +32,16 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 					 fluidRow(column(2,NULL), column(8,uiOutput("rate_pvals")), column(2,NULL)),
 					 plotOutput("gene", height = "600px"),#, width="500px"),
 					 fluidRow(
-					 	column(4, .busyIndicator(text="Loading..." , wait=1000 , image='gif.gif')), 
-					 	# column(4, uiOutput("saveRNAdynamicsPlot")),
-					 	column(4, list(
+					 	column(2, .busyIndicator(text="Loading..." , wait=1000 , image='gif.gif')), 
+					 	column(3, list(
 					 		downloadButton('saveRNAdynamicsPlotButton', 'Get PDF'),
-					 		downloadButton('saveRNAdynamicsDataButton', 'Get XLS')
+					 		downloadButton('saveRNAdynamicsDataButton', 'Get TSV')
 					 		)),
-					 	column(4, uiOutput("logtime_checkbox_ui"), uiOutput("confint_checkbox_ui"))
+					 	column(7, list(
+					 		checkboxInput("relativexpr_checkbox", label = "View relative expression", value = FALSE),
+					 		uiOutput("logtime_checkbox_ui"), 
+					 		uiOutput("confint_checkbox_ui")
+					 	))
 					 )
 		),
 		

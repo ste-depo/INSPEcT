@@ -1,7 +1,9 @@
 INSPEcTGUIshinyAppServer <- function(input, output, session) {
 	
-	# global variables
+	# allow loading datasets up to 50MB
+	options(shiny.maxRequestSize=50*1024^2)
 	
+	# global variables
 	ranges <- reactiveValues()
 	values <- reactiveValues()
 	experiment <- reactiveValues()
@@ -39,6 +41,9 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				# select only genes with exons and introns
 				ids <- ids[apply(is.finite(ratesFirstGuess(ids,'preMRNA')),1,all)]
 
+				## set to false the evaluation of CI on load of a new dataset
+				updateCheckboxInput(session, "confint_checkbox", value = FALSE)
+				
 				if( !experiment$steady_state ) {
 
 					inspect$mod_method <- modelingParams(ids)$estimateRatesWith ## either "der" or "int"
@@ -49,6 +54,9 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 
 					# ... optionally throw a warning and consider as steady-state
 					if( ids@NF ) stop("The RNAdynamics app doesn't work with non-functional(NF) INSPEcT models")
+					
+					# set default values of the checkboxes
+					updateRadioButtons(session, inputId = 'data_selection', selected = 'Smooth data')
 					
 					## select only the best model
 					
@@ -78,6 +86,9 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 
 				} else { ## steady state
 
+					# set default values of the checkboxes
+					# updateRadioButtons(session, inputId = 'data_selection', selected = 'Experimental data')
+					
 					inspect$mod_method <- 'int'
 					inspect$logshift <- 1
 					inspect$linshift <- 0
@@ -209,7 +220,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				
 				rateRange <- function(rate) {
 					rate_vals = ratesFirstGuess(ids, rate)
-					rate_range = range(rate_vals[is.finite(rate_vals)])
+					rate_range = quantile(rate_vals[is.finite(rate_vals)], probs=c(.025, .975))
 					return(c(floor(rate_range[1]), ceiling(rate_range[2])))
 				}
 
@@ -238,7 +249,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			}
 			
 			## set to false the evaluation of CI on load of a new dataset
-			updateCheckboxInput(session, "confint_checkbox", value = FALSE)
+			# updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 
 			try({ 
 				## this try is necessary because the class is updated before the gene, then the model_name
@@ -618,9 +629,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 														 selected = if(degradationmodel$type == 'impulse') "Impulsive" else "Sigmoidal")
 				}
 				
-				# gene_h_vals <- c(isolate(values$k1_h0),isolate(values$k1_h1),isolate(values$k1_h2),
-				# 	isolate(values$k2_h0),isolate(values$k2_h1),isolate(values$k2_h2),
-				# 	isolate(values$k3_h0),isolate(values$k3_h1),isolate(values$k3_h2))
 				gene_t_vals <- c(isolate(values$k1_t1),isolate(values$k1_t2),isolate(values$k2_t1),
 												 isolate(values$k2_t2),isolate(values$k3_t1),isolate(values$k3_t2))
 				gene_beta_vals <- c(isolate(values$k1_beta),isolate(values$k2_beta),isolate(values$k3_beta))
@@ -1525,6 +1533,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				data_selection = input$data_selection,
 				show_logtime = input$logtime_checkbox,
 				show_confint = input$confint_checkbox,
+				show_relexpr = input$relativexpr_checkbox,
 				logshift = inspect$logshift,
 				linshift = inspect$linshift,
 				time_min = ranges$time_min,
@@ -1616,7 +1625,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 					
 				}
 
-			}, silent = FALSE))
+			}, silent = TRUE))
 		
 	})
 
@@ -1626,6 +1635,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				data_selection = input$data_selection,
 				show_logtime = input$logtime_checkbox,
 				show_confint = input$confint_checkbox,
+				show_relexpr = input$relativexpr_checkbox,
 				logshift = inspect$logshift,
 				linshift = inspect$linshift,
 				time_min = ranges$time_min,
@@ -1633,7 +1643,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				experiment = experiment,
 				simdata = modeling$simdata
 			)
-		}, silent = FALSE))
+		}, silent = TRUE))
 	})
 	
 	#######################
