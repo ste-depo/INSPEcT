@@ -1570,23 +1570,25 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 		# content is a function with argument file. content writes the plot to the device
 		content = function(file) {
 			pdf(file) # open the pdf device
-			RNAdynamicsAppPlot(
-				data_selection = input$data_selection,
-				show_logtime = input$logtime_checkbox,
-				show_relexpr = input$relativexpr_checkbox,
-				logshift = inspect$logshift,
-				linshift = inspect$linshift,
-				time_min = ranges$time_min,
-				time_max = ranges$time_max,
-				experiment = experiment,
-				simdata = modeling$simdata,
-				ylims = if(input$fixyaxis_checkbox) isolate(ranges$ylims) else NULL,
-				rate_p = values$rate_p
-			)
+			suppressWarnings(try({
+				RNAdynamicsAppPlot(
+					data_selection = input$data_selection,
+					show_logtime = input$logtime_checkbox,
+					show_relexpr = input$relativexpr_checkbox,
+					logshift = inspect$logshift,
+					linshift = inspect$linshift,
+					time_min = ranges$time_min,
+					time_max = ranges$time_max,
+					experiment = experiment,
+					simdata = modeling$simdata,
+					ylims = if(input$fixyaxis_checkbox) isolate(ranges$ylims) else NULL,
+					rate_p = values$rate_p
+				)
+			}, silent = TRUE))
 			dev.off()  # turn the device off
 		}
 	)
-
+	
 	## call the plot function when downloading the image
 	output$saveRNAdynamicsDataButton <- downloadHandler(
 		filename =  function() {
