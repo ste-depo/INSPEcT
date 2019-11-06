@@ -39,7 +39,8 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 					 		)),
 					 	column(7, list(
 					 		checkboxInput("relativexpr_checkbox", label = "View relative expression", value = FALSE),
-					 		uiOutput("logtime_checkbox_ui")
+					 		uiOutput("logtime_checkbox_ui"),
+					 		checkboxInput("fixyaxis_checkbox", label = "Fix Y-axis", value = FALSE)
 					 	))
 					 )
 		),

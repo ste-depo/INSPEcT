@@ -386,7 +386,9 @@ RNAdynamicsAppPlot <- function(data_selection,
 															 logshift, linshift, 
 															 time_min, time_max, 
 															 experiment, 
-															 simdata
+															 simdata,
+															 ylims,
+															 rate_p
 															 ) {
 
 	# get experimental values
@@ -450,33 +452,33 @@ RNAdynamicsAppPlot <- function(data_selection,
 	# start plot routine
 	
 	par(mfrow=c(5,1))
-	par(mar=c(2.5,5,0,1)+.1)
+	par(mar=c(2.5,8,0,1)+.1)
 	
 	# plot k1
 
 	plot_k1_experiment = ! (data_selection == 'User defined' | experiment$no_nascent)
-	plotSingleRNADynamic( 'synthesis', simtimeplot, sim[,'k1'], conf_int$k1[,'left'], conf_int$k1[,'right'], 
-												plot_k1_experiment, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd, show_relexpr )
+	k1_ylim <- plotSingleRNADynamic( 'synthesis', simtimeplot, sim[,'k1'], conf_int$k1[,'left'], conf_int$k1[,'right'], 
+												plot_k1_experiment, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd, show_relexpr, ylims$k1_ylim, rate_p = rate_p['k1'] )
 	
 	# plot pre-RNA dynamics
 
-	plotSingleRNADynamic( 'pre-RNA', simtimeplot, sim[,'p'], rep(NA, length(simtimeplot)), rep(NA, length(simtimeplot)), 
-												data_selection != 'User defined', exptimeplot, reference_preMRNA, secondary_preMRNA, experimental_preMRNAsd, show_relexpr )
+	p_ylim <- plotSingleRNADynamic( 'pre-RNA', simtimeplot, sim[,'p'], rep(NA, length(simtimeplot)), rep(NA, length(simtimeplot)), 
+												data_selection != 'User defined', exptimeplot, reference_preMRNA, secondary_preMRNA, experimental_preMRNAsd, show_relexpr, ylims$p_ylim )
 	
 	# plot k2
 
-	plotSingleRNADynamic( 'processing', simtimeplot, sim[,'k2'], conf_int$k2[,'left'], conf_int$k2[,'right'], 
-												FALSE, show_relexpr = show_relexpr)#, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd )
+	k2_ylim <- plotSingleRNADynamic( 'processing', simtimeplot, sim[,'k2'], conf_int$k2[,'left'], conf_int$k2[,'right'], 
+												FALSE, show_relexpr = show_relexpr, ylim = ylims$k2_ylim, rate_p = rate_p['k2'] )#, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd )
 	
 	# plot mRNA dynamics 
 
-	plotSingleRNADynamic( 'mature RNA', simtimeplot, sim[,'m'], rep(NA, length(simtimeplot)), rep(NA, length(simtimeplot)), 
-												data_selection != 'User defined', exptimeplot, reference_mRNA, secondary_mRNA, experimental_mRNAsd, show_relexpr )
+	m_ylim <- plotSingleRNADynamic( 'mature RNA', simtimeplot, sim[,'m'], rep(NA, length(simtimeplot)), rep(NA, length(simtimeplot)), 
+												data_selection != 'User defined', exptimeplot, reference_mRNA, secondary_mRNA, experimental_mRNAsd, show_relexpr, ylims$m_ylim )
 	
 	# plot k3
 
-	plotSingleRNADynamic( 'degradation', simtimeplot, sim[,'k3'], conf_int$k3[,'left'], conf_int$k3[,'right'], 
-												FALSE, show_relexpr = show_relexpr)#, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd )
+	k3_ylim <- plotSingleRNADynamic( 'degradation', simtimeplot, sim[,'k3'], conf_int$k3[,'left'], conf_int$k3[,'right'], 
+												FALSE, show_relexpr = show_relexpr, ylim = ylims$k3_ylim, rate_p = rate_p['k3'] )#, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd )
 	
 	# draw x-axis
 	if( show_logtime ) {
@@ -484,11 +486,24 @@ RNAdynamicsAppPlot <- function(data_selection,
 	} else {
 		axis(1, at=experiment_tpts, labels = signif(experiment_tpts,2) , cex.axis = 1.3)	
 	}
-
+	
+	# return ylims upon request
+	ylims <- list(
+		k1_ylim = k1_ylim, 
+		k2_ylim = k2_ylim, 
+		k3_ylim = k3_ylim, 
+		p_ylim = p_ylim, 
+		m_ylim = m_ylim
+	)
 }
 
-plotSingleRNADynamic <- function( dyn_name, simtimeplot, simprofile, ci_left, ci_right, plot_exp, exptimeplot, ref_exp, sec_exp, ssd_exp, show_relexpr = FALSE ) {
+plotSingleRNADynamic <- function( dyn_name, simtimeplot, simprofile, ci_left, ci_right, plot_exp, exptimeplot, ref_exp, sec_exp, ssd_exp, show_relexpr = FALSE, ylim, rate_p = NULL ) {
 	
+	if( !is.null(rate_p) ) {
+		dyn_name <- paste(dyn_name, paste0('(p=',signif(rate_p,2),')'), sep = '\n')
+	} else {
+		dyn_name <- paste(dyn_name, '', sep = '\n')
+	}
 	deltaylim <- function( yrange ) {
 		deltarange <- yrange[2] * .05
 		ylim <- yrange + c(-deltarange, deltarange)
@@ -516,15 +531,17 @@ plotSingleRNADynamic <- function( dyn_name, simtimeplot, simprofile, ci_left, ci
 		}
 	}
 	
-	if( plot_exp ) {
-		yrange <- range(c(simprofile, 
-											sec_exp_plus_ssd, 
-											ref_exp_plus_ssd, 
-											sec_exp_minus_ssd, 
-											ref_exp_minus_ssd), na.rm=TRUE)
-		ylim <- deltaylim(yrange)
-	} else {
-		ylim <- deltaylim( range(c(simprofile, ci_left, ci_right), na.rm=TRUE) )
+	if( is.null(ylim) ) {
+		if( plot_exp ) {
+			yrange <- range(c(simprofile, 
+												sec_exp_plus_ssd, 
+												ref_exp_plus_ssd, 
+												sec_exp_minus_ssd, 
+												ref_exp_minus_ssd), na.rm=TRUE)
+			ylim <- deltaylim(yrange)
+		} else {
+			ylim <- deltaylim( range(c(simprofile, ci_left, ci_right), na.rm=TRUE) )
+		}
 	}
 	plot(simtimeplot, simprofile, 
 			 xaxs='i', yaxs='i', xaxt = 'n',
@@ -540,6 +557,8 @@ plotSingleRNADynamic <- function( dyn_name, simtimeplot, simprofile, ci_left, ci
 		segments( exptimeplot , ref_exp_minus_ssd 
 							, exptimeplot , ref_exp_plus_ssd )
 	}
+	# return ylim upon request
+	ylim <- ylim
 }
 
 

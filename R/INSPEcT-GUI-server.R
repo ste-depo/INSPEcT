@@ -28,6 +28,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 		if( file.exists(filename) ) {
 			
 			ids <- readRDS(filename)
+			updateCheckboxInput(session, "fixyaxis_checkbox", value=FALSE)
 
 			if( class(ids) != 'INSPEcT' ) {
 				
@@ -1005,29 +1006,12 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 					column(4,h5('Optimization'), actionButton("optimize", "Run"))
 					),
 				h4('Confidence Intervals'),
-				actionButton("conf_int_button", "Estimate"),
-				uiOutput("rate_pvals")
+				actionButton("conf_int_button", "Estimate")
 				)
 		}
 		})
 	
 	## rate pvalues 
-	
-	output$rate_pvals <- renderUI({
-		ids <- contentsrea()
-		if( !is.null(ids) ) {
-			if( input$data_selection != 'User defined' & !is.null(values$rate_p) ) {
-				list(
-					h5('Rate variablity\n(p-value)'),
-					h6(paste('k1:',signif(values$rate_p['k1'],2))),
-					h6(paste('k2:',signif(values$rate_p['k2'],2))),
-					h6(paste('k3:',signif(values$rate_p['k3'],2)))
-				)
-			} else {
-				NULL
-			}
-		}
-	})	
 	
 	output$modeling_type <- renderUI({
 		if( inspect$mod_method == 'int' | input$data_selection == 'User defined' ) {
@@ -1595,7 +1579,9 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				time_min = ranges$time_min,
 				time_max = ranges$time_max,
 				experiment = experiment,
-				simdata = modeling$simdata
+				simdata = modeling$simdata,
+				ylims = if(input$fixyaxis_checkbox) isolate(ranges$ylims) else NULL,
+				rate_p = values$rate_p
 			)
 			dev.off()  # turn the device off
 		}
@@ -1685,7 +1671,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 
 	output$gene <- renderPlot({
 		suppressWarnings(try({
-			RNAdynamicsAppPlot(
+			ylims <- RNAdynamicsAppPlot(
 				data_selection = input$data_selection,
 				show_logtime = input$logtime_checkbox,
 				show_relexpr = input$relativexpr_checkbox,
@@ -1694,8 +1680,11 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				time_min = ranges$time_min,
 				time_max = ranges$time_max,
 				experiment = experiment,
-				simdata = modeling$simdata
+				simdata = modeling$simdata,
+				ylims = if(input$fixyaxis_checkbox) isolate(ranges$ylims) else NULL,
+				rate_p = values$rate_p
 			)
+			ranges$ylims <- ylims
 		}, silent = TRUE))
 	})
 	
