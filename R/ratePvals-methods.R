@@ -32,6 +32,9 @@ setMethod('ratePvals', 'INSPEcT_model', function(object, bTsh=NULL, cTsh=NULL) {
 
 #' @rdname ratePvals
 setMethod('ratePvals', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	if( nrow(object@modelRates) == 0 )
 		stop('ratePvals: run modelRates or modelRatesNF before.')
 	if( !object@NoNascent | object@NF )

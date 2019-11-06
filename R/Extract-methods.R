@@ -41,6 +41,9 @@ setMethod('[', 'INSPEcT_model', function(x, i) {
 #' ## Before subsetting time points, the model should be removed:
 #' nascentInspObj10_5genes_5tpts <- removeModel(nascentInspObj10)[1:5, 1:5]
 setMethod('[', 'INSPEcT', function(x, i, j) {
+	if( !.hasSlot(x, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	# subset the expressionSet slots (if populated)
 	if( !missing(i) ) {
 		if( is.logical(i) ) i <- which(i)
@@ -114,6 +117,9 @@ setMethod('[', 'INSPEcT_diffsteady', function(x, i, j) {
 #' modelingParams(nascentInspObj10_new)$useSigmoidFun <- FALSE
 #' \dontrun{nascentInspObj10_new <- modelRates(nascentInspObj10_new)}
 setMethod('removeModel', 'INSPEcT', function(object) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	object@model@ratesSpecs <- list()
 	return(object)
 	})
@@ -151,6 +157,9 @@ NULL
 
 #' @rdname combine
 setMethod('combine', signature(x='INSPEcT', y='INSPEcT'), function(x, y, ...) {
+	if( !.hasSlot(x, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	dots <- c(x, y, list(...))
 	dotsClasses <- sapply(dots, class)
 	if( !all(dotsClasses == 'INSPEcT') )
@@ -209,6 +218,9 @@ NULL
 
 #' @rdname split
 setMethod('split', 'INSPEcT', function(x, f, drop = FALSE, ...) {
+	if( !.hasSlot(x, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	if( nGenes(x) != length(f) )
 		stop('split: length of f must match the number of genes of x')
 	f <- as.factor(f)

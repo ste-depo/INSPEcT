@@ -17,5 +17,8 @@ setMethod('logLik', 'INSPEcT_model', function(object, ...) {
 
 #' @rdname logLik
 setMethod('logLik', 'INSPEcT', function(object, ...) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	logLik(object@model)
 	})

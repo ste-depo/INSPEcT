@@ -109,6 +109,7 @@ setClass('INSPEcT_model',
 #' @slot NoNascent A logical indicating if the nascent RNA was included into the analysis.
 #' @slot NF A logical indicating if the modeling approach is Non-Functional
 #' @slot degDuringPulse A logical indicating if degradation of RNA during the 4sU pulse was considered.
+#' @slot version A character indicating the version of INSPEcT that created the object
 #' @details Methods that apply to INSPEcT class are
 #'
 #'	\code{\link[=Extract]{[}} \cr
@@ -156,6 +157,7 @@ setClass('INSPEcT',
 		, NoNascent='logical'
 		, NF='logical'
 		, degDuringPulse='logical'
+		, version='character'
 		)
 	, prototype=list(
 		params=list(
@@ -172,7 +174,8 @@ setClass('INSPEcT',
 			),
 		NoNascent=FALSE,
 		NF=FALSE,
-		degDuringPulse=FALSE
+		degDuringPulse=FALSE,
+		version='1.17.1'
 		)
 	)
 

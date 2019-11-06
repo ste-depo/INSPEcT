@@ -88,5 +88,7 @@ Methods that apply to INSPEcT class are
 \item{\code{NF}}{A logical indicating if the modeling approach is Non-Functional}
 
 \item{\code{degDuringPulse}}{A logical indicating if degradation of RNA during the 4sU pulse was considered.}
+
+\item{\code{version}}{A character indicating the version of INSPEcT that created the object}
 }}
 

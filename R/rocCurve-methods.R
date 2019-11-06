@@ -44,7 +44,10 @@
 
 setMethod('rocCurve', signature(object='INSPEcT_model', object2='INSPEcT'), 
 	function(object, object2, cTsh=NULL, plot=TRUE, comparative=FALSE) {
-
+		if( !.hasSlot(object2, 'version') ) {
+			stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+		}
+		
 	# reduce the set of genes to the one present in the modeled object
 	if( length(object@ratesSpecs) !=  length(featureNames(object2)) )
 		object <- object[as.numeric(featureNames(object2))]

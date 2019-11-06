@@ -41,6 +41,9 @@ setMethod('modelRates', 'INSPEcT', function(object
 										  , BPPARAM=bpparam()
 										  , verbose=NULL)
 {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	if( length(object@model@ratesSpecs) > 0 )
 		stop('Remove the model before running the model again. (See "?removeModel")')
 
@@ -97,46 +100,6 @@ setMethod('modelRates', 'INSPEcT', function(object
 			stop('Seed argument must be either NULL or numeric.')
 		if( !is.null(verbose) && !is.logical(verbose) )
 			stop('verbose argument must be either NULL or logical.')
-	
-								# Time transformation
-						#		a <- findttpar(tpts)
-						#		tptsOriginal <- tpts
-						#		tptsLinear <- timetransf(tptsOriginal,a)
-						#		c <- abs(min(tptsLinear))
-						#		tptsLinear <- tptsLinear + abs(min(tptsLinear))
-
-						#		if(object@params$estimateRatesWith=="int")
-						#		{
-						#			ratesSpecs <- .inspect.engine_Integrative_NoNascent(tptsOriginal = tptsOriginal
-						#															,tptsLinear = tptsLinear
-						#															,a = a
-						#															,c = c
-						#															,concentrations = concentrations
-						#															,rates = rates
-						#															,BPPARAM = BPPARAM
-						#															,na.rm = na.rm
-						#															,verbose = verbose
-						#															,testOnSmooth = testOnSmooth
-						#															,seed = seed
-						#															,nInit = nInit
-						#															,nIter = nIter
-						#															,limitModelComplexity=limitModelComplexity
-						#															,sigmoid=sigmoid)
-						#		}else{
-						#			ratesSpecs <- .inspect.engine_Derivative_NoNascent(tptsOriginal = tptsOriginal
-						#														  ,tptsLinear = tptsLinear
-						#														  ,a = a
-						#														  ,c = c
-						#														  ,concentrations = concentrations
-						#														  ,rates = rates
-						#														  ,BPPARAM = BPPARAM
-						#														  ,na.rm = na.rm
-						#														  ,verbose = verbose
-						#														  ,testOnSmooth = testOnSmooth
-						#														  ,seed = seed
-						#														  ,nInit = nInit
-						#														  ,nIter = nIter
-						#														  ,limitModelComplexity=limitModelComplexity)
 
 		if(object@params$estimateRatesWith=="der")
 		{

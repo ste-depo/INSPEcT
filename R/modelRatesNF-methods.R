@@ -21,6 +21,9 @@
 #' }
 setMethod('modelRatesNF', 'INSPEcT', function(object, BPPARAM=SerialParam())
 {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	if( length(object@model@ratesSpecs) > 0 )
 		stop('Remove the model before running the model again. (See "?removeModel")')
 

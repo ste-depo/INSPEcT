@@ -75,6 +75,9 @@ setMethod('modelSelection', 'INSPEcT', function(object) {
 
 #' @rdname modelSelection
 setReplaceMethod('modelSelection', 'INSPEcT', function(object, value) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	pre_val <- modelSelection(object@model)
 	modelSelection(object@model) <- value
 	if( value$limitModelComplexity != pre_val$limitModelComplexity ) {

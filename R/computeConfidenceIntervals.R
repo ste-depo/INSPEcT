@@ -9,6 +9,9 @@
 
 setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object, singleGeneClass=NULL, BPPARAM=bpparam())
 {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	if(!object@NoNascent){
 
 		message("+ Nascent objects have confidence intervals by default!")

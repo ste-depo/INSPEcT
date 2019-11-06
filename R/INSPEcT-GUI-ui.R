@@ -17,6 +17,7 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 					 
 					 fileInput("file1", "Choose INSPEcT File", accept = ".rds", width = NULL,
 					 					buttonLabel = "Browse...", placeholder = "nascentInspObj10.rds"),
+					 uiOutput("file_error"),
 					 uiOutput('modeling_type'),
 					 uiOutput('select_condition'),
 					 uiOutput('select_class'),

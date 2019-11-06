@@ -57,6 +57,12 @@ setMethod('show', 'INSPEcT', function(object) {
 		message("Only Rates first guess were computed.")
 		message("Access complete rates with the method ratesFirstGuess.")
 	}
+	
+	if( .hasSlot(object, 'version') ) {
+		message(paste("INSPEcT Version",object@version))
+	} else {
+		message("This object is OBSOLETE and most of the INSPEcT routines will not work on it.")
+	}
 
 	})
 

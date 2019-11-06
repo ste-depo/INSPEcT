@@ -28,6 +28,9 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' modelingParams(nascentInspObj10)
 setMethod('modelingParams', 'INSPEcT', function(object) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	return(object@params)
 	})
 #' @rdname modelingParams
@@ -38,7 +41,10 @@ setMethod('modelingParams', 'INSPEcT', function(object) {
 #' nascentInspObj10 <- removeModel(nascentInspObj10)
 #' modelingParams(nascentInspObj10)$useSigmoidFun <- FALSE
 setReplaceMethod('modelingParams', 'INSPEcT', function(object, value) {
-
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
+	
 	if(!is.list(value))
 		stop('modelingParams: value argument must be a list')
 	if( !is.numeric(value$nInit) )

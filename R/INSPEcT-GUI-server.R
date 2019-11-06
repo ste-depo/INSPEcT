@@ -26,12 +26,26 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 
 		## load file
 		if( file.exists(filename) ) {
+			
 			ids <- readRDS(filename)
 
 			if( class(ids) != 'INSPEcT' ) {
-				return(NULL)
+				
+				error_on_load_file()
+				values$loaded_file <- FALSE
+				values$loaded_file_error_message <- 'The loaded file is not of class INSPEcT'
+				return(new(Class = 'INSPEcT'))
 
-			} else { # (the loaded object is of class INSPEcT
+			}  else if(!(.hasSlot(ids, 'version'))) {
+
+				error_on_load_file()
+				values$loaded_file <- FALSE
+				values$loaded_file_error_message <- 'The loaded file is obsolete and cannot work with the current version of INSPEcT'
+				return(new(Class = 'INSPEcT'))
+				
+			} else {
+			
+			# (the loaded object is of class INSPEcT
 				
 				## store inspect global values
 				experiment$tpts <- tpts(ids)
@@ -41,7 +55,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				# select only genes with exons and introns
 				ids <- ids[apply(is.finite(ratesFirstGuess(ids,'preMRNA')),1,all)]
 
-				if( !experiment$steady_state ) {
+				if( !experiment$steady_state & nrow(ids@modelRates) > 0 ) {
 
 					inspect$mod_method <- modelingParams(ids)$estimateRatesWith ## either "der" or "int"
 					inspect$classes <- geneClass(ids)
@@ -106,14 +120,41 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				## predifined  
 
 				values$logtime <- FALSE
+				values$loaded_file <- TRUE
 				
 				return(ids)
+			
+				}
 				
-			}
 		} else { # (if the file name does not exist)
-			return(NULL)
+		
+			error_on_load_file()
+			values$loaded_file <- FALSE
+			values$loaded_file_error_message <- 'The selected file does not exist'
+			return(new(Class = 'INSPEcT'))
+			
 		}
 
+	})
+	
+	#####################
+	## load file error ##
+	#####################
+	
+	error_on_load_file <- function() {
+		updateRadioButtons(session, 'data_selection', selected = 'User defined')
+		updateSelectInput(session, "select_class", choices = character(0))
+		updateRadioButtons(session, 'k1_function', selected = 'Constant')
+		updateRadioButtons(session, 'k2_function', selected = 'Constant')
+		updateRadioButtons(session, 'k3_function', selected = 'Constant')
+	}
+	
+	output$file_error <- renderUI({
+		if( !is.null(contentsrea()) & !values$loaded_file ) {
+			h6(paste('Error:', values$loaded_file_error_message))
+		} else {
+			NULL
+		}
 	})
 	
 	################################################
@@ -637,7 +678,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				ranges$beta_min <- min(c(gene_beta_vals,out$beta_pars[1]))
 				ranges$beta_max <- max(c(gene_beta_vals,out$beta_pars[2]))
 				
-			}, silent=FALSE)
+			}, silent = TRUE)
 		}
 		
 	})
@@ -1527,7 +1568,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 					
 				}
 				
-			}, silent = FALSE))
+			}, silent = TRUE))
 		
 	})
 	
@@ -1655,7 +1696,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				experiment = experiment,
 				simdata = modeling$simdata
 			)
-		}, silent = FALSE))
+		}, silent = TRUE))
 	})
 	
 	#######################

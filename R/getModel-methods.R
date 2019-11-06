@@ -10,12 +10,18 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' getModel(nascentInspObj10)
 setMethod('getModel', 'INSPEcT', function(object) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	return(object@model)
 	})
 #' @rdname getModel
 #'
 #' @param value An object of class INSPEcT model
 setReplaceMethod('getModel', 'INSPEcT', function(object, value) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	object@model <- value
 	object
 	})

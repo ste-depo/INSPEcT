@@ -53,6 +53,9 @@ setMethod('geneClass', 'INSPEcT_model',
 #' @rdname geneClass
 setMethod('geneClass', 'INSPEcT', function(object, bTsh=NULL, cTsh=NULL)
 {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	if(object@NoNascent & !object@NF){return(geneClass(object@model, bTsh=bTsh, cTsh=cTsh))}
 	else{.bestModel_confidenceIntervals(object, bTsh = modelSelection(object)$thresholds$brown)}
 

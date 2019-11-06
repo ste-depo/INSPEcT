@@ -17,6 +17,9 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' plotGene(nascentInspObj10, 1)
 setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TRUE, constantModel=FALSE) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	ix <- ix[1]
 	tpts <- object@tpts
 

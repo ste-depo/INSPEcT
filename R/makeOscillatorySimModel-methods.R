@@ -26,7 +26,10 @@ setMethod('makeOscillatorySimModel', 'INSPEcT', function(object
 									, na.rm=TRUE
 									, seed=NULL)
 {
-
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
+	
 	tpts <- object@tpts
 	if( !is.numeric(tpts) ) stop('makeSimModel: simulated data can be created only from time-course.')
 
