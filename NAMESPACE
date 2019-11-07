@@ -24,7 +24,7 @@ exportMethods( "[", "AIC", "calculateDelta", "calculateTau", "chisqmodel", "chis
     "featureNames<-", "geneClass", "getModel", "getModel<-", "inHeatmap", "labeledSF", "logLik", 
     "makeModelRates", "makeSimDataset", "makeSimModel", "makeOscillatorySimModel", "modelingParams", 
     "modelingParams<-", "modelRates", "modelRatesNF", "modelSelection", "modelSelection<-", 
-    "nGenes", "nTpts", "plotGene", "plotMA", "processing", "processingDelay", "ratePvals", "ratesFirstGuess",
+    "nGenes", "nTpts", "plotGene", "plotMA", "processing", "processingDelay", "calculateRatePvals", "ratePvals", "ratesFirstGuess",
     "ratesFirstGuessVar", "removeModel", "rocCurve", "rocThresholds", "sfPlot", "show", "split", "synthesis", 
     "tpts", "viewModelRates", "viewConfidenceIntervals")
 exportClasses("INSPEcT", "INSPEcT_model", "INSPEcT_diffsteady")

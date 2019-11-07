@@ -67,15 +67,13 @@ Methods that apply to INSPEcT class are
 
 \item{\code{ratesFirstGuessVar}}{An object of class ExpressionSet that contains the variances related to rates and concentrations guessed from the first part of INSPEcT analysis (before modeling)}
 
-\item{\code{ratesFirstGuessP}}{An object containing the rates first guess part of INSPEcT analysis (before modeling)}
-
-\item{\code{precision}}{A matrix that contains the estimated precision of the rates. Rows represent genes, Columns represent time points.}
+\item{\code{confidenceIntervals}}{An object of class ExpressionSet that contains the confidence intervals.}
 
 \item{\code{model}}{An object of class INSPEcT_model that contains the output of the mdoeling.}
 
 \item{\code{modelRates}}{An object of class ExpressionSet that contains all modeled the rates and concentrations.}
 
-\item{\code{confidenceIntervals}}{An object of class ExpressionSet that contains the confidence intervals.}
+\item{\code{ratePvals}}{A matrix containing the p-value relative to the variability of synthesis, processing and degradation for each gene.}
 
 \item{\code{tpts}}{A numeric vector of the time-points.}
 

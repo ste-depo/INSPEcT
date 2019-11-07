@@ -60,6 +60,9 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 
 	tpts <- object@tpts	
 
+	# update rate pvalues
+	object <- calculateRatePvalues(object)
+	
 	## in case some elements of ratesSpecs are longer than one,
 	# meaning that a unique choiche for a model has not been done yet,
 	# choose one using "bestModel" method

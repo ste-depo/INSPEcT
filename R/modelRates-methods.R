@@ -142,7 +142,6 @@ setMethod('modelRates', 'INSPEcT', function(object
 		## update and return the object
 		# names(ratesSpecs) <- featureNames(object)
 		object@model@ratesSpecs <- ratesSpecs
-		object@model@modeledGenes <- length(featureNames(object))
 		object <- makeModelRates(object)
 		object@NF <- FALSE
 		return(object)
@@ -256,9 +255,6 @@ setMethod('modelRates', 'INSPEcT', function(object
 		object <- makeModelRates(object)
 		object <- setConfidenceIntervals(object=object,confidenceIntervals=confidenceIntervals)
 		object@NF <- FALSE
-
-		object@model@modeledGenes <- length(featureNames(object))
-
 		return(object)
 	}
 })

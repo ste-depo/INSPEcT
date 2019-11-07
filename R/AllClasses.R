@@ -36,7 +36,6 @@ NULL
 #' @slot params A list that defines thresholds and how to perform log likelihood ratio tests
 #' @slot ratesSpecs A list containing the modeling output
 #' @slot simple A logical that indicates whether the mode of INSPEcT is simple (no pre-mRNA and degradation rates) or not.
-#' @slot modeledGenes A numeric that indicates the number of modeled genes (for multiple testing purpouses).
 #' @details Methods that apply to INSPEcT_model class are
 #'
 #'	\code{\link{[}} \cr
@@ -56,7 +55,6 @@ setClass('INSPEcT_model',
 		params='list'
 		, ratesSpecs='list'
 		, simple='logical'
-		, modeledGenes='numeric'
 		)
 	, prototype=list(
 		simple=FALSE
@@ -98,11 +96,10 @@ setClass('INSPEcT_model',
 #' @slot params A list of parameters of the modeling part
 #' @slot ratesFirstGuess An object of class ExpressionSet that contains all the rates and concentrations guessed from the first part of INSPEcT analysis (before modeling)
 #' @slot ratesFirstGuessVar An object of class ExpressionSet that contains the variances related to rates and concentrations guessed from the first part of INSPEcT analysis (before modeling)
-#' @slot ratesFirstGuessP An object containing the rates first guess part of INSPEcT analysis (before modeling)
-#' @slot precision A matrix that contains the estimated precision of the rates. Rows represent genes, Columns represent time points.
+#' @slot confidenceIntervals An object of class ExpressionSet that contains the confidence intervals.
 #' @slot model An object of class INSPEcT_model that contains the output of the mdoeling.
 #' @slot modelRates An object of class ExpressionSet that contains all modeled the rates and concentrations.
-#' @slot confidenceIntervals An object of class ExpressionSet that contains the confidence intervals.
+#' @slot ratePvals A matrix containing the p-value relative to the variability of synthesis, processing and degradation for each gene.
 #' @slot tpts A numeric vector of the time-points.
 #' @slot labeledSF A numeric vector of the scaling factor used for inter time-point normalization of Nascent-seq libraries.
 #' @slot tL A numeric containing the length of the Nascent pulse.
@@ -146,11 +143,10 @@ setClass('INSPEcT',
 		params='list'
 		, ratesFirstGuess='ExpressionSet'
 		, ratesFirstGuessVar='ExpressionSet'
-		, ratesFirstGuessP='numeric'
-		, precision='matrix'
+		, confidenceIntervals='ExpressionSet'
 		, model='INSPEcT_model'
 		, modelRates='ExpressionSet'
-		, confidenceIntervals='ExpressionSet'
+		, ratePvals='data.frame'
 		, tpts='vector'
 		, labeledSF='numeric'
 		, tL='numeric'

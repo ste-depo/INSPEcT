@@ -20,6 +20,9 @@ setGeneric('logLik', function(object, ...)
 #' Retrieve a single p-value for each rate
 setGeneric('ratePvals', function(object, bTsh=NULL, cTsh=NULL) 
 	standardGeneric('ratePvals'))
+#' Calculate a single p-value for each rate
+setGeneric('calculateRatePvals', function(object, bTsh=NULL, cTsh=NULL) 
+	standardGeneric('calculateRatePvals'))
 #' Retrieve the regulatory class for each gene
 setGeneric('geneClass', function(object, bTsh=NULL, cTsh=NULL)
 	standardGeneric('geneClass'))
