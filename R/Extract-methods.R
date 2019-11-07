@@ -50,6 +50,7 @@ setMethod('[', 'INSPEcT', function(x, i, j) {
 		if( nrow(x@ratesFirstGuess)>0 ) x@ratesFirstGuess <- x@ratesFirstGuess[i]
 		if( nrow(x@ratesFirstGuessVar)>0 ) x@ratesFirstGuessVar <- x@ratesFirstGuessVar[i]
 		if( nrow(x@modelRates)>0 ) x@modelRates <- x@modelRates[i]
+		if( nrow(x@confidenceIntervals)>0 ) x@confidenceIntervals <- x@confidenceIntervals[i]
 		# subset the INSPEcT_model slot
 		x@model <- x@model[i]		
 	}
@@ -65,6 +66,8 @@ setMethod('[', 'INSPEcT', function(x, i, j) {
 				x@ratesFirstGuess <- x@ratesFirstGuess[,ix]
 				ix <- pData(x@ratesFirstGuessVar)$time %in% x@tpts
 				x@ratesFirstGuessVar <- x@ratesFirstGuessVar[,ix]
+				ix <- pData(x@confidenceIntervals)$time %in% x@tpts
+				x@confidenceIntervals <- x@confidenceIntervals[,ix]
 			}
 		}
 	}
