@@ -3,11 +3,10 @@
 #' @description
 #' This function is used to compute the confidence intervals for a given set of modeled genes in the NoNascent scenario.
 #' @param object An object of class INSPEcT_model
-#' @param singleGeneClass The regulative class of the single gene under analysis (default=NULL)
 #' @param BPPARAM Parallelization parameters for bplapply. By default bpparam()
 #' @return An object of class INSPEcT.
 
-setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object, singleGeneClass=NULL, BPPARAM=bpparam())
+setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object, BPPARAM=bpparam())
 {
 	if( !.hasSlot(object, 'version') ) {
 		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
@@ -19,14 +18,9 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object,
 		
 	} else {
 
-		if(nGenes(object)==1&!is.null(singleGeneClass))
-		{
-			gc <- singleGeneClass
-		}else{
-			gc <- geneClass(object)
-			names(gc) <- featureNames(object)
-		}
-		
+		gc <- geneClass(object)
+		names(gc) <- featureNames(object)
+
 		llConfidenceThreshold <- object@model@params$logLikelihoodConfidenceThreshold
 		if(is.null(llConfidenceThreshold)) llConfidenceThreshold <- 0.95
 		llConfidenceThreshold <- qchisq(llConfidenceThreshold,1)

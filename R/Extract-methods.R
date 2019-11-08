@@ -49,8 +49,9 @@ setMethod('[', 'INSPEcT', function(x, i, j) {
 		if( is.logical(i) ) i <- which(i)
 		if( nrow(x@ratesFirstGuess)>0 ) x@ratesFirstGuess <- x@ratesFirstGuess[i]
 		if( nrow(x@ratesFirstGuessVar)>0 ) x@ratesFirstGuessVar <- x@ratesFirstGuessVar[i]
-		if( nrow(x@modelRates)>0 ) x@modelRates <- x@modelRates[i]
 		if( nrow(x@confidenceIntervals)>0 ) x@confidenceIntervals <- x@confidenceIntervals[i]
+		if( nrow(x@modelRates)>0 ) x@modelRates <- x@modelRates[i]
+		if( nrow(x@ratePvals)>0 ) x@ratePvals <- x@ratePvals[i,]
 		# subset the INSPEcT_model slot
 		x@model <- x@model[i]		
 	}

@@ -55,19 +55,11 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 
 	if( nrow(oneGene@modelRates) > 0 ) {
 
-		# if(object@NoNascent)
-		# {
-			pValues <- formatC(as.numeric(ratePvals(object)[ix,]),format = "e", digits = 1)
-			names(pValues) <- c('synthesis','processing','degradation')
-		# }else{
-		# 	pValues <- formatC(as.numeric(ratePvals(oneGene)),format = "e", digits = 1)
-		# 	names(pValues) <- c('synthesis','processing','degradation')		
-		# }
-
-		geneClassIX <- geneClass(object)[ix]
+		pValues <- formatC(as.numeric(ratePvals(object)[ix,]),format = "e", digits = 1)
+		names(pValues) <- c('synthesis','processing','degradation')
 
 		if( oneGene@NoNascent & !oneGene@NF )
-			foe <- capture.output(oneGene <- computeConfidenceIntervals(oneGene,singleGeneClass = geneClassIX))
+			foe <- capture.output(oneGene <- computeConfidenceIntervals(oneGene))
 
 		alpha_left <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_left"),error=function(e){rep(NaN,length(tpts(oneGene)))})
 		alpha_right <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_right"),error=function(e){rep(NaN,length(tpts(oneGene)))})
