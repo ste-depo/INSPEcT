@@ -84,12 +84,12 @@ setMethod('calculateRatePvals', 'INSPEcT', function(object) {
 			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
 			pchisq(k_scores_out$value,length(tpts(object))-1,lower.tail=FALSE)
 		}))
-		if(object@params$padj)
+		if(modelSelection(object)$padj)
 		{
 			rate_pvals <- data.frame(
-				"synthesis"=p.adjust(fitResults_synthesis, method="BH"),
-				"processing"=p.adjust(fitResults_processing, method="BH"),
-				"degradation"=p.adjust(fitResults_degradation, method="BH"),
+				"synthesis"=p.adjust(fitResults_synthesis, method="BH", n=length(fitResults_synthesis)),
+				"processing"=p.adjust(fitResults_processing, method="BH", n=length(fitResults_processing)),
+				"degradation"=p.adjust(fitResults_degradation, method="BH", n=length(fitResults_degradation)),
 				row.names=featureNames(object))
 		} else {
 			rate_pvals <- data.frame(
@@ -246,12 +246,12 @@ calculate_rates_pvalues <- function(object, bTsh=NULL, cTsh=NULL, dfmax=Inf) {
 		if(is.matrix(alphaLLRtestPvlas)){synthesisBP <- brown_method_mask(alphaLLRtestPvlas, alphaChisqMask)}else{synthesisBP <- alphaLLRtestPvlas}
 		if(is.matrix(betaLLRtestPvlas)){degradationBP <- brown_method_mask(betaLLRtestPvlas, betaChisqMask)}else{degradationBP <- betaLLRtestPvlas}
 		if(is.matrix(gammaLLRtestPvlas)){processingBP <- brown_method_mask(gammaLLRtestPvlas, gammaChisqMask)}else{processingBP <- gammaLLRtestPvlas}
-
-		if(object@params$padj)
+		
+		if(modelSelection(object)$padj)
 		{
-			synthesisBP <- p.adjust(synthesisBP,method="BH")
-			degradationBP <- p.adjust(degradationBP,method="BH")
-			processingBP <- p.adjust(processingBP,method="BH")
+			synthesisBP <- p.adjust(synthesisBP,method="BH",n=length(synthesisBP))
+			degradationBP <- p.adjust(degradationBP,method="BH",n=length(degradationBP))
+			processingBP <- p.adjust(processingBP,method="BH",n=length(processingBP))
 		}
 
 		ratePvals <- data.frame(
@@ -348,8 +348,8 @@ calculate_rates_pvalues <- function(object, bTsh=NULL, cTsh=NULL, dfmax=Inf) {
 		if( length(rates_to_avoid)>0 ) {
 			ratePvals[,c('a'='synthesis','b'='degradation','c'='processing')[rates_to_avoid]] <- 1
 		}
- 		if(object@params$padj) {
-			ratePvals <- data.frame(apply(ratePvals, 2, p.adjust, method="BH"))
+ 		if(modelSelection(object)$padj) {
+			ratePvals <- data.frame(apply(ratePvals, 2, p.adjust, method="BH", n=nrow(ratePvals)))
 			if(ncol(ratePvals)!=3){ratePvals <- t(ratePvals); rownames(ratePvals) <- rownames(aictest)}
 		}
 		return(ratePvals)

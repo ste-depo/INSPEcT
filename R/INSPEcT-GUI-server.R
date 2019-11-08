@@ -85,8 +85,8 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 					}
 					
 					## update (converted) gene classes in the select input box
-					classes_table <- table(isolate(inspect$classes))
-					names(classes_table) <- convert_gene_classes( names(classes_table) )
+					classes_table <- sort(table(isolate(inspect$classes)), decreasing = TRUE)
+					# names(classes_table) <- convert_gene_classes( names(classes_table) )
 					classes_table_string <- paste( names(classes_table) , '(', classes_table, ')' )
 					updateSelectInput(session, "select_class", 
 						choices = classes_table_string, selected = classes_table_string[1])
@@ -165,7 +165,8 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 	observe({
 		if( !is.null(input$select_class) ) {
 			if( !experiment$steady_state ) {
-				selected_class <- reconvert_gene_classes(strsplit( input$select_class , ' ')[[1]][1])
+				# selected_class <- reconvert_gene_classes(strsplit( input$select_class , ' ')[[1]][1])
+				selected_class <- strsplit( input$select_class , ' ')[[1]][1]
 				updateSelectInput(session, "select", selected = NULL,
 					choices = sort(featureNames(contentsrea()[inspect$classes == selected_class])))
 			}
@@ -194,8 +195,8 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				modeling_type <- 'K123'
 				model_names <- c('alpha','gamma','beta')
 			} else { # inspect$mod_method == 'der'
-				if( experiment$no_nascent & (gene_class  %in% c('KVK','KKV','KVV') ) ) {
-					if( gene_class %in% c('KVK','KVV') ) {
+				if( experiment$no_nascent & (gene_class  %in% c('p','d','pd') ) ) {  ## c('KVK','KKV','KVV')
+					if( gene_class %in% c('p','pd') ) {
 						modeling_type <- 'TK13'
 						model_names <- c('total','alpha','beta')
 					} else {

@@ -50,6 +50,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 	if( !.hasSlot(object, 'version') ) {
 		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
 	}
+	
 	## get ratesSpec field
 	ratesSpecs <- object@model@ratesSpecs
 
@@ -61,22 +62,23 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 	tpts <- object@tpts	
 
 	# update rate pvalues
-	object <- calculateRatePvalues(object)
+	object <- calculateRatePvals(object)
 	
 	## in case some elements of ratesSpecs are longer than one,
 	# meaning that a unique choiche for a model has not been done yet,
 	# choose one using "bestModel" method
-	if( any(sapply(ratesSpecs, length)!=1) )
-	{	
-		if(object@NoNascent)
-		{
-			ratesSpecs <- .bestModel(object@model)@ratesSpecs			
-		}else{
-			ratesSpecs <- .bestModel(object@model,Nascent=TRUE)@ratesSpecs # Always VVV
-		}
-	}
-	names(ratesSpecs) <- allGenes
-	bestModels <- sapply(ratesSpecs,names)
+	# if( any(sapply(ratesSpecs, length)!=1) )
+	# {	
+	# 	if(object@NoNascent)
+	# 	{
+	# 		ratesSpecs <- .bestModel(object@model)@ratesSpecs			
+	# 	}else{
+	# 		ratesSpecs <- .bestModel(object@model,Nascent=TRUE)@ratesSpecs # Always VVV
+	# 	}
+	# }
+	# names(ratesSpecs) <- allGenes
+	# bestModels <- sapply(ratesSpecs,names)
+	bestModels <- geneClassForRateSpecs(object)
 
 	if(object@params$estimateRatesWith=="der")
 	{

@@ -29,17 +29,17 @@
 
 ##########################
 
-convert_gene_classes <- function(gene_classes) {
-	diz <- c('0'='KKK', 'a'='VKK', 'b'='KKV', 'c'='KVK',
-		'ab'='VKV', 'ac'='VVK', 'bc'='KVV', 'abc'='VVV')
-	unname(diz[gene_classes])
-}
-
-reconvert_gene_classes <- function(gene_classes) {
-	diz <- c('KKK'='0','VKK'='a','KKV'='b','KVK'='c',
-		'VKV'='ab','VVK'='ac','KVV'='bc','VVV'='abc')
-	unname(diz[gene_classes])
-}
+# convert_gene_classes <- function(gene_classes) {
+# 	diz <- c('0'='KKK', 'a'='VKK', 'b'='KKV', 'c'='KVK',
+# 		'ab'='VKV', 'ac'='VVK', 'bc'='KVV', 'abc'='VVV')
+# 	unname(diz[gene_classes])
+# }
+# 
+# reconvert_gene_classes <- function(gene_classes) {
+# 	diz <- c('KKK'='0','VKK'='a','KKV'='b','KVK'='c',
+# 		'VKV'='ab','VVK'='ac','KVV'='bc','VVV'='abc')
+# 	unname(diz[gene_classes])
+# }
 
 ###########################
 ## function for ranges ####
@@ -357,7 +357,7 @@ RNAdynamicsAppMakeConfInt <- function(data_selection,
 		conf_int <- compute_ci_Derivative_Nascent(c(k1_params, k2_params, k3_params),
 																							tpts = experiment_tpts,
 																							model_tpts = simulation_time,
-																							classTmp = reconvert_gene_classes(gene_class),
+																							classTmp = gene_class, #reconvert_gene_classes(gene_class),
 																							experimentalP = reference_preMRNA,
 																							experimentalM = reference_mRNA,
 																							experimentalA = reference_synthesis,
