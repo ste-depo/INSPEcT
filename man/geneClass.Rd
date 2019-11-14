@@ -4,43 +4,42 @@
 \docType{methods}
 \name{geneClass}
 \alias{geneClass}
-\alias{geneClass,INSPEcT_model-method}
 \alias{geneClass,INSPEcT-method}
+\alias{geneClass,INSPEcT_model-method}
 \alias{geneClass,INSPEcT_diffsteady-method}
 \title{Retrieve the regulatory class for each gene}
 \usage{
-geneClass(object, bTsh = NULL, cTsh = NULL)
+geneClass(object, ...)
 
-\S4method{geneClass}{INSPEcT_model}(object, bTsh = NULL, cTsh = NULL)
+\S4method{geneClass}{INSPEcT}(object, ...)
 
-\S4method{geneClass}{INSPEcT}(object, bTsh = NULL, cTsh = NULL)
+\S4method{geneClass}{INSPEcT_model}(object, ...)
 
-\S4method{geneClass}{INSPEcT_diffsteady}(object, bTsh = NULL,
-  cTsh = NULL)
+\S4method{geneClass}{INSPEcT_diffsteady}(object, ...)
 }
 \arguments{
 \item{object}{An object of class INSPEcT or INSPEcT_model}
 
-\item{bTsh}{A numeric representing the p-value threshold for considering a rate as variable. P-values are calculated through \code{\link{ratePvals}}}
-
-\item{cTsh}{A numeric representing the threshold for the chi-squared test to consider a model as valid}
+\item{...}{specify the threshold for rate variability 'bTsh' in case of 'INSPEcT_diffsteady' objects (default = .1)}
 }
 \value{
 A character containing the regulatory class for each gene
 }
 \description{
 This method returns a factor that summarise the gene class (transcriptional regulatory mechanism) that
-INSPEcT has assigned to each gene. The classification depends on the chi-squared and Brown's method
-thresholds, that can be both provided as arguments. If the user decides a different thresholding respect to
-the default, these new values can be permanently set within the object.
+INSPEcT has assigned to each gene. The variability of each rate is indicated with a letter, 's' for
+synthesis, 'p' for processing and 'd' for degradation. In case more than one rate is variable, the 
+letters associated to each variable rate are merged, for example 'sd' stands for a gene where synthesis
+and degradation cotributed to transcriptional changes. 'no-reg' is associated to genes with no
+change in transcription. The classification depends on the thresholds of the goodness-of-fit and
+rate variability tests that can be changed via the method \code{\link{calculateRatePvals}}.
 }
 \examples{
 nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 geneClass(nascentInspObj10)
-# see the classification with another threshold for chi-squared test 
-geneClass(nascentInspObj10, cTsh=.2)
-# set the new threshold permanently within the object
-modelSelection(nascentInspObj10)$thresholds$chisquare <- .2
+# see the classification with another threshold for rate variability
+nascentInspObj10 <- calculateRatePvals(nascentInspObj10, p_variability=rep(1,3))
+geneClass(nascentInspObj10)
 }
 \seealso{
 \code{\link{ratePvals}}

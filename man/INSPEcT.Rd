@@ -6,21 +6,22 @@
 \alias{INSPEcT-package}
 \title{INSPEcT package}
 \description{
-INSPEcT (INference of Synthesis, Processing and degradation rates from Transcriptome data),
+INSPEcT (INference of Synthesis, Processing and dEgradation rates from Transcriptomic data),
 is a package that analyse RNA-seq data in order to evaluate synthesis, processing and degradation
 rates and asses via modeling the rates that determines changes in RNA levels.
-
-It implements two classes (\code{\linkS4class{INSPEcT_model}} and 
-\code{\linkS4class{INSPEcT}}) and their corresponding methods. To have a detailed 
-description of how the two classes are structured and which methods apply on, type:
-
-\code{?'INSPEcT-class'} \cr
-\code{?'INSPEcT_model-class'} \cr
-\code{?'INSPEcT_diffsteady-class'}
 
 To see how the typical workflow of INSPEcT works, type: \cr
 \code{vignette('INSPEcT')}
 
-Last but not least, to obtain a citation, type: \cr
+INSPEcT implements two main classes (\code{\linkS4class{INSPEcT}} and 
+\code{\linkS4class{INSPEcT_diffsteady}}) and their corresponding methods. 
+To have a detailed description of how the two classes are structured 
+and which methods apply on, type:
+
+\code{?'INSPEcT-class'} \cr
+\code{?'INSPEcT_diffsteady-class'}
+
+
+To obtain the citation, type: \cr
 \code{citation('INSPEcT')}
 }

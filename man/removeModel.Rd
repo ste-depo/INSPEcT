@@ -39,6 +39,5 @@ nascentInspObj10_5genes_5tpts <- removeModel(nascentInspObj10)[1:5, 1:5]
 ## the previous model should be removed:
 nascentInspObj10_old <- nascentInspObj10
 nascentInspObj10_new <- removeModel(nascentInspObj10)
-modelingParams(nascentInspObj10_new)$useSigmoidFun <- FALSE
-\dontrun{nascentInspObj10_new <- modelRates(nascentInspObj10_new)}
+\dontrun{nascentInspObj10_new <- modelRates(nascentInspObj10_new, useSigmoidFun = FALSE)}
 }

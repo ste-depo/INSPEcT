@@ -264,7 +264,7 @@ The global quality of each model is evaluated through chi-squared goodness-of-fi
 
 chisq<-chisqmodel(nascentInspObj10)
 hist(log10(chisq), main='', xlab='log10 chi-squared p-value')
-discard<-which(chisq>1e-4)
+discard<-which(chisq>1e-2)
 featureNames(nascentInspObj10)[discard]
 nascentInspObj_reduced<-nascentInspObj10[-discard]  
 ```
@@ -469,8 +469,7 @@ Further, the method <i>rocThresholds</i> can be used to assess the sensitivity a
 
 ```{r ROCsThresholds, message=FALSE, warnings=FALSE, eval=TRUE, fig.width=8, fig.height=4, fig.cap="Effect of chi-squared and Brown tests thresholds in <i>INSPEcT</i> classification. Plot of the sensitivity (black curve) and specificity (red curve) that is achieved after performing the log-likelihood ratio and Brown method for combining p-values with selected thresholds; thresholds that can be set for chi-squared test to accept models that will undergo the log-likelihood ratio test and for Brown p-value to assess variability of rates"}
 
-rocThresholds(simRates[1:100],nascentSim2replicates,
-  bTsh=c(.01,.01,.05),cTsh=.1)
+rocThresholds(simRates[1:100],nascentSim2replicates)
 
 ```
 
@@ -501,38 +500,27 @@ oscillatoryWithNascentK3<-makeSimDataset(object=oscillatorySimRatesK3
                                    ,seed=1)
 ```
 
-## Parameters setting
+## Non default parameters for modeling and model selection
     
-If desired, different parameters can be set for both the modelling and the testing part. Regarding the modelling part, we might want to increase the number of different initializations that are performed for each gene (<i>nInit</i> option) or increase the maximum number of steps in the rates optimization process (<i>nIter</i> option). All these choices could improve the performance of the method, but also the needed computational time; the impact of these options on the quality of the modelling can be evaluated using simulated datasets.
+If desired, different parameters can be set for both the modelling and the testing part. Regarding the modeling part, we might want to increase the number of different initializations that are performed for each gene (<i>nInit</i> option) or increase the maximum number of steps in the rates optimization process (<i>nIter</i> option). All these choices could improve the performance of the method, but also the needed computational time; the impact of these options on the quality of the modelling can be evaluated using simulated datasets.
 
-```{r parameters1, message=FALSE, warnings=FALSE, eval=TRUE}
-
-nascentInspObj10<-removeModel(nascentInspObj10)
-
-modelingParams(nascentInspObj10)$nInit<-20
-modelingParams(nascentInspObj10)$nIter<-1000
-
+```{r parameters1, message=FALSE, warnings=FALSE, eval=FALSE}
+nascentInspObj10<-modelRates(nascentInspObj10, nInit=20, nIter=1000)
 ```
 
-Instead, we might want to change the thresholds for chi-squared and log-likelihood ratio tests, or define the specific set of models to be compared with log-likelihood ratio test while assessing if a given rate is variable or not. The chi-squared test is used to discard bad models that will not enter in the model selection. By default, the threshold of acceptance is set to 0.2 and in this example we decide to be more stringent and set the threshold to 0.1. In case of low number of time points, few or no models can result in a low chi-square. In these case, it could be necessary to use larger values for the chi-squared test threshold, or be completely comprehensive and set the threshold to 1. The threshold relative to the Brown test is used to call differential regulation and can be set independently for each rate. Low threshold of the Brown test reflect in a more strict call for differential regulation of the rate. In this example, we are changing the thresholds of both the chi-squared test and the Brown test.
+Alternatively, it is possible to change the thresholds for goodness-of-fit (chi-squared) and variability tests. The goodness-of-fit is used to discard bad models that will not enter in the model selection. By default, the threshold of acceptance is set to 0.1 and in this example we decide to be less stringent and set the threshold to 0.2. In case of low number of time points, few or no models can result in a low chi-square. In these case, it could be necessary to use larger values for the chi-squared test threshold, or be completely comprehensive and set the threshold to 1. The threshold relative to the variability test is used to call differential regulation and can be set independently for each rate. Low thresholds reflect in a more strict call for differential regulation of the rate. In this example, we are changing the thresholds of both the goodness-of-fit and variability tests, eventually regenerating p-values and modeled rates.
 
 ```{r parameters2, message=FALSE, eval=TRUE}
-
-modelSelection(matureInspObj10)$thresholds$chisquare<-.1
-modelSelection(matureInspObj10)$thresholds$brown<-c(synthesis=.01
-                                    ,processing=.01
-                                    ,degradation=.05)
+matureInspObj10 <- calculateRatePvals(matureInspObj10, p_goodness_of_fit = .2, p_variability = c(.01,.01,.05))
 ```
 
-To have a sense of all parameters that can be set, type:
+In general, to increase reproducitbilty of the results, the parameters used for the modeling and for the model selection can be accessed also later by using the method <i>modelingParams<\i> and <i>modelSelection<\i>:
 
 ```{r parameters3, message=TRUE, eval=TRUE}
-
-## modelling
-modelingParams(matureInspObj10)
-
+## modeling
+str(modelingParams(matureInspObj10))
 ## model selection and testing framework
-modelSelection(matureInspObj10)
+str(modelSelection(matureInspObj10))
 ```
 
 # Analysis of RNA dynamics in steady state RNA-seq data

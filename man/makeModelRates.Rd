@@ -33,9 +33,7 @@ some testing parameters has changed.
 \examples{
 nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 viewModelRates(nascentInspObj10, 'degradation')
-## force every degradation rate to be accepted as variable
-modelSelection(getModel(nascentInspObj10))$thresholds$brown <- 
-  c(synthesis=.01, degradation=1, processing=.01)
-nascentInspObj10 <- makeModelRates(nascentInspObj10)
+## force every degradation rate to be accepted as variable (makeModelRates is called internally)
+nascentInspObj10 <- calculateRatePvals(nascentInspObj10, p_variability = c(.05,.05,1))
 viewModelRates(nascentInspObj10, 'degradation')
 }

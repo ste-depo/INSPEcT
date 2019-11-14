@@ -6,7 +6,7 @@
 \alias{ratePvals,INSPEcT-method}
 \title{Retrieve a single p-value for each rate}
 \usage{
-ratePvals(object, bTsh = NULL, cTsh = NULL)
+ratePvals(object)
 
 \S4method{ratePvals}{INSPEcT}(object)
 }

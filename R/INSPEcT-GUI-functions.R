@@ -500,13 +500,12 @@ RNAdynamicsAppPlot <- function(data_selection,
 plotSingleRNADynamic <- function( dyn_name, tag, simtimeplot, simprofile, ci_left, ci_right, plot_exp, exptimeplot, ref_exp, sec_exp, ssd_exp, show_relexpr = FALSE, ylim, rate_p = NULL ) {
 	
 	if( !is.null(rate_p) ) {
-		dyn_name <- paste(dyn_name, paste0('(p=',signif(rate_p,2),')'), sep = '\n')
+		p_name <- paste0('(p=',signif(rate_p,2),')')
 	} else {
-		if( tag == '' ) {
-			dyn_name <- paste(dyn_name, '', sep = '\n')	
-		} else {
-			dyn_name <- gsub("^","paste('", gsub("$",")", gsub("\\)", "'),')'", gsub("\\(", "(', bold('", paste(dyn_name, paste0('(', tag, ')'))))))
-		}
+		p_name <- ''
+	}
+	if( tag != '' ) {
+		dyn_name <- gsub("^","paste('", gsub("$",")", gsub("\\)", "'),')'", gsub("\\(", "(', bold('", paste(dyn_name, paste0('(', tag, ')'))))))
 	}
 	deltaylim <- function( yrange ) {
 		deltarange <- yrange[2] * .05
@@ -548,12 +547,14 @@ plotSingleRNADynamic <- function( dyn_name, tag, simtimeplot, simprofile, ci_lef
 		}
 	}
 	plot(simtimeplot, simprofile, 
-			 xaxs='i', yaxs='i', xaxt = 'n',
-			 ylab = parse(text=dyn_name), type='l', xlab='', lwd=2, cex.lab = 1.7, cex.axis=1.3,  
+			 xaxs='i', yaxs='i', xaxt = 'n', ylab='',
+			 type='l', xlab='', lwd=2, cex.lab = 1.7, cex.axis=1.3,  
 			 xlim = range(simtimeplot) 
 			 + diff(range(simtimeplot)) * c(-.05, .05),
 			 ylim = ylim
 	)
+	mtext(parse(text=dyn_name), 2, 4)
+	mtext(p_name, 2, 3)
 	matlines(simtimeplot, cbind(ci_left, ci_right), lty=2, col=1)	
 	if( plot_exp ) {
 		points( exptimeplot, sec_exp, pch=1, col='grey')
