@@ -27,9 +27,10 @@ setMethod('modelRatesNF', 'INSPEcT', function(object, BPPARAM=SerialParam())
 	if( length(object@model@ratesSpecs) > 0 )
 		stop('Remove the model before running the model again. (See "?removeModel")')
 
-	llConfidenceThreshold <- object@model@params$logLikelihoodConfidenceThreshold
-	if(is.null(llConfidenceThreshold)) llConfidenceThreshold <- 0.95
-	llConfidenceThreshold <- qchisq(llConfidenceThreshold,1)
+	# llConfidenceThreshold <- object@model@params$logLikelihoodConfidenceThreshold
+	# if(is.null(llConfidenceThreshold)) llConfidenceThreshold <- 0.95
+	# llConfidenceThreshold <- qchisq(llConfidenceThreshold,1)
+	llConfidenceThreshold <- qchisq(0.95,1)
 
 	NoNascent <- object@NoNascent
 
@@ -104,6 +105,7 @@ setMethod('modelRatesNF', 'INSPEcT', function(object, BPPARAM=SerialParam())
 	object@modelRates <- modelRates
 	object@NF <- TRUE
 	object <- setConfidenceIntervals(object=object,confidenceIntervals=confidenceIntervals)
+	object <- calculateRatePvals(object)
 
 	return(object)
 

@@ -9,10 +9,9 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' logLik(nascentInspObj10)
 setMethod('logLik', 'INSPEcT_model', function(object, ...) {
-	t(sapply(object@ratesSpecs, function(x) 
-		tryCatch(sapply(x, '[[', 'logLik'),
-			error=function(e) c("0"=NA,"a"=NA,"b"=NA,"c"=NA,"ab"=NA,"bc"=NA,"ac"=NA,"abc"=NA))
-		))
+	out <- logLik_internal(object)
+	colnames(out) <- c("no-reg","s","p","d","sd","sp","pd","spd")
+	return(out)
 	})
 
 #' @rdname logLik
@@ -22,3 +21,10 @@ setMethod('logLik', 'INSPEcT', function(object, ...) {
 	}
 	logLik(object@model)
 	})
+
+logLik_internal <- function(object) {
+	t(sapply(object@ratesSpecs, function(x) 
+		tryCatch(sapply(x, '[[', 'logLik'),
+						 error=function(e) c("0"=NA,"a"=NA,"b"=NA,"c"=NA,"ab"=NA,"bc"=NA,"ac"=NA,"abc"=NA))
+	))
+}

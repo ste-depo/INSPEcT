@@ -17,13 +17,14 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object,
 		return(object)
 		
 	} else {
-
-		gc <- geneClass(object)
+		
+		gc <- geneClassInternal(object)
 		names(gc) <- featureNames(object)
 
-		llConfidenceThreshold <- object@model@params$logLikelihoodConfidenceThreshold
-		if(is.null(llConfidenceThreshold)) llConfidenceThreshold <- 0.95
-		llConfidenceThreshold <- qchisq(llConfidenceThreshold,1)
+		# llConfidenceThreshold <- object@model@params$logLikelihoodConfidenceThreshold
+		# if(is.null(llConfidenceThreshold)) llConfidenceThreshold <- 0.95
+		# llConfidenceThreshold <- qchisq(llConfidenceThreshold,1)
+		llConfidenceThreshold <- qchisq(0.95,1)
 
 		eiGenes <- featureNames(object)
 
@@ -46,13 +47,12 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object,
 
 			parameters <- unlist(object@model@ratesSpecs[[g]][[classTmp]])
 			parameters <- unlist(parameters[grep("params",names(parameters))])
-			
 			parameters <- c(parameters[grep("total",names(parameters))],
 							parameters[grep("mature",names(parameters))],
 							parameters[grep("alpha",names(parameters))],
 							parameters[grep("gamma",names(parameters))],
 							parameters[grep("beta",names(parameters))])
-
+			
 			optTmp <- rates_derivativeModels(tpts=tpts, class=classTmp, parameters=parameters)
 
 			foe <- capture.output({ # Just to capture the output of multiroot function

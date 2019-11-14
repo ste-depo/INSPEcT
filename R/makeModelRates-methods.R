@@ -40,10 +40,8 @@ setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
 #' @examples
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' viewModelRates(nascentInspObj10, 'degradation')
-#' ## force every degradation rate to be accepted as variable
-#' modelSelection(getModel(nascentInspObj10))$thresholds$brown <- 
-#'   c(synthesis=.01, degradation=1, processing=.01)
-#' nascentInspObj10 <- makeModelRates(nascentInspObj10)
+#' ## force every degradation rate to be accepted as variable (makeModelRates is called internally)
+#' nascentInspObj10 <- calculateRatePvals(nascentInspObj10, p_variability = c(.05,.05,1))
 #' viewModelRates(nascentInspObj10, 'degradation')
 
 setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
@@ -61,25 +59,20 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 
 	tpts <- object@tpts	
 
-	# update rate pvalues
-	object <- calculateRatePvals(object)
+	# choose the best model for each gene in ratesSpecs 
+	if( any(sapply(ratesSpecs, length)!=1) )
+	{
+		if(object@NoNascent)
+		{
+			bestModels <- geneClassInternal(object)
+		}else{
+			bestModels <- rep('abc', length(allGenes))
+			names(bestModels) <- allGenes
+		}
+	}
+	ratesSpecs <- lapply(seq_along(ratesSpecs), function(i) ratesSpecs[[i]][bestModels[i]])
+	names(ratesSpecs) <- allGenes
 	
-	## in case some elements of ratesSpecs are longer than one,
-	# meaning that a unique choiche for a model has not been done yet,
-	# choose one using "bestModel" method
-	# if( any(sapply(ratesSpecs, length)!=1) )
-	# {	
-	# 	if(object@NoNascent)
-	# 	{
-	# 		ratesSpecs <- .bestModel(object@model)@ratesSpecs			
-	# 	}else{
-	# 		ratesSpecs <- .bestModel(object@model,Nascent=TRUE)@ratesSpecs # Always VVV
-	# 	}
-	# }
-	# names(ratesSpecs) <- allGenes
-	# bestModels <- sapply(ratesSpecs,names)
-	bestModels <- geneClassForRateSpecs(object)
-
 	if(object@params$estimateRatesWith=="der")
 	{
 		eiModelRates <- lapply(eiGenes, function(i)
@@ -147,8 +140,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 		assayData=exprData
 		, phenoData=phenoData
 		)
-	## update and return the object
+	## update the object 
 	object@modelRates <- modelRates
-
 	return(object)
 })

@@ -46,7 +46,7 @@
 ###########################
 
 define_parameter_ranges <- function(ids) {
-
+	
 	range_k1_h_pars <- quantile(
 		unlist(lapply(ids@model@ratesSpecs, function(gene) {
 			rate <- gene[[1]][[ 1 ]]
@@ -457,27 +457,27 @@ RNAdynamicsAppPlot <- function(data_selection,
 	# plot k1
 
 	plot_k1_experiment = ! (data_selection == 'User defined' | experiment$no_nascent)
-	k1_ylim <- plotSingleRNADynamic( 'synthesis', simtimeplot, sim[,'k1'], conf_int$k1[,'left'], conf_int$k1[,'right'], 
+	k1_ylim <- plotSingleRNADynamic( 'synthesis', 's', simtimeplot, sim[,'k1'], conf_int$k1[,'left'], conf_int$k1[,'right'], 
 												plot_k1_experiment, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd, show_relexpr, ylims$k1_ylim, rate_p = rate_p['k1'] )
 	
 	# plot pre-RNA dynamics
 
-	p_ylim <- plotSingleRNADynamic( 'pre-RNA', simtimeplot, sim[,'p'], rep(NA, length(simtimeplot)), rep(NA, length(simtimeplot)), 
+	p_ylim <- plotSingleRNADynamic( 'pre-RNA', '', simtimeplot, sim[,'p'], rep(NA, length(simtimeplot)), rep(NA, length(simtimeplot)), 
 												data_selection != 'User defined', exptimeplot, reference_preMRNA, secondary_preMRNA, experimental_preMRNAsd, show_relexpr, ylims$p_ylim )
 	
 	# plot k2
 
-	k2_ylim <- plotSingleRNADynamic( 'processing', simtimeplot, sim[,'k2'], conf_int$k2[,'left'], conf_int$k2[,'right'], 
+	k2_ylim <- plotSingleRNADynamic( 'processing', 'p', simtimeplot, sim[,'k2'], conf_int$k2[,'left'], conf_int$k2[,'right'], 
 												FALSE, show_relexpr = show_relexpr, ylim = ylims$k2_ylim, rate_p = rate_p['k2'] )#, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd )
 	
 	# plot mRNA dynamics 
 
-	m_ylim <- plotSingleRNADynamic( 'mature RNA', simtimeplot, sim[,'m'], rep(NA, length(simtimeplot)), rep(NA, length(simtimeplot)), 
+	m_ylim <- plotSingleRNADynamic( 'mature-RNA', '', simtimeplot, sim[,'m'], rep(NA, length(simtimeplot)), rep(NA, length(simtimeplot)), 
 												data_selection != 'User defined', exptimeplot, reference_mRNA, secondary_mRNA, experimental_mRNAsd, show_relexpr, ylims$m_ylim )
 	
 	# plot k3
 
-	k3_ylim <- plotSingleRNADynamic( 'degradation', simtimeplot, sim[,'k3'], conf_int$k3[,'left'], conf_int$k3[,'right'], 
+	k3_ylim <- plotSingleRNADynamic( 'degradation', 'd', simtimeplot, sim[,'k3'], conf_int$k3[,'left'], conf_int$k3[,'right'], 
 												FALSE, show_relexpr = show_relexpr, ylim = ylims$k3_ylim, rate_p = rate_p['k3'] )#, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd )
 	
 	# draw x-axis
@@ -497,12 +497,16 @@ RNAdynamicsAppPlot <- function(data_selection,
 	)
 }
 
-plotSingleRNADynamic <- function( dyn_name, simtimeplot, simprofile, ci_left, ci_right, plot_exp, exptimeplot, ref_exp, sec_exp, ssd_exp, show_relexpr = FALSE, ylim, rate_p = NULL ) {
+plotSingleRNADynamic <- function( dyn_name, tag, simtimeplot, simprofile, ci_left, ci_right, plot_exp, exptimeplot, ref_exp, sec_exp, ssd_exp, show_relexpr = FALSE, ylim, rate_p = NULL ) {
 	
 	if( !is.null(rate_p) ) {
 		dyn_name <- paste(dyn_name, paste0('(p=',signif(rate_p,2),')'), sep = '\n')
 	} else {
-		dyn_name <- paste(dyn_name, '', sep = '\n')
+		if( tag == '' ) {
+			dyn_name <- paste(dyn_name, '', sep = '\n')	
+		} else {
+			dyn_name <- gsub("^","paste('", gsub("$",")", gsub("\\)", "'),')'", gsub("\\(", "(', bold('", paste(dyn_name, paste0('(', tag, ')'))))))
+		}
 	}
 	deltaylim <- function( yrange ) {
 		deltarange <- yrange[2] * .05
@@ -545,7 +549,7 @@ plotSingleRNADynamic <- function( dyn_name, simtimeplot, simprofile, ci_left, ci
 	}
 	plot(simtimeplot, simprofile, 
 			 xaxs='i', yaxs='i', xaxt = 'n',
-			 ylab = dyn_name, type='l', xlab='', lwd=2, cex.lab = 1.7, cex.axis=1.3,  
+			 ylab = parse(text=dyn_name), type='l', xlab='', lwd=2, cex.lab = 1.7, cex.axis=1.3,  
 			 xlim = range(simtimeplot) 
 			 + diff(range(simtimeplot)) * c(-.05, .05),
 			 ylim = ylim

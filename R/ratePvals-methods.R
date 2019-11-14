@@ -7,45 +7,82 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' ratePvals(nascentInspObj10)
 setMethod('ratePvals', 'INSPEcT', function(object) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
+	if( !is.numeric(tpts(object)) ) {
+		stop("Run 'compareSteady' method on this object to evaluate differential rate ")
+	}
 	object@ratePvals
 })
 
 #' @rdname calculateRatePvals
 #' @description
 #' This method is used to calculate all the p-values relative to the variability of synthesis, processing and degradation rates.
-#' In case the 'llr' method is chose via \code{\link{modelSelection}}, combined with Brown's method that combines the results of the 
-#' log likelihood ratio test results for all pairs tested for each rate and all genes. P-values will change 
-#' according to the threshold set for the chi-squared test because it influences the model that will be taken into 
-#' consideration to perform log likelihood ratio tests. To have a sense of the best parameter to choose, a sythetic
-#' data-set can be built and tested (\code{\link{makeSimModel}}, \code{\link{makeSimDataset}})
-#' In case 'aic' has been selected via \code{\link{modelSelection}} method, 
-#' this method assigns the chi-squared test result of the model selected by AIC
-#' to the respective variable rates
+#' For object modeled with nascent RNA or when non-functional modeling was used, the variability is calculated using the 
+#' confidence intervals. For objects modeled without nascent RNA, model selection is performed by comparing the likelihood of 
+#' different (nested) models.
 #' @param object An object of class INSPEcT or INSPEcT_model
-#' @details ratePvlas retrieve a single p-value for each rate thanks to multiple log likelihood tests performed on 
-#' nested models that has a chi-squared test below the selected threshold. 
-#' Among the many p-values that log likelihood ratio test calculate, a single p-value is obtaied applying Brown's method 
-#' for combining dependent p-values.
+#' @param modelSelection 'aic' compares nested models closest to the one with lowest AIC, 'llr' compares all nested models, 
+#' 'hib' is a mix between the previous two. (default 'aic')
+#' @param preferPValue a logical, if TRUE (default) limit the search for best models among the ones with succeded the goodness of fit test.
+#' @param padj a logical, if TRUE (default) correct the p-values for multiple testing
+#' @param p_goodness_of_fit a numeric, the threshold for the goodness-of-fit test (default = .1)
+#' @param p_variability a numeric, a vector with the thresholds for the p-value of the variability test (one threshold for each rate, default = rep(.05, 3))
+#' @param limitModelComplexity a logical that limits the complexity of the function used to describe dynamics to the length of the time-course (default = FALSE)
+#' @details ratePvals retrieve a single p-value for each rate and gene associated to its variability (null hypothesis = the rate is not
+#' changing between the conditions)
 #' @return A matrix containing p-values calculated for each rate
 #' @seealso \code{\link{makeSimModel}}, \code{\link{makeSimDataset}}
 #' @examples
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
-#' calculateRatePvals(nascentInspObj10)
 #' # Set the chi-squared threshold at .2 for nascentInspObj10 object
-#' modelSelection(nascentInspObj10)$thresholds$chisquare <- .2
-#' calculateRatePvals(nascentInspObj10)
-setMethod('calculateRatePvals', 'INSPEcT', function(object) {
+#' nascentInspObj10 <- calculateRatePvals(nascentInspObj10, p_goodness_of_fit=.2)
+setMethod('calculateRatePvals', 'INSPEcT', function(object
+																										, modelSelection = c('aic','llr','hib')
+																										, preferPValue = TRUE
+																										, padj = TRUE
+																										, p_goodness_of_fit = .1
+																										, p_variability=rep(.05, 3)
+																										, limitModelComplexity = FALSE) 
+	{
 	
 	if( !.hasSlot(object, 'version') ) {
 		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
 	}
-	if( nrow(object@modelRates) == 0 )
-		stop('ratePvals: run modelRates or modelRatesNF before.')
+	# if( nrow(object@modelRates) == 0 )
+	# 	stop('ratePvals: run modelRates or modelRatesNF before.')
+	modelSelection <- modelSelection[1]
+	if( !modelSelection %in% c('aic','llr','hib') )
+		stop('calculateRatePvals: modelSelection argument must be either "aic", "llr" or "hib"')
+	if( !is.logical(preferPValue) )
+		stop('calculateRatePvals: preferPValue argument must be a logical')		
+	if( !is.logical(padj) )
+		stop('calculateRatePvals: padj argument must be a logical')
+	if( !is.numeric(p_goodness_of_fit) )
+		stop('calculateRatePvals: p_goodness_of_fit argument must be a numeric')
+	if( !is.numeric(p_variability) )
+		stop('calculateRatePvals: p_variability argument must be a numeric')
+	if( length(p_variability) != 3 )
+		stop('calculateRatePvals: p_variability argument must have length 3')
+	if( !is.logical(limitModelComplexity) )
+		stop('calculateRatePvals: limitModelComplexity argument must be a logical')		
 	message('Calculating rate p-values...')
+
+	## store parameters used for model selection
+	object@model@params <- list(
+		modelSelection =modelSelection
+		, preferPValue = preferPValue
+		, padj = padj
+		, p_goodness_of_fit = p_goodness_of_fit
+		, p_variability = p_variability
+		, limitModelComplexity = limitModelComplexity)
+	
 	if( !object@NoNascent | object@NF )
 	# in case of Nascent mode or Non-Functional (both Nascent and No-Nascent)
 	# perform the estimation of variability using the confidence intervals
 	{
+
 		synthesis_left <- viewConfidenceIntervals(object,"synthesis_left")
 		synthesis_center <- viewModelRates(object,"synthesis")
 		synthesis_right <- viewConfidenceIntervals(object,"synthesis_right")
@@ -57,7 +94,7 @@ setMethod('calculateRatePvals', 'INSPEcT', function(object) {
 		degradation_left <- viewConfidenceIntervals(object,"degradation_left")
 		degradation_center <- viewModelRates(object,"degradation")
 		degradation_right <- viewConfidenceIntervals(object,"degradation_right")
-
+		
 		fitResults_synthesis <- unlist(lapply(featureNames(object),function(g)
 		{
 			rate_conf_int <- cbind(synthesis_left[g,],synthesis_center[g,],synthesis_right[g,])
@@ -84,6 +121,7 @@ setMethod('calculateRatePvals', 'INSPEcT', function(object) {
 			k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
 			pchisq(k_scores_out$value,length(tpts(object))-1,lower.tail=FALSE)
 		}))
+		
 		if(modelSelection(object)$padj)
 		{
 			rate_pvals <- data.frame(
@@ -98,27 +136,26 @@ setMethod('calculateRatePvals', 'INSPEcT', function(object) {
 				"degradation"=fitResults_degradation,
 				row.names=featureNames(object))
 		}
-	}else{
+	} else { # NoNascent
 		if( modelSelection(object)$limitModelComplexity ) {
 			dfmax = length(tpts(object))
-			rate_pvals = calculate_rates_pvalues(object@model, dfmax)
+			rate_pvals = calculate_rates_pvalues(object@model, bTsh=p_variability, cTsh=p_goodness_of_fit, dfmax)
 		} else {
-			rate_pvals = calculate_rates_pvalues(object@model)
+			rate_pvals = calculate_rates_pvalues(object@model, bTsh=p_variability, cTsh=p_goodness_of_fit)
 		}
 	}
 	object@ratePvals <- rate_pvals
+	# in case of NoNascent update the modeled rates after the update of ratePvals
+	if( object@NoNascent ) object <- makeModelRates(object)
 	return(object)
 	})
 
-calculate_rates_pvalues <- function(object, bTsh=NULL, cTsh=NULL, dfmax=Inf) {
+calculate_rates_pvalues <- function(object, bTsh, cTsh, dfmax=Inf) {
 	## calculates the pval to be varying per rate per gene, 
 	## according to the threshold set for the chisq masking step)
-	priors <- object@params$priors
-	if(is.null(priors)) priors<-c("synthesis"=1,"processing"=1,"degradation"=1)
-	
-	## get thresholds from the object
-	bTsh <- modelSelection(object)$thresholds$brown
-	cTsh <- modelSelection(object)$thresholds$chisquare
+	# priors <- object@params$priors
+	# if(is.null(priors)) 
+		priors<-c("synthesis"=1,"processing"=1,"degradation"=1)
 	
 	## in case a rate has a threshold set to 0, avoid testing it
 	rates_to_avoid <- names(bTsh)[bTsh == 0]
@@ -145,8 +182,8 @@ calculate_rates_pvalues <- function(object, bTsh=NULL, cTsh=NULL, dfmax=Inf) {
 	{
 			
 		## generic tests
-		chisq_pvals <- chisqtest(object)
-		logLik_vals <- logLik(object)
+		chisq_pvals <- chisqtest_internal(object)
+		logLik_vals <- logLik_internal(object)
 
 		### New lines "copied" from AIC method - control repeated in logLikRatioTestInscpectModels
 		chisq_pvals[!is.finite(chisq_pvals)] <- 1
@@ -295,7 +332,7 @@ calculate_rates_pvalues <- function(object, bTsh=NULL, cTsh=NULL, dfmax=Inf) {
 	{
 		## assign the chi-squared test result of the model selected by AIC
 		## to the respective variable rates
-		aictest <- AIC(object)
+		aictest <- AIC_internal(object)
 		aictest[is.na(aictest)] <- Inf
 		if( length(rates_to_avoid)>0 )
 			aictest = aictest[,grep(rates_to_avoid, colnames(aictest), invert=TRUE)]

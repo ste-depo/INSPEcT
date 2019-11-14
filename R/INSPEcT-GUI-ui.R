@@ -32,16 +32,17 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 		column(4,
 					 plotOutput("gene", height = "600px"),#, width="500px"),
 					 fluidRow(
-					 	column(2, .busyIndicator(text="Loading..." , wait=1000 , image='gif.gif')), 
+					 	column(3, .busyIndicator(text="Loading..." , wait=1000 , image='gif.gif')),
+					 	column(3, uiOutput('confint_box')),
+					 	column(3, list(
+					 		checkboxInput("relativexpr_checkbox", label = "Rel. Expr.", value = FALSE),
+					 		uiOutput("logtime_checkbox_ui"),
+					 		checkboxInput("fixyaxis_checkbox", label = "Fix Y-axis", value = FALSE)
+					 	)),
 					 	column(3, list(
 					 		downloadButton('saveRNAdynamicsPlotButton', 'Get PDF'),
 					 		downloadButton('saveRNAdynamicsDataButton', 'Get TSV')
-					 		)),
-					 	column(7, list(
-					 		checkboxInput("relativexpr_checkbox", label = "View relative expression", value = FALSE),
-					 		uiOutput("logtime_checkbox_ui"),
-					 		checkboxInput("fixyaxis_checkbox", label = "Fix Y-axis", value = FALSE)
-					 	))
+					 		))
 					 )
 		),
 		

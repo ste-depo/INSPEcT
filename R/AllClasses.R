@@ -1,22 +1,23 @@
 #' INSPEcT package
 #'
 #' @description
-#' INSPEcT (INference of Synthesis, Processing and degradation rates from Transcriptome data),
+#' INSPEcT (INference of Synthesis, Processing and dEgradation rates from Transcriptomic data),
 #' is a package that analyse RNA-seq data in order to evaluate synthesis, processing and degradation
 #' rates and asses via modeling the rates that determines changes in RNA levels.
-#'
-#' It implements two classes (\code{\linkS4class{INSPEcT_model}} and 
-#' \code{\linkS4class{INSPEcT}}) and their corresponding methods. To have a detailed 
-#' description of how the two classes are structured and which methods apply on, type:
-#'
-#' \code{?'INSPEcT-class'} \cr
-#' \code{?'INSPEcT_model-class'} \cr
-#' \code{?'INSPEcT_diffsteady-class'}
-#'
+#' 
 #' To see how the typical workflow of INSPEcT works, type: \cr
 #' \code{vignette('INSPEcT')}
+#'
+#' INSPEcT implements two main classes (\code{\linkS4class{INSPEcT}} and 
+#' \code{\linkS4class{INSPEcT_diffsteady}}) and their corresponding methods. 
+#' To have a detailed description of how the two classes are structured 
+#' and which methods apply on, type:
 #' 
-#' Last but not least, to obtain a citation, type: \cr
+#' \code{?'INSPEcT-class'} \cr
+#' \code{?'INSPEcT_diffsteady-class'}
+#'
+#' 
+#' To obtain the citation, type: \cr
 #' \code{citation('INSPEcT')}
 #'
 #'
@@ -37,19 +38,18 @@ NULL
 #' @slot ratesSpecs A list containing the modeling output
 #' @slot simple A logical that indicates whether the mode of INSPEcT is simple (no pre-mRNA and degradation rates) or not.
 #' @details Methods that apply to INSPEcT_model class are
-#'
-#'	\code{\link{[}} \cr
+#'	\code{\link[=Extract]{[}} \cr
 #'	\code{\link{AIC}} \cr
-#'	\code{\link{chisqmodel}} \cr
 #'	\code{\link{chisqtest}} \cr
+#'	\code{\link{correlationPlot}} \cr
 #'	\code{\link{geneClass}} \cr
 #'	\code{\link{logLik}} \cr
 #'	\code{\link{makeModelRates}} \cr
 #'	\code{\link{makeSimDataset}} \cr
 #'	\code{\link{modelSelection}} \cr
-#'	\code{\link{ratePvals}} \cr
 #'	\code{\link{rocCurve}} \cr
 #'	\code{\link{rocThresholds}} \cr
+#'	\code{\link{show}} \cr
 setClass('INSPEcT_model', 
 	slots=c(
 		params='list'
@@ -58,26 +58,6 @@ setClass('INSPEcT_model',
 		)
 	, prototype=list(
 		simple=FALSE
-		, params=list(
-			modelSelection=c('llr','aic','hib')[2]
-            , preferPValue = TRUE
-            , padj = TRUE
-            , thresholds=list(
-                    chisquare=.1
-                    , brown=c(
-                    	synthesis=.05, 
-                    	processing=.05, 
-                    	degradation=.05)
-                    )
-            , limitModelComplexity = FALSE
-            , priors=c(
-            	synthesis=1,
-            	processing=1,
-            	degradation=1)
-            , computeDerivatives = TRUE
-            , logLikelihoodConfidenceThreshold = 0.95
-
-				)
 			)
 		)
 
@@ -108,72 +88,71 @@ setClass('INSPEcT_model',
 #' @slot degDuringPulse A logical indicating if degradation of RNA during the 4sU pulse was considered.
 #' @slot version A character indicating the version of INSPEcT that created the object
 #' @details Methods that apply to INSPEcT class are
-#'
-#'	\code{\link[=Extract]{[}} \cr
 #'	\code{\link{AIC}} \cr
+#'	\code{\link[=Extract]{[}} \cr
+#'	\code{\link{calculateDelta}} \cr
+#'	\code{\link{calculateRatePvals}} \cr
+#'	\code{\link{calculateTau}} \cr
 #'	\code{\link{chisqmodel}} \cr
 #'	\code{\link{chisqtest}} \cr
 #'	\code{\link{combine}} \cr
+#'	\code{\link{compareSteady}} \cr
+#'	\code{\link{compareSteadyNoNascent}} \cr
+#'	\code{\link{computeConfidenceIntervals}} \cr
+#'	\code{\link{correlationPlot}} \cr
 #'	\code{\link{dim}} \cr
 #'	\code{\link{featureNames}} \cr
 #'	\code{\link{geneClass}} \cr
-#'	\code{\link{getModel<-}} \cr
-#'	\code{\link{getModel}} \cr
 #'	\code{\link{inHeatmap}} \cr
-#'	\code{\link{labeledSF}}
+#'	\code{\link{labeledSF}} \cr
 #'	\code{\link{logLik}} \cr
 #'	\code{\link{makeModelRates}} \cr
+#'	\code{\link{makeOscillatorySimModel}} \cr
 #'	\code{\link{makeSimModel}} \cr
-#'	\code{\link{modelingParams<-}} \cr
-#'	\code{\link{modelingParams}} \cr
 #'	\code{\link{modelRates}} \cr
+#'	\code{\link{modelRatesNF}} \cr
 #'	\code{\link{modelSelection}} \cr
+#'	\code{\link{modelingParams}} \cr
 #'	\code{\link{nGenes}} \cr
 #'	\code{\link{nTpts}} \cr
 #'	\code{\link{plotGene}} \cr
+#'	\code{\link{processingDelay}} \cr
 #'	\code{\link{ratePvals}} \cr
-#'	\code{\link{ratesFirstGuessVar}} \cr
 #'	\code{\link{ratesFirstGuess}} \cr
+#'	\code{\link{ratesFirstGuessVar}} \cr
 #'	\code{\link{removeModel}} \cr
-#'	\code{\link{sfPlot}} \cr
+#'	\code{\link{rocCurve}} \cr
+#'	\code{\link{rocThresholds}} \cr
+#'	\code{\link{setConfidenceIntervals}} \cr
+#'	\code{\link{show}} \cr
+#'	\code{\link{split}} \cr
 #'	\code{\link{tpts}} \cr
+#'	\code{\link{viewConfidenceIntervals}} \cr
 #'	\code{\link{viewModelRates}} \cr
 setClass('INSPEcT', 
-	slots=c(
-		params='list'
-		, ratesFirstGuess='ExpressionSet'
-		, ratesFirstGuessVar='ExpressionSet'
-		, confidenceIntervals='ExpressionSet'
-		, model='INSPEcT_model'
-		, modelRates='ExpressionSet'
-		, ratePvals='data.frame'
-		, tpts='vector'
-		, labeledSF='numeric'
-		, tL='numeric'
-		, NoNascent='logical'
-		, NF='logical'
-		, degDuringPulse='logical'
-		, version='character'
-		)
-	, prototype=list(
-		params=list(
-			nInit=10
-			, nIter=300
-			, na.rm=TRUE
-			, Dmax = 10
-			, Dmin = 1e-6
-			, verbose=TRUE
-			, estimateRatesWith=c('int', 'der')[2]
-			, useSigmoidFun=TRUE
-			, testOnSmooth=TRUE
-			, cores = 1
-			),
-		NoNascent=FALSE,
-		NF=FALSE,
-		degDuringPulse=FALSE,
-		version='1.17.1'
-		)
-	)
+				 slots=c(
+				 	params='list'
+				 	, ratesFirstGuess='ExpressionSet'
+				 	, ratesFirstGuessVar='ExpressionSet'
+				 	, confidenceIntervals='ExpressionSet'
+				 	, model='INSPEcT_model'
+				 	, modelRates='ExpressionSet'
+				 	, ratePvals='data.frame'
+				 	, tpts='vector'
+				 	, labeledSF='numeric'
+				 	, tL='numeric'
+				 	, NoNascent='logical'
+				 	, NF='logical'
+				 	, degDuringPulse='logical'
+				 	, version='character'
+				 )
+				 , prototype=list(
+				 	NoNascent=FALSE,
+				 	NF=FALSE,
+				 	degDuringPulse=FALSE,
+				 	version='1.17.1'
+				 )
+)
 
 #' An S4 class to represent comparisons between two steady-state conditions
 #'

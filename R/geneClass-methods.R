@@ -2,34 +2,34 @@
 #'
 #' @description
 #' This method returns a factor that summarise the gene class (transcriptional regulatory mechanism) that
-#' INSPEcT has assigned to each gene. The classification depends on the chi-squared and Brown's method
-#' thresholds, that can be both provided as arguments. If the user decides a different thresholding respect to
-#' the default, these new values can be permanently set within the object.
+#' INSPEcT has assigned to each gene. The variability of each rate is indicated with a letter, 's' for
+#' synthesis, 'p' for processing and 'd' for degradation. In case more than one rate is variable, the 
+#' letters associated to each variable rate are merged, for example 'sd' stands for a gene where synthesis
+#' and degradation cotributed to transcriptional changes. 'no-reg' is associated to genes with no
+#' change in transcription. The classification depends on the thresholds of the goodness-of-fit and
+#' rate variability tests that can be changed via the method \code{\link{calculateRatePvals}}.
 #' @param object An object of class INSPEcT or INSPEcT_model
-#' @param bTsh A numeric representing the p-value threshold for considering a rate as variable. P-values are calculated through \code{\link{ratePvals}}
-#' @param cTsh A numeric representing the threshold for the chi-squared test to consider a model as valid
 #' @return A character containing the regulatory class for each gene
 #' @seealso \code{\link{ratePvals}}
 #' @examples
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' geneClass(nascentInspObj10)
 #' # see the classification with another threshold for rate variability
-#' geneClass(nascentInspObj10, bTsh=.2)
-#' # set the new threshold permanently within the object
-#' modelSelection(nascentInspObj10)$thresholds$chisquare <- .2
-setMethod('geneClass', 'INSPEcT', function(object, bTsh=NULL) #, cTsh=NULL)
+#' nascentInspObj10 <- calculateRatePvals(nascentInspObj10, p_variability=rep(1,3))
+#' geneClass(nascentInspObj10)
+setMethod('geneClass', 'INSPEcT', function(object, ...)
 {
 	if( !.hasSlot(object, 'version') ) {
 		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
 	}
-	# if(object@NoNascent & !object@NF){return(geneClass(object@model, bTsh=bTsh, cTsh=cTsh))}
-	# else{.bestModel_confidenceIntervals(object, bTsh = modelSelection(object)$thresholds$brown)}
-	if(is.null(bTsh)){bTsh <- modelSelection(object)$thresholds$brown}
-	
+	if( !is.numeric(tpts(object)) ) {
+		stop("Run 'compareSteady' method on this object to evaluate differential rates.")
+	}
+	p_variability <- modelSelection(object)$p_variability
 	ratePvalsTmp <- ratePvals(object)
 	geneClass <- apply(ratePvalsTmp,1,function(r)
 	{
-		r <- r < unlist(bTsh)
+		r <- r < unlist(p_variability)
 		if(all(is.na(r))) return(NA)
 		if(!r[1]&!r[2]&!r[3]) return("no-reg") # 0
 		if(r[1]&!r[2]&!r[3]) return("s") # a
@@ -44,12 +44,25 @@ setMethod('geneClass', 'INSPEcT', function(object, bTsh=NULL) #, cTsh=NULL)
 	
 })
 
-geneClassForRateSpecs <- function(object, bTsh=NULL) {
-	if(is.null(bTsh)){bTsh <- modelSelection(object)$thresholds$brown}
+#' @rdname geneClass
+setMethod('geneClass', 'INSPEcT_model', function(object, ...)
+{
+	acceptedVarModels <- do.call('rbind', lapply(object@ratesSpecs, function(geneRates) 
+		sapply(geneRates[[1]][c('alpha','beta','gamma')], '[[', 'df')>1))
+	## transform the previous information into a string character per gene
+	# where the presence of the letter means that the rate is variable
+	allResponses <- apply(acceptedVarModels, 1, 
+												function(accepted) paste(c('a','b','c')[accepted],collapse=''))
+	allResponses[allResponses==''] <- '0'
+	return(allResponses)
+})
+
+geneClassInternal <- function(object) {
+	p_variability <- modelSelection(object)$p_variability
 	ratePvalsTmp <- ratePvals(object)
 	geneClass <- apply(ratePvalsTmp,1,function(r)
 	{
-		r <- r < unlist(bTsh)
+		r <- r < unlist(p_variability)
 		if(all(is.na(r))) return(NA)
 		if(!r[1]&!r[2]&!r[3]) return("0") # no-reg 
 		if(r[1]&!r[2]&!r[3]) return("a") # s 
@@ -62,70 +75,3 @@ geneClassForRateSpecs <- function(object, bTsh=NULL) {
 	})
 	return(geneClass)
 }
-
-# 
-# .bestModel_confidenceIntervals <- function(object,bTsh=NULL)
-# {
-# 	if(is.null(bTsh)){bTsh <- modelSelection(object)$thresholds$brown}
-# 
-# 	ratePvalsTmp <- ratePvals(object)
-# 	geneClass <- apply(ratePvalsTmp,1,function(r)
-# 	{
-# 		r <- r < unlist(bTsh)
-# 		if(all(is.na(r))) return(NA)
-# 		if(!r[1]&!r[2]&!r[3]) return("no-reg") # 0
-# 		if(r[1]&!r[2]&!r[3]) return("s") # a
-# 		if(!r[1]&r[2]&!r[3]) return("p") # c
-# 		if(!r[1]&!r[2]&r[3]) return("d") # b
-# 		if(r[1]&!r[2]&r[3]) return("sd") # ab
-# 		if(r[1]&r[2]&!r[3]) return("sp") # ac
-# 		if(!r[1]&r[2]&r[3]) return("pd") # bc
-# 		if(r[1]&r[2]&r[3]) return("spd") # abc
-# 	})
-# 	return(geneClass)
-# }
-# 
-# .bestModel <- function(object, bTsh=NULL, cTsh=NULL, Nascent = FALSE) {
-# 	
-# 	preferPValue <- object@params$preferPValue
-# 	
-# 	## in case bTsh or bTsh are provided set them as
-# 	# permanent for the object
-# 	if( is.null(bTsh) )
-# 		bTsh <- object@params$thresholds$brown
-# 	if( is.null(cTsh) )
-# 		cTsh <- object@params$thresholds$chisquare
-# 
-# 	if(Nascent) # It must be always VVV, just for makeModelRates
-# 	{
-# 		ratePvals <- matrix(rep(0,length(object@ratesSpecs)*3),ncol=3)
-# 		rownames(ratePvals) <- names(object@ratesSpecs)
-# 		colnames(ratePvals) <- c("synthesis","processing","degradation")
-# 	}else{
-# 		## calculate ratePvals
-# 		ratePvals <- ratePvals(object, bTsh, cTsh)
-# 		ratePvals <- replace(ratePvals,is.na(ratePvals),1)
-# 	}
-# 
-# 	geneClass <- apply(ratePvals,1,function(r)
-# 	{
-# 		r <- r < unlist(bTsh)
-# 		if(all(is.na(r))) return(NA)
-# 		if(!r[1]&!r[2]&!r[3]) return("0")
-# 		if(r[1]&!r[2]&!r[3]) return("a")
-# 		if(!r[1]&r[2]&!r[3]) return("c")
-# 		if(!r[1]&!r[2]&r[3]) return("b")
-# 		if(r[1]&!r[2]&r[3]) return("ab")
-# 		if(r[1]&r[2]&!r[3]) return("ac")
-# 		if(!r[1]&r[2]&r[3]) return("bc")
-# 		if(r[1]&r[2]&r[3]) return("abc")
-# 	})
-# 
-# 	ratesSpecs <- object@ratesSpecs
-# 	nGenes <- length(ratesSpecs)
-# 
-# 	object@ratesSpecs <- lapply(1:nGenes, function(i) ratesSpecs[[i]][geneClass[i]])
-# 	return(object)
-# 	
-# }
-

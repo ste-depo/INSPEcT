@@ -52,7 +52,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				experiment$tpts <- tpts(ids)
 				experiment$no_nascent <- ids@NoNascent
 				experiment$steady_state <- is.character(experiment$tpts)
-
+				
 				# select only genes with exons and introns
 				ids <- ids[apply(is.finite(ratesFirstGuess(ids,'preMRNA')),1,all)]
 
@@ -60,6 +60,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 
 					inspect$mod_method <- modelingParams(ids)$estimateRatesWith ## either "der" or "int"
 					inspect$classes <- geneClass(ids)
+					inspect$classes_internal <- geneClassInternal(ids)
 					inspect$logshift <- findttpar(experiment$tpts)
 					inspect$linshift <- ifelse( experiment$no_nascent,
 						abs(min(timetransf(experiment$tpts,inspect$logshift))),0)
@@ -74,8 +75,8 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 					
 					if( ids@NoNascent ){ # (based on the class)
 						ids@model@ratesSpecs <-
-							lapply(seq_along(inspect$classes), function(i)
-								list(ids@model@ratesSpecs[[i]][[inspect$classes[i]]]))
+							lapply(seq_along(inspect$classes_internal), function(i)
+								list(ids@model@ratesSpecs[[i]][[inspect$classes_internal[i]]]))
 						names(ids@model@ratesSpecs) <- featureNames(ids)
 					} else{ # Nascent RNA object (always VVV)
 						ids@model@ratesSpecs <-
@@ -989,6 +990,14 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 	## observe_parameters_change_by_user (end) #########
 	##############################################
 	
+	## confidence intervals
+	
+	output$confint_box <- renderUI({
+		if( input$data_selection != 'User defined' & !experiment$steady_state ) {
+			actionButton("conf_int_button", "Conf. Int.")
+		}
+	})
+	
 	## modeling checkbox
 	
 	output$modeling_box <- renderUI({
@@ -1005,9 +1014,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 						choices = c('NM','BFGS'), selected = 'NM')),
 					column(4,numericInput("nIter", label = h5("iterations"), value = 100)),
 					column(4,h5('Optimization'), actionButton("optimize", "Run"))
-					),
-				h4('Confidence Intervals'),
-				actionButton("conf_int_button", "Estimate")
+					)
 				)
 		}
 		})
@@ -1049,7 +1056,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 	output$logtime_checkbox_ui <- renderUI({
 		if( input$data_selection != 'User defined' & !experiment$steady_state ) {
 			checkboxInput("logtime_checkbox", 
-					label = "Space time logarithmically", 
+					label = "Log time", 
 					value = values$logtime)
 		} else {
 			NULL

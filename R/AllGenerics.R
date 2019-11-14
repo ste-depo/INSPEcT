@@ -2,12 +2,9 @@
 # generics for class INSPEcT_model ####
 ####################################
 
-#' @rdname modelSelection
+#' Visualize criteria used for rate variability
 setGeneric('modelSelection', function(object) 
 	standardGeneric('modelSelection'))
-#' @rdname modelSelection
-setGeneric('modelSelection<-', function(object, value) 
-	standardGeneric('modelSelection<-'))
 #' Retrieve all results of chi-squared test
 setGeneric('chisqtest', function(object, ...) 
 	standardGeneric('chisqtest'))
@@ -18,13 +15,14 @@ setGeneric('chisqmodel', function(object, gc=NULL, tpts=NULL, ...)
 setGeneric('logLik', function(object, ...) 
 	standardGeneric('logLik'))
 #' Retrieve a single p-value for each rate
-setGeneric('ratePvals', function(object, bTsh=NULL, cTsh=NULL) 
+setGeneric('ratePvals', function(object) 
 	standardGeneric('ratePvals'))
 #' Calculate a single p-value for each rate
-setGeneric('calculateRatePvals', function(object, bTsh=NULL, cTsh=NULL) 
+setGeneric('calculateRatePvals', function(object, modelSelection = c('aic','llr','hib'), preferPValue = TRUE, padj = TRUE, 
+																					p_goodness_of_fit = .1, p_variability=rep(.05,3), limitModelComplexity = FALSE) 
 	standardGeneric('calculateRatePvals'))
 #' Retrieve the regulatory class for each gene
-setGeneric('geneClass', function(object, bTsh=NULL, cTsh=NULL)
+setGeneric('geneClass', function(object, ...)
 	standardGeneric('geneClass'))
 #' Calculate modeled rates and concentrations
 setGeneric('makeModelRates', function(object, ...) 
@@ -42,10 +40,10 @@ setGeneric('makeSimDataset', function(object, tpts, nRep, NoNascent = FALSE, see
 setGeneric('correlationPlot', function(object, object2, plot=TRUE) 
 	standardGeneric('correlationPlot'))
 #' Display rate classification performance
-setGeneric('rocCurve', function(object, object2, cTsh=NULL, plot=TRUE, comparative=FALSE) 
+setGeneric('rocCurve', function(object, object2, plot=TRUE, comparative=FALSE) 
 	standardGeneric('rocCurve'))
 #' Display rate classification performance with thresholds visible at x-axis
-setGeneric('rocThresholds', function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1), plot=TRUE) 
+setGeneric('rocThresholds', function(object, object2, xlim=c(1e-5,1), plot=TRUE) 
 	standardGeneric('rocThresholds'))
 
 #############################
@@ -70,18 +68,6 @@ setGeneric('nTpts', function(object)
 #' Get and set number parameters for the modeling
 setGeneric('modelingParams', function(object) 
 	standardGeneric('modelingParams'))
-#' @rdname modelingParams
-setGeneric('modelingParams<-', function(object, value) 
-	standardGeneric('modelingParams<-'))
-#' Get or replace INSPEcT_model object within INSPEcT object
-setGeneric('getModel', function(object) 
-	standardGeneric('getModel'))
-#' @rdname getModel
-setGeneric('getModel<-', function(object, value) 
-	standardGeneric('getModel<-'))
-#' A nice plot to see scaling factors used for RNA-seq and Nascent-seq libraries
-setGeneric('sfPlot', function(object) 
-	standardGeneric('sfPlot'))
 #' Retrieve pre-modeling rates and concentrations
 setGeneric('ratesFirstGuess', function(object, feature) 
 	standardGeneric('ratesFirstGuess'))
@@ -90,7 +76,9 @@ setGeneric('ratesFirstGuessVar', function(object, feature)
 	standardGeneric('ratesFirstGuessVar'))
 #' @title Launch the modeling process
 #' @description Launch the modeling process with parameters set with \code{\link{modelingParams}}
-setGeneric('modelRates', function(object, seed=NULL, BPPARAM=bpparam(), verbose=NULL) 
+setGeneric('modelRates', function(object, estimateRatesWith = c('der', 'int'), useSigmoidFun = TRUE, 
+																	testOnSmooth = TRUE, nInit = 10, nIter = 300, Dmin = 1e-06, Dmax = 10, 
+																	seed=NULL, BPPARAM=bpparam())
 	standardGeneric('modelRates'))
 #' Launch the modeling process without imposing sigmoid/impulse functional form
 setGeneric('modelRatesNF', function(object, BPPARAM=SerialParam()) 

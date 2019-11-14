@@ -11,8 +11,6 @@
 #' Consequently, at increasing brown p-values different sensitivity and specificity can be achieved.
 #' @param object An object of class INSPEcT_model, with true rates
 #' @param object2 An object of class INSPEcT or INSPEcT_model, with modeled rates
-#' @param cTsh A numeric representing the threshold for the chi-squared test to consider a model as valid
-#' @param bTsh A numeric representing the threshold for the Brown's method to consider a rate as varying
 #' @param xlim A numeric representing limits for the x-axis (default is c(1-e-5,1))
 #' @param plot A logical that indicates whether to plot or not. (default=TRUE)
 #' @return The thresholds that maximize both sensitivity and specificity
@@ -35,11 +33,11 @@
 #'  
 #'   data("nascentSim2replicates",package='INSPEcT')
 #'  
-#'   rocThresholds(simRates[1:100],nascentSim2replicates,bTsh=c(.01,.01,.05),cTsh=.1)
+#'   rocThresholds(simRates[1:100],nascentSim2replicates)
 #' }
 
 #' @rdname rocThresholds
-setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT'), function(object, object2, cTsh=NULL, bTsh=NULL, xlim=c(1e-5,1), plot=TRUE)
+setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT'), function(object, object2, xlim=c(1e-5,1), plot=TRUE)
 {
 	if( !.hasSlot(object2, 'version') ) {
 		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
@@ -48,35 +46,16 @@ setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT'),
 	if( length(object@ratesSpecs) !=  length(featureNames(object2)) )
 		object <- object[as.numeric(featureNames(object2))]
 	# manage arguments
-	if( is.null(bTsh) ) {
-		bTsh <- modelSelection(object2)$thresholds$brown
-	} else {
-		if( !is.numeric(bTsh) )
-			stop('rocThresholds: bTsh must be either numeric or NULL')
-		if( length(bTsh) != 3 )
-			stop('rocThresholds: bTsh must be a vector of length 3')
-		if( any(bTsh < 0 | bTsh > 1) )
-			stop('rocThresholds: every element of bTsh must be between 0 and 1')
-	}
-	if( is.null(cTsh) ) {
-		cTsh <- modelSelection(object2)$thresholds$chisquare
-	} else {
-		if( !is.numeric(cTsh) )
-			stop('rocThresholds: cTsh must be either numeric or NULL')
-		if( length(cTsh) != 1 )
-			stop('rocThresholds: cTsh must be a vector of length 1')
-		if( cTsh<0 | cTsh>1 )
-			stop('rocThresholds: cTsh must be between 0 and 1')
-	}
 	if( !is.numeric(xlim) )
 		stop('rocThresholds: xlim must be either numeric or NULL')
 	if( length(xlim) != 2 )
 		stop('rocThresholds: xlim must be a vector of length 2')
 	if( any(xlim<=0 | xlim>1) )
 		stop('rocThresholds: xlim must be between 0 and 1')
-	## obtain the response
+	## obtain the response (true class)
 	allResponses <- geneClass(object)
-	ratePvals <- ratePvals(object2, cTsh)
+	## compare with p-values of rate variability
+	ratePvals <- ratePvals(object2)
 	rAlpha <- roc(response=grepl('a', allResponses)
 		, predictor=ratePvals$synthesis)
 	rBeta <- roc(response=grepl('b', allResponses)
@@ -101,9 +80,11 @@ setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT'),
 	if(plot)
 	{
 
+		bTsh <- modelSelection(object2)$thresholds$brown
+		
 		oldMfrow <- par()$mfrow
 		oldMar <- par()$mar
-
+	
 		par(mfrow=c(1,3))
 		ix <- is.finite(rAlpha$thresholds)
 		matplot(rAlpha$thresholds[ix], cbind(rAlpha$sensitivities[ix], rAlpha$specificities[ix])

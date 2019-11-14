@@ -32,9 +32,17 @@ setMethod('show', 'INSPEcT', function(object) {
 		message("Access complete rates with the method ratesFirstGuess.")
 	} else if( length(object@model@ratesSpecs)>0 ) {
 		if( modelingParams(object)$estimateRatesWith == 'int' ) {
-			message("Rates were modeled using the integrative framework with either constant, sigmoid or impulse functions.")	
+			if( modelingParams(object)$useSigmoidFun ) {
+				message("Rates were modeled using the integrative framework with either constant, sigmoid or impulse functions.")		
+			} else {
+				message("Rates were modeled using the integrative framework with either constant or impulse functions.")		
+			}
 		} else {
-			message("Rates were modeled using the derivative framework with either constant, sigmoid or impulse functions.")	
+			if( modelingParams(object)$useSigmoidFun ) {
+				message("Rates were modeled using the derivative framework with either constant, sigmoid or impulse functions.")	
+			} else {
+				message("Rates were modeled using the derivative framework with either constant or impulse functions.")	
+			}
 		}
 		message("Access complete rates with the method viewModelRates.")
 	} else {

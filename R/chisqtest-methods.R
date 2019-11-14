@@ -9,10 +9,9 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' chisqtest(nascentInspObj10)
 setMethod('chisqtest', 'INSPEcT_model', function(object, ...) {
-	exp(t(sapply(object@ratesSpecs, function(x) 
-		tryCatch(sapply(x, '[[', 'test'), 
-			error=function(e) c("0"=NA,"a"=NA,"b"=NA,"c"=NA,"ab"=NA,"bc"=NA,"ac"=NA,"abc"=NA))
-		)))
+	out <- chisqtest_internal(object)
+	colnames(out) <- c("no-reg","s","p","d","sd","sp","pd","spd")
+	return(out)
 	})
 #' @rdname chisqtest
 setMethod('chisqtest', 'INSPEcT', function(object, ...) {
@@ -21,6 +20,13 @@ setMethod('chisqtest', 'INSPEcT', function(object, ...) {
 	}
 	chisqtest(object@model, ...)
 })
+
+chisqtest_internal <- function(object) {
+	exp(t(sapply(object@ratesSpecs, function(x) 
+		tryCatch(sapply(x, '[[', 'test'), 
+						 error=function(e) c("0"=NA,"a"=NA,"b"=NA,"c"=NA,"ab"=NA,"bc"=NA,"ac"=NA,"abc"=NA))
+	)))
+}
 
 #' @rdname chisqmodel
 #'
@@ -43,21 +49,22 @@ setMethod('chisqmodel', 'INSPEcT', function(object, ...) {
 	{
 		chisqmodelfun(object@model)
 	}else{
-		chisqmodelfun(object@model, gc=geneClass(object), tpts=tpts(object))
+		chisqmodelfun(object@model, gc=geneClassInternal(object), tpts=tpts(object))
 	}
 	})
 
 chisqmodelfun <- function(object, gc=NULL, tpts=NULL, ...) 
 {
+	
 	if(is.null(gc)&is.null(tpts))
 	{
-		gc <- geneClass(object)
+		gc <- geneClassInternal(object)
 		NoNascent <- TRUE
 	}else{
 		NoNascent <- FALSE
 	}
 	
-	chisqtest <- chisqtest(object)	
+	chisqtest <- chisqtest_internal(object)	
 	
 	if(NoNascent)
 	{
@@ -97,10 +104,9 @@ NULL
 
 #' @rdname AIC-INSPEcT-method
 setMethod('AIC', 'INSPEcT_model', function(object, ..., k=2) {
-	t(sapply(object@ratesSpecs, function(x) 
-		tryCatch(sapply(x, '[[', 'AIC'),
-			error=function(e) c("0"=NA,"a"=NA,"b"=NA,"c"=NA,"ab"=NA,"bc"=NA,"ac"=NA,"abc"=NA))
-		))
+	out <- AIC_internal(object)
+	colnames(out) <- c("no-reg","s","p","d","sd","sp","pd","spd")
+	return(out)
 	})
 #' @rdname AIC-INSPEcT-method
 setMethod('AIC', 'INSPEcT', function(object, ..., k=2) {
@@ -109,3 +115,10 @@ setMethod('AIC', 'INSPEcT', function(object, ..., k=2) {
 	}
 	AIC(object@model, ..., k)
 	})
+
+AIC_internal <- function(object) {
+	t(sapply(object@ratesSpecs, function(x) 
+		tryCatch(sapply(x, '[[', 'AIC'),
+						 error=function(e) c("0"=NA,"a"=NA,"b"=NA,"c"=NA,"ab"=NA,"bc"=NA,"ac"=NA,"abc"=NA))
+	))
+}
