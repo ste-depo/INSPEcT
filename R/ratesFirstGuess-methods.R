@@ -15,6 +15,9 @@
 #' ratesFirstGuess(nascentInspObj10, 'synthesis')
 
 setMethod('ratesFirstGuess', 'INSPEcT', function(object, feature) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	ix <- pData(object@ratesFirstGuess)$feature == feature
 	exprs(object@ratesFirstGuess)[,ix, drop=FALSE]
 	})
@@ -35,6 +38,9 @@ setMethod('ratesFirstGuess', 'INSPEcT', function(object, feature) {
 #' ratesFirstGuessVar(nascentInspObj10, 'preMRNA')
 #' ratesFirstGuessVar(nascentInspObj10, 'synthesis')
 setMethod('ratesFirstGuessVar', 'INSPEcT', function(object, feature) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	ix <- pData(object@ratesFirstGuessVar)$feature == feature
 	exprs(object@ratesFirstGuessVar)[,ix, drop=FALSE]
 	})

@@ -3,51 +3,20 @@
 \docType{methods}
 \name{ratePvals}
 \alias{ratePvals}
-\alias{ratePvals,INSPEcT_model-method}
 \alias{ratePvals,INSPEcT-method}
 \title{Retrieve a single p-value for each rate}
 \usage{
-ratePvals(object, bTsh = NULL, cTsh = NULL)
+ratePvals(object)
 
-\S4method{ratePvals}{INSPEcT_model}(object, bTsh = NULL, cTsh = NULL)
-
-\S4method{ratePvals}{INSPEcT}(object, bTsh = NULL, cTsh = NULL)
+\S4method{ratePvals}{INSPEcT}(object)
 }
 \arguments{
-\item{object}{An object of class INSPEcT or INSPEcT_model}
-
-\item{bTsh}{A numeric representing the p-value threshold for considering a rate as variable. P-values are calculated through \code{\link{ratePvals}}}
-
-\item{cTsh}{A numeric representing the threshold for the chi-squared test to consider a model as valid}
-}
-\value{
-A matrix containing p-values calculated for each rate
+\item{object}{An object of class INSPEcT}
 }
 \description{
-This method is used to retrieve all the p-values combined with Brown's method that combines the results of the 
-log likelihood ratio test results for all pairs tested for each rate and all genes. P-values will change 
-according to the threshold set for the chi-squared test because it influences the model that will be taken into 
-consideration to perform log likelihood ratio tests. To have a sense of the best parameter to choose, a sythetic
-data-set can be built and tested (\code{\link{makeSimModel}}, \code{\link{makeSimDataset}})
-In case 'aic' has been selected via \code{\link{modelSelection}} method, 
-this method assigns the chi-squared test result of the model selected by AIC
-to the respective variable rates
-}
-\details{
-ratePvlas retrieve a single p-value for each rate thanks to multiple log likelihood tests performed on 
-nested models that has a chi-squared test below the selected threshold. 
-Among the many p-values that log likelihood ratio test calculate, a single p-value is obtaied applying Brown's method 
-for combining dependent p-values.
+This method is used to retrieve all the p-values relative to the variability of synthesis, processing and degradation rates.
 }
 \examples{
 nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 ratePvals(nascentInspObj10)
-# calculate agin the p-values with Brown with a different threshold 
-# for considering a model valid for the log likelihood ratio test
-ratePvals(nascentInspObj10, cTsh=.2)
-# Set permaenently the chi-squared threshold at .2 for nascentInspObj10 object
-modelSelection(nascentInspObj10)$thresholds$chisquare <- .2
-}
-\seealso{
-\code{\link{makeSimModel}}, \code{\link{makeSimDataset}}
 }

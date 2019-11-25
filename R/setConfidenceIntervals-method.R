@@ -7,7 +7,10 @@
 #' @return An object of class ExpressionSet containing the confidence intervals.
 
 setMethod(f='setConfidenceIntervals', 'INSPEcT', definition=function(object, confidenceIntervals) {
-
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
+	
 	tpts <- tpts(object)
 
 	confidenceIntervals <- lapply(confidenceIntervals,function(g){cbind(g[[1]][,c(1,3,4)],g[[2]][,c(1,3,4)],g[[3]][,c(1,3,4)])})

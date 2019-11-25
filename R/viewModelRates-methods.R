@@ -9,6 +9,12 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' viewModelRates(nascentInspObj10, 'synthesis')
 setMethod('viewModelRates', 'INSPEcT', function(object, feature) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
+	if( !is.numeric(tpts(object)) ) {
+		stop("Run 'compareSteady' method on this object to evaluate differential rate ")
+	}
 	ix <- grep(feature,pData(object@modelRates)$feature)
 	exprs(object@modelRates)[,ix, drop=FALSE]
 })

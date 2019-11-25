@@ -3,54 +3,41 @@
 \docType{methods}
 \name{modelingParams}
 \alias{modelingParams}
-\alias{modelingParams<-}
 \alias{modelingParams,INSPEcT-method}
-\alias{modelingParams<-,INSPEcT-method}
 \title{Get and set number parameters for the modeling}
 \usage{
 modelingParams(object)
 
-modelingParams(object) <- value
-
 \S4method{modelingParams}{INSPEcT}(object)
-
-\S4method{modelingParams}{INSPEcT}(object) <- value
 }
 \arguments{
 \item{object}{An object of class INSPEcT}
-
-\item{value}{A list with new parameters}
 }
 \value{
 List of parameters and their values
 \itemize{
- \item nInit number of optimization to find the best functional representation of each 
-   rate (by default 10)
- \item nIter number of max iteration during optimization (default is 300)
- \item na.rm A logical wheter missing values should be removed from estimated rates 
-   (default is TRUE)
- \item verbose A logical wheter to be verbose or not (default is TRUE)
- \item estimateRatesWith Either "int" or "der". With "int" the degradation and processing
+\item estimateRatesWith Either "int" or "der". With "int" the degradation and processing
    rates are estimated integrating the system between one time point and the following. 
    With "der" degradation and processing rates are estimated using the derivative of total
-   and pre mRNA. (default is "int")
- \item useSigmoidFun A logical, whether to choose between sigmoid and impulse function 
+   and pre mRNA. 
+\item useSigmoidFun A logical, whether to choose between sigmoid and impulse function 
    to fit rates and concentrations. In case not, always impulse function is used. 
-   (default is TRUE)
- \item testOnSmooth A logical, wheter models should be tested on smoothed pre-mRNA, 
-   total mRNA and eventually synthesis rates or not. (default is TRUE)
+\item testOnSmooth A logical, wheter models should be tested on smoothed pre-mRNA, 
+   total mRNA and eventually synthesis rates or not.
+\item nInit number of optimization to find the best functional representation of each rate
+\item nIter number of max iteration during optimization
+\item Dmin lower bondary for degradation rates in the NoNascent mode
+\item Dmax upper bondary for degradation rates in the NoNascent mode
+\item seed A numeric, indicatindg the seed set for reproducible results.
 }
 }
 \description{
-A method to get and set the parameters that will be used in the modeling of estimated rates and 
+A method to get the parameters used for modeling rates and 
 concentrations by the method \code{\link{modelRates}}
 }
 \examples{
 nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 modelingParams(nascentInspObj10)
-nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
-nascentInspObj10 <- removeModel(nascentInspObj10)
-modelingParams(nascentInspObj10)$useSigmoidFun <- FALSE
 }
 \seealso{
 \code{\link{modelRates}}

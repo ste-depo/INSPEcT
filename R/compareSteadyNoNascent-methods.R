@@ -37,6 +37,9 @@ setMethod('compareSteadyNoNascent', 'INSPEcT', function(inspectIds,
 	expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NULL, 
 	returnNormScores=FALSE, referenceCondition=NULL)
 {
+	if( !.hasSlot(inspectIds, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	# Mature, premature and total rpkms
 	premature <- ratesFirstGuess(inspectIds, 'preMRNA')
 	total <- ratesFirstGuess(inspectIds, 'total')

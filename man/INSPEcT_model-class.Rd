@@ -25,19 +25,18 @@ This object will be used by \code{\link{makeSimDataset}} to generate a complete 
 }
 \details{
 Methods that apply to INSPEcT_model class are
-
-\code{\link{[}} \cr
+\code{\link[=Extract]{[}} \cr
 \code{\link{AIC}} \cr
-\code{\link{chisqmodel}} \cr
 \code{\link{chisqtest}} \cr
+\code{\link{correlationPlot}} \cr
 \code{\link{geneClass}} \cr
 \code{\link{logLik}} \cr
 \code{\link{makeModelRates}} \cr
 \code{\link{makeSimDataset}} \cr
 \code{\link{modelSelection}} \cr
-\code{\link{ratePvals}} \cr
 \code{\link{rocCurve}} \cr
 \code{\link{rocThresholds}} \cr
+\code{\link{show}} \cr
 }
 \section{Slots}{
 
@@ -47,7 +46,5 @@ Methods that apply to INSPEcT_model class are
 \item{\code{ratesSpecs}}{A list containing the modeling output}
 
 \item{\code{simple}}{A logical that indicates whether the mode of INSPEcT is simple (no pre-mRNA and degradation rates) or not.}
-
-\item{\code{modeledGenes}}{A numeric that indicates the number of modeled genes (for multiple testing purpouses).}
 }}
 

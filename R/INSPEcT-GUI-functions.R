@@ -29,24 +29,24 @@
 
 ##########################
 
-convert_gene_classes <- function(gene_classes) {
-	diz <- c('0'='KKK', 'a'='VKK', 'b'='KKV', 'c'='KVK',
-		'ab'='VKV', 'ac'='VVK', 'bc'='KVV', 'abc'='VVV')
-	unname(diz[gene_classes])
-}
-
-reconvert_gene_classes <- function(gene_classes) {
-	diz <- c('KKK'='0','VKK'='a','KKV'='b','KVK'='c',
-		'VKV'='ab','VVK'='ac','KVV'='bc','VVV'='abc')
-	unname(diz[gene_classes])
-}
+# convert_gene_classes <- function(gene_classes) {
+# 	diz <- c('0'='KKK', 'a'='VKK', 'b'='KKV', 'c'='KVK',
+# 		'ab'='VKV', 'ac'='VVK', 'bc'='KVV', 'abc'='VVV')
+# 	unname(diz[gene_classes])
+# }
+# 
+# reconvert_gene_classes <- function(gene_classes) {
+# 	diz <- c('KKK'='0','VKK'='a','KKV'='b','KVK'='c',
+# 		'VKV'='ab','VVK'='ac','KVV'='bc','VVV'='abc')
+# 	unname(diz[gene_classes])
+# }
 
 ###########################
 ## function for ranges ####
 ###########################
 
 define_parameter_ranges <- function(ids) {
-
+	
 	range_k1_h_pars <- quantile(
 		unlist(lapply(ids@model@ratesSpecs, function(gene) {
 			rate <- gene[[1]][[ 1 ]]
@@ -163,7 +163,7 @@ define_parameter_ranges <- function(ids) {
 ## PLOT FUNCTION ######
 #######################
 
-RNAdynamicsAppMake <- function(data_selection, show_confint, 
+RNAdynamicsAppMake <- function(data_selection,
 															 time_min, time_max, experiment,
 															 k1_function, k2_function,
 															 k3_function, k1_params,
@@ -211,35 +211,6 @@ RNAdynamicsAppMake <- function(data_selection, show_confint,
 			k1_function, k2_function, k3_function, 
 			k1_params, k2_params, k3_params)
 
-		if( show_confint & data_selection != 'User defined' ) {
-			
-			gene_class <- paste0(
-				switch(k1_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V"),
-				switch(k2_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V"),
-				switch(k3_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V")
-			)
-			conf_int <- compute_ci_Integrative_Nascent(c(k1_params, k2_params, k3_params),
-																								tpts = experiment_tpts,
-																								model_tpts = simulation_time,
-																								classTmp = gene_class,
-																								experimentalP = reference_preMRNA,
-																								experimentalM = reference_mRNA,
-																								experimentalA = reference_synthesis,
-																								varianceP = experiment$preMRNAsd^2,
-																								varianceM = experiment$mRNAsd^2,
-																								varianceA = experiment$synthesissd^2,
-																								confidenceThreshold = qchisq(.95,1)
-			)
-			
-		} else {
-			conf_int <- list(
-				k1 = cbind(left=rep(NA, length(simulation_time)),right=rep(NA, length(simulation_time))),
-				k2 = cbind(left=rep(NA, length(simulation_time)),right=rep(NA, length(simulation_time))),
-				k3 = cbind(left=rep(NA, length(simulation_time)),right=rep(NA, length(simulation_time)))
-			)
-		}
-		
-		
 	} else { # mod_method == 'der'
 
 		gene_class <- paste0(
@@ -248,68 +219,11 @@ RNAdynamicsAppMake <- function(data_selection, show_confint,
 			switch(k3_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V")
 		)
 		
-		# if( experiment$no_nascent ) {
-		# 	
-		# 	sim <- derivative_solution_no_nascent(
-		# 		simulation_time, gene_class,
-		# 		k1_function, k2_function, k3_function, 
-		# 		k1_params, k2_params, k3_params)
-		# 
-		# 	if( show_confint & data_selection != 'User defined' ) {
-		# 		
-		# 		conf_int <- compute_ci_Derivative_Nascent(c(k1_params, k2_params, k3_params),
-		# 																							tpts = experiment_tpts,
-		# 																							model_tpts = simulation_time,
-		# 																							classTmp = reconvert_gene_classes(gene_class),
-		# 																							experimentalP = reference_preMRNA,
-		# 																							experimentalM = reference_mRNA,
-		# 																							experimentalA = reference_synthesis,
-		# 																							varianceP = experiment$preMRNAsd^2,
-		# 																							varianceM = experiment$mRNAsd^2,
-		# 																							varianceA = experiment$synthesissd^2,
-		# 																							confidenceThreshold = qchisq(.95,1)
-		# 		)
-		# 		
-		# 	} else {
-		# 		conf_int <- list(
-		# 			k1 = cbind(left=rep(NA, length(simulation_time)),right=rep(NA, length(simulation_time))),
-		# 			k2 = cbind(left=rep(NA, length(simulation_time)),right=rep(NA, length(simulation_time))),
-		# 			k3 = cbind(left=rep(NA, length(simulation_time)),right=rep(NA, length(simulation_time)))
-		# 		)
-		# 	}			
-		# 
-		# } else { # with nascent RNA
-
-			sim <- derivative_solution(
-				simulation_time, gene_class,
-				k1_function, k2_function, k3_function, 
-				k1_params, k2_params, k3_params)
+		sim <- derivative_solution(
+			simulation_time, gene_class,
+			k1_function, k2_function, k3_function, 
+			k1_params, k2_params, k3_params)
 			
-			if( show_confint & data_selection != 'User defined' ) {
-				
-				conf_int <- compute_ci_Derivative_Nascent(c(k1_params, k2_params, k3_params),
-																									tpts = experiment_tpts,
-																									model_tpts = simulation_time,
-																									classTmp = reconvert_gene_classes(gene_class),
-																									experimentalP = reference_preMRNA,
-																									experimentalM = reference_mRNA,
-																									experimentalA = reference_synthesis,
-																									varianceP = experiment$preMRNAsd^2,
-																									varianceM = experiment$mRNAsd^2,
-																									varianceA = if(is.null(experiment$synthesissd)) NULL else experiment$synthesissd^2,
-																									confidenceThreshold = qchisq(.95,1)
-				)
-				
-			} else {
-				conf_int <- list(
-					k1 = cbind(left=rep(NA, length(simulation_time)),right=rep(NA, length(simulation_time))),
-					k2 = cbind(left=rep(NA, length(simulation_time)),right=rep(NA, length(simulation_time))),
-					k3 = cbind(left=rep(NA, length(simulation_time)),right=rep(NA, length(simulation_time)))
-				)
-			}
-			
-		# }
-		
 	}
 	
 	# calculate the scores of the modeling and assign to output
@@ -351,35 +265,130 @@ RNAdynamicsAppMake <- function(data_selection, show_confint,
 		scores$pchisq <- pchisq( chisq_score, 3*length(experiment_tpts) - k )
 		scores$aic <- 2*k - 2*loglik_score
 		
-		# rate variability p-value
-		if( show_confint ) {
-			p_k1 <- rate_var_p(conf_int$k1[simulation_time %in% experiment_tpts,])
-			p_k2 <- rate_var_p(conf_int$k2[simulation_time %in% experiment_tpts,])
-			p_k3 <- rate_var_p(conf_int$k3[simulation_time %in% experiment_tpts,])
-			scores$rate_p <- c(k1=p_k1, k2=p_k2, k3=p_k3)
-		} else {
-			scores$rate_p <- c(k1=NA,k2=NA,k3=NA)
-		}
 		
 	} else {
 		
 		scores <- list()
 		scores$pchisq <- NA
 		scores$aic <- NA
-		scores$rate_p <- c(k1=NA,k2=NA,k3=NA)
 		
 	}
-
+	
+	conf_int <- list(
+		k1 = cbind(left=rep(NA, length(simulation_time)),right=rep(NA, length(simulation_time))),
+		k2 = cbind(left=rep(NA, length(simulation_time)),right=rep(NA, length(simulation_time))),
+		k3 = cbind(left=rep(NA, length(simulation_time)),right=rep(NA, length(simulation_time)))
+	)
+	
 	return(list(sim = sim, conf_int = conf_int, scores = scores))
 	
 }
 
+RNAdynamicsAppMakeConfInt <- function(data_selection, 
+																			time_min, time_max, experiment,
+																			k1_function, k2_function,
+																			k3_function, k1_params,
+																			k2_params, k3_params, 
+																			mod_method) {
+	
+	if( data_selection == 'Experimental data' ) {
+		reference_mRNA <- experiment$mRNA
+		secondary_mRNA <- experiment$mRNA_smooth
+	} else { 
+		reference_mRNA <- experiment$mRNA_smooth
+		secondary_mRNA <- experiment$mRNA
+	}
+	if( data_selection == 'Experimental data' ) {
+		reference_preMRNA <- experiment$preMRNA 
+		secondary_preMRNA <- experiment$preMRNA_smooth
+	} else {
+		reference_preMRNA <- experiment$preMRNA_smooth
+		secondary_preMRNA <- experiment$preMRNA
+	}
+	if( data_selection == 'Experimental data' ) {
+		reference_synthesis <- experiment$synthesis
+		secondary_synthesis <- experiment$synthesis_smooth
+	} else {
+		reference_synthesis <- experiment$synthesis_smooth
+		secondary_synthesis <- experiment$synthesis
+	}
+	
+	experimental_mRNAsd <- experiment$mRNAsd
+	experimental_preMRNAsd <- experiment$preMRNAsd
+	experimental_synthesissd <- experiment$synthesissd
+	if( !experiment$steady_state ) {
+		experiment_tpts <- experiment$tpts	
+		simulation_time <- seq(time_min,time_max,length.out=1000)
+		simulation_time <- sort(unique(c(simulation_time, experiment_tpts)))
+	} else {
+		experiment_tpts <- 0
+		simulation_time <- seq(0,16,length.out=1000)
+	}
+	
+	if( mod_method == 'int' ) {
+		
+		gene_class <- paste0(
+			switch(k1_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V"),
+			switch(k2_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V"),
+			switch(k3_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V")
+		)
+		
+		conf_int <- compute_ci_Integrative_Nascent(c(k1_params, k2_params, k3_params),
+																							 tpts = experiment_tpts,
+																							 model_tpts = simulation_time,
+																							 classTmp = gene_class,
+																							 experimentalP = reference_preMRNA,
+																							 experimentalM = reference_mRNA,
+																							 experimentalA = reference_synthesis,
+																							 varianceP = experiment$preMRNAsd^2,
+																							 varianceM = experiment$mRNAsd^2,
+																							 varianceA = experiment$synthesissd^2,
+																							 confidenceThreshold = qchisq(.95,1)
+		)
+		
+	} else { # mod_method == 'der'
+		
+		gene_class <- paste0(
+			switch(k1_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V"),
+			switch(k2_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V"),
+			switch(k3_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V")
+		)
+		
+		conf_int <- compute_ci_Derivative_Nascent(c(k1_params, k2_params, k3_params),
+																							tpts = experiment_tpts,
+																							model_tpts = simulation_time,
+																							classTmp = gene_class, #reconvert_gene_classes(gene_class),
+																							experimentalP = reference_preMRNA,
+																							experimentalM = reference_mRNA,
+																							experimentalA = reference_synthesis,
+																							varianceP = experiment$preMRNAsd^2,
+																							varianceM = experiment$mRNAsd^2,
+																							varianceA = if(is.null(experiment$synthesissd)) NULL else experiment$synthesissd^2,
+																							confidenceThreshold = qchisq(.95,1)
+		)
+		
+		
+	}
+	
+	# calculate the scores of the modeling and assign to output
+	
+	p_k1 <- rate_var_p(conf_int$k1[simulation_time %in% experiment_tpts,])
+	p_k2 <- rate_var_p(conf_int$k2[simulation_time %in% experiment_tpts,])
+	p_k3 <- rate_var_p(conf_int$k3[simulation_time %in% experiment_tpts,])
+	rate_p <- c(k1=p_k1, k2=p_k2, k3=p_k3)
+	
+	return(list(conf_int = conf_int, rate_p = rate_p))
+	
+}
+
 RNAdynamicsAppPlot <- function(data_selection, 
-															 show_logtime, show_confint, 
+															 show_logtime, show_relexpr,
 															 logshift, linshift, 
 															 time_min, time_max, 
 															 experiment, 
-															 simdata
+															 simdata,
+															 ylims,
+															 rate_p
 															 ) {
 
 	# get experimental values
@@ -414,8 +423,17 @@ RNAdynamicsAppPlot <- function(data_selection,
 		simulation_time <- seq(time_min,time_max,length.out=1000)
 		simulation_time <- sort(unique(c(simulation_time, experiment_tpts)))
 	} else {
-		experiment_tpts <- 0
+		experiment_tpts <- seq(0,16,by=4)
 		simulation_time <- seq(0,16,length.out=1000)
+		reference_mRNA <- c(reference_mRNA, rep(NA, 4))
+		secondary_mRNA <- c(secondary_mRNA, rep(NA, 4))
+		reference_preMRNA <- c(reference_preMRNA, rep(NA, 4))
+		secondary_preMRNA <- c(secondary_preMRNA, rep(NA, 4))
+		reference_synthesis <- c(reference_synthesis, rep(NA, 4))
+		secondary_synthesis <- c(secondary_synthesis, rep(NA, 4))
+		experimental_mRNAsd <- c(experimental_mRNAsd, rep(NA, 4))
+		experimental_preMRNAsd <- c(experimental_preMRNAsd, rep(NA, 4))
+		experimental_synthesissd <- c(experimental_synthesissd, rep(NA, 4))
 	}
 	
 	# make the simulation
@@ -434,33 +452,33 @@ RNAdynamicsAppPlot <- function(data_selection,
 	# start plot routine
 	
 	par(mfrow=c(5,1))
-	par(mar=c(2.5,5,0,1)+.1)
+	par(mar=c(2.5,8,0,1)+.1)
 	
 	# plot k1
 
 	plot_k1_experiment = ! (data_selection == 'User defined' | experiment$no_nascent)
-	plotSingleRNADynamic( 'synthesis', simtimeplot, sim[,'k1'], conf_int$k1[,'left'], conf_int$k1[,'right'], 
-												plot_k1_experiment, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd )
+	k1_ylim <- plotSingleRNADynamic( 'synthesis', 's', simtimeplot, sim[,'k1'], conf_int$k1[,'left'], conf_int$k1[,'right'], 
+												plot_k1_experiment, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd, show_relexpr, ylims$k1_ylim, rate_p = rate_p['k1'] )
 	
 	# plot pre-RNA dynamics
 
-	plotSingleRNADynamic( 'pre-RNA', simtimeplot, sim[,'p'], rep(NA, length(simtimeplot)), rep(NA, length(simtimeplot)), 
-												data_selection != 'User defined', exptimeplot, reference_preMRNA, secondary_preMRNA, experimental_preMRNAsd )
+	p_ylim <- plotSingleRNADynamic( 'pre-RNA', '', simtimeplot, sim[,'p'], rep(NA, length(simtimeplot)), rep(NA, length(simtimeplot)), 
+												data_selection != 'User defined', exptimeplot, reference_preMRNA, secondary_preMRNA, experimental_preMRNAsd, show_relexpr, ylims$p_ylim )
 	
 	# plot k2
 
-	plotSingleRNADynamic( 'processing', simtimeplot, sim[,'k2'], conf_int$k2[,'left'], conf_int$k2[,'right'], 
-												FALSE)#, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd )
+	k2_ylim <- plotSingleRNADynamic( 'processing', 'p', simtimeplot, sim[,'k2'], conf_int$k2[,'left'], conf_int$k2[,'right'], 
+												FALSE, show_relexpr = show_relexpr, ylim = ylims$k2_ylim, rate_p = rate_p['k2'] )#, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd )
 	
 	# plot mRNA dynamics 
 
-	plotSingleRNADynamic( 'mature RNA', simtimeplot, sim[,'m'], rep(NA, length(simtimeplot)), rep(NA, length(simtimeplot)), 
-												data_selection != 'User defined', exptimeplot, reference_mRNA, secondary_mRNA, experimental_mRNAsd )
+	m_ylim <- plotSingleRNADynamic( 'mature-RNA', '', simtimeplot, sim[,'m'], rep(NA, length(simtimeplot)), rep(NA, length(simtimeplot)), 
+												data_selection != 'User defined', exptimeplot, reference_mRNA, secondary_mRNA, experimental_mRNAsd, show_relexpr, ylims$m_ylim )
 	
 	# plot k3
 
-	plotSingleRNADynamic( 'degradation', simtimeplot, sim[,'k3'], conf_int$k3[,'left'], conf_int$k3[,'right'], 
-												FALSE)#, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd )
+	k3_ylim <- plotSingleRNADynamic( 'degradation', 'd', simtimeplot, sim[,'k3'], conf_int$k3[,'left'], conf_int$k3[,'right'], 
+												FALSE, show_relexpr = show_relexpr, ylim = ylims$k3_ylim, rate_p = rate_p['k3'] )#, exptimeplot, reference_synthesis, secondary_synthesis, experimental_synthesissd )
 	
 	# draw x-axis
 	if( show_logtime ) {
@@ -468,41 +486,84 @@ RNAdynamicsAppPlot <- function(data_selection,
 	} else {
 		axis(1, at=experiment_tpts, labels = signif(experiment_tpts,2) , cex.axis = 1.3)	
 	}
-
+	
+	# return ylims upon request
+	ylims <- list(
+		k1_ylim = k1_ylim, 
+		k2_ylim = k2_ylim, 
+		k3_ylim = k3_ylim, 
+		p_ylim = p_ylim, 
+		m_ylim = m_ylim
+	)
 }
 
-plotSingleRNADynamic <- function( dyn_name, simtimeplot, simprofile, ci_left, ci_right, plot_exp, exptimeplot, ref_exp, sec_exp, ssd_exp ) {
+plotSingleRNADynamic <- function( dyn_name, tag, simtimeplot, simprofile, ci_left, ci_right, plot_exp, exptimeplot, ref_exp, sec_exp, ssd_exp, show_relexpr = FALSE, ylim, rate_p = NULL ) {
 	
+	if( !is.null(rate_p) ) {
+		p_name <- paste0('(p=',signif(rate_p,2),')')
+	} else {
+		p_name <- ''
+	}
+	if( tag != '' ) {
+		dyn_name <- gsub("^","paste('", gsub("$",")", gsub("\\)", "'),')'", gsub("\\(", "(', bold('", paste(dyn_name, paste0('(', tag, ')'))))))
+	}
 	deltaylim <- function( yrange ) {
 		deltarange <- yrange[2] * .05
 		ylim <- yrange + c(-deltarange, deltarange)
 	}
-	
+
 	if( plot_exp ) {
-		yrange <- range(c(simprofile, 
-											ci_left, ci_right, 
-											c(sec_exp + ssd_exp, 
-												ref_exp + ssd_exp) , 
-											c(sec_exp - ssd_exp, 
-												ref_exp - ssd_exp)), na.rm=TRUE)
-		ylim <- deltaylim(yrange)
-	} else {
-		ylim <- deltaylim( range(c(simprofile, ci_left, ci_right), na.rm=TRUE) )
+		sec_exp_plus_ssd <- sec_exp + ssd_exp
+		ref_exp_plus_ssd <- ref_exp + ssd_exp
+		sec_exp_minus_ssd <- sec_exp - ssd_exp
+		ref_exp_minus_ssd <- ref_exp - ssd_exp
+	}
+	
+	if(show_relexpr) {
+		refexpression <- simprofile[1]
+		simprofile <- simprofile/refexpression
+		ci_left <- ci_left/refexpression
+		ci_right <- ci_right/refexpression
+		if( plot_exp ) {
+			sec_exp <- sec_exp/refexpression
+			ref_exp <- ref_exp/refexpression
+			sec_exp_plus_ssd <- sec_exp_plus_ssd/refexpression
+			ref_exp_plus_ssd <- ref_exp_plus_ssd/refexpression
+			sec_exp_minus_ssd <- sec_exp_minus_ssd/refexpression
+			ref_exp_minus_ssd <- ref_exp_minus_ssd/refexpression
+		}
+	}
+	
+	if( is.null(ylim) ) {
+		if( plot_exp ) {
+			yrange <- range(c(simprofile, 
+												sec_exp_plus_ssd, 
+												ref_exp_plus_ssd, 
+												sec_exp_minus_ssd, 
+												ref_exp_minus_ssd), na.rm=TRUE)
+			ylim <- deltaylim(yrange)
+		} else {
+			ylim <- deltaylim( range(c(simprofile, ci_left, ci_right), na.rm=TRUE) )
+		}
 	}
 	plot(simtimeplot, simprofile, 
-			 xaxs='i', yaxs='i', xaxt = 'n',
-			 ylab = dyn_name, type='l', xlab='', lwd=2, cex.lab = 1.7, cex.axis=1.3,  
+			 xaxs='i', yaxs='i', xaxt = 'n', ylab='',
+			 type='l', xlab='', lwd=2, cex.lab = 1.7, cex.axis=1.3,  
 			 xlim = range(simtimeplot) 
 			 + diff(range(simtimeplot)) * c(-.05, .05),
 			 ylim = ylim
 	)
+	mtext(parse(text=dyn_name), 2, 4)
+	mtext(p_name, 2, 3)
 	matlines(simtimeplot, cbind(ci_left, ci_right), lty=2, col=1)	
 	if( plot_exp ) {
 		points( exptimeplot, sec_exp, pch=1, col='grey')
 		points( exptimeplot, ref_exp, pch=19)
-		segments( exptimeplot , ref_exp - ssd_exp 
-							, exptimeplot , ref_exp + ssd_exp )
+		segments( exptimeplot , ref_exp_minus_ssd 
+							, exptimeplot , ref_exp_plus_ssd )
 	}
+	# return ylim upon request
+	ylim <- ylim
 }
 
 

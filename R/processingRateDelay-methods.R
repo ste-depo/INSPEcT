@@ -47,7 +47,10 @@
 #' table(procDelay)
 #'
 setMethod('processingDelay', signature('INSPEcT'), function(inspectIds, tauThreshold=1.2, deltaThreshold=1.0, silent=TRUE) {
-
+	if( !.hasSlot(inspectIds, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
+	
 	tau <- calculateTau(inspectIds, silent=silent)
 	delta <- calculateDelta(inspectIds, silent=silent)
 	tau > tauThreshold & delta > deltaThreshold
@@ -59,7 +62,10 @@ setMethod('processingDelay', signature('INSPEcT'), function(inspectIds, tauThres
 #' head(calculateTau(matureInspObj))
 #'
 setMethod('calculateTau', signature('INSPEcT'), function(inspectIds, silent=FALSE) {
-
+	if( !.hasSlot(inspectIds, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
+	
 	eiGenes <- featureNames(inspectIds)[!apply(is.na(ratesFirstGuess(inspectIds, 'preMRNA')),1,all)]
 
 	if( inspectIds@NoNascent ) {
@@ -98,7 +104,10 @@ setMethod('calculateTau', signature('INSPEcT'), function(inspectIds, silent=FALS
 #' head(calculateDelta(matureInspObj))
 #'
 setMethod('calculateDelta', signature('INSPEcT'), function(inspectIds, silent=FALSE) {
-
+	if( !.hasSlot(inspectIds, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
+	
 	eiGenes <- featureNames(inspectIds)[!apply(is.na(ratesFirstGuess(inspectIds, 'preMRNA')),1,all)]
 
 	if( inspectIds@NoNascent ) {

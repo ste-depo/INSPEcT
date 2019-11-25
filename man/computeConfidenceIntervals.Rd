@@ -6,16 +6,13 @@
 \alias{computeConfidenceIntervals,INSPEcT-method}
 \title{Compute confidence intervals}
 \usage{
-computeConfidenceIntervals(object, singleGeneClass = NULL,
-  BPPARAM = bpparam())
+computeConfidenceIntervals(object, BPPARAM = bpparam())
 
 \S4method{computeConfidenceIntervals}{INSPEcT}(object,
-  singleGeneClass = NULL, BPPARAM = bpparam())
+  BPPARAM = bpparam())
 }
 \arguments{
 \item{object}{An object of class INSPEcT_model}
-
-\item{singleGeneClass}{The regulative class of the single gene under analysis (default=NULL)}
 
 \item{BPPARAM}{Parallelization parameters for bplapply. By default bpparam()}
 }

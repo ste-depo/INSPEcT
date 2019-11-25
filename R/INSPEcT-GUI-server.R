@@ -1,7 +1,9 @@
 INSPEcTGUIshinyAppServer <- function(input, output, session) {
 	
-	# global variables
+	# allow loading datasets up to 50MB
+	options(shiny.maxRequestSize=50*1024^2)
 	
+	# global variables
 	ranges <- reactiveValues()
 	values <- reactiveValues()
 	experiment <- reactiveValues()
@@ -24,25 +26,41 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 
 		## load file
 		if( file.exists(filename) ) {
+			
 			ids <- readRDS(filename)
+			updateCheckboxInput(session, "fixyaxis_checkbox", value=FALSE)
 
 			if( class(ids) != 'INSPEcT' ) {
-				return(NULL)
+				
+				error_on_load_file()
+				values$loaded_file <- FALSE
+				values$loaded_file_error_message <- 'The loaded file is not of class INSPEcT'
+				return(new(Class = 'INSPEcT'))
 
-			} else { # (the loaded object is of class INSPEcT
+			}  else if(!(.hasSlot(ids, 'version'))) {
+
+				error_on_load_file()
+				values$loaded_file <- FALSE
+				values$loaded_file_error_message <- 'The loaded file is obsolete and cannot work with the current version of INSPEcT'
+				return(new(Class = 'INSPEcT'))
+				
+			} else {
+			
+			# (the loaded object is of class INSPEcT
 				
 				## store inspect global values
 				experiment$tpts <- tpts(ids)
 				experiment$no_nascent <- ids@NoNascent
 				experiment$steady_state <- is.character(experiment$tpts)
-
+				
 				# select only genes with exons and introns
 				ids <- ids[apply(is.finite(ratesFirstGuess(ids,'preMRNA')),1,all)]
 
-				if( !experiment$steady_state ) {
+				if( !experiment$steady_state & nrow(ids@modelRates) > 0 ) {
 
 					inspect$mod_method <- modelingParams(ids)$estimateRatesWith ## either "der" or "int"
 					inspect$classes <- geneClass(ids)
+					inspect$classes_internal <- geneClassInternal(ids)
 					inspect$logshift <- findttpar(experiment$tpts)
 					inspect$linshift <- ifelse( experiment$no_nascent,
 						abs(min(timetransf(experiment$tpts,inspect$logshift))),0)
@@ -50,12 +68,15 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 					# ... optionally throw a warning and consider as steady-state
 					if( ids@NF ) stop("The RNAdynamics app doesn't work with non-functional(NF) INSPEcT models")
 					
+					# set default values of the checkboxes
+					updateRadioButtons(session, inputId = 'data_selection', selected = 'Smooth data')
+					
 					## select only the best model
 					
 					if( ids@NoNascent ){ # (based on the class)
 						ids@model@ratesSpecs <-
-							lapply(seq_along(inspect$classes), function(i)
-								list(ids@model@ratesSpecs[[i]][[inspect$classes[i]]]))
+							lapply(seq_along(inspect$classes_internal), function(i)
+								list(ids@model@ratesSpecs[[i]][[inspect$classes_internal[i]]]))
 						names(ids@model@ratesSpecs) <- featureNames(ids)
 					} else{ # Nascent RNA object (always VVV)
 						ids@model@ratesSpecs <-
@@ -65,8 +86,8 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 					}
 					
 					## update (converted) gene classes in the select input box
-					classes_table <- table(isolate(inspect$classes))
-					names(classes_table) <- convert_gene_classes( names(classes_table) )
+					classes_table <- sort(table(isolate(inspect$classes)), decreasing = TRUE)
+					# names(classes_table) <- convert_gene_classes( names(classes_table) )
 					classes_table_string <- paste( names(classes_table) , '(', classes_table, ')' )
 					updateSelectInput(session, "select_class", 
 						choices = classes_table_string, selected = classes_table_string[1])
@@ -78,6 +99,9 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 
 				} else { ## steady state
 
+					# set default values of the checkboxes
+					# updateRadioButtons(session, inputId = 'data_selection', selected = 'Experimental data')
+					
 					inspect$mod_method <- 'int'
 					inspect$logshift <- 1
 					inspect$linshift <- 0
@@ -98,15 +122,41 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				## predifined  
 
 				values$logtime <- FALSE
-				values$confint <- FALSE
+				values$loaded_file <- TRUE
 				
 				return(ids)
+			
+				}
 				
-			}
 		} else { # (if the file name does not exist)
-			return(NULL)
+		
+			error_on_load_file()
+			values$loaded_file <- FALSE
+			values$loaded_file_error_message <- 'The selected file does not exist'
+			return(new(Class = 'INSPEcT'))
+			
 		}
 
+	})
+	
+	#####################
+	## load file error ##
+	#####################
+	
+	error_on_load_file <- function() {
+		updateRadioButtons(session, 'data_selection', selected = 'User defined')
+		updateSelectInput(session, "select_class", choices = character(0))
+		updateRadioButtons(session, 'k1_function', selected = 'Constant')
+		updateRadioButtons(session, 'k2_function', selected = 'Constant')
+		updateRadioButtons(session, 'k3_function', selected = 'Constant')
+	}
+	
+	output$file_error <- renderUI({
+		if( !is.null(contentsrea()) & !values$loaded_file ) {
+			h6(paste('Error:', values$loaded_file_error_message))
+		} else {
+			NULL
+		}
 	})
 	
 	################################################
@@ -116,7 +166,8 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 	observe({
 		if( !is.null(input$select_class) ) {
 			if( !experiment$steady_state ) {
-				selected_class <- reconvert_gene_classes(strsplit( input$select_class , ' ')[[1]][1])
+				# selected_class <- reconvert_gene_classes(strsplit( input$select_class , ' ')[[1]][1])
+				selected_class <- strsplit( input$select_class , ' ')[[1]][1]
 				updateSelectInput(session, "select", selected = NULL,
 					choices = sort(featureNames(contentsrea()[inspect$classes == selected_class])))
 			}
@@ -145,8 +196,8 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				modeling_type <- 'K123'
 				model_names <- c('alpha','gamma','beta')
 			} else { # inspect$mod_method == 'der'
-				if( experiment$no_nascent & (gene_class  %in% c('KVK','KKV','KVV') ) ) {
-					if( gene_class %in% c('KVK','KVV') ) {
+				if( experiment$no_nascent & (gene_class  %in% c('p','d','pd') ) ) {  ## c('KVK','KKV','KVV')
+					if( gene_class %in% c('p','pd') ) {
 						modeling_type <- 'TK13'
 						model_names <- c('total','alpha','beta')
 					} else {
@@ -209,7 +260,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				
 				rateRange <- function(rate) {
 					rate_vals = ratesFirstGuess(ids, rate)
-					rate_range = range(rate_vals[is.finite(rate_vals)])
+					rate_range = quantile(rate_vals[is.finite(rate_vals)], probs=c(.025, .975))
 					return(c(floor(rate_range[1]), ceiling(rate_range[2])))
 				}
 
@@ -237,9 +288,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 
 			}
 			
-			## set to false the evaluation of CI on load of a new dataset
-			updateCheckboxInput(session, "confint_checkbox", value = FALSE)
-
 			try({ 
 				## this try is necessary because the class is updated before the gene, then the model_name
 				## corresponding to the new class can also not correspond to the currently selected gene
@@ -618,9 +666,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 														 selected = if(degradationmodel$type == 'impulse') "Impulsive" else "Sigmoidal")
 				}
 				
-				# gene_h_vals <- c(isolate(values$k1_h0),isolate(values$k1_h1),isolate(values$k1_h2),
-				# 	isolate(values$k2_h0),isolate(values$k2_h1),isolate(values$k2_h2),
-				# 	isolate(values$k3_h0),isolate(values$k3_h1),isolate(values$k3_h2))
 				gene_t_vals <- c(isolate(values$k1_t1),isolate(values$k1_t2),isolate(values$k2_t1),
 												 isolate(values$k2_t2),isolate(values$k3_t1),isolate(values$k3_t2))
 				gene_beta_vals <- c(isolate(values$k1_beta),isolate(values$k2_beta),isolate(values$k3_beta))
@@ -636,7 +681,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				ranges$beta_min <- min(c(gene_beta_vals,out$beta_pars[1]))
 				ranges$beta_max <- max(c(gene_beta_vals,out$beta_pars[2]))
 				
-			}, silent=FALSE)
+			}, silent = TRUE)
 		}
 		
 	})
@@ -730,7 +775,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k1_h0) & !is.null(isolate(values$k1_h0)))
 			{
 				if(input$k1_h0 != isolate(values$k1_h0)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k1_h0 <- input$k1_h0
 				}
@@ -743,7 +787,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k1_h1) & !is.null(isolate(values$k1_h1)))
 			{
 				if(input$k1_h1 != isolate(values$k1_h1)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k1_h1 <- input$k1_h1
 				}
@@ -756,7 +799,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k1_h2) & !is.null(isolate(values$k1_h2)))
 			{
 				if(input$k1_h2 != isolate(values$k1_h2)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k1_h2 <- input$k1_h2
 				}
@@ -769,7 +811,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k1_t1) & !is.null(isolate(values$k1_t1)))
 			{
 				if(input$k1_t1 != isolate(values$k1_t1)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k1_t1 <- input$k1_t1
 				}
@@ -782,7 +823,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k1_t2) & !is.null(isolate(values$k1_t2)))
 			{
 				if(input$k1_t2 != isolate(values$k1_t2)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k1_t2 <- input$k1_t2
 				}
@@ -795,7 +835,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k1_beta) & !is.null(isolate(values$k1_beta)))
 			{
 				if(input$k1_beta != isolate(values$k1_beta)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k1_beta <- input$k1_beta
 				}
@@ -808,7 +847,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k2_h0) & !is.null(isolate(values$k2_h0)))
 			{
 				if(input$k2_h0 != isolate(values$k2_h0)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k2_h0 <- input$k2_h0
 				}
@@ -821,7 +859,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k2_h1) & !is.null(isolate(values$k2_h1)))
 			{
 				if(input$k2_h1 != isolate(values$k2_h1)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k2_h1 <- input$k2_h1
 				}
@@ -834,7 +871,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k2_h2) & !is.null(isolate(values$k2_h2)))
 			{
 				if(input$k2_h2 != isolate(values$k2_h2)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k2_h2 <- input$k2_h2
 				}
@@ -847,7 +883,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k2_t1) & !is.null(isolate(values$k2_t1)))
 			{
 				if(input$k2_t1 != isolate(values$k2_t1)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k2_t1 <- input$k2_t1
 				}
@@ -860,7 +895,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k2_t2) & !is.null(isolate(values$k2_t2)))
 			{
 				if(input$k2_t2 != isolate(values$k2_t2)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k2_t2 <- input$k2_t2
 				}
@@ -873,7 +907,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k2_beta) & !is.null(isolate(values$k2_beta)))
 			{
 				if(input$k2_beta != isolate(values$k2_beta)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k2_beta <- input$k2_beta
 				}
@@ -886,7 +919,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k3_h0) & !is.null(isolate(values$k3_h0)))
 			{
 				if(input$k3_h0 != isolate(values$k3_h0)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k3_h0 <- input$k3_h0
 				}
@@ -899,7 +931,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k3_h1) & !is.null(isolate(values$k3_h1)))
 			{
 				if(input$k3_h1 != isolate(values$k3_h1)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k3_h1 <- input$k3_h1
 				}
@@ -912,7 +943,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k3_h2) & !is.null(isolate(values$k3_h2)))
 			{
 				if(input$k3_h2 != isolate(values$k3_h2)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k3_h2 <- input$k3_h2
 				}
@@ -925,7 +955,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k3_t1) & !is.null(isolate(values$k3_t1)))
 			{
 				if(input$k3_t1 != isolate(values$k3_t1)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k3_t1 <- input$k3_t1
 				}
@@ -938,7 +967,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k3_t2) & !is.null(isolate(values$k3_t2)))
 			{
 				if(input$k3_t2 != isolate(values$k3_t2)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k3_t2 <- input$k3_t2
 				}
@@ -951,7 +979,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			if(!is.null(input$k3_beta) & !is.null(isolate(values$k3_beta)))
 			{
 				if(input$k3_beta != isolate(values$k3_beta)) {
-					updateCheckboxInput(session, "confint_checkbox", value = FALSE)
 					output$convergence <- renderPrint({"not converged"})
 					values$k3_beta <- input$k3_beta
 				}
@@ -963,14 +990,15 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 	## observe_parameters_change_by_user (end) #########
 	##############################################
 	
+	## confidence intervals
+	
+	output$confint_box <- renderUI({
+		if( input$data_selection != 'User defined' & !experiment$steady_state ) {
+			actionButton("conf_int_button", "Conf. Int.")
+		}
+	})
+	
 	## modeling checkbox
-
-	# observe({
-	# 	if( input$data_selection == 'User defined' ) {
-	# 		updateCheckboxInput(session, "confint_checkbox", value = FALSE)
-	# 		values$confint <- FALSE
-	# 	}
-	# })
 	
 	output$modeling_box <- renderUI({
 		if( input$data_selection != 'User defined' & !experiment$steady_state ) {
@@ -990,7 +1018,9 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				)
 		}
 		})
-
+	
+	## rate pvalues 
+	
 	output$modeling_type <- renderUI({
 		if( inspect$mod_method == 'int' | input$data_selection == 'User defined' ) {
 			h4('Integrative framework')
@@ -1021,43 +1051,12 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 	######################################################################
 	######################################################################
 	
-	## rate pvalues 
-	
-	output$rate_pvals <- renderUI({
-		ids <- contentsrea()
-		if( !is.null(ids) & !is.null(values$confint) ) {
-			if( input$data_selection != 'User defined' & values$confint ) {
-				# fluidRow(
-				# 	column(2,h5("variability of k1 (p):")),
-				# 	column(2,verbatimTextOutput("k1_p", TRUE)),
-				# 	column(2,h5("k2 (p):")),
-				# 	column(2,verbatimTextOutput("k2_p", TRUE)),
-				# 	column(2,h5("k3 (p):")),
-				# 	column(2,verbatimTextOutput("k3_p", TRUE))
-				# )
-				fluidRow(
-					column(6,h5('Rate variablity (p-value)')),
-					column(6,h5(paste(
-						'k1:',
-						signif(values$rate_p['k1'],2), 
-						'k2:',
-						signif(values$rate_p['k2'],2),
-						'k3:',
-						signif(values$rate_p['k3'],2)
-						)))
-				)
-			} else {
-				NULL
-			}
-		}
-	})	
-	
 	## logarithmic time axis
 	
 	output$logtime_checkbox_ui <- renderUI({
 		if( input$data_selection != 'User defined' & !experiment$steady_state ) {
 			checkboxInput("logtime_checkbox", 
-					label = "Space time logarithmically", 
+					label = "Log time", 
 					value = values$logtime)
 		} else {
 			NULL
@@ -1068,24 +1067,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 		ids <- contentsrea()
 		if( !is.null(ids) )
 			values$logtime <- input$logtime_checkbox
-	})
-	
-	## view/compute confidence intervals
-
-	output$confint_checkbox_ui <- renderUI({
-		if( input$data_selection != 'User defined' & !experiment$steady_state ) {
-			checkboxInput("confint_checkbox",
-										label = "Evaluate confidence intervals",
-										value = values$confint)
-		} else {
-			NULL
-		}
-	})
-
-	observe({
-		ids <- contentsrea()
-		if( !is.null(ids) )
-			values$confint <- input$confint_checkbox
 	})
 
 	################################  
@@ -1507,6 +1488,82 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 		
 	})
 	
+	###########################
+	## confidence intervals ###
+	###########################
+
+	observeEvent(input$conf_int_button, {
+		
+		ids <- contentsrea()
+		if( input$select != "" & !is.null(ids) & !is.null(input$k1_function) &
+				!is.null(input$k2_function) & !is.null(input$k3_function) )
+			
+			suppressWarnings(try({
+				
+				k1_params <- switch(input$k1_function,
+														"Constant" = input$k1_h0,
+														"Sigmoidal" = c(input$k1_h0, input$k1_h1, input$k1_t1, input$k1_beta),
+														"Impulsive" = c(input$k1_h0, input$k1_h1, input$k1_h2, input$k1_t1, input$k1_t2, input$k1_beta)
+				)
+				
+				expected_length_k1_params <- switch(input$k1_function,
+																						"Constant" = 1, "Sigmoidal" = 4, "Impulsive" = 6)
+				
+				k2_params <- switch(input$k2_function,
+														"Constant" = input$k2_h0,
+														"Sigmoidal" = c(input$k2_h0, input$k2_h1, input$k2_t1, input$k2_beta),
+														"Impulsive" = c(input$k2_h0, input$k2_h1, input$k2_h2, input$k2_t1, input$k2_t2, input$k2_beta)
+				)
+				
+				expected_length_k2_params <- switch(input$k2_function,
+																						"Constant" = 1, "Sigmoidal" = 4, "Impulsive" = 6)
+				
+				k3_params <- switch(input$k3_function,
+														"Constant" = input$k3_h0,
+														"Sigmoidal" = c(input$k3_h0, input$k3_h1, input$k3_t1, input$k3_beta),
+														"Impulsive" = c(input$k3_h0, input$k3_h1, input$k3_h2, input$k3_t1, input$k3_t2, input$k3_beta)
+				)
+				
+				expected_length_k3_params <- switch(input$k3_function,
+																						"Constant" = 1, "Sigmoidal" = 4, "Impulsive" = 6)
+				
+				if( length(k1_params) == expected_length_k1_params &
+						length(k2_params) == expected_length_k2_params &
+						length(k3_params) == expected_length_k3_params )
+				{
+					
+					if( input$data_selection != 'User defined' ) {
+						mod_method <- inspect$mod_method
+					} else {
+						mod_method <- 'int'
+					}
+					
+					ci_res <- RNAdynamicsAppMakeConfInt(
+						data_selection = input$data_selection,
+						time_min = ranges$time_min,
+						time_max = ranges$time_max,
+						experiment = experiment,
+						k1_function = input$k1_function, 
+						k2_function = input$k2_function, 
+						k3_function = input$k3_function,
+						k1_params = k1_params,
+						k2_params = k2_params,
+						k3_params = k3_params,
+						mod_method = mod_method
+					)
+					
+					# put into global variables
+					simdata <- modeling$simdata
+					simdata$conf_int <- ci_res$conf_int
+					modeling$simdata <- simdata
+					values$rate_p <- ci_res$rate_p 
+					
+				}
+				
+			}, silent = TRUE))
+		
+	})
+	
 	######################################################################
 	######################################################################
 	### PLOT of the gene (and update of some parameters if succeded)
@@ -1521,22 +1578,25 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 		# content is a function with argument file. content writes the plot to the device
 		content = function(file) {
 			pdf(file) # open the pdf device
-			RNAdynamicsAppPlot(
-				data_selection = input$data_selection,
-				show_logtime = input$logtime_checkbox,
-				show_confint = input$confint_checkbox,
-				logshift = inspect$logshift,
-				linshift = inspect$linshift,
-				time_min = ranges$time_min,
-				time_max = ranges$time_max,
-				experiment = experiment,
-				simdata = modeling$simdata#,
-				#mod_method = if( input$data_selection != 'User defined' ) inspect$mod_method else 'int'
-			)
+			suppressWarnings(try({
+				RNAdynamicsAppPlot(
+					data_selection = input$data_selection,
+					show_logtime = input$logtime_checkbox,
+					show_relexpr = input$relativexpr_checkbox,
+					logshift = inspect$logshift,
+					linshift = inspect$linshift,
+					time_min = ranges$time_min,
+					time_max = ranges$time_max,
+					experiment = experiment,
+					simdata = modeling$simdata,
+					ylims = if(input$fixyaxis_checkbox) isolate(ranges$ylims) else NULL,
+					rate_p = values$rate_p
+				)
+			}, silent = TRUE))
 			dev.off()  # turn the device off
 		}
 	)
-
+	
 	## call the plot function when downloading the image
 	output$saveRNAdynamicsDataButton <- downloadHandler(
 		filename =  function() {
@@ -1548,7 +1608,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 		}
 	)
 	
-	output$gene <- renderPlot({
+	observe({
 		
 		ids <- contentsrea()
 		if( input$select != "" & !is.null(ids) & !is.null(input$k1_function) &
@@ -1596,7 +1656,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 
 					simdata <- RNAdynamicsAppMake(
 						data_selection = input$data_selection,
-						show_confint = input$confint_checkbox,
 						time_min = ranges$time_min,
 						time_max = ranges$time_max,
 						experiment = experiment,
@@ -1608,28 +1667,37 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 						k3_params = k3_params,
 						mod_method = mod_method
 						)
-					RNAdynamicsAppPlot(
-						data_selection = input$data_selection,
-						show_logtime = input$logtime_checkbox,
-						show_confint = input$confint_checkbox,
-						logshift = inspect$logshift,
-						linshift = inspect$linshift,
-						time_min = ranges$time_min,
-						time_max = ranges$time_max,
-						experiment = experiment,
-						simdata = simdata
-					)
+
 					modeling$simdata <- simdata
-					output$pchisq <- renderPrint({signif(modeling$simdata$scores$pchisq,3)})
-					output$aic <- renderPrint({signif(modeling$simdata$scores$aic,3)})
-					values$rate_p <- modeling$simdata$scores$rate_p # put into a global variable
+					output$pchisq <- renderPrint({signif(isolate(modeling$simdata$scores$pchisq),3)})
+					output$aic <- renderPrint({signif(isolate(modeling$simdata$scores$aic),3)})
+					values$rate_p <- NULL
 					
 				}
 
-			}, silent = FALSE))
+			}, silent = TRUE))
 		
 	})
 
+	output$gene <- renderPlot({
+		suppressWarnings(try({
+			ylims <- RNAdynamicsAppPlot(
+				data_selection = input$data_selection,
+				show_logtime = input$logtime_checkbox,
+				show_relexpr = input$relativexpr_checkbox,
+				logshift = inspect$logshift,
+				linshift = inspect$linshift,
+				time_min = ranges$time_min,
+				time_max = ranges$time_max,
+				experiment = experiment,
+				simdata = modeling$simdata,
+				ylims = if(input$fixyaxis_checkbox) isolate(ranges$ylims) else NULL,
+				rate_p = values$rate_p
+			)
+			ranges$ylims <- ylims
+		}, silent = TRUE))
+	})
+	
 	#######################
 	## OPTIMIZE ###########
 	#######################

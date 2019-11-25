@@ -3,93 +3,35 @@
 \docType{methods}
 \name{modelSelection}
 \alias{modelSelection}
-\alias{modelSelection<-}
 \alias{modelSelection,INSPEcT-method}
-\alias{modelSelection<-,INSPEcT-method}
 \alias{modelSelection,INSPEcT_model-method}
-\alias{modelSelection<-,INSPEcT_model-method}
-\title{Get or set parameters for model test and selection}
+\title{Visualize criteria used for rate variability}
 \usage{
 modelSelection(object)
 
-modelSelection(object) <- value
-
 \S4method{modelSelection}{INSPEcT}(object)
 
-\S4method{modelSelection}{INSPEcT}(object) <- value
-
 \S4method{modelSelection}{INSPEcT_model}(object)
-
-\S4method{modelSelection}{INSPEcT_model}(object) <- value
 }
 \arguments{
 \item{object}{An object of class INSPEcT or INSPEcT_model}
-
-\item{value}{A list or a character that will substitute the set of parameters
-\itemize{
-  \item modelSelection: A character, either "llr" to test whether a rate is 
-    varying using log-likelihood testing framework or "aic" to choose
-    the best model via Akaike Information Criterion (Default: "llr").
-  \item thresholds: A named list containing the thresholds for the goodness of fit 
-    (chisquare) and variability (brown) tests. Both must be comprised from 0 to 1.
-    The goodness of fit threshold defines which models are considered valid or not
-    (0 most stringent, 1 most permissive). The variability threshold (one per each rate)
-    defines the stringency of the call for the variability of each rate (0 the most
-    stringent, 1 the most permissive). When set to 0, the specific rate is 
-    excluded from the hypothesis of variability.
-  \item preferPValue: when model selection is "llr", preferPValue means that 
-    if the selected model has a goodness of fit below threshold the model with
-    the best goodness of fit is returned in place of it. When the model selection
-    is "aic", with preferPValue the best model is tested against the closest 
-    nested models to test the hypothesis of variability and only when this 
-    pvalue is below threshold the rate is considered as varible. Otherwise the 
-    model selection is just based on the lowest AIC (Default: TRUE).
-  \item padj: whether to correct pvalues with the Benjamini-Hochberg procedure 
-    or not. (Default: TRUE).
-  \item limitModelComplexity: limit the complexity of the models associated to
-    variable rates to the length of the time courses. Particularly helpful
-    for short time series. (Default:FALSE)
-    
-}}
 }
 \value{
-See "value"
+\itemize{
+\item modelSelection 'aic' compares nested models closest to the one with lowest AIC, 'llr' compares all nested models, 
+'hib' is a mix between the previous two. (default 'aic')
+\item preferPValue a logical, if TRUE (default) limit the search for best models among the ones with succeded the goodness of fit test.
+\item padj a logical, if TRUE (default) correct the p-values for multiple testing
+\item goodness_of_fit a numeric, the threshold for the goodness-of-fit test (default = .1)
+\item variability a numeric, a vector with the thresholds for the variability test (one threshold for each rate, default = c('s'=05, 'p'=.05, 'd'=.05))
+\item limitModelComplexity a logical that limits the complexity of the function used to describe dynamics to the length of the time-course (default = FALSE)
+    
+}
 }
 \description{
-With this methods the user can personalize the criteria by which INSPEcT
-selects a rate to be variable or constant. In particular, the model selection
-criteria can be selected between log-likelihood ratio test and Akaike's information
-criterion (AIC). In case log-likelihood ratio test is selected, the thresholds of 
-chi-squared and Brown's method can be set (see Details section).
-}
-\details{
-When log-likelihood is chosen as a criterion for model selection, different nested 
-models can be compared to assess wheter a single rate is varying or constant. 
-For example, in case we want to establish whether synthesis rate is constant or not
-we can test the null hypothesis "all the rates are constant" against the alternative 
-hypothesis "synthesis rate is changing". The null hypothesis is a special case
-of the alternative hypothesis, therefore the models are nested. We can also assess
-whether synthesis rate is constant or not by comparing the null hypothesis 
-"degradation rate is changing" against the alternative hypothesis "degradation and
-synthesis are changing". Different comparisons will be combined using Brown's method 
-for combinig p-values.
-Models are named with a short notation where synthesis is "a", degradation is "b"
-and processing is "c". "0" is the model where all genes are kept constant
-and "ab", for example is the model where synthesis rate and degradation rate 
-are changing.
-The user can also set the thresholds for Brown's p-value and chi-suqared p-value.
-While the former set the threshold to assess whether a rate is variable or not over time,
-the latter set the chi-squared threshold for a pair of model to be used via the
-log-likelihood ratio test. In order for a pair to be used, at least one model of the 
-pair should have a chi-squared p-value (goodness of fit) below the threshold.
-The construction of a synthetic data-set can help in the choice of the correct 
-parameters for the test (\code{\link{makeSimModel}}, \code{\link{makeSimDataset}}).
+Method to visualize the criteria used to assess variability of rates.
 }
 \examples{
 nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 modelSelection(nascentInspObj10)
-modelSelection(nascentInspObj10)$modelSelection <- 'aic'
-}
-\seealso{
-\code{\link{makeSimModel}}, \code{\link{makeSimDataset}}
 }

@@ -9,6 +9,9 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' viewConfidenceIntervals(nascentInspObj10, 'synthesis')
 setMethod('viewConfidenceIntervals', 'INSPEcT', function(object, feature) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
 	ix <- grep(feature,pData(object@confidenceIntervals)$feature)
 	out <- exprs(object@confidenceIntervals)[,ix, drop=FALSE]
 	if(all(dim(out)==c(0,0)))

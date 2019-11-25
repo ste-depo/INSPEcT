@@ -17,6 +17,10 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' plotGene(nascentInspObj10, 1)
 setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TRUE, constantModel=FALSE) {
+	if( !.hasSlot(object, 'version') ) {
+		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+	}
+	
 	ix <- ix[1]
 	tpts <- object@tpts
 
@@ -51,31 +55,23 @@ setMethod('plotGene', 'INSPEcT', function(object, ix, fix.yaxis=FALSE, priors=TR
 
 	if( nrow(oneGene@modelRates) > 0 ) {
 
-		if(object@NoNascent)
-		{
-			pValues <- formatC(as.numeric(ratePvals(object)[ix,]),format = "e", digits = 1)
-			names(pValues) <- c('synthesis','processing','degradation')
-		}else{
-			pValues <- formatC(as.numeric(ratePvals(oneGene)),format = "e", digits = 1)
-			names(pValues) <- c('synthesis','processing','degradation')		
-		}
-
-		geneClassIX <- geneClass(object)[ix]
+		pValues <- formatC(as.numeric(ratePvals(object)[ix,]),format = "e", digits = 1)
+		names(pValues) <- c('synthesis','processing','degradation')
 
 		if( oneGene@NoNascent & !oneGene@NF )
-			foe <- capture.output(oneGene <- computeConfidenceIntervals(oneGene,singleGeneClass = geneClassIX))
+			foe <- capture.output(oneGene <- computeConfidenceIntervals(oneGene))
 
-		alpha_left <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_left")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-		alpha_right <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_right")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-		alpha_constant <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_constant")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
+		alpha_left <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_left"),error=function(e){rep(NaN,length(tpts(oneGene)))})
+		alpha_right <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_right"),error=function(e){rep(NaN,length(tpts(oneGene)))})
+		alpha_constant <- tryCatch(viewConfidenceIntervals(oneGene,"synthesis_constant"),error=function(e){rep(NaN,length(tpts(oneGene)))})
+		
+		gamma_left <- tryCatch(viewConfidenceIntervals(oneGene,"processing_left"),error=function(e){rep(NaN,length(tpts(oneGene)))})
+		gamma_right <- tryCatch(viewConfidenceIntervals(oneGene,"processing_right"),error=function(e){rep(NaN,length(tpts(oneGene)))})
+		gamma_constant <- tryCatch(viewConfidenceIntervals(oneGene,"processing_constant"),error=function(e){rep(NaN,length(tpts(oneGene)))})
 
-		gamma_left <- tryCatch(viewConfidenceIntervals(oneGene,"processing_left")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-		gamma_right <- tryCatch(viewConfidenceIntervals(oneGene,"processing_right")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-		gamma_constant <- tryCatch(viewConfidenceIntervals(oneGene,"processing_constant")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-
-		beta_left <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_left")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-		beta_right <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_right")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
-		beta_constant <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_constant")[ix,],error=function(e){rep(NaN,length(tpts(oneGene)))})
+		beta_left <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_left"),error=function(e){rep(NaN,length(tpts(oneGene)))})
+		beta_right <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_right"),error=function(e){rep(NaN,length(tpts(oneGene)))})
+		beta_constant <- tryCatch(viewConfidenceIntervals(oneGene,"degradation_constant"),error=function(e){rep(NaN,length(tpts(oneGene)))})
 
 		if(oneGene@NoNascent|!constantModel)
 		{

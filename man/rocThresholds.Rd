@@ -6,20 +6,15 @@
 \alias{rocThresholds,INSPEcT_model,INSPEcT-method}
 \title{Display rate classification performance with thresholds visible at x-axis}
 \usage{
-rocThresholds(object, object2, cTsh = NULL, bTsh = NULL,
-  xlim = c(1e-05, 1), plot = TRUE)
+rocThresholds(object, object2, xlim = c(1e-05, 1), plot = TRUE)
 
 \S4method{rocThresholds}{INSPEcT_model,INSPEcT}(object, object2,
-  cTsh = NULL, bTsh = NULL, xlim = c(1e-05, 1), plot = TRUE)
+  xlim = c(1e-05, 1), plot = TRUE)
 }
 \arguments{
 \item{object}{An object of class INSPEcT_model, with true rates}
 
 \item{object2}{An object of class INSPEcT or INSPEcT_model, with modeled rates}
-
-\item{cTsh}{A numeric representing the threshold for the chi-squared test to consider a model as valid}
-
-\item{bTsh}{A numeric representing the threshold for the Brown's method to consider a rate as varying}
 
 \item{xlim}{A numeric representing limits for the x-axis (default is c(1-e-5,1))}
 
@@ -56,7 +51,7 @@ if( Sys.info()["sysname"] != "Windows" ) {
  
   data("nascentSim2replicates",package='INSPEcT')
  
-  rocThresholds(simRates[1:100],nascentSim2replicates,bTsh=c(.01,.01,.05),cTsh=.1)
+  rocThresholds(simRates[1:100],nascentSim2replicates)
 }
 }
 \seealso{

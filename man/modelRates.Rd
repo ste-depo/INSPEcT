@@ -6,21 +6,42 @@
 \alias{modelRates,INSPEcT-method}
 \title{Launch the modeling process}
 \usage{
-modelRates(object, seed = NULL, BPPARAM = bpparam(), verbose = NULL)
+modelRates(object, estimateRatesWith = c("der", "int"),
+  useSigmoidFun = TRUE, testOnSmooth = TRUE, nInit = 10,
+  nIter = 300, Dmin = 1e-06, Dmax = 10, seed = NULL,
+  BPPARAM = bpparam())
 
-\S4method{modelRates}{INSPEcT}(object, seed = NULL,
-  BPPARAM = bpparam(), verbose = NULL)
+\S4method{modelRates}{INSPEcT}(object, estimateRatesWith = c("der",
+  "int"), useSigmoidFun = TRUE, testOnSmooth = TRUE, nInit = 10,
+  nIter = 300, Dmin = 1e-06, Dmax = 10, seed = NULL,
+  BPPARAM = bpparam())
 }
 \arguments{
 \item{object}{An object of class INSPEcT}
 
-\item{seed}{A numeric, indicatindg the seed to be set for reproducible results}
+\item{estimateRatesWith}{Either "int" or "der". With "int" the degradation and processing
+rates are estimated integrating the system between one time point and the following. 
+With "der" degradation and processing rates are estimated using the derivative of total
+and pre mRNA. (default is "int")}
+
+\item{useSigmoidFun}{A logical, whether to choose between sigmoid and impulse function 
+to fit rates and concentrations. In case not, always impulse function is used. 
+(default is TRUE)}
+
+\item{testOnSmooth}{A logical, wheter models should be tested on smoothed pre-mRNA, 
+total mRNA and eventually synthesis rates or not. (default is TRUE)}
+
+\item{nInit}{number of optimization to find the best functional representation of each rate (by default 10)}
+
+\item{nIter}{number of max iteration during optimization (default is 300)}
+
+\item{Dmin}{lower bondary for degradation rates in the NoNascent mode (default 1e-06)}
+
+\item{Dmax}{upper bondary for degradation rates in the NoNascent mode (default 10)}
+
+\item{seed}{A numeric, indicatindg the seed to be set for reproducible results. If NULL it is randomly selected (default NULL)}
 
 \item{BPPARAM}{Parallelization parameters for bplapply. By default bpparam()}
-
-\item{verbose}{Either NULL or logical. If logical indicates whether to output some text
-during computation or not, if NULL  it takes the information from the object
-(see \code{\link{modelingParams}}) (Default: NULL)}
 }
 \value{
 An object of class INSPEcT with modeled rates
@@ -32,18 +53,9 @@ This method model the synthesis, degradation and processing rates after their es
 \code{\link{newINSPEcT}}. Estimated rates are not guaranteed to optimally describes provided input data yet. 
 To this purpose, modeled rates can be generated and genes can be assigned to a transcriptional regulatory mechanism.
 Modeled rates can be accessed via the method \code{\link{viewModelRates}} and gene classification according 
-to the regulatory mechanism can be accessed by \code{\link{geneClass}}. The modeling procedure can be set by the
-user changing the parameters via \code{\link{modelingParams}}
-}
-\details{
-When modeling many genes, parallelization is strongly suggested to reduce computational time.
-Since all genes run independently, the computational time is diveded by the number of
-cores used/available.
-However, when modeling more than 500 genes, it may happen that 
-a single gene returns an error that escapes the try/catch controls of INSPEcT. 
-With the parallel mode, the error will propagate on all genes that have been computed 
-with the same processor (or core). To avoid this, the computation could be splitted in chunks
-and the whole data set can be obtaied by combining the chunks (see Examples).
+to the regulatory mechanism can be accessed by \code{\link{geneClass}}. The modeling options used for the 
+modeling can be later accessed by the user via \code{\link{modelingParams}}. After modeling, model selection is run
+by the method \code{\link{calculateRatePvals}} with default parameters
 }
 \examples{
 if( Sys.info()["sysname"] != "Windows" ) {
@@ -59,5 +71,5 @@ if( Sys.info()["sysname"] != "Windows" ) {
 }
 }
 \seealso{
-\code{\link{viewModelRates}}, \code{\link{geneClass}}, \code{\link{modelingParams}}
+\code{\link{viewModelRates}}, \code{\link{calculateRatePvals}}, \code{\link{geneClass}}
 }

@@ -19,12 +19,11 @@ importFrom("KernSmooth", "bkde2D")
 
 export("newINSPEcT", "runINSPEcTGUI", "compareSteadyNoNascent", 
     "quantifyExpressionsFromBAMs", "quantifyExpressionsFromTrCounts", "quantifyExpressionsFromTrAbundance")
-exportMethods( "[", "AIC", "calculateDelta", "calculateTau", "chisqmodel", "chisqtest", "combine", 
+exportMethods( "[", "AIC", "calculateDelta", "calculateRatePvals", "calculateTau", "chisqmodel", "chisqtest", "combine",
     "compareSteady", "computeConfidenceIntervals", "correlationPlot", "degradation", "dim", "featureNames", 
-    "featureNames<-", "geneClass", "getModel", "getModel<-", "inHeatmap", "labeledSF", "logLik", 
-    "makeModelRates", "makeSimDataset", "makeSimModel", "makeOscillatorySimModel", "modelingParams", 
-    "modelingParams<-", "modelRates", "modelRatesNF", "modelSelection", "modelSelection<-", 
-    "nGenes", "nTpts", "plotGene", "plotMA", "processing", "processingDelay", "ratePvals", "ratesFirstGuess",
-    "ratesFirstGuessVar", "removeModel", "rocCurve", "rocThresholds", "sfPlot", "show", "split", "synthesis", 
-    "tpts", "viewModelRates", "viewConfidenceIntervals")
+    "featureNames<-", "geneClass", "inHeatmap", "labeledSF", "logLik", "makeModelRates", "makeOscillatorySimModel", 
+    "makeSimDataset", "makeSimModel", "modelingParams", "modelRates", "modelRatesNF", "modelSelection", 
+    "nGenes", "nTpts", "plotGene", "plotMA", "processing", "processingDelay", "ratePvals", 
+    "ratesFirstGuess","ratesFirstGuessVar", "removeModel", "rocCurve", "rocThresholds", "show", "split", "synthesis", 
+    "tpts", "viewConfidenceIntervals", "viewModelRates")
 exportClasses("INSPEcT", "INSPEcT_model", "INSPEcT_diffsteady")

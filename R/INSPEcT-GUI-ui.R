@@ -17,6 +17,7 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 					 
 					 fileInput("file1", "Choose INSPEcT File", accept = ".rds", width = NULL,
 					 					buttonLabel = "Browse...", placeholder = "nascentInspObj10.rds"),
+					 uiOutput("file_error"),
 					 uiOutput('modeling_type'),
 					 uiOutput('select_condition'),
 					 uiOutput('select_class'),
@@ -28,17 +29,20 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 					 						 selected = 'Smooth data'),
 					 uiOutput('modeling_box')
 		),
-		column(4, 
-					 fluidRow(column(2,NULL), column(8,uiOutput("rate_pvals")), column(2,NULL)),
+		column(4,
 					 plotOutput("gene", height = "600px"),#, width="500px"),
 					 fluidRow(
-					 	column(4, .busyIndicator(text="Loading..." , wait=1000 , image='gif.gif')), 
-					 	# column(4, uiOutput("saveRNAdynamicsPlot")),
-					 	column(4, list(
+					 	column(3, .busyIndicator(text="Loading..." , wait=1000 , image='gif.gif')),
+					 	column(3, uiOutput('confint_box')),
+					 	column(3, list(
+					 		checkboxInput("relativexpr_checkbox", label = "Rel. Expr.", value = FALSE),
+					 		uiOutput("logtime_checkbox_ui"),
+					 		checkboxInput("fixyaxis_checkbox", label = "Fix Y-axis", value = FALSE)
+					 	)),
+					 	column(3, list(
 					 		downloadButton('saveRNAdynamicsPlotButton', 'Get PDF'),
-					 		downloadButton('saveRNAdynamicsDataButton', 'Get XLS')
-					 		)),
-					 	column(4, uiOutput("logtime_checkbox_ui"), uiOutput("confint_checkbox_ui"))
+					 		downloadButton('saveRNAdynamicsDataButton', 'Get TSV')
+					 		))
 					 )
 		),
 		

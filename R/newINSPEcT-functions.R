@@ -775,13 +775,13 @@ createInspectObject <- function(out, NoNascent=FALSE,
 	object@tL <- out$tL	
 	object@ratesFirstGuess <- ratesFirstGuess
 	object@ratesFirstGuessVar <- ratesFirstGuessVar
-	object@precision <- out$ratesEstimPrec
+	# object@precision <- out$ratesEstimPrec
 	object@model@simple <- TRUE
 	object@NoNascent <- NoNascent
 	object@degDuringPulse <- degDuringPulse
 	
 	if( NoNascent ) {
-		object@ratesFirstGuessP <- out$ratesFirstGuessP
+		# object@ratesFirstGuessP <- out$ratesFirstGuessP
 	} else {
 		if( NascentSimple )
 			object@model@simple <- TRUE

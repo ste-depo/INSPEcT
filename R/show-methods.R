@@ -12,22 +12,6 @@ setMethod('show', 'INSPEcT_model', function(object) {
 #' @return Method show for objects of class INSPEcT displays the main features
 #' of the slots ratesFirstGuess, model and modelRates
 setMethod('show', 'INSPEcT', function(object) {
-
-	# @slot params A list of parameters of the modeling part
-	# @slot ratesFirstGuess An object of class ExpressionSet that contains all the rates and concentrations guessed from the first part of INSPEcT analysis (before modeling)
-	# @slot ratesFirstGuessVar An object of class ExpressionSet that contains the variances related to rates and concentrations guessed from the first part of INSPEcT analysis (before modeling)
-	# @slot ratesFirstGuessP An object containing the rates first guess part of INSPEcT analysis (before modeling)
-	# @slot precision A matrix that contains the estimated precision of the rates. Rows represent genes, Columns represent time points.
-	# @slot model An object of class INSPEcT_model that contains the output of the mdoeling.
-	# @slot modelRates An object of class ExpressionSet that contains all modeled the rates and concentrations.
-	# @slot confidenceIntervals An object of class ExpressionSet that contains the confidence intervals.
-	# @slot tpts A numeric vector of the time-points.
-	# @slot labeledSF A numeric vector of the scaling factor used for inter time-point normalization of Nascent-seq libraries.
-	# @slot tL A numeric containing the length of the Nascent pulse.
-	# @slot NoNascent A logical indicating if the nascent RNA was included into the analysis.
-	# @slot NF A logical indicating if the modeling approach is Non-Functional
-	# @slot degDuringPulse A logical indicating if degradation of RNA during the 4sU pulse was considered.
-	# @details Methods that apply to INSPEcT class are
 	
 	tpts <- tpts(object)
 	
@@ -48,14 +32,28 @@ setMethod('show', 'INSPEcT', function(object) {
 		message("Access complete rates with the method ratesFirstGuess.")
 	} else if( length(object@model@ratesSpecs)>0 ) {
 		if( modelingParams(object)$estimateRatesWith == 'int' ) {
-			message("Rates were modeled using the integrative framework with either constant, sigmoid or impulse functions.")	
+			if( modelingParams(object)$useSigmoidFun ) {
+				message("Rates were modeled using the integrative framework with either constant, sigmoid or impulse functions.")		
+			} else {
+				message("Rates were modeled using the integrative framework with either constant or impulse functions.")		
+			}
 		} else {
-			message("Rates were modeled using the derivative framework with either constant, sigmoid or impulse functions.")	
+			if( modelingParams(object)$useSigmoidFun ) {
+				message("Rates were modeled using the derivative framework with either constant, sigmoid or impulse functions.")	
+			} else {
+				message("Rates were modeled using the derivative framework with either constant or impulse functions.")	
+			}
 		}
 		message("Access complete rates with the method viewModelRates.")
 	} else {
 		message("Only Rates first guess were computed.")
 		message("Access complete rates with the method ratesFirstGuess.")
+	}
+	
+	if( .hasSlot(object, 'version') ) {
+		message(paste("INSPEcT Version",object@version))
+	} else {
+		message("This object is OBSOLETE and most of the INSPEcT routines will not work on it.")
 	}
 
 	})
