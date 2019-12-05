@@ -1,26 +1,27 @@
 import("methods","Biobase","BiocParallel","pROC", "DESeq2","plgem","SummarizedExperiment","TxDb.Mmusculus.UCSC.mm9.knownGene","shiny")
 
-importFrom("stats", "median", "cor", "qchisq", "sd")
+importFrom("stats", "median", "constrOptim", "cor", "qchisq", "sd")
 importFrom("BiocGenerics", "unlist", "plotMA", "invertStrand")
 importFrom("deSolve", "ode")
+importFrom("gdata", "read.xls")
 importFrom("GenomicAlignments", "readGAlignmentPairs", "readGAlignments")
 importFrom("GenomicFeatures","exonsBy","transcriptsBy","intronsByTranscript")
 importFrom("GenomicRanges","reduce","seqnames","start","end","strand","width","findOverlaps")
 importFrom("GenomeInfoDb","seqlengths","seqlevels","seqlevels<-")
-importFrom("graphics", "abline", "axis", "image", "layout", "legend","matplot", "matlines", "par", "points", "smoothScatter", "plot", "segments", "text", "title")
+importFrom("graphics", "abline", "axis", "image", "layout", "legend","matplot", "matlines", "mtext", "par", "points", "smoothScatter", "plot", "segments", "text", "title")
 importFrom("grDevices", "colorRampPalette", "dev.off", "pdf")
 importFrom("IRanges", "IRanges", "psetdiff")
 importFrom("rootSolve", "multiroot")
 importFrom("Rsamtools", "ScanBamParam")
 importFrom("S4Vectors","subjectHits","queryHits","subjectLength","elementNROWS")
 importFrom("stats", "approx", "density", "dist", "ecdf", "hclust", "lm","na.omit", "optim", "optimize", "pchisq", "pnorm", "predict", "quantile", "rnorm", "runif", "splinefun", "uniroot", "p.adjust", "pt")
-importFrom("utils", "capture.output", "read.table", "write.table", "head", "tail")
+importFrom("utils", "capture.output", "read.csv", "read.table", "write.table", "head", "tail")
 importFrom("KernSmooth", "bkde2D")
 
-export("newINSPEcT", "runINSPEcTGUI", "compareSteadyNoNascent", 
+export("newINSPEcT", "runINSPEcTGUI", "compareSteadyNoNascent", "inspectFromBAM", "inspectFromPCR",
     "quantifyExpressionsFromBAMs", "quantifyExpressionsFromTrCounts", "quantifyExpressionsFromTrAbundance")
 exportMethods( "[", "AIC", "calculateDelta", "calculateRatePvals", "calculateTau", "chisqmodel", "chisqtest", "combine",
-    "compareSteady", "computeConfidenceIntervals", "correlationPlot", "degradation", "dim", "featureNames", 
+    "compareSteady", "computeConfidenceIntervals", "convergence", "correlationPlot", "degradation", "dim", "featureNames", 
     "featureNames<-", "geneClass", "inHeatmap", "labeledSF", "logLik", "makeModelRates", "makeOscillatorySimModel", 
     "makeSimDataset", "makeSimModel", "modelingParams", "modelRates", "modelRatesNF", "modelSelection", 
     "nGenes", "nTpts", "plotGene", "plotMA", "processing", "processingDelay", "ratePvals", 

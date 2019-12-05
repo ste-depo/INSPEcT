@@ -39,7 +39,7 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object,
 		matureVariance <- totalVariance + prematureVariance
 
 		### Confidence intervals
- 		print("Confidence intervals.")
+ 		message("Confidence intervals.")
 
 		confidenceIntervals <- bplapply(eiGenes,function(g)
 		{
@@ -168,7 +168,7 @@ setMethod(f='computeConfidenceIntervals', 'INSPEcT', definition=function(object,
 				{
 					if(is.finite(row[2]))
 					{
-						if(row[1]==row[2] & row[1]==row[3]) row[1] <- row[2]*(1-median_low[[r]]); row[3] <- row[2]*(1+median_high[[r]])
+						if(row[1]==row[2] & row[1]==row[3]) {row[1] <- row[2]*(1-median_low[[r]]); row[3] <- row[2]*(1+median_high[[r]])}
 					}
 					row
 				}))

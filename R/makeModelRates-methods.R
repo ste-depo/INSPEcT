@@ -84,7 +84,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 
 		if(length(eGenes)>0)
 		{
-			print("makeModelRates: simple still to be implemented!")
+			message("makeModelRates: simple still to be implemented!")
 			# eModelRates <- lapply(eGenes, function(i)
 			# {
 			# 	tryCatch(.makeModel_Derivative_Simple(tpts = tpts, hyp = ratesSpecs[[i]][[1]], geneBestModel = bestModels[i])
@@ -103,7 +103,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 
 		if(length(eGenes)>0)
 		{
-			print("makeModelRates: simple still to be implemented!")
+			message("makeModelRates: simple still to be implemented!")
 			# eModelRates <- lapply(eGenes, function(i)
 			# {
 			# 	tryCatch(.makeModel(tpts = tpts, hyp = ratesSpecs[[i]][[1]], nascent = FALSE)

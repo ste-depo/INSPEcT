@@ -77,7 +77,7 @@ setGeneric('ratesFirstGuessVar', function(object, feature)
 #' @title Launch the modeling process
 #' @description Launch the modeling process with parameters set with \code{\link{modelingParams}}
 setGeneric('modelRates', function(object, estimateRatesWith = c('der', 'int'), useSigmoidFun = TRUE, 
-																	testOnSmooth = TRUE, nInit = 10, nIter = 300, Dmin = 1e-06, Dmax = 10, 
+																	nInit = 10, nIter = 300, Dmin = 1e-06, Dmax = 10, 
 																	seed=NULL, BPPARAM=bpparam())
 	standardGeneric('modelRates'))
 #' Launch the modeling process without imposing sigmoid/impulse functional form
@@ -124,6 +124,9 @@ setGeneric('calculateDelta', function(inspectIds, silent=FALSE)
 #' @rdname processingDelay
 setGeneric('calculateTau', function(inspectIds, silent=FALSE) 
 	standardGeneric('calculateTau'))
+#' Retrieve the convergence for the selected models of each gene
+setGeneric('convergence', function(object) 
+	standardGeneric('convergence'))
 
 ##########################################
 # generics for class INSPEcT_diffsteady ####

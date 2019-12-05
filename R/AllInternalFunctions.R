@@ -1539,6 +1539,18 @@ classificationFunction <- function(p,m,alpha,ref=NULL)
 # 	}
 # }
 
+# optimization with constrain for all parameteres to be positive
+optimPositive <- function(par, fn, ...) {
+	N <- length(par)
+	ui <- diag(N)
+	ci <- rep(0, N)
+	out <- tryCatch(
+		constrOptim(theta=par, f=fn, grad=NULL, ui=ui, ci=ci, ...),
+		error=function(e) list(par=rep(NaN, N), value=NaN, counts=c("function"=NaN, gradient=NaN), convergence=NaN, outer.iterations=NaN, barrier.value=NaN)
+	)
+	out[names(out)!='message']
+}
+
 ### Choose among constant, sigmoid and impulsive function ###
 .chooseModel <- function(tpts
 												 , experiment
@@ -2498,7 +2510,7 @@ k_score_fun <- function(k, rate_conf_int)
 																								, BPPARAM
 																								, na.rm
 																								, verbose
-																								, testOnSmooth
+																								# , testOnSmooth
 																								, seed
 																								, nInit
 																								, nIter
@@ -2557,7 +2569,6 @@ k_score_fun <- function(k, rate_conf_int)
 		)
 	}, BPPARAM=BPPARAM)
 	names(KKK) <- eiGenes
-	message("Model 0 finished.")
 	
 	VVV <- bplapply(eiGenes, function(row){
 		if(useSigmoidFun)
@@ -2666,10 +2677,9 @@ k_score_fun <- function(k, rate_conf_int)
 	}, BPPARAM=BPPARAM)
 	
 	names(VVV) <- eiGenes
-	message("Model ABC finished.")
-	
+
 	### Confidence intervals
-	print("Confidence intervals.")
+	message("Confidence intervals.")
 	confidenceIntervals <- bplapply(eiGenes,function(g)
 	{
 		classTmp <- "VVV"
@@ -2793,7 +2803,854 @@ k_score_fun <- function(k, rate_conf_int)
 				
 				if(is.finite(row[2]))
 				{
-					if(row[1]==row[2] & row[1]==row[3]) row[1] <- row[2]*(1-median_low[[r]]); row[3] <- row[2]*(1+median_high[[r]])
+					if(row[1]==row[2] & row[1]==row[3]) {row[1] <- row[2]*(1-median_low[[r]]); row[3] <- row[2]*(1+median_high[[r]])}
+				}
+				row
+			}))
+		}
+	}
+	
+	# Removal of not modeled genes
+	eiGenes <- eiGenes[sapply(confidenceIntervals,function(g)all(is.finite(g[[1]]))&all(is.finite(g[[2]]))&all(is.finite(g[[3]])))]
+	confidenceIntervals <- confidenceIntervals[eiGenes]
+	VVV <- VVV[eiGenes]
+	
+	# I compute che constant rates
+	fitResults_synthesis <- unlist(lapply(eiGenes,function(g)
+	{
+		rate_conf_int <- confidenceIntervals[[g]][["k1"]]
+		k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
+		if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
+		k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
+		return(k_scores_out$par)
+	}))
+	
+	fitResults_processing <- unlist(lapply(eiGenes,function(g)
+	{
+		rate_conf_int <- confidenceIntervals[[g]][["k2"]]
+		k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
+		if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
+		k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
+		return(k_scores_out$par)
+	}))
+	
+	fitResults_degradation <- unlist(lapply(eiGenes,function(g)
+	{
+		rate_conf_int <- confidenceIntervals[[g]][["k3"]]
+		k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
+		if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
+		k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
+		return(k_scores_out$par)
+	}))
+	
+	names(fitResults_synthesis) <- 
+		names(fitResults_processing) <- 
+		names(fitResults_degradation) <- eiGenes
+	
+	confidenceIntervals <- lapply(eiGenes,function(g)
+	{
+		confidenceIntervals[[g]][['k1']] <- cbind(confidenceIntervals[[g]][['k1']],'constant'=rep(fitResults_synthesis[[g]],length(tpts)))
+		confidenceIntervals[[g]][['k2']] <- cbind(confidenceIntervals[[g]][['k2']],'constant'=rep(fitResults_processing[[g]],length(tpts)))
+		confidenceIntervals[[g]][['k3']] <- cbind(confidenceIntervals[[g]][['k3']],'constant'=rep(fitResults_degradation[[g]],length(tpts)))
+		confidenceIntervals[[g]]
+	})
+	
+	### Standard outputs
+	
+	# Log likelihood
+	logLikelihood <- t(sapply(eiGenes,function(g)
+	{
+		modelVVV <- expressionData_integrativeModels(tpts, class = "VVV", parameters = VVV[[g]][grep("par",names(VVV[[g]]))])
+		ratesVVV <- rates_integrativeModels(tpts, class = "VVV", parameters = VVV[[g]][grep("par",names(VVV[[g]]))])
+		
+		matureModel <- modelVVV[grep("^mature",names(modelVVV))]
+		prematureModel <- modelVVV[grep("^premature",names(modelVVV))]
+		alphaModel <- ratesVVV[grep("alpha",names(ratesVVV))]
+		
+		modelVVV <- c(matureModel,prematureModel,alphaModel)
+		
+		VVVTemp <- tryCatch(logLikelihoodFunction(experiment = c(matureSmooth[g,],prematureSmooth[g,],alpha[g,])
+																							, model = modelVVV
+																							, variance = c(matureVariance[g,],prematureVariance[g,],alphaVariance[g,])),error=function(e)NaN)
+		
+		c("KKK" = NaN,"VKK" = NaN,"KVK" = NaN,"KKV" = NaN,"VVK" = NaN,"VKV" = NaN,"KVV" = NaN,"VVV" = VVVTemp)
+	}))
+	
+	rownames(logLikelihood) <- eiGenes
+	
+	dof <- cbind(KKK = NaN
+							 ,VKK = NaN
+							 ,KVK = NaN
+							 ,KKV = NaN
+							 ,VVK = NaN
+							 ,VKV = NaN
+							 ,KVV = NaN
+							 ,VVV = sapply(VVV,function(m)length(grep("par",names(m)))))
+	
+	AIC <- 2*(dof - logLikelihood)
+	AICc <- 2*(dof - logLikelihood) + (2*dof*(dof+1))/max(0,2*length(tpts)-dof-1)
+	
+	chi2data <- t(mcsapply(eiGenes,function(g)
+	{
+		KKKTemp <- NaN
+		VKKTemp <- NaN
+		KVKTemp <- NaN
+		KKVTemp <- NaN	
+		VVKTemp <- NaN
+		VKVTemp <- NaN
+		KVVTemp <- NaN
+		
+		VVVTemp <- tryCatch(errorVVV_Int(parameters = VVV[[g]][grep("par",names(VVV[[g]]))]
+																		 ,tpts = tpts
+																		 ,premature = prematureSmooth[g,]
+																		 ,mature = matureSmooth[g,]
+																		 ,alpha = alpha[g,]
+																		 ,prematureVariance = prematureVariance[g,]
+																		 ,matureVariance = matureVariance[g,]
+																		 ,alphaVariance = alphaVariance[g,]
+																		 ,clean = TRUE),error = function(e)NaN)
+		
+		
+		c(KKK = KKKTemp,VKK = VKKTemp,KVK = KVKTemp,KKV = KKVTemp,VVK = VVKTemp,VKV = VKVTemp,KVV = KVVTemp,VVV = VVVTemp)
+		
+	}, BPPARAM=BPPARAM))
+	
+	rownames(chi2data) <- eiGenes
+	
+	# P values
+	pvaluesdata <- cbind(KKK=sapply(eiGenes,function(g)pchisq(chi2data[g,'KKK'], max(c(0,3*length(tpts)-dof[g,'KKK']))))
+											 ,VKK=sapply(eiGenes,function(g)pchisq(chi2data[g,'VKK'], max(c(0,3*length(tpts)-dof[g,'VKK']))))
+											 ,KVK=sapply(eiGenes,function(g)pchisq(chi2data[g,'KVK'], max(c(0,3*length(tpts)-dof[g,'KVK']))))
+											 ,KKV=sapply(eiGenes,function(g)pchisq(chi2data[g,'KKV'], max(c(0,3*length(tpts)-dof[g,'KKV']))))
+											 ,VVK=sapply(eiGenes,function(g)pchisq(chi2data[g,'VVK'], max(c(0,3*length(tpts)-dof[g,'VVK']))))
+											 ,VKV=sapply(eiGenes,function(g)pchisq(chi2data[g,'VKV'], max(c(0,3*length(tpts)-dof[g,'VKV']))))
+											 ,KVV=sapply(eiGenes,function(g)pchisq(chi2data[g,'KVV'], max(c(0,3*length(tpts)-dof[g,'KVV']))))
+											 ,VVV=sapply(eiGenes,function(g)pchisq(chi2data[g,'VVV'], max(c(0,3*length(tpts)-dof[g,'VVV'])))))
+	
+	ratesSpecs <- lapply(eiGenes,function(g)
+	{
+		list("0" = list(alpha = list(fun = constantModelP
+																 ,type = "constant"
+																 ,df = 1
+																 ,params = NaN)
+										,beta = list(fun = constantModelP
+																 ,type = "constant"
+																 ,df = 1
+																 ,params = NaN)
+										,gamma = list(fun = constantModelP
+																	,type = "constant"
+																	,df = 1
+																	,params = NaN)
+										,test = NaN
+										,logLik = NaN
+										,AIC = NaN
+										,AICc = NaN
+										,counts = NaN
+										,convergence = NaN
+										,message = NaN)
+				 ,"a" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(alpha = list(fun = impulseModelP
+				 										,type = "impulse"
+				 										,df = 6
+				 										,params = NaN)
+				 			 ,beta = list(fun = constantModelP
+				 			 						 ,type = "constant"
+				 			 						 ,df = 1
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }else{
+				 	list(alpha = list(fun = sigmoidModelP
+				 										,type = "sigmoid"
+				 										,df = 4
+				 										,params = NaN)
+				 			 ,beta = list(fun = constantModelP
+				 			 						 ,type = "constant"
+				 			 						 ,df = 1
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }
+				 ,"b" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(alpha = list(fun = constantModelP
+				 										,type = "constant"
+				 										,df = 1
+				 										,params = NaN)
+				 			 ,beta = list(fun = impulseModelP
+				 			 						 ,type = "impulse"
+				 			 						 ,df = 6
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }else{
+				 	list(alpha = list(fun = constantModelP
+				 										,type = "constant"
+				 										,df = 1
+				 										,params = NaN)
+				 			 ,beta = list(fun = sigmoidModelP
+				 			 						 ,type = "sigmoid"
+				 			 						 ,df = 4
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }
+				 ,"c" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(alpha = list(fun = constantModelP
+				 										,type = "constant"
+				 										,df = 1
+				 										,params = NaN)
+				 			 ,beta = list(fun = constantModelP
+				 			 						 ,type = "constant"
+				 			 						 ,df = 1
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = impulseModelP
+				 			 							,type = "impulse"
+				 			 							,df = 6
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }else{
+				 	list(alpha = list(fun = constantModelP
+				 										,type = "constant"
+				 										,df = 1
+				 										,params = NaN)
+				 			 ,beta = list(fun = constantModelP
+				 			 						 ,type = "constant"
+				 			 						 ,df = 1
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = sigmoidModelP
+				 			 							,type = "sigmoid"
+				 			 							,df = 4
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }
+				 ,"ab" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(alpha = list(fun = impulseModelP
+				 										,type = "impulse"
+				 										,df = 6
+				 										,params = NaN)
+				 			 ,beta = list(fun = impulseModelP
+				 			 						 ,type = "impulse"
+				 			 						 ,df = 6
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }else{
+				 	list(alpha = list(fun = sigmoidModelP
+				 										,type = "sigmoid"
+				 										,df = 4
+				 										,params = NaN)
+				 			 ,beta = list(fun = sigmoidModelP
+				 			 						 ,type = "sigmoid"
+				 			 						 ,df = 4
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }
+				 ,"ac" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(alpha = list(fun = impulseModelP
+				 										,type = "impulse"
+				 										,df = 6
+				 										,params = NaN)
+				 			 ,beta = list(fun = constantModelP
+				 			 						 ,type = "constant"
+				 			 						 ,df = 1
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = impulseModelP
+				 			 							,type = "impulse"
+				 			 							,df = 6
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }else{
+				 	list(alpha = list(fun = sigmoidModelP
+				 										,type = "sigmoid"
+				 										,df = 4
+				 										,params = NaN)
+				 			 ,beta = list(fun = constantModelP
+				 			 						 ,type = "constant"
+				 			 						 ,df = 1
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = sigmoidModelP
+				 			 							,type = "sigmoid"
+				 			 							,df = 4
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }
+				 ,"bc" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(alpha = list(fun = constantModelP
+				 										,type = "constant"
+				 										,df = 1
+				 										,params = NaN)
+				 			 ,beta = list(fun = impulseModelP
+				 			 						 ,type = "impulse"
+				 			 						 ,df = 6
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = impulseModelP
+				 			 							,type = "impulse"
+				 			 							,df = 6
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }else{
+				 	list(alpha = list(fun = constantModelP
+				 										,type = "constant"
+				 										,df = 1
+				 										,params = NaN)
+				 			 ,beta = list(fun = sigmoidModelP
+				 			 						 ,type = "sigmoid"
+				 			 						 ,df = 4
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = sigmoidModelP
+				 			 							,type = "sigmoid"
+				 			 							,df = 4
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }
+				 ,"abc" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(alpha = list(fun = impulseModelP
+				 										,type = "impulse"
+				 										,df = 6
+				 										,params = c(alpha = unname(VVV[[g]][1:6])))
+				 			 ,beta = list(fun = impulseModelP
+				 			 						 ,type = "impulse"
+				 			 						 ,df = 6
+				 			 						 ,params = c(beta = unname(VVV[[g]][13:18])))
+				 			 ,gamma = list(fun = impulseModelP
+				 			 							,type = "impulse"
+				 			 							,df = 6
+				 			 							,params = c(gamma = unname(VVV[[g]][7:12])))
+				 			 ,test = log(pvaluesdata[g,"VVV"])
+				 			 ,logLik = logLikelihood[g,"VVV"]
+				 			 ,AIC = AIC[g,"VVV"]
+				 			 ,AICc = AICc[g,"VVV"]
+				 			 ,counts = c("function"=unname(VVV[[g]]["counts.function"]), gradient=unname(VVV[[g]]["counts.gradient"]))
+				 			 ,convergence = unname(VVV[[g]]["convergence"])
+				 			 ,message = NULL)
+				 }else{
+				 	list(alpha = list(fun = sigmoidModelP
+				 										,type = "sigmoid"
+				 										,df = 4
+				 										,params = c(alpha = unname(VVV[[g]][1:4])))
+				 			 ,beta = list(fun = sigmoidModelP
+				 			 						 ,type = "sigmoid"
+				 			 						 ,df = 4
+				 			 						 ,params = c(beta = unname(VVV[[g]][9:12])))
+				 			 ,gamma = list(fun = sigmoidModelP
+				 			 							,type = "sigmoid"
+				 			 							,df = 4
+				 			 							,params = c(gamma = unname(VVV[[g]][5:8])))
+				 			 ,test = log(pvaluesdata[g,"VVV"])
+				 			 ,logLik = logLikelihood[g,"VVV"]
+				 			 ,AIC = AIC[g,"VVV"]
+				 			 ,AICc = AICc[g,"VVV"]
+				 			 ,counts = c("function"=unname(VVV[[g]]["counts.function"]), gradient=unname(VVV[[g]]["counts.gradient"]))
+				 			 ,convergence = unname(VVV[[g]]["convergence"])
+				 			 ,message = NULL)
+				 }
+		)
+	})
+	
+	names(ratesSpecs) <- eiGenes
+	
+	out <- list(ratesSpecs=ratesSpecs[eiGenes],
+							confidenceIntervals=confidenceIntervals)
+	
+	return(out)
+}
+
+.inspect.engine_Integrative_Nascent_sdp <- function(tpts
+																								, concentrations
+																								, rates
+																								, BPPARAM
+																								, na.rm
+																								, verbose
+																								# , testOnSmooth
+																								, seed
+																								, nInit
+																								, nIter
+																								, computeDerivatives = TRUE
+																								, useSigmoidFun = TRUE
+																								, initialPenalityRelevance = 1
+																								, derivativePenalityRelevance = 10^-50
+																								, llConfidenceThreshold)
+{
+	total <- concentrations$total
+	totalVariance <- concentrations$total_var
+	
+	premature <- concentrations$preMRNA
+	prematureVariance <- concentrations$preMRNA_var
+	
+	mature <- concentrations$mature
+	matureVariance <- concentrations$mature_var
+	
+	alpha <- rates$alpha
+	alphaVariance <- rates$alpha_var
+	
+	beta <- rates$beta
+	gamma <- rates$gamma
+	
+	prematureSmooth <- premature
+	matureSmooth <- mature
+	
+	eiGenes <- rownames(mature)
+	
+	KKK <- bplapply(eiGenes,function(row){
+		
+		k1Parameters <- mean(alpha[row,])
+		k2Parameters <- mean(gamma[row,])
+		k3Parameters <- mean(beta[row,])
+		
+		unlist(
+			tryCatch(
+				optim(c(k1Parameters, k2Parameters, k3Parameters)
+							,errorKKK_Int
+							,tpts = tpts
+							,premature = premature[row,]
+							,mature = mature[row,]
+							,alpha = alpha[row,]
+							,prematureVariance = prematureVariance[row,]
+							,matureVariance = matureVariance[row,]
+							,alphaVariance = alphaVariance[row,]
+							,control = list(maxit = nIter)),
+				error=function(e) c(par1 = NaN
+														, par2 = NaN
+														, par3 = NaN
+														, value = NaN
+														, counts.function = NaN
+														, counts.gradient = NaN
+														, convergence = e)
+			)
+		)
+	}, BPPARAM=BPPARAM)
+	names(KKK) <- eiGenes
+	
+	VVV <- bplapply(eiGenes, function(row){
+		if(useSigmoidFun)
+		{
+			
+			k1Parameters <- tryCatch(.chooseModel(tpts=tpts
+																						, experiment=alpha[row,]
+																						, variance=alpha[row,]
+																						, na.rm=na.rm
+																						, sigmoid=TRUE
+																						, impulse=FALSE
+																						, polynomial=FALSE
+																						, nInit=nInit
+																						, nIter=nIter
+																						, sigmoidModel=sigmoidModel
+																						, impulseModel=impulseModel
+																						, sigmoidModelP=sigmoidModelP
+																						, impulseModelP=impulseModelP
+																						, .polynomialModelP=.polynomialModelP
+																						, seed = seed
+																						, computeDerivatives = FALSE)$params, 
+															 error=function(e) 
+															 	c(rep(KKK[[row]][1],2), max(tpts)/3,1))			
+			k2Parameters <- tryCatch(.chooseModel(tpts=tpts
+																						, experiment=gamma[row,]
+																						, variance=gamma[row,]
+																						, na.rm=na.rm
+																						, sigmoid=TRUE
+																						, impulse=FALSE
+																						, polynomial=FALSE
+																						, nInit=nInit
+																						, nIter=nIter
+																						, sigmoidModel=sigmoidModel
+																						, impulseModel=impulseModel
+																						, sigmoidModelP=sigmoidModelP
+																						, impulseModelP=impulseModelP
+																						, .polynomialModelP=.polynomialModelP
+																						, seed = seed
+																						, computeDerivatives = FALSE)$params, 
+															 error=function(e) 
+															 	c(rep(KKK[[row]][2],2), max(tpts)/3,1))
+			k3Parameters <- tryCatch(.chooseModel(tpts=tpts
+																						, experiment=beta[row,]
+																						, variance=beta[row,]
+																						, na.rm=na.rm
+																						, sigmoid=TRUE
+																						, impulse=FALSE
+																						, polynomial=FALSE
+																						, nInit=nInit
+																						, nIter=nIter
+																						, sigmoidModel=sigmoidModel
+																						, impulseModel=impulseModel
+																						, sigmoidModelP=sigmoidModelP
+																						, impulseModelP=impulseModelP
+																						, .polynomialModelP=.polynomialModelP
+																						, seed = seed
+																						, computeDerivatives = FALSE)$params, 
+															 error=function(e) 
+															 	c(rep(KKK[[row]][3],2), max(tpts)/3,1))
+			
+			sigmoidsParameters <- unlist(
+				tryCatch(
+					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
+								,errorVVV_Int
+								,tpts = tpts
+								,premature = premature[row,]
+								,mature = mature[row,]
+								,alpha = alpha[row,]
+								,prematureVariance = prematureVariance[row,]
+								,matureVariance = matureVariance[row,]
+								,alphaVariance = alphaVariance[row,]	
+								,KKK = NULL
+								,initialChisquare = NULL
+								,initialDistances = NULL
+								,initialPenalityRelevance = 1
+								,derivativePenalityRelevance = 10^-50
+								,clean = FALSE
+								,control = list(maxit = nIter*10)),
+					error=function(e) c(par1 = NaN
+															, par2 = NaN
+															, par3 = NaN
+															, par4 = NaN
+															, par5 = NaN
+															, par6 = NaN
+															, par7 = NaN
+															, par8 = NaN
+															, par9 = NaN
+															, par10 = NaN
+															, par11 = NaN
+															, par12 = NaN
+															, value = NaN
+															, counts.function = NaN
+															, counts.gradient = NaN
+															, convergence = e)
+				)
+			)
+		}
+		
+		k1Parameters <- tryCatch(.chooseModel(tpts=tpts
+																					, experiment=alpha[row,]
+																					, variance=alpha[row,]
+																					, na.rm=na.rm
+																					, sigmoid=FALSE
+																					, impulse=TRUE
+																					, polynomial=FALSE
+																					, nInit=nInit
+																					, nIter=nIter
+																					, sigmoidModel=sigmoidModel
+																					, impulseModel=impulseModel
+																					, sigmoidModelP=sigmoidModelP
+																					, impulseModelP=impulseModelP
+																					, .polynomialModelP=.polynomialModelP
+																					, seed = seed
+																					, computeDerivatives = FALSE)$params, 
+														 error=function(e) 
+														 	c(rep(KKK[[row]][1],3), max(tpts)/3, max(tpts)/3*2,1))
+		k2Parameters <- tryCatch(.chooseModel(tpts=tpts
+																					, experiment=gamma[row,]
+																					, variance=gamma[row,]
+																					, na.rm=na.rm
+																					, sigmoid=FALSE
+																					, impulse=TRUE
+																					, polynomial=FALSE
+																					, nInit=nInit
+																					, nIter=nIter
+																					, sigmoidModel=sigmoidModel
+																					, impulseModel=impulseModel
+																					, sigmoidModelP=sigmoidModelP
+																					, impulseModelP=impulseModelP
+																					, .polynomialModelP=.polynomialModelP
+																					, seed = seed
+																					, computeDerivatives = FALSE)$params, 
+														 error=function(e) 
+														 	c(rep(KKK[[row]][2],3), max(tpts)/3, max(tpts)/3*2,1))
+		k3Parameters <- tryCatch(.chooseModel(tpts=tpts
+																					, experiment=beta[row,]
+																					, variance=beta[row,]
+																					, na.rm=na.rm
+																					, sigmoid=FALSE
+																					, impulse=TRUE
+																					, polynomial=FALSE
+																					, nInit=nInit
+																					, nIter=nIter
+																					, sigmoidModel=sigmoidModel
+																					, impulseModel=impulseModel
+																					, sigmoidModelP=sigmoidModelP
+																					, impulseModelP=impulseModelP
+																					, .polynomialModelP=.polynomialModelP
+																					, seed = seed
+																					, computeDerivatives = FALSE)$params, 
+														 error=function(e) 
+														 	c(rep(KKK[[row]][3],3), max(tpts)/3, max(tpts)/3*2,1))
+		
+		impulsesParameters <- unlist(
+			tryCatch(
+				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
+							,errorVVV_Int
+							,tpts = tpts
+							,premature = premature[row,]
+							,mature = mature[row,]
+							,alpha = alpha[row,]
+							,prematureVariance = prematureVariance[row,]
+							,matureVariance = matureVariance[row,]
+							,alphaVariance = alphaVariance[row,]	
+							,KKK = NULL
+							,initialChisquare = NULL
+							,initialDistances = NULL
+							,initialPenalityRelevance = 1
+							,derivativePenalityRelevance = 10^-50
+							,clean = FALSE
+							,control = list(maxit = nIter*10)),
+				error=function(e) c(par1 = NaN
+														, par2 = NaN
+														, par3 = NaN
+														, par4 = NaN
+														, par5 = NaN
+														, par6 = NaN
+														, par7 = NaN
+														, par8 = NaN
+														, par9 = NaN
+														, par10 = NaN
+														, par11 = NaN
+														, par12 = NaN
+														, par13 = NaN
+														, par14 = NaN
+														, par15 = NaN
+														, par16 = NaN
+														, par17 = NaN
+														, par18 = NaN
+														, value = NaN
+														, counts.function = NaN
+														, counts.gradient = NaN
+														, convergence = e)
+			)
+		)
+		
+		if(!useSigmoidFun)return(impulsesParameters)
+		
+		if(!is.finite(impulsesParameters[["value"]]))return(sigmoidsParameters)
+		if(!is.finite(sigmoidsParameters[["value"]]))return(impulsesParameters)
+		
+		if(pchisq(impulsesParameters[["value"]],max(0,3*length(tpts) - 18)) < pchisq(sigmoidsParameters[["value"]],max(0,3*length(tpts) - 12))){return(impulsesParameters)}else{return(sigmoidsParameters)}
+		
+	}, BPPARAM=BPPARAM)
+	
+	names(VVV) <- eiGenes
+	
+	### Confidence intervals
+	message("Confidence intervals.")
+	confidenceIntervals <- bplapply(eiGenes,function(g)
+	{
+		classTmp <- "VVV"
+		
+		parameters <- unlist(VVV[[g]][grep("par",names(VVV[[g]]))])
+		optTmp <- rates_integrativeModels(tpts=tpts, class=classTmp, parameters=parameters)
+		
+		foe <- capture.output({ # Just to capture the output of multiroot function
+			suppressWarnings({
+				intervals <- sapply(names(parameters),function(parname)
+				{
+					par <- parameters[parname]
+					
+					mOut = list(
+						left_1 = tryCatch(multiroot(f = logLikelihoodCIerror, start = 1e-2*par, name = parname, parameters = parameters, class = classTmp, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalA = alpha[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceA = alphaVariance[g,], confidenceThreshold = llConfidenceThreshold, derivative = FALSE),error=function(e)return(emptyList)),
+						left_2 = tryCatch(multiroot(f = logLikelihoodCIerror, start = 1/2*par, name = parname, parameters = parameters, class = classTmp, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalA = alpha[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceA = alphaVariance[g,], confidenceThreshold = llConfidenceThreshold, derivative = FALSE),error=function(e)return(emptyList)),
+						center = tryCatch(multiroot(f = logLikelihoodCIerror, start = par, name = parname, parameters = parameters, class = classTmp, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalA = alpha[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceA = alphaVariance[g,], confidenceThreshold = llConfidenceThreshold, derivative = FALSE),error=function(e)return(emptyList)),
+						right_1 = tryCatch(multiroot(f = logLikelihoodCIerror, start = 1.5*par, name = parname, parameters = parameters, class = classTmp, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalA = alpha[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceA = alphaVariance[g,], confidenceThreshold = llConfidenceThreshold, derivative = FALSE),error=function(e)return(emptyList)),
+						right_2 = tryCatch(multiroot(f = logLikelihoodCIerror, start = 1e2*par, name = parname, parameters = parameters, class = classTmp, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalA = alpha[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceA = alphaVariance[g,], confidenceThreshold = llConfidenceThreshold, derivative = FALSE),error=function(e)return(emptyList))
+					)
+					precis = sapply(mOut, '[[', 'f.root')
+					
+					if( length(which(precis<1e-2))>0 )  {
+						conf_int = sapply(mOut[which(precis<1e-2)], '[[', 'root')
+						low_int = min(conf_int)
+						high_int = max(conf_int)
+						
+						left = ifelse( low_int < par, low_int, NA)
+						right = ifelse( high_int > par, high_int, NA)
+						
+						left = unname(left)
+						right = unname(right)
+						
+					} else {
+						left = NA
+						right = NA
+					}
+					return(c(left,right))
+				})
+				intervals[1,!is.finite(intervals[2,])] <- NaN
+				intervals[2,!is.finite(intervals[1,])] <- NaN
+			})
+		})
+		
+		perturbedRates <- matrix(rep(NaN,3*length(tpts)),ncol=1)
+		for(parname in names(parameters))
+		{
+			for(extremePar in intervals[,parname])
+			{
+				perturbedParameters <- parameters
+				perturbedParameters[parname] <- extremePar
+				
+				perturbedRates <- cbind(perturbedRates,rates_integrativeModels(tpts=tpts, class=classTmp, parameters=perturbedParameters))
+			}
+		};perturbedRates <- perturbedRates[,-1]
+		perturbedRates[perturbedRates<0] <- 0
+		
+		k1left <- apply(perturbedRates[grep("alpha",rownames(perturbedRates)),],1,min,na.rm=TRUE)
+		k1TC <- optTmp[grep("alpha",names(optTmp))]
+		k1right <- apply(perturbedRates[grep("alpha",rownames(perturbedRates)),],1,max,na.rm=TRUE)
+		
+		k2left <- apply(perturbedRates[grep("gamma",rownames(perturbedRates)),],1,min,na.rm=TRUE)
+		k2TC <- optTmp[grep("gamma",names(optTmp))]
+		k2right <- apply(perturbedRates[grep("gamma",rownames(perturbedRates)),],1,max,na.rm=TRUE)
+		
+		k3left <- apply(perturbedRates[grep("beta",rownames(perturbedRates)),],1,min,na.rm=TRUE)
+		k3TC <- optTmp[grep("beta",names(optTmp))]
+		k3right <- apply(perturbedRates[grep("beta",rownames(perturbedRates)),],1,max,na.rm=TRUE)
+		
+		return(list(
+			k1 = cbind(left=k1left, opt=k1TC, right=k1right),
+			k2 = cbind(left=k2left, opt=k2TC, right=k2right),
+			k3 = cbind(left=k3left, opt=k3TC, right=k3right)
+		))
+	},BPPARAM=BPPARAM)
+	
+	names(confidenceIntervals) <- eiGenes
+	
+	for(g in seq_along(confidenceIntervals))
+	{
+		for(r in 1:3)
+		{
+			confidenceIntervals[[g]][[r]] <- t(apply(confidenceIntervals[[g]][[r]],1,function(row)
+			{
+				if((!is.finite(row[1])|row[1]==row[2])&(is.finite(row[3])&row[3]!=row[2])) row[1] <- row[2] - (row[3]-row[2])
+				if((!is.finite(row[3])|row[3]==row[2])&(is.finite(row[1])&row[1]!=row[2])) row[3] <- row[2] + (row[2]-row[1])
+				row
+			}))
+		}
+	}
+	
+	k1_low <- median(sapply(confidenceIntervals,function(g){abs(g[[1]][,2] - g[[1]][,1])/g[[1]][,1]}),na.rm=TRUE)
+	k1_high <- median(sapply(confidenceIntervals,function(g){abs(g[[1]][,3] - g[[1]][,1])/g[[1]][,1]}),na.rm=TRUE)
+	
+	k2_low <- median(sapply(confidenceIntervals,function(g){abs(g[[2]][,2] - g[[2]][,1])/g[[2]][,1]}),na.rm=TRUE)
+	k2_high <- median(sapply(confidenceIntervals,function(g){abs(g[[2]][,3] - g[[2]][,1])/g[[2]][,1]}),na.rm=TRUE)
+	
+	k3_low <- median(sapply(confidenceIntervals,function(g){abs(g[[3]][,2] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
+	k3_high <- median(sapply(confidenceIntervals,function(g){abs(g[[3]][,3] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
+	
+	### Possible for very few genes
+	#
+	if(k1_low==0)k1_low <- mean(sapply(confidenceIntervals,function(g){abs(g[[1]][,2] - g[[1]][,1])/g[[1]][,1]}),na.rm=TRUE)
+	if(k1_high==0)k1_high <- mean(sapply(confidenceIntervals,function(g){abs(g[[1]][,3] - g[[1]][,1])/g[[1]][,1]}),na.rm=TRUE)
+	
+	if(k2_low==0)k2_low <- mean(sapply(confidenceIntervals,function(g){abs(g[[2]][,2] - g[[2]][,1])/g[[2]][,1]}),na.rm=TRUE)
+	if(k2_high==0)k2_high <- mean(sapply(confidenceIntervals,function(g){abs(g[[2]][,3] - g[[2]][,1])/g[[2]][,1]}),na.rm=TRUE)
+	
+	if(k3_low==0)k3_low <- mean(sapply(confidenceIntervals,function(g){abs(g[[3]][,2] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
+	if(k3_high==0)k3_high <- mean(sapply(confidenceIntervals,function(g){abs(g[[3]][,3] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
+	
+	median_low <- c(k1=k1_low,k2=k2_low,k3=k3_low)
+	median_high <- c(k1=k1_high,k2=k2_high,k3=k3_high)
+	
+	for(g in seq_along(confidenceIntervals))
+	{
+		for(r in 1:3)
+		{
+			confidenceIntervals[[g]][[r]] <- t(apply(confidenceIntervals[[g]][[r]],1,function(row)
+			{
+				
+				if(is.finite(row[2]))
+				{
+					if(row[1]==row[2] & row[1]==row[3]) {row[1] <- row[2]*(1-median_low[[r]]); row[3] <- row[2]*(1+median_high[[r]])}
 				}
 				row
 			}))
@@ -3249,7 +4106,7 @@ k_score_fun <- function(k, rate_conf_int)
 																									, BPPARAM
 																									, na.rm
 																									, verbose
-																									, testOnSmooth
+																									# , testOnSmooth
 																									, seed
 																									, nInit
 																									, nIter
@@ -3339,7 +4196,7 @@ k_score_fun <- function(k, rate_conf_int)
 			betaEstimated <- ratesVKK[grep("beta",names(ratesVKK))]
 			gammaEstimated <- ratesVKK[grep("gamma",names(ratesVKK))]
 			
-			sigmoidsParameters <- unlist(
+			capture.output(sigmoidsParameters <- unlist(
 				tryCatch(
 					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 								,errorVKK_Int
@@ -3370,7 +4227,7 @@ k_score_fun <- function(k, rate_conf_int)
 															, counts.gradient = NaN
 															, convergence = e)
 				)
-			)
+			))
 			
 			k1Parameters <- tryCatch(fromSigmoidToImpulse(sigmoidsParameters[[1:4]],tpts=tpts,nIter=nIter),error=function(e){c(rep(KKK[[row]][1],3), max(tpts)/3, max(tpts)/3*2,1)})
 			k2Parameters <- tryCatch(sigmoidsParameters[[2]],error=function(e)KKK[[row]][2])
@@ -3394,7 +4251,7 @@ k_score_fun <- function(k, rate_conf_int)
 		betaEstimated <- ratesVKK[grep("beta",names(ratesVKK))]
 		gammaEstimated <- ratesVKK[grep("gamma",names(ratesVKK))]
 		
-		impulsesParameters <- unlist(
+		capture.output(impulsesParameters <- unlist(
 			tryCatch(
 				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 							,errorVKK_Int
@@ -3427,7 +4284,7 @@ k_score_fun <- function(k, rate_conf_int)
 														, counts.gradient = NaN
 														, convergence = e)
 			)
-		)
+		))
 		
 		if(!useSigmoidFun)return(impulsesParameters)
 		
@@ -3469,7 +4326,7 @@ k_score_fun <- function(k, rate_conf_int)
 			betaEstimated <- ratesKKV[grep("beta",names(ratesKKV))]
 			gammaEstimated <- ratesKKV[grep("gamma",names(ratesKKV))]
 			
-			sigmoidsParameters <- unlist(
+			capture.output(sigmoidsParameters <- unlist(
 				tryCatch(
 					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 								,errorKKV_Int
@@ -3500,7 +4357,7 @@ k_score_fun <- function(k, rate_conf_int)
 															, counts.gradient = NaN
 															, convergence = e)
 				)
-			)
+			))
 			
 			k1Parameters <- tryCatch(sigmoidsParameters[[1]],error=function(e)KKK[[row]][1])
 			k2Parameters <- tryCatch(sigmoidsParameters[[2]],error=function(e)KKK[[row]][2])
@@ -3524,7 +4381,7 @@ k_score_fun <- function(k, rate_conf_int)
 		betaEstimated <- ratesKKV[grep("beta",names(ratesKKV))]
 		gammaEstimated <- ratesKKV[grep("gamma",names(ratesKKV))]
 		
-		impulsesParameters <- unlist(
+		capture.output(impulsesParameters <- unlist(
 			tryCatch(
 				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 							,errorKKV_Int
@@ -3557,7 +4414,7 @@ k_score_fun <- function(k, rate_conf_int)
 														, counts.gradient = NaN
 														, convergence = e)
 			)
-		)
+		))
 		
 		if(!useSigmoidFun)return(impulsesParameters)
 		
@@ -3599,7 +4456,7 @@ k_score_fun <- function(k, rate_conf_int)
 			betaEstimated <- ratesKVK[grep("beta",names(ratesKVK))]
 			gammaEstimated <- ratesKVK[grep("gamma",names(ratesKVK))]
 			
-			sigmoidsParameters <- unlist(
+			capture.output(sigmoidsParameters <- unlist(
 				tryCatch(
 					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 								,errorKVK_Int
@@ -3630,7 +4487,7 @@ k_score_fun <- function(k, rate_conf_int)
 															, counts.gradient = NaN
 															, convergence = e)
 				)
-			)
+			))
 			
 			k1Parameters <- tryCatch(sigmoidsParameters[[1]],error=function(e){KKK[[row]][1]})
 			k2Parameters <- tryCatch(fromSigmoidToImpulse(sigmoidsParameters[[2:5]],tpts=tpts,nIter=nIter),error=function(e){c(rep(KKK[[row]][2],3), max(tpts)/3, max(tpts)/3*2,1)})
@@ -3655,7 +4512,7 @@ k_score_fun <- function(k, rate_conf_int)
 		betaEstimated <- ratesKVK[grep("beta",names(ratesKVK))]
 		gammaEstimated <- ratesKVK[grep("gamma",names(ratesKVK))]
 		
-		impulsesParameters <- unlist(
+		capture.output(impulsesParameters <- unlist(
 			tryCatch(
 				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 							,errorKVK_Int
@@ -3688,7 +4545,7 @@ k_score_fun <- function(k, rate_conf_int)
 														, counts.gradient = NaN
 														, convergence = e)
 			)
-		)
+		))
 		
 		if(!useSigmoidFun)return(impulsesParameters)
 		
@@ -3730,7 +4587,7 @@ k_score_fun <- function(k, rate_conf_int)
 			betaEstimated <- ratesVKV[grep("beta",names(ratesVKV))]
 			gammaEstimated <- ratesVKV[grep("gamma",names(ratesVKV))]
 			
-			sigmoidsParameters <- unlist(
+			capture.output(sigmoidsParameters <- unlist(
 				tryCatch(
 					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 								,errorVKV_Int
@@ -3764,7 +4621,7 @@ k_score_fun <- function(k, rate_conf_int)
 															, counts.gradient = NaN
 															, convergence = e)
 				)
-			)
+			))
 			
 			k1Parameters <- tryCatch(fromSigmoidToImpulse(sigmoidsParameters[[1:4]],tpts=tpts,nIter=nIter),error=function(e){c(rep(KKK[[row]][1],3), max(tpts)/3, max(tpts)/3*2,1)})
 			k2Parameters <- tryCatch(sigmoidsParameters[[5]],error=function(e)KKK[[row]][2])
@@ -3789,7 +4646,7 @@ k_score_fun <- function(k, rate_conf_int)
 		betaEstimated <- ratesVKV[grep("beta",names(ratesVKV))]
 		gammaEstimated <- ratesVKV[grep("gamma",names(ratesVKV))]
 		
-		impulsesParameters <- unlist(
+		capture.output(impulsesParameters <- unlist(
 			tryCatch(
 				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 							,errorVKV_Int
@@ -3827,7 +4684,7 @@ k_score_fun <- function(k, rate_conf_int)
 														, counts.gradient = NaN
 														, convergence = e)
 			)
-		)
+		))
 		
 		if(!useSigmoidFun)return(impulsesParameters)
 		
@@ -3869,7 +4726,7 @@ k_score_fun <- function(k, rate_conf_int)
 			betaEstimated <- ratesVVK[grep("beta",names(ratesVVK))]
 			gammaEstimated <- ratesVVK[grep("gamma",names(ratesVVK))]
 			
-			sigmoidsParameters <- unlist(
+			capture.output(sigmoidsParameters <- unlist(
 				tryCatch(
 					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 								,errorVVK_Int
@@ -3903,7 +4760,7 @@ k_score_fun <- function(k, rate_conf_int)
 															, counts.gradient = NaN
 															, convergence = e)
 				)
-			)
+			))
 			
 			k1Parameters <- tryCatch(fromSigmoidToImpulse(sigmoidsParameters[[1:4]],tpts=tpts,nIter=nIter),error=function(e){c(rep(KKK[[row]][1],3), max(tpts)/3, max(tpts)/3*2,1)})
 			k2Parameters <- tryCatch(fromSigmoidToImpulse(sigmoidsParameters[[5:8]],tpts=tpts,nIter=nIter),error=function(e){c(rep(KKK[[row]][2],3), max(tpts)/3, max(tpts)/3*2,1)})
@@ -3928,7 +4785,7 @@ k_score_fun <- function(k, rate_conf_int)
 		betaEstimated <- ratesVVK[grep("beta",names(ratesVVK))]
 		gammaEstimated <- ratesVVK[grep("gamma",names(ratesVVK))]
 		
-		impulsesParameters <- unlist(
+		capture.output(impulsesParameters <- unlist(
 			tryCatch(
 				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 							,errorVVK_Int
@@ -3966,7 +4823,7 @@ k_score_fun <- function(k, rate_conf_int)
 														, counts.gradient = NaN
 														, convergence = e)
 			)
-		)
+		))
 		
 		if(!useSigmoidFun)return(impulsesParameters)
 		
@@ -4008,7 +4865,7 @@ k_score_fun <- function(k, rate_conf_int)
 			betaEstimated <- ratesKVV[grep("beta",names(ratesKVV))]
 			gammaEstimated <- ratesKVV[grep("gamma",names(ratesKVV))]
 			
-			sigmoidsParameters <- unlist(
+			capture.output(sigmoidsParameters <- unlist(
 				tryCatch(
 					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 								,errorKVV_Int
@@ -4042,7 +4899,7 @@ k_score_fun <- function(k, rate_conf_int)
 															, counts.gradient = NaN
 															, convergence = e)
 				)
-			)
+			))
 			
 			k1Parameters <- tryCatch(sigmoidsParameters[[1]],error=function(e)KKK[[row]][1])
 			k2Parameters <- tryCatch(fromSigmoidToImpulse(sigmoidsParameters[[2:5]],tpts=tpts,nIter=nIter),error=function(e){c(rep(KKK[[row]][2],3), max(tpts)/3, max(tpts)/3*2,1)})
@@ -4067,7 +4924,7 @@ k_score_fun <- function(k, rate_conf_int)
 		betaEstimated <- ratesKVV[grep("beta",names(ratesKVV))]
 		gammaEstimated <- ratesKVV[grep("gamma",names(ratesKVV))]
 		
-		impulsesParameters <- unlist(
+		capture.output(impulsesParameters <- unlist(
 			tryCatch(
 				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 							,errorKVV_Int
@@ -4105,7 +4962,7 @@ k_score_fun <- function(k, rate_conf_int)
 														, counts.gradient = NaN
 														, convergence = e)
 			)
-		)
+		))
 		
 		if(!useSigmoidFun)return(impulsesParameters)
 		
@@ -4147,7 +5004,7 @@ k_score_fun <- function(k, rate_conf_int)
 			betaEstimated <- ratesVVV[grep("beta",names(ratesVVV))]
 			gammaEstimated <- ratesVVV[grep("gamma",names(ratesVVV))]
 			
-			sigmoidsParameters <- unlist(
+			capture.output(sigmoidsParameters <- unlist(
 				tryCatch(
 					optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 								,errorVVV_Int
@@ -4184,7 +5041,7 @@ k_score_fun <- function(k, rate_conf_int)
 															, counts.gradient = NaN
 															, convergence = e)
 				)
-			)
+			))
 			
 			k1Parameters <- tryCatch(fromSigmoidToImpulse(sigmoidsParameters[[1:4]],tpts=tpts,nIter=nIter),error=function(e){c(rep(KKK[[row]][1],3), max(tpts)/3, max(tpts)/3*2,1)})
 			k2Parameters <- tryCatch(fromSigmoidToImpulse(sigmoidsParameters[[5:8]],tpts=tpts,nIter=nIter),error=function(e){c(rep(KKK[[row]][2],3), max(tpts)/3, max(tpts)/3*2,1)})
@@ -4209,7 +5066,7 @@ k_score_fun <- function(k, rate_conf_int)
 		betaEstimated <- ratesVVV[grep("beta",names(ratesVVV))]
 		gammaEstimated <- ratesVVV[grep("gamma",names(ratesVVV))]
 		
-		impulsesParameters <- unlist(
+		capture.output(impulsesParameters <- unlist(
 			tryCatch(
 				optim(unname(c(k1Parameters, k2Parameters, k3Parameters))
 							,errorVVV_Int
@@ -4252,7 +5109,7 @@ k_score_fun <- function(k, rate_conf_int)
 														, counts.gradient = NaN
 														, convergence = e)
 			)
-		)
+		))
 		
 		if(!useSigmoidFun)return(impulsesParameters)
 		
@@ -5185,7 +6042,7 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 																							 , BPPARAM
 																							 , na.rm
 																							 , verbose
-																							 , testOnSmooth
+																							 # , testOnSmooth
 																							 , seed
 																							 , nInit
 																							 , nIter
@@ -5195,6 +6052,7 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 																							 , derivativePenalityRelevance = 10^-50
 																							 , llConfidenceThreshold)
 {
+	
 	total <- concentrations$total
 	totalVariance <- concentrations$total_var
 	
@@ -5215,7 +6073,7 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 	
 	eiGenes <- rownames(premature)
 	
-	print("Mature RNA fit.")
+	message("Mature RNA fit.")
 	modelMatureRNAfun <- bplapply(eiGenes,function(i)
 	{
 		tryCatch(.chooseModel(tpts=tpts
@@ -5237,8 +6095,6 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 		), error=function(e) return(.emptyGene(e)))
 	},BPPARAM=BPPARAM)
 	names(modelMatureRNAfun) <- eiGenes
-	
-	# saveRDS(modelMatureRNAfun,"modelMatureRNAfun.rds")
 	
 	accelerationCoefficient <- sapply(eiGenes, function(row)
 	{
@@ -5331,7 +6187,7 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 	# saveRDS(accelerationCoefficient,"accelerationCoefficient.rds")
 	# eiGenes <- rownames(mature)
 	
-	print("VVV modeling.")
+	message("spd modeling.")
 	VVV <- bplapply(eiGenes,function(row){
 		
 		matureParameters <- tryCatch(unname(modelMatureRNAfun[[row]]$params),error=function(e) rep(NaN, length(tpts)))
@@ -5374,7 +6230,755 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 	# saveRDS(VVV,"VVV.rds")
 	
 	### Confidence intervals
-	print("Confidence intervals.")
+	message("Confidence intervals.")
+	confidenceIntervals <- bplapply(eiGenes,function(g)
+	{
+		classTmp <- "VVV"
+		
+		parameters <- VVV[[g]][grep("par",names(VVV[[g]]))]
+		optTmp <- rates_derivativeModels(tpts=tpts, class=classTmp, parameters=parameters)
+		
+		foe <- capture.output({ # Just to capture the output of multiroot function
+			suppressWarnings({
+				intervals <- sapply(names(parameters),function(parname)
+				{
+					par <- parameters[parname]
+					
+					mOut = list(
+						left_1 = tryCatch(multiroot(f = logLikelihoodCIerror, start = 1e-2*par, name = parname, parameters = parameters, class = classTmp, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalA = alpha[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceA = alphaVariance[g,], confidenceThreshold = llConfidenceThreshold, derivative = TRUE),error=function(e)return(emptyList)),
+						left_2 = tryCatch(multiroot(f = logLikelihoodCIerror, start = 1/2*par, name = parname, parameters = parameters, class = classTmp, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalA = alpha[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceA = alphaVariance[g,], confidenceThreshold = llConfidenceThreshold, derivative = TRUE),error=function(e)return(emptyList)),
+						center = tryCatch(multiroot(f = logLikelihoodCIerror, start = par, name = parname, parameters = parameters, class = classTmp, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalA = alpha[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceA = alphaVariance[g,], confidenceThreshold = llConfidenceThreshold, derivative = TRUE),error=function(e)return(emptyList)),
+						right_1 = tryCatch(multiroot(f = logLikelihoodCIerror, start = 1.5*par, name = parname, parameters = parameters, class = classTmp, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalA = alpha[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceA = alphaVariance[g,], confidenceThreshold = llConfidenceThreshold, derivative = TRUE),error=function(e)return(emptyList)),
+						right_2 = tryCatch(multiroot(f = logLikelihoodCIerror, start = 1e2*par, name = parname, parameters = parameters, class = classTmp, tpts = tpts, experimentalP = premature[g,], experimentalM = mature[g,], experimentalA = alpha[g,], varianceP = prematureVariance[g,], varianceM = matureVariance[g,], varianceA = alphaVariance[g,], confidenceThreshold = llConfidenceThreshold, derivative = TRUE),error=function(e)return(emptyList))
+					)
+					precis = sapply(mOut, '[[', 'f.root')
+					
+					if( length(which(precis<1e-2))>0 )  {
+						conf_int = sapply(mOut[which(precis<1e-2)], '[[', 'root')
+						low_int = min(conf_int)
+						high_int = max(conf_int)
+						
+						left = ifelse( low_int < par, low_int, NA)
+						right = ifelse( high_int > par, high_int, NA)
+						
+						left = unname(left)
+						right = unname(right)
+						
+					} else {
+						left = NA
+						right = NA
+					}
+					return(c(left,right))
+				})
+				intervals[1,!is.finite(intervals[2,])] <- NaN
+				intervals[2,!is.finite(intervals[1,])] <- NaN
+			})
+		})
+		
+		perturbedRates <- matrix(rep(NaN,3*length(tpts)),ncol=1)
+		for(parname in names(parameters))
+		{
+			for(extremePar in intervals[,parname])
+			{
+				perturbedParameters <- parameters
+				perturbedParameters[parname] <- extremePar
+				
+				perturbedRates <- cbind(perturbedRates,rates_derivativeModels(tpts=tpts, class=classTmp, parameters=perturbedParameters))
+			}
+		};perturbedRates <- perturbedRates[,-1]
+		perturbedRates[perturbedRates<0] <- 0
+		
+		k1left <- apply(perturbedRates[grep("alpha",rownames(perturbedRates)),],1,min,na.rm=TRUE)
+		k1TC <- optTmp[grep("alpha",names(optTmp))]
+		k1right <- apply(perturbedRates[grep("alpha",rownames(perturbedRates)),],1,max,na.rm=TRUE)
+		
+		k2left <- apply(perturbedRates[grep("gamma",rownames(perturbedRates)),],1,min,na.rm=TRUE)
+		k2TC <- optTmp[grep("gamma",names(optTmp))]
+		k2right <- apply(perturbedRates[grep("gamma",rownames(perturbedRates)),],1,max,na.rm=TRUE)
+		
+		k3left <- apply(perturbedRates[grep("beta",rownames(perturbedRates)),],1,min,na.rm=TRUE)
+		k3TC <- optTmp[grep("beta",names(optTmp))]
+		k3right <- apply(perturbedRates[grep("beta",rownames(perturbedRates)),],1,max,na.rm=TRUE)
+		
+		return(list(
+			k1 = cbind(left=k1left, opt=k1TC, right=k1right),
+			k2 = cbind(left=k2left, opt=k2TC, right=k2right),
+			k3 = cbind(left=k3left, opt=k3TC, right=k3right)
+		))
+	},BPPARAM=BPPARAM)
+	
+	names(confidenceIntervals) <- eiGenes
+	
+	# saveRDS(confidenceIntervals,"confidenceIntervals.rds")
+
+	for(g in seq_along(confidenceIntervals))
+	{
+		for(r in 1:3)
+		{
+			confidenceIntervals[[g]][[r]] <- t(apply(confidenceIntervals[[g]][[r]],1,function(row)
+			{
+				if((!is.finite(row[1])|row[1]==row[2])&(is.finite(row[3])&row[3]!=row[2])) row[1] <- row[2] - (row[3]-row[2])
+				if((!is.finite(row[3])|row[3]==row[2])&(is.finite(row[1])&row[1]!=row[2])) row[3] <- row[2] + (row[2]-row[1])
+				row
+			}))
+		}
+	}
+
+	k1_low <- median(sapply(confidenceIntervals,function(g){abs(g[[1]][,2] - g[[1]][,1])/g[[1]][,1]}),na.rm=TRUE)
+	k1_high <- median(sapply(confidenceIntervals,function(g){abs(g[[1]][,3] - g[[1]][,1])/g[[1]][,1]}),na.rm=TRUE)
+	
+	k2_low <- median(sapply(confidenceIntervals,function(g){abs(g[[2]][,2] - g[[2]][,1])/g[[2]][,1]}),na.rm=TRUE)
+	k2_high <- median(sapply(confidenceIntervals,function(g){abs(g[[2]][,3] - g[[2]][,1])/g[[2]][,1]}),na.rm=TRUE)
+	
+	k3_low <- median(sapply(confidenceIntervals,function(g){abs(g[[3]][,2] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
+	k3_high <- median(sapply(confidenceIntervals,function(g){abs(g[[3]][,3] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
+	
+	### Possible for very few genes
+	#
+	if(k1_low==0)k1_low <- mean(sapply(confidenceIntervals,function(g){abs(g[[1]][,2] - g[[1]][,1])/g[[1]][,1]}),na.rm=TRUE)
+	if(k1_high==0)k1_high <- mean(sapply(confidenceIntervals,function(g){abs(g[[1]][,3] - g[[1]][,1])/g[[1]][,1]}),na.rm=TRUE)
+	
+	if(k2_low==0)k2_low <- mean(sapply(confidenceIntervals,function(g){abs(g[[2]][,2] - g[[2]][,1])/g[[2]][,1]}),na.rm=TRUE)
+	if(k2_high==0)k2_high <- mean(sapply(confidenceIntervals,function(g){abs(g[[2]][,3] - g[[2]][,1])/g[[2]][,1]}),na.rm=TRUE)
+	
+	if(k3_low==0)k3_low <- mean(sapply(confidenceIntervals,function(g){abs(g[[3]][,2] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
+	if(k3_high==0)k3_high <- mean(sapply(confidenceIntervals,function(g){abs(g[[3]][,3] - g[[3]][,1])/g[[3]][,1]}),na.rm=TRUE)
+	
+	median_low <- c(k1=k1_low,k2=k2_low,k3=k3_low)
+	median_high <- c(k1=k1_high,k2=k2_high,k3=k3_high)
+	
+	for(g in seq_along(confidenceIntervals))
+	{
+		for(r in 1:3)
+		{
+			confidenceIntervals[[g]][[r]] <- t(apply(confidenceIntervals[[g]][[r]],1,function(row)
+			{
+				if(is.finite(row[2]))
+				{
+					if(row[1]==row[2] & row[1]==row[3]) {row[1] <- row[2]*(1-median_low[[r]]); row[3] <- row[2]*(1+median_high[[r]])}
+				}
+				row
+			}))
+		}
+	}
+	
+	# Removal of not modeled genes
+	eiGenes <- eiGenes[sapply(confidenceIntervals,function(g)all(is.finite(g[[1]]))&all(is.finite(g[[2]]))&all(is.finite(g[[3]])))]
+	confidenceIntervals <- confidenceIntervals[eiGenes]
+	VVV <- VVV[eiGenes]
+	
+	# saveRDS(confidenceIntervals,"confidenceIntervals.rds")
+	
+	# I compute che constant rates
+	fitResults_synthesis <- unlist(lapply(eiGenes,function(g)
+	{
+		rate_conf_int <- confidenceIntervals[[g]][["k1"]]
+		k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
+		if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
+		k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
+		return(k_scores_out$par)
+	}))
+	
+	fitResults_processing <- unlist(lapply(eiGenes,function(g)
+	{
+		rate_conf_int <- confidenceIntervals[[g]][["k2"]]
+		k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
+		if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
+		k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
+		return(k_scores_out$par)
+	}))
+	
+	fitResults_degradation <- unlist(lapply(eiGenes,function(g)
+	{
+		rate_conf_int <- confidenceIntervals[[g]][["k3"]]
+		k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
+		if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
+		k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
+		return(k_scores_out$par)
+	}))
+	
+	names(fitResults_synthesis) <- 
+		names(fitResults_processing) <- 
+		names(fitResults_degradation) <- eiGenes
+	
+	confidenceIntervals <- lapply(eiGenes,function(g)
+	{
+		confidenceIntervals[[g]][['k1']] <- cbind(confidenceIntervals[[g]][['k1']],'constant'=rep(fitResults_synthesis[[g]],length(tpts)))
+		confidenceIntervals[[g]][['k2']] <- cbind(confidenceIntervals[[g]][['k2']],'constant'=rep(fitResults_processing[[g]],length(tpts)))
+		confidenceIntervals[[g]][['k3']] <- cbind(confidenceIntervals[[g]][['k3']],'constant'=rep(fitResults_degradation[[g]],length(tpts)))
+		confidenceIntervals[[g]]
+	})
+	
+	# saveRDS(confidenceIntervals,"confidenceIntervals.rds")
+	
+	### Standard outputs
+	
+	# Log likelihood
+	logLikelihood <- t(sapply(eiGenes,function(g)
+	{
+		prematureVVVTemp <- tryCatch(c(sapply(seq_along(tpts),function(t)prematureVVV_Der(x = tpts[t], parameters = VVV[[g]][grep("par",names(VVV[[g]]))]))),error=function(e)rep(NaN,length(tpts)))
+		matureVVVTemp <- tryCatch(c(sapply(seq_along(tpts),function(t)matureVVV_Der(x = tpts[t], parameters = VVV[[g]][grep("par",names(VVV[[g]]))]))),error=function(e)rep(NaN,length(tpts)))
+		alphaVVVTemp <- tryCatch(c(sapply(seq_along(tpts),function(t)k1VVV_Der(x = tpts[t], parameters = VVV[[g]][grep("par",names(VVV[[g]]))]))),error=function(e)rep(NaN,length(tpts)))
+		
+		modelVVV <- c(matureVVVTemp,prematureVVVTemp,alphaVVVTemp)
+		
+		VVVTemp <- tryCatch(logLikelihoodFunction(experiment = c(matureSmooth[g,],prematureSmooth[g,],alpha[g,])
+																							, model = modelVVV
+																							, variance = c(matureVariance[g,],prematureVariance[g,],alphaVariance[g,])),error=function(e)NaN)
+		
+		c("KKK" = NaN,"VKK" = NaN,"KVK" = NaN,"KKV" = NaN,"VVK" = NaN,"VKV" = NaN,"KVV" = NaN,"VVV" = VVVTemp)
+	}))
+	
+	rownames(logLikelihood) <- eiGenes
+	
+	### Common code for confidence bars computation
+	# dof
+	dof <- cbind(KKK = NaN
+							 ,VKK = NaN
+							 ,KVK = NaN
+							 ,KKV = NaN
+							 ,VVK = NaN
+							 ,VKV = NaN
+							 ,KVV = NaN
+							 ,VVV = sapply(VVV,function(m)length(grep("par",names(m)))))
+	
+	AIC <- 2*(dof - logLikelihood)
+	AICc <- 2*(dof - logLikelihood) + (2*dof*(dof+1))/max(0,2*length(tpts)-dof-1)
+	
+	chi2data <- t(mcsapply(eiGenes,function(g)
+	{
+		KKKTemp <- NaN
+		VKKTemp <- NaN
+		KVKTemp <- NaN
+		KKVTemp <- NaN	
+		VVKTemp <- NaN
+		VKVTemp <- NaN
+		KVVTemp <- NaN
+		
+		VVVTemp <- tryCatch(errorVVV_Der(parameters = VVV[[g]][grep("par",names(VVV[[g]]))]
+																		 , tpts = tpts
+																		 , premature = prematureSmooth[g,]
+																		 , mature = matureSmooth[g,]
+																		 , alpha = alpha[g,]
+																		 , prematureVariance = prematureVariance[g,]
+																		 , matureVariance = matureVariance[g,]
+																		 , alphaVariance = alphaVariance[g,]
+																		 , clean = TRUE),error = function(e)NaN)
+		
+		
+		c(KKK = KKKTemp,VKK = VKKTemp,KVK = KVKTemp,KKV = KKVTemp,VVK = VVKTemp,VKV = VKVTemp,KVV = KVVTemp,VVV = VVVTemp)
+		
+	}, BPPARAM=BPPARAM))
+	
+	rownames(chi2data) <- eiGenes
+	
+	# P values
+	pvaluesdata <- cbind(KKK=sapply(eiGenes,function(g)pchisq(chi2data[g,'KKK'], max(c(0,3*length(tpts)-dof[g,'KKK']))))
+											 ,VKK=sapply(eiGenes,function(g)pchisq(chi2data[g,'VKK'], max(c(0,3*length(tpts)-dof[g,'VKK']))))
+											 ,KVK=sapply(eiGenes,function(g)pchisq(chi2data[g,'KVK'], max(c(0,3*length(tpts)-dof[g,'KVK']))))
+											 ,KKV=sapply(eiGenes,function(g)pchisq(chi2data[g,'KKV'], max(c(0,3*length(tpts)-dof[g,'KKV']))))
+											 ,VVK=sapply(eiGenes,function(g)pchisq(chi2data[g,'VVK'], max(c(0,3*length(tpts)-dof[g,'VVK']))))
+											 ,VKV=sapply(eiGenes,function(g)pchisq(chi2data[g,'VKV'], max(c(0,3*length(tpts)-dof[g,'VKV']))))
+											 ,KVV=sapply(eiGenes,function(g)pchisq(chi2data[g,'KVV'], max(c(0,3*length(tpts)-dof[g,'KVV']))))
+											 ,VVV=sapply(eiGenes,function(g)pchisq(chi2data[g,'VVV'], max(c(0,3*length(tpts)-dof[g,'VVV'])))))
+	
+	ratesSpecs <- lapply(eiGenes,function(g)
+	{
+		list("0" = list(mature = list(fun = constantModelP
+																	,type = "constant"
+																	,df = 1
+																	,params = NaN)
+										,beta = list(fun = constantModelP
+																 ,type = "constant"
+																 ,df = 1
+																 ,params = NaN)
+										,gamma = list(fun = constantModelP
+																	,type = "constant"
+																	,df = 1
+																	,params = NaN)
+										,test = NaN
+										,logLik = NaN
+										,AIC = NaN
+										,AICc = NaN
+										,counts = NaN
+										,convergence = NaN
+										,message = NaN)
+				 ,"a" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(mature = list(fun = impulseModelP
+				 										 ,type = "impulse"
+				 										 ,df = 6
+				 										 ,params = NaN)
+				 			 ,beta = list(fun = constantModelP
+				 			 						 ,type = "constant"
+				 			 						 ,df = 1
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }else{
+				 	list(mature = list(fun = sigmoidModelP
+				 										 ,type = "sigmoid"
+				 										 ,df = 4
+				 										 ,params = NaN)
+				 			 ,beta = list(fun = constantModelP
+				 			 						 ,type = "constant"
+				 			 						 ,df = 1
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }
+				 ,"b" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(total = list(fun = impulseModelP
+				 										,type = "impulse"
+				 										,df = 6
+				 										,params = NaN)
+				 			 ,alpha = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,gamma = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }else{
+				 	list(total = list(fun = sigmoidModelP
+				 										,type = "sigmoid"
+				 										,df = 4
+				 										,params = NaN)
+				 			 ,alpha = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,gamma = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }
+				 ,"c" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(total = list(fun = impulseModelP
+				 										,type = "impulse"
+				 										,df = 6
+				 										,params = NaN)
+				 			 ,alpha = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,beta = list(fun = constantModelP
+				 			 						 ,type = "constant"
+				 			 						 ,df = 1
+				 			 						 ,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }else{
+				 	list(total = list(fun = sigmoidModelP
+				 										,type = "sigmoid"
+				 										,df = 4
+				 										,params = NaN)
+				 			 ,alpha = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,beta = list(fun = constantModelP
+				 			 						 ,type = "constant"
+				 			 						 ,df = 1
+				 			 						 ,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }
+				 ,"ab" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(mature = list(fun = impulseModelP
+				 										 ,type = "impulse"
+				 										 ,df = 6
+				 										 ,params = NaN)
+				 			 ,beta = list(fun = impulseModelP
+				 			 						 ,type = "impulse"
+				 			 						 ,df = 6
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }else{
+				 	list(mature = list(fun = sigmoidModelP
+				 										 ,type = "sigmoid"
+				 										 ,df = 4
+				 										 ,params = NaN)
+				 			 ,beta = list(fun = sigmoidModelP
+				 			 						 ,type = "sigmoid"
+				 			 						 ,df = 4
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }
+				 ,"ac" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(mature = list(fun = impulseModelP
+				 										 ,type = "impulse"
+				 										 ,df = 6
+				 										 ,params = NaN)
+				 			 ,beta = list(fun = constantModelP
+				 			 						 ,type = "constant"
+				 			 						 ,df = 1
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = impulseModelP
+				 			 							,type = "impulse"
+				 			 							,df = 6
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }else{
+				 	list(mature = list(fun = sigmoidModelP
+				 										 ,type = "sigmoid"
+				 										 ,df = 4
+				 										 ,params = NaN)
+				 			 ,beta = list(fun = constantModelP
+				 			 						 ,type = "constant"
+				 			 						 ,df = 1
+				 			 						 ,params = NaN)
+				 			 ,gamma = list(fun = sigmoidModelP
+				 			 							,type = "sigmoid"
+				 			 							,df = 4
+				 			 							,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }
+				 ,"bc" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(total = list(fun = impulseModelP
+				 										,type = "impulse"
+				 										,df = 6
+				 										,params = NaN)
+				 			 ,alpha = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,beta = list(fun = impulseModelP
+				 			 						 ,type = "impulse"
+				 			 						 ,df = 6
+				 			 						 ,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }else{
+				 	list(total = list(fun = sigmoidModelP
+				 										,type = "sigmoid"
+				 										,df = 4
+				 										,params = NaN)
+				 			 ,alpha = list(fun = constantModelP
+				 			 							,type = "constant"
+				 			 							,df = 1
+				 			 							,params = NaN)
+				 			 ,beta = list(fun = sigmoidModelP
+				 			 						 ,type = "sigmoid"
+				 			 						 ,df = 4
+				 			 						 ,params = NaN)
+				 			 ,test = NaN
+				 			 ,logLik = NaN
+				 			 ,AIC = NaN
+				 			 ,AICc = NaN
+				 			 ,counts = NaN
+				 			 ,convergence = NaN
+				 			 ,message = NaN)
+				 }
+				 ,"abc" = if(length(grep("par",names(VVV[[g]])))==18)
+				 {
+				 	list(mature = list(fun = impulseModelP
+				 										 ,type = "impulse"
+				 										 ,df = 6
+				 										 ,params = c(mature = unname(VVV[[g]][1:6])))
+				 			 ,beta = list(fun = impulseModelP
+				 			 						 ,type = "impulse"
+				 			 						 ,df = 6
+				 			 						 ,params = c(beta = unname(VVV[[g]][13:18])))
+				 			 ,gamma = list(fun = impulseModelP
+				 			 							,type = "impulse"
+				 			 							,df = 6
+				 			 							,params = c(gamma = unname(VVV[[g]][7:12])))
+				 			 ,test = log(pvaluesdata[g,"VVV"])
+				 			 ,logLik = logLikelihood[g,"VVV"]
+				 			 ,AIC = AIC[g,"VVV"]
+				 			 ,AICc = AICc[g,"VVV"]
+				 			 ,counts = c("function"=unname(VVV[[g]]["counts.function"]), gradient=unname(VVV[[g]]["counts.gradient"]))
+				 			 ,convergence = unname(VVV[[g]]["convergence"])
+				 			 ,message = NULL)
+				 }else{
+				 	list(mature = list(fun = sigmoidModelP
+				 										 ,type = "sigmoid"
+				 										 ,df = 4
+				 										 ,params = c(mature = unname(VVV[[g]][1:4])))
+				 			 ,beta = list(fun = sigmoidModelP
+				 			 						 ,type = "sigmoid"
+				 			 						 ,df = 4
+				 			 						 ,params = c(beta = unname(VVV[[g]][9:12])))
+				 			 ,gamma = list(fun = sigmoidModelP
+				 			 							,type = "sigmoid"
+				 			 							,df = 4
+				 			 							,params = c(gamma = unname(VVV[[g]][5:8])))
+				 			 ,test = log(pvaluesdata[g,"VVV"])
+				 			 ,logLik = logLikelihood[g,"VVV"]
+				 			 ,AIC = AIC[g,"VVV"]
+				 			 ,AICc = AICc[g,"VVV"]
+				 			 ,counts = c("function"=unname(VVV[[g]]["counts.function"]), gradient=unname(VVV[[g]]["counts.gradient"]))
+				 			 ,convergence = unname(VVV[[g]]["convergence"])
+				 			 ,message = NULL)
+				 }
+		)
+	})
+	
+	names(ratesSpecs) <- eiGenes
+	
+	out <- list(ratesSpecs=ratesSpecs[eiGenes], confidenceIntervals=confidenceIntervals)
+	
+	return(out)
+}
+
+.inspect.engine_Derivative_Nascent_sdp <- function(tpts
+																									 , concentrations
+																									 , rates
+																									 , BPPARAM
+																									 , na.rm
+																									 , verbose
+																									 # , testOnSmooth
+																									 , seed
+																									 , nInit
+																									 , nIter
+																									 , computeDerivatives = TRUE
+																									 , useSigmoidFun = TRUE
+																									 , initialPenalityRelevance = 1
+																									 , derivativePenalityRelevance = 10^-50
+																									 , llConfidenceThreshold)
+{
+	
+	total <- concentrations$total
+	totalVariance <- concentrations$total_var
+	
+	premature <- concentrations$preMRNA
+	prematureVariance <- concentrations$preMRNA_var
+	
+	mature <- concentrations$mature
+	matureVariance <- concentrations$mature_var
+	
+	alpha <- rates$alpha
+	alphaVariance <- rates$alpha_var
+	
+	beta <- rates$beta
+	gamma <- rates$gamma
+	
+	prematureSmooth <- premature
+	matureSmooth <- mature
+	
+	eiGenes <- rownames(premature)
+	
+	message("Mature RNA fit.")
+	modelMatureRNAfun <- bplapply(eiGenes,function(i)
+	{
+		tryCatch(.chooseModel(tpts=tpts
+													, experiment=mature[i,]
+													, variance=matureVariance[i,]
+													, na.rm=na.rm
+													, sigmoid=useSigmoidFun
+													, impulse=TRUE
+													, polynomial=FALSE
+													, nInit=nInit
+													, nIter=nIter
+													, sigmoidModel=sigmoidModel
+													, impulseModel=impulseModel
+													, sigmoidModelP=sigmoidModelP
+													, impulseModelP=impulseModelP
+													, .polynomialModelP=.polynomialModelP
+													, seed = seed
+													, computeDerivatives = computeDerivatives
+		), error=function(e) return(.emptyGene(e)))
+	},BPPARAM=BPPARAM)
+	names(modelMatureRNAfun) <- eiGenes
+	
+	message("spd modeling.")
+	VVV <- bplapply(eiGenes,function(row){
+		
+		matureParameters <- tryCatch(unname(modelMatureRNAfun[[row]]$params),error=function(e) rep(NaN, length(tpts)))
+		if(length(matureParameters)==6)
+		{
+			k2Parameters <- tryCatch(.chooseModel(tpts=tpts
+																						, experiment=gamma[row,]
+																						, variance=gamma[row,]
+																						, na.rm=na.rm
+																						, sigmoid=FALSE
+																						, impulse=TRUE
+																						, polynomial=FALSE
+																						, nInit=nInit
+																						, nIter=nIter
+																						, sigmoidModel=sigmoidModel
+																						, impulseModel=impulseModel
+																						, sigmoidModelP=sigmoidModelP
+																						, impulseModelP=impulseModelP
+																						, .polynomialModelP=.polynomialModelP
+																						, seed = seed
+																						, computeDerivatives = FALSE)$params, 
+															 error=function(e) 
+															 	c(rep(mean(gamma[row,]),3), max(tpts)/3, max(tpts)/3*2, 1))
+			k3Parameters <- tryCatch(.chooseModel(tpts=tpts
+																						, experiment=beta[row,]
+																						, variance=beta[row,]
+																						, na.rm=na.rm
+																						, sigmoid=FALSE
+																						, impulse=TRUE
+																						, polynomial=FALSE
+																						, nInit=nInit
+																						, nIter=nIter
+																						, sigmoidModel=sigmoidModel
+																						, impulseModel=impulseModel
+																						, sigmoidModelP=sigmoidModelP
+																						, impulseModelP=impulseModelP
+																						, .polynomialModelP=.polynomialModelP
+																						, seed = seed
+																						, computeDerivatives = FALSE)$params, 
+															 error=function(e) 
+															 	c(rep(mean(beta[row,]),3), max(tpts)/3, max(tpts)/3*2, 1))
+		}else{
+			k2Parameters <- tryCatch(.chooseModel(tpts=tpts
+																						, experiment=gamma[row,]
+																						, variance=gamma[row,]
+																						, na.rm=na.rm
+																						, sigmoid=TRUE
+																						, impulse=FALSE
+																						, polynomial=FALSE
+																						, nInit=nInit
+																						, nIter=nIter
+																						, sigmoidModel=sigmoidModel
+																						, impulseModel=impulseModel
+																						, sigmoidModelP=sigmoidModelP
+																						, impulseModelP=impulseModelP
+																						, .polynomialModelP=.polynomialModelP
+																						, seed = seed
+																						, computeDerivatives = FALSE)$params, 
+															 error=function(e) 
+															 	c(rep(mean(gamma[row,]),2), max(tpts)/3, 1))
+			k3Parameters <- tryCatch(.chooseModel(tpts=tpts
+																						, experiment=beta[row,]
+																						, variance=beta[row,]
+																						, na.rm=na.rm
+																						, sigmoid=TRUE
+																						, impulse=FALSE
+																						, polynomial=FALSE
+																						, nInit=nInit
+																						, nIter=nIter
+																						, sigmoidModel=sigmoidModel
+																						, impulseModel=impulseModel
+																						, sigmoidModelP=sigmoidModelP
+																						, impulseModelP=impulseModelP
+																						, .polynomialModelP=.polynomialModelP
+																						, seed = seed
+																						, computeDerivatives = FALSE)$params, 
+															 error=function(e) 
+															 	c(rep(mean(beta[row,]),2), max(tpts)/3, 1))
+		}
+		
+		unlist(
+			tryCatch(
+				optim(unname(c(matureParameters, k2Parameters, k3Parameters))
+							,errorVVV_Der
+							,tpts = tpts
+							,premature = premature[row,]
+							,mature = mature[row,]
+							,alpha = alpha[row,]
+							,prematureVariance = prematureVariance[row,]
+							,matureVariance = matureVariance[row,]
+							,alphaVariance = alphaVariance[row,]
+							,KKK = NULL
+							,initialChisquare = NULL
+							,initialDistances = NULL
+							,initialPenalityRelevance = initialPenalityRelevance
+							,derivativePenalityRelevance = derivativePenalityRelevance
+							,clean = FALSE
+							,control = list(maxit = nIter * 1000)),
+				error=function(e) list("par"=rep(NaN,length(c(matureParameters, k2Parameters, k3Parameters)))
+															 , "value" = NaN
+															 , "counts" = c("function" = NaN, "gradient" = NaN)
+															 , "convergence" = NaN)
+			)
+		)
+	}, BPPARAM=BPPARAM)
+	names(VVV) <- eiGenes
+	
+	# saveRDS(VVV,"VVV.rds")
+	
+	### Confidence intervals
+	message("Confidence intervals.")
 	confidenceIntervals <- bplapply(eiGenes,function(g)
 	{
 		classTmp <- "VVV"
@@ -5499,7 +7103,7 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 			{
 				if(is.finite(row[2]))
 				{
-					if(row[1]==row[2] & row[1]==row[3]) row[1] <- row[2]*(1-median_low[[r]]); row[3] <- row[2]*(1+median_high[[r]])
+					if(row[1]==row[2] & row[1]==row[3]) {row[1] <- row[2]*(1-median_low[[r]]); row[3] <- row[2]*(1+median_high[[r]])}
 				}
 				row
 			}))
@@ -5957,7 +7561,7 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 																								 , BPPARAM
 																								 , na.rm
 																								 , verbose
-																								 , testOnSmooth
+																								 # , testOnSmooth
 																								 , seed
 																								 , nInit
 																								 , nIter

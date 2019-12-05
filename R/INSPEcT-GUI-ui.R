@@ -16,7 +16,7 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 		column(2,
 					 
 					 fileInput("file1", "Choose INSPEcT File", accept = ".rds", width = NULL,
-					 					buttonLabel = "Browse...", placeholder = "nascentInspObj10.rds"),
+					 					buttonLabel = "Browse...", placeholder = "INSPEcT_GUI_sample_dataset.rds"),
 					 uiOutput("file_error"),
 					 uiOutput('modeling_type'),
 					 uiOutput('select_condition'),
@@ -24,9 +24,9 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 					 selectInput("select", label = "Select gene", 
 					 						choices = NULL, selected = NULL),
 					 radioButtons('data_selection', 'Select input:',
-					 						 choiceValues = c('Smooth data', 'Experimental data','User defined'), 
-					 						 choiceNames = c('Smooth data', 'Experimental data','User defined (No input)'), 
-					 						 selected = 'Smooth data'),
+					 						 choiceValues = c('Experimental data', 'Smooth data', 'User defined'), 
+					 						 choiceNames = c('Raw experimental data', 'Smooth experimental data', 'User defined (No input)'), 
+					 						 selected = 'Experimental data'),
 					 uiOutput('modeling_box')
 		),
 		column(4,

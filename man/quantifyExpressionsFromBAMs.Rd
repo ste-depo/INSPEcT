@@ -4,12 +4,21 @@
 \alias{quantifyExpressionsFromBAMs}
 \title{Evaluate introns and exons expressions from BAM or SAM files}
 \usage{
-quantifyExpressionsFromBAMs(txdb, BAMfiles, experimentalDesign,
-  by = c("gene", "tx"), countMultiMappingReads = FALSE,
-  allowMultiOverlap = FALSE, prioritizeExons = TRUE,
-  libsize = c("assigned", "all"), strandSpecific = 0,
-  isPairedEnd = FALSE, DESeq2 = TRUE, varSamplingCondition = NULL,
-  BPPARAM = SerialParam())
+quantifyExpressionsFromBAMs(
+  txdb,
+  BAMfiles,
+  experimentalDesign,
+  by = c("gene", "tx"),
+  countMultiMappingReads = FALSE,
+  allowMultiOverlap = FALSE,
+  prioritizeExons = TRUE,
+  libsize = c("assigned", "all"),
+  strandSpecific = 0,
+  isPairedEnd = FALSE,
+  DESeq2 = TRUE,
+  varSamplingCondition = NULL,
+  BPPARAM = SerialParam()
+)
 }
 \arguments{
 \item{txdb}{A TranscriptDB object}

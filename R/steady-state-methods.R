@@ -249,7 +249,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 		# model!
 
-		print('Evaluating model no-reg [1/8]...')
+		message('Evaluating model no-reg [1/8]...')
 		outKKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
 			tryCatch(
 				unlist(optim(mean_rates[i,], errorKKK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader,
@@ -258,7 +258,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			,BPPARAM=BPPARAM))
 		outKKK[apply(outKKK[,1:3]<0,1,any),] <- NaN
 
-		print('Evaluating model s [2/8]...')
+		message('Evaluating model s [2/8]...')
 		outVKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
 			tryCatch(
 				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], mean_rates[i,3] ), 
@@ -268,7 +268,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			,BPPARAM=BPPARAM))
 		outVKK[apply(outVKK[,1:4]<0,1,any),] <- NaN
 
-		print('Evaluating model p [3/8]...')
+		message('Evaluating model p [3/8]...')
 		outKVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
 			tryCatch(
 				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
@@ -278,7 +278,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			,BPPARAM=BPPARAM))
 		outKVK[apply(outKVK[,1:4]<0,1,any),] <- NaN
 
-		print('Evaluating model d [4/8]...')
+		message('Evaluating model d [4/8]...')
 		outKKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
 			tryCatch(
 				unlist(optim( c( mean_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
@@ -288,7 +288,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			,BPPARAM=BPPARAM))
 		outKKV[apply(outKKV[,1:4]<0,1,any),] <- NaN
 
-		print('Evaluating model sp [5/8]...')
+		message('Evaluating model sp [5/8]...')
 		outVVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
 			tryCatch(
 				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
@@ -298,7 +298,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			,BPPARAM=BPPARAM))
 		outVVK[apply(outVVK[,1:5]<0,1,any),] <- NaN
 
-		print('Evaluating model sd [6/8]...')
+		message('Evaluating model sd [6/8]...')
 		outVKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
 			tryCatch(
 				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
@@ -308,7 +308,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			,BPPARAM=BPPARAM))
 		outVKV[apply(outVKV[,1:5]<0,1,any),] <- NaN
 
-		print('Evaluating model pd [7/8]...')
+		message('Evaluating model pd [7/8]...')
 		outKVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
 			tryCatch(
 				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
@@ -318,7 +318,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 			,BPPARAM=BPPARAM))
 		outKVV[apply(outKVV[,1:5]<0,1,any),] <- NaN
 
-		print('Evaluating model spd [8/8]...')
+		message('Evaluating model spd [8/8]...')
 		outVVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
 			tryCatch(
 				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
@@ -534,7 +534,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 
 			# model!
 
-			print('Evaluating model no-reg [1/4]...')
+			message('Evaluating model no-reg [1/4]...')
 			outK_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
 				tryCatch(
 					unlist(optim(mean_rates[i,], errorKK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader,
@@ -542,7 +542,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 					, error=function(e) rep(NaN, 6))
 				,BPPARAM=BPPARAM))
 
-			print('Evaluating model s [2/4]...')
+			message('Evaluating model s [2/4]...')
 			outV_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
 				tryCatch(
 					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2] ), 
@@ -551,7 +551,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 					, error=function(e) rep(NaN, 7))
 				,BPPARAM=BPPARAM))
 
-			print('Evaluating model d [3/4]...')
+			message('Evaluating model d [3/4]...')
 			outK_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
 				tryCatch(
 					unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
@@ -560,7 +560,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bp
 					, error=function(e) rep(NaN, 7))
 				,BPPARAM=BPPARAM))
 
-			print('Evaluating model sd [4/4]...')
+			message('Evaluating model sd [4/4]...')
 			outV_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
 				tryCatch(
 					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 

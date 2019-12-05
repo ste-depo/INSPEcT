@@ -22,7 +22,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 	contentsrea <- reactive({
 
 		filename <- input$file1$datapath 
-		if( is.null(filename) ) filename <- system.file(package='INSPEcT', 'nascentInspObj10.rds')
+		if( is.null(filename) ) filename <- system.file(package='INSPEcT', 'INSPEcT_GUI_sample_dataset.rds')
 
 		## load file
 		if( file.exists(filename) ) {
@@ -46,7 +46,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				
 			} else {
 			
-			# (the loaded object is of class INSPEcT
+				# (the loaded object is of class INSPEcT
 				
 				## store inspect global values
 				experiment$tpts <- tpts(ids)
@@ -69,7 +69,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 					if( ids@NF ) stop("The RNAdynamics app doesn't work with non-functional(NF) INSPEcT models")
 					
 					# set default values of the checkboxes
-					updateRadioButtons(session, inputId = 'data_selection', selected = 'Smooth data')
+					updateRadioButtons(session, inputId = 'data_selection', selected = 'Experimental data')
 					
 					## select only the best model
 					
@@ -215,7 +215,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			values$model_names <- model_names
 			
 			if( !experiment$steady_state ) {
-
+				
 				experiment$synthesis <- if( !experiment$no_nascent ) {
 					ratesFirstGuess(ids[input$select], 'synthesis')	
 				} else NULL
@@ -236,7 +236,11 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				experiment$preMRNAsd <- sqrt(ratesFirstGuessVar(ids[input$select], 'preMRNA'))
 
 				out <- define_parameter_ranges( ids )
-
+				if( is.na(out$t_pars[1]) ) out$t_pars[1] <- ranges$time_min
+				if( is.na(out$t_pars[2]) ) out$t_pars[2] <- ranges$time_max
+				if( is.na(out$beta_pars[1]) ) out$beta_pars[1] <- 0
+				if( is.na(out$beta_pars[2]) ) out$beta_pars[2] <- 10
+				
 				gene_model <- ids@model@ratesSpecs[[input$select]][[1]]
 				modeling$counts <- gene_model$counts[1]
 				modeling$convergence <- gene_model$convergence
@@ -321,78 +325,80 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 													 selected = function_types$k3)
 				
 				if( function_types$k1 == "Constant" ) {
-					values$k1_h0 = round(gene_model[[ model_names[1] ]][["params"]][1],2)
-					values$k1_h1 = round(gene_model[[ model_names[1] ]][["params"]][1],2)
-					values$k1_h2 = round(gene_model[[ model_names[1] ]][["params"]][1],2)
+					values$k1_h0 = round(gene_model[[ model_names[1] ]][["params"]][1],6)
+					values$k1_h1 = round(gene_model[[ model_names[1] ]][["params"]][1],6)
+					values$k1_h2 = round(gene_model[[ model_names[1] ]][["params"]][1],6)
 					values$k1_t1 = round(mean(out$t_pars))
 					values$k1_t2 = round(mean(out$t_pars))
 					values$k1_beta = round(mean(out$beta_pars))
 				}
 				if( function_types$k1 == "Sigmoidal" ) {
-					values$k1_h0 = round(gene_model[[ model_names[1] ]][["params"]][1],2)
-					values$k1_h1 = round(gene_model[[ model_names[1] ]][["params"]][2],2)
-					values$k1_h2 = round(gene_model[[ model_names[1] ]][["params"]][2],2)
-					values$k1_t1 = round(gene_model[[ model_names[1] ]][["params"]][3],2)
-					values$k1_t2 = round(gene_model[[ model_names[1] ]][["params"]][3],2)
-					values$k1_beta = round(gene_model[[ model_names[1] ]][["params"]][4],2)
+					values$k1_h0 = round(gene_model[[ model_names[1] ]][["params"]][1],6)
+					values$k1_h1 = round(gene_model[[ model_names[1] ]][["params"]][2],6)
+					values$k1_h2 = round(gene_model[[ model_names[1] ]][["params"]][2],6)
+					values$k1_t1 = round(gene_model[[ model_names[1] ]][["params"]][3],6)
+					values$k1_t2 = round(gene_model[[ model_names[1] ]][["params"]][3],6)
+					values$k1_beta = round(gene_model[[ model_names[1] ]][["params"]][4],6)
 				}
 				if( function_types$k1 == "Impulsive" ) {
-					values$k1_h0 = round(gene_model[[ model_names[1] ]][["params"]][1],2)
-					values$k1_h1 = round(gene_model[[ model_names[1] ]][["params"]][2],2)
-					values$k1_h2 = round(gene_model[[ model_names[1] ]][["params"]][3],2)
-					values$k1_t1 = round(gene_model[[ model_names[1] ]][["params"]][4],2)
-					values$k1_t2 = round(gene_model[[ model_names[1] ]][["params"]][5],2)
-					values$k1_beta = round(gene_model[[ model_names[1] ]][["params"]][6],2)
+					values$k1_h0 = round(gene_model[[ model_names[1] ]][["params"]][1],6)
+					values$k1_h1 = round(gene_model[[ model_names[1] ]][["params"]][2],6)
+					values$k1_h2 = round(gene_model[[ model_names[1] ]][["params"]][3],6)
+					values$k1_t1 = round(gene_model[[ model_names[1] ]][["params"]][4],6)
+					values$k1_t2 = round(gene_model[[ model_names[1] ]][["params"]][5],6)
+					values$k1_beta = round(gene_model[[ model_names[1] ]][["params"]][6],6)
 				}
 				
+				capture.output(print(values$k1_h0))
+				
 				if( function_types$k2 == "Constant" ) {
-					values$k2_h0 = round(gene_model[[ model_names[2] ]][["params"]][1],2)
-					values$k2_h1 = round(gene_model[[ model_names[2] ]][["params"]][1],2)
-					values$k2_h2 = round(gene_model[[ model_names[2] ]][["params"]][1],2)
+					values$k2_h0 = round(gene_model[[ model_names[2] ]][["params"]][1],6)
+					values$k2_h1 = round(gene_model[[ model_names[2] ]][["params"]][1],6)
+					values$k2_h2 = round(gene_model[[ model_names[2] ]][["params"]][1],6)
 					values$k2_t1 = round(mean(out$t_pars))
 					values$k2_t2 = round(mean(out$t_pars))
 					values$k2_beta = round(mean(out$beta_pars))
 				}
 				if( function_types$k2 == "Sigmoidal" ) {
-					values$k2_h0 = round(gene_model[[ model_names[2] ]][["params"]][1],2)
-					values$k2_h1 = round(gene_model[[ model_names[2] ]][["params"]][2],2)
-					values$k2_h2 = round(gene_model[[ model_names[2] ]][["params"]][2],2)
-					values$k2_t1 = round(gene_model[[ model_names[2] ]][["params"]][3],2)
-					values$k2_t2 = round(gene_model[[ model_names[2] ]][["params"]][3],2)
-					values$k2_beta = round(gene_model[[ model_names[2] ]][["params"]][4],2)
+					values$k2_h0 = round(gene_model[[ model_names[2] ]][["params"]][1],6)
+					values$k2_h1 = round(gene_model[[ model_names[2] ]][["params"]][2],6)
+					values$k2_h2 = round(gene_model[[ model_names[2] ]][["params"]][2],6)
+					values$k2_t1 = round(gene_model[[ model_names[2] ]][["params"]][3],6)
+					values$k2_t2 = round(gene_model[[ model_names[2] ]][["params"]][3],6)
+					values$k2_beta = round(gene_model[[ model_names[2] ]][["params"]][4],6)
 				}
 				if( function_types$k2 == "Impulsive" ) {
-					values$k2_h0 = round(gene_model[[ model_names[2] ]][["params"]][1],2)
-					values$k2_h1 = round(gene_model[[ model_names[2] ]][["params"]][2],2)
-					values$k2_h2 = round(gene_model[[ model_names[2] ]][["params"]][3],2)
-					values$k2_t1 = round(gene_model[[ model_names[2] ]][["params"]][4],2)
-					values$k2_t2 = round(gene_model[[ model_names[2] ]][["params"]][5],2)
-					values$k2_beta = round(gene_model[[ model_names[2] ]][["params"]][6],2)
+					values$k2_h0 = round(gene_model[[ model_names[2] ]][["params"]][1],6)
+					values$k2_h1 = round(gene_model[[ model_names[2] ]][["params"]][2],6)
+					values$k2_h2 = round(gene_model[[ model_names[2] ]][["params"]][3],6)
+					values$k2_t1 = round(gene_model[[ model_names[2] ]][["params"]][4],6)
+					values$k2_t2 = round(gene_model[[ model_names[2] ]][["params"]][5],6)
+					values$k2_beta = round(gene_model[[ model_names[2] ]][["params"]][6],6)
 				}
 				
 				if( function_types$k3 == "Constant" ) {
-					values$k3_h0 = round(gene_model[[ model_names[3] ]][["params"]][1],2)
-					values$k3_h1 = round(gene_model[[ model_names[3] ]][["params"]][1],2)
-					values$k3_h2 = round(gene_model[[ model_names[3] ]][["params"]][1],2)
+					values$k3_h0 = round(gene_model[[ model_names[3] ]][["params"]][1],6)
+					values$k3_h1 = round(gene_model[[ model_names[3] ]][["params"]][1],6)
+					values$k3_h2 = round(gene_model[[ model_names[3] ]][["params"]][1],6)
 					values$k3_t1 = round(mean(out$t_pars))
 					values$k3_t2 = round(mean(out$t_pars))
 					values$k3_beta = round(mean(out$beta_pars))
 				}
 				if( function_types$k3 == "Sigmoidal" ) {
-					values$k3_h0 = round(gene_model[[ model_names[3] ]][["params"]][1],2)
-					values$k3_h1 = round(gene_model[[ model_names[3] ]][["params"]][2],2)
-					values$k3_h2 = round(gene_model[[ model_names[3] ]][["params"]][2],2)
-					values$k3_t1 = round(gene_model[[ model_names[3] ]][["params"]][3],2)
-					values$k3_t2 = round(gene_model[[ model_names[3] ]][["params"]][3],2)
-					values$k3_beta = round(gene_model[[ model_names[3] ]][["params"]][4],2)
+					values$k3_h0 = round(gene_model[[ model_names[3] ]][["params"]][1],6)
+					values$k3_h1 = round(gene_model[[ model_names[3] ]][["params"]][2],6)
+					values$k3_h2 = round(gene_model[[ model_names[3] ]][["params"]][2],6)
+					values$k3_t1 = round(gene_model[[ model_names[3] ]][["params"]][3],6)
+					values$k3_t2 = round(gene_model[[ model_names[3] ]][["params"]][3],6)
+					values$k3_beta = round(gene_model[[ model_names[3] ]][["params"]][4],6)
 				}
 				if( function_types$k3 == "Impulsive" ) {
-					values$k3_h0 = round(gene_model[[ model_names[3] ]][["params"]][1],2)
-					values$k3_h1 = round(gene_model[[ model_names[3] ]][["params"]][2],2)
-					values$k3_h2 = round(gene_model[[ model_names[3] ]][["params"]][3],2)
-					values$k3_t1 = round(gene_model[[ model_names[3] ]][["params"]][4],2)
-					values$k3_t2 = round(gene_model[[ model_names[3] ]][["params"]][5],2)
-					values$k3_beta = round(gene_model[[ model_names[3] ]][["params"]][6],2)
+					values$k3_h0 = round(gene_model[[ model_names[3] ]][["params"]][1],6)
+					values$k3_h1 = round(gene_model[[ model_names[3] ]][["params"]][2],6)
+					values$k3_h2 = round(gene_model[[ model_names[3] ]][["params"]][3],6)
+					values$k3_t1 = round(gene_model[[ model_names[3] ]][["params"]][4],6)
+					values$k3_t2 = round(gene_model[[ model_names[3] ]][["params"]][5],6)
+					values$k3_beta = round(gene_model[[ model_names[3] ]][["params"]][6],6)
 				}
 				
 				## convert the models into MK23
@@ -437,39 +443,39 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 																							 , isolate(experiment$no_nascent), mod_method = isolate(inspect$mod_method))
 						## update mature values
 						if( processingmodel$type == 'sigmoid' ) {
-							values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],2)
-							values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],2)
-							values$k1_h2 = round(gene_model[[ 1 ]][["params"]][2],2)
-							values$k1_t1 = round(gene_model[[ 1 ]][["params"]][3],2)
-							values$k1_t2 = round(gene_model[[ 1 ]][["params"]][3],2)
-							values$k1_beta = round(gene_model[[ 1 ]][["params"]][4],2)
+							values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],6)
+							values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],6)
+							values$k1_h2 = round(gene_model[[ 1 ]][["params"]][2],6)
+							values$k1_t1 = round(gene_model[[ 1 ]][["params"]][3],6)
+							values$k1_t2 = round(gene_model[[ 1 ]][["params"]][3],6)
+							values$k1_beta = round(gene_model[[ 1 ]][["params"]][4],6)
 						} else {
-							values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],2)
-							values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],2)
-							values$k1_h2 = round(gene_model[[ 1 ]][["params"]][3],2)
-							values$k1_t1 = round(gene_model[[ 1 ]][["params"]][4],2)
-							values$k1_t2 = round(gene_model[[ 1 ]][["params"]][5],2)
-							values$k1_beta = round(gene_model[[ 1 ]][["params"]][6],2)
+							values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],6)
+							values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],6)
+							values$k1_h2 = round(gene_model[[ 1 ]][["params"]][3],6)
+							values$k1_t1 = round(gene_model[[ 1 ]][["params"]][4],6)
+							values$k1_t2 = round(gene_model[[ 1 ]][["params"]][5],6)
+							values$k1_beta = round(gene_model[[ 1 ]][["params"]][6],6)
 						}
 						## update k2 values
 						if( processingmodel$type == 'sigmoid' ) {
-							values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],2)
-							values$k2_h1 = round(gene_model[[ 3 ]][["params"]][2],2)
-							values$k2_h2 = round(gene_model[[ 3 ]][["params"]][2],2)
-							values$k2_t1 = round(gene_model[[ 3 ]][["params"]][3],2)
-							values$k2_t2 = round(gene_model[[ 3 ]][["params"]][3],2)
-							values$k2_beta = round(gene_model[[ 3 ]][["params"]][4],2)
+							values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],6)
+							values$k2_h1 = round(gene_model[[ 3 ]][["params"]][2],6)
+							values$k2_h2 = round(gene_model[[ 3 ]][["params"]][2],6)
+							values$k2_t1 = round(gene_model[[ 3 ]][["params"]][2],6)
+							values$k2_t2 = round(gene_model[[ 3 ]][["params"]][2],6)
+							values$k2_beta = round(gene_model[[ 3 ]][["params"]][4],6)
 						} else {
-							values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],2)
-							values$k2_h1 = round(gene_model[[ 3 ]][["params"]][2],2)
-							values$k2_h2 = round(gene_model[[ 3 ]][["params"]][3],2)
-							values$k2_t1 = round(gene_model[[ 3 ]][["params"]][4],2)
-							values$k2_t2 = round(gene_model[[ 3 ]][["params"]][5],2)
-							values$k2_beta = round(gene_model[[ 3 ]][["params"]][6],2)
+							values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],6)
+							values$k2_h1 = round(gene_model[[ 3 ]][["params"]][2],6)
+							values$k2_h2 = round(gene_model[[ 3 ]][["params"]][3],6)
+							values$k2_t1 = round(gene_model[[ 3 ]][["params"]][4],6)
+							values$k2_t2 = round(gene_model[[ 3 ]][["params"]][5],6)
+							values$k2_beta = round(gene_model[[ 3 ]][["params"]][6],6)
 						}
-						values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],2)
-						values$k3_h1 = round(gene_model[[ 2 ]][["params"]][1],2)
-						values$k3_h2 = round(gene_model[[ 2 ]][["params"]][1],2)
+						values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],6)
+						values$k3_h1 = round(gene_model[[ 2 ]][["params"]][1],6)
+						values$k3_h2 = round(gene_model[[ 2 ]][["params"]][1],6)
 						values$k3_t1 = round(mean(out$t_pars))
 						values$k3_t2 = round(mean(out$t_pars))
 						values$k3_beta = round(mean(out$beta_pars))
@@ -480,7 +486,8 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 															 selected = if(processingmodel$type == 'impulse') "Impulsive" else "Sigmoidal")
 						updateRadioButtons(session, 'k3_function',
 															 selected = "Constant")
-					} else { # KVV
+					} else 
+						{ # KVV
 						modeling_fun <- gene_model[[3]]$type
 						parameters <- unname(unlist(lapply(gene_model[1:3], '[[', 'params')))
 						processingfit <- k2KVV_Der(ids@tpts, parameters)
@@ -525,51 +532,51 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 																							 , isolate(experiment$no_nascent), mod_method = isolate(inspect$mod_method))
 						## update mature values
 						if( modeling_fun == 'sigmoid' ) {
-							values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],2)
-							values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],2)
-							values$k1_h2 = round(gene_model[[ 1 ]][["params"]][2],2)
-							values$k1_t1 = round(gene_model[[ 1 ]][["params"]][3],2)
-							values$k1_t2 = round(gene_model[[ 1 ]][["params"]][3],2)
-							values$k1_beta = round(gene_model[[ 1 ]][["params"]][4],2)
+							values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],6)
+							values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],6)
+							values$k1_h2 = round(gene_model[[ 1 ]][["params"]][2],6)
+							values$k1_t1 = round(gene_model[[ 1 ]][["params"]][2],6)
+							values$k1_t2 = round(gene_model[[ 1 ]][["params"]][2],6)
+							values$k1_beta = round(gene_model[[ 1 ]][["params"]][4],6)
 						} else {
-							values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],2)
-							values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],2)
-							values$k1_h2 = round(gene_model[[ 1 ]][["params"]][3],2)
-							values$k1_t1 = round(gene_model[[ 1 ]][["params"]][4],2)
-							values$k1_t2 = round(gene_model[[ 1 ]][["params"]][5],2)
-							values$k1_beta = round(gene_model[[ 1 ]][["params"]][6],2)
+							values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],6)
+							values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],6)
+							values$k1_h2 = round(gene_model[[ 1 ]][["params"]][2],6)
+							values$k1_t1 = round(gene_model[[ 1 ]][["params"]][4],6)
+							values$k1_t2 = round(gene_model[[ 1 ]][["params"]][5],6)
+							values$k1_beta = round(gene_model[[ 1 ]][["params"]][6],6)
 						}
 						## update k2 values
 						if( modeling_fun == 'sigmoid' ) {
-							values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],2)
-							values$k2_h1 = round(gene_model[[ 3 ]][["params"]][2],2)
-							values$k2_h2 = round(gene_model[[ 3 ]][["params"]][2],2)
-							values$k2_t1 = round(gene_model[[ 3 ]][["params"]][3],2)
-							values$k2_t2 = round(gene_model[[ 3 ]][["params"]][3],2)
-							values$k2_beta = round(gene_model[[ 3 ]][["params"]][4],2)
+							values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],6)
+							values$k2_h1 = round(gene_model[[ 3 ]][["params"]][2],6)
+							values$k2_h2 = round(gene_model[[ 3 ]][["params"]][2],6)
+							values$k2_t1 = round(gene_model[[ 3 ]][["params"]][2],6)
+							values$k2_t2 = round(gene_model[[ 3 ]][["params"]][2],6)
+							values$k2_beta = round(gene_model[[ 3 ]][["params"]][4],6)
 						} else {
-							values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],2)
-							values$k2_h1 = round(gene_model[[ 3 ]][["params"]][2],2)
-							values$k2_h2 = round(gene_model[[ 3 ]][["params"]][3],2)
-							values$k2_t1 = round(gene_model[[ 3 ]][["params"]][4],2)
-							values$k2_t2 = round(gene_model[[ 3 ]][["params"]][5],2)
-							values$k2_beta = round(gene_model[[ 3 ]][["params"]][6],2)
+							values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],6)
+							values$k2_h1 = round(gene_model[[ 3 ]][["params"]][2],6)
+							values$k2_h2 = round(gene_model[[ 3 ]][["params"]][2],6)
+							values$k2_t1 = round(gene_model[[ 3 ]][["params"]][4],6)
+							values$k2_t2 = round(gene_model[[ 3 ]][["params"]][5],6)
+							values$k2_beta = round(gene_model[[ 3 ]][["params"]][6],6)
 						}
 						## update k3 values
 						if( modeling_fun == 'sigmoid' ) {
-							values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],2)
-							values$k3_h1 = round(gene_model[[ 2 ]][["params"]][2],2)
-							values$k3_h2 = round(gene_model[[ 2 ]][["params"]][2],2)
-							values$k3_t1 = round(gene_model[[ 2 ]][["params"]][3],2)
-							values$k3_t2 = round(gene_model[[ 2 ]][["params"]][3],2)
-							values$k3_beta = round(gene_model[[ 2 ]][["params"]][4],2)
+							values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],6)
+							values$k3_h1 = round(gene_model[[ 2 ]][["params"]][2],6)
+							values$k3_h2 = round(gene_model[[ 2 ]][["params"]][2],6)
+							values$k3_t1 = round(gene_model[[ 2 ]][["params"]][2],6)
+							values$k3_t2 = round(gene_model[[ 2 ]][["params"]][2],6)
+							values$k3_beta = round(gene_model[[ 2 ]][["params"]][4],6)
 						} else {
-							values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],2)
-							values$k3_h1 = round(gene_model[[ 2 ]][["params"]][2],2)
-							values$k3_h2 = round(gene_model[[ 2 ]][["params"]][3],2)
-							values$k3_t1 = round(gene_model[[ 2 ]][["params"]][4],2)
-							values$k3_t2 = round(gene_model[[ 2 ]][["params"]][5],2)
-							values$k3_beta = round(gene_model[[ 2 ]][["params"]][6],2)
+							values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],6)
+							values$k3_h1 = round(gene_model[[ 2 ]][["params"]][2],6)
+							values$k3_h2 = round(gene_model[[ 2 ]][["params"]][2],6)
+							values$k3_t1 = round(gene_model[[ 2 ]][["params"]][4],6)
+							values$k3_t2 = round(gene_model[[ 2 ]][["params"]][5],6)
+							values$k3_beta = round(gene_model[[ 2 ]][["params"]][6],6)
 						}
 						## update functional forms
 						updateRadioButtons(session, 'k1_function',
@@ -579,7 +586,8 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 						updateRadioButtons(session, 'k3_function',
 															 selected = if(modeling_fun == 'impulse') "Impulsive" else "Sigmoidal")
 					}
-				} else if( modeling_type == 'TK12' ) { # KKV
+				} else if( modeling_type == 'TK12' ) 
+					{ # KKV
 					
 					parameters <- unname(unlist(lapply(gene_model[1:3], '[[', 'params')))
 					degradationfit <- k3KKV_Der(ids@tpts, parameters)
@@ -620,42 +628,42 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 																						 , isolate(experiment$no_nascent), mod_method = isolate(inspect$mod_method))
 					## update mature values
 					if( degradationmodel$type == 'sigmoid' ) {
-						values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],2)
-						values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],2)
-						values$k1_h2 = round(gene_model[[ 1 ]][["params"]][2],2)
-						values$k1_t1 = round(gene_model[[ 1 ]][["params"]][3],2)
-						values$k1_t2 = round(gene_model[[ 1 ]][["params"]][3],2)
-						values$k1_beta = round(gene_model[[ 1 ]][["params"]][4],2)
+						values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],6)
+						values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],6)
+						values$k1_h2 = round(gene_model[[ 1 ]][["params"]][2],6)
+						values$k1_t1 = round(gene_model[[ 1 ]][["params"]][2],6)
+						values$k1_t2 = round(gene_model[[ 1 ]][["params"]][2],6)
+						values$k1_beta = round(gene_model[[ 1 ]][["params"]][4],6)
 					} else {
-						values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],2)
-						values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],2)
-						values$k1_h2 = round(gene_model[[ 1 ]][["params"]][3],2)
-						values$k1_t1 = round(gene_model[[ 1 ]][["params"]][4],2)
-						values$k1_t2 = round(gene_model[[ 1 ]][["params"]][5],2)
-						values$k1_beta = round(gene_model[[ 1 ]][["params"]][6],2)
+						values$k1_h0 = round(gene_model[[ 1 ]][["params"]][1],6)
+						values$k1_h1 = round(gene_model[[ 1 ]][["params"]][2],6)
+						values$k1_h2 = round(gene_model[[ 1 ]][["params"]][2],6)
+						values$k1_t1 = round(gene_model[[ 1 ]][["params"]][4],6)
+						values$k1_t2 = round(gene_model[[ 1 ]][["params"]][5],6)
+						values$k1_beta = round(gene_model[[ 1 ]][["params"]][6],6)
 					}
 					## update k2 values
-					values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],2)
-					values$k2_h1 = round(gene_model[[ 3 ]][["params"]][1],2)
-					values$k2_h2 = round(gene_model[[ 3 ]][["params"]][1],2)
+					values$k2_h0 = round(gene_model[[ 3 ]][["params"]][1],6)
+					values$k2_h1 = round(gene_model[[ 3 ]][["params"]][1],6)
+					values$k2_h2 = round(gene_model[[ 3 ]][["params"]][1],6)
 					values$k2_t1 = round(mean(out$t_pars))
 					values$k2_t2 = round(mean(out$t_pars))
 					values$k2_beta = round(mean(out$beta_pars))
 					## update k3 values
 					if( degradationmodel$type == 'sigmoid' ) {
-						values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],2)
-						values$k3_h1 = round(gene_model[[ 2 ]][["params"]][2],2)
-						values$k3_h2 = round(gene_model[[ 2 ]][["params"]][2],2)
-						values$k3_t1 = round(gene_model[[ 2 ]][["params"]][3],2)
-						values$k3_t2 = round(gene_model[[ 2 ]][["params"]][3],2)
-						values$k3_beta = round(gene_model[[ 2 ]][["params"]][4],2)
+						values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],6)
+						values$k3_h1 = round(gene_model[[ 2 ]][["params"]][2],6)
+						values$k3_h2 = round(gene_model[[ 2 ]][["params"]][2],6)
+						values$k3_t1 = round(gene_model[[ 2 ]][["params"]][2],6)
+						values$k3_t2 = round(gene_model[[ 2 ]][["params"]][2],6)
+						values$k3_beta = round(gene_model[[ 2 ]][["params"]][4],6)
 					} else {
-						values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],2)
-						values$k3_h1 = round(gene_model[[ 2 ]][["params"]][2],2)
-						values$k3_h2 = round(gene_model[[ 2 ]][["params"]][3],2)
-						values$k3_t1 = round(gene_model[[ 2 ]][["params"]][4],2)
-						values$k3_t2 = round(gene_model[[ 2 ]][["params"]][5],2)
-						values$k3_beta = round(gene_model[[ 2 ]][["params"]][6],2)
+						values$k3_h0 = round(gene_model[[ 2 ]][["params"]][1],6)
+						values$k3_h1 = round(gene_model[[ 2 ]][["params"]][2],6)
+						values$k3_h2 = round(gene_model[[ 2 ]][["params"]][2],6)
+						values$k3_t1 = round(gene_model[[ 2 ]][["params"]][4],6)
+						values$k3_t2 = round(gene_model[[ 2 ]][["params"]][5],6)
+						values$k3_beta = round(gene_model[[ 2 ]][["params"]][6],6)
 					}
 					## update functional forms
 					updateRadioButtons(session, 'k1_function',
@@ -670,23 +678,33 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 												 isolate(values$k2_t2),isolate(values$k3_t1),isolate(values$k3_t2))
 				gene_beta_vals <- c(isolate(values$k1_beta),isolate(values$k2_beta),isolate(values$k3_beta))
 				
-				ranges$k1_h_min <- min(c(isolate(values$k1_h0),isolate(values$k1_h1),isolate(values$k1_h2),out$k1_h_pars[1]))
-				ranges$k1_h_max <- max(c(isolate(values$k1_h0),isolate(values$k1_h1),isolate(values$k1_h2),out$k1_h_pars[2]))
-				ranges$k2_h_min <- min(c(isolate(values$k2_h0),isolate(values$k2_h1),isolate(values$k2_h2),out$k2_h_pars[1]))
-				ranges$k2_h_max <- max(c(isolate(values$k2_h0),isolate(values$k2_h1),isolate(values$k2_h2),out$k2_h_pars[2]))
-				ranges$k3_h_min <- min(c(isolate(values$k3_h0),isolate(values$k3_h1),isolate(values$k3_h2),out$k3_h_pars[1]))
-				ranges$k3_h_max <- max(c(isolate(values$k3_h0),isolate(values$k3_h1),isolate(values$k3_h2),out$k3_h_pars[2]))
-				ranges$t_min    <- min(c(gene_t_vals,out$t_pars[1]))
-				ranges$t_max    <- max(c(gene_t_vals,out$t_pars[2]))
-				ranges$beta_min <- min(c(gene_beta_vals,out$beta_pars[1]))
-				ranges$beta_max <- max(c(gene_beta_vals,out$beta_pars[2]))
+				ranges$k1_h_min <- floor(min(c(isolate(values$k1_h0),isolate(values$k1_h1),isolate(values$k1_h2),out$k1_h_pars[1])))
+				try(updateNumericInput(session, "min_h_k1", value = ranges$k1_h_min))
+				ranges$k1_h_max <- ceiling(max(c(isolate(values$k1_h0),isolate(values$k1_h1),isolate(values$k1_h2),out$k1_h_pars[2])))
+				try(updateNumericInput(session, "max_h_k1", value = ranges$k1_h_max))
+				ranges$k2_h_min <- floor(min(c(isolate(values$k2_h0),isolate(values$k2_h1),isolate(values$k2_h2),out$k2_h_pars[1])))
+				try(updateNumericInput(session, "min_h_k2", value = ranges$k2_h_min))
+				ranges$k2_h_max <- ceiling(max(c(isolate(values$k2_h0),isolate(values$k2_h1),isolate(values$k2_h2),out$k2_h_pars[2])))
+				try(updateNumericInput(session, "max_h_k2", value = ranges$k2_h_max))
+				ranges$k3_h_min <- floor(min(c(isolate(values$k3_h0),isolate(values$k3_h1),isolate(values$k3_h2),out$k3_h_pars[1])))
+				try(updateNumericInput(session, "min_h_k3", value = ranges$k3_h_min))
+				ranges$k3_h_max <- ceiling(max(c(isolate(values$k3_h0),isolate(values$k3_h1),isolate(values$k3_h2),out$k3_h_pars[2])))
+				try(updateNumericInput(session, "max_h_k3", value = ranges$k3_h_max))
+				ranges$t_min    <- floor(min(c(gene_t_vals,out$t_pars[1])))
+				# try(updateNumericInput(session, "t_min", value = ranges$t_min))
+				ranges$t_max    <- ceiling(max(c(gene_t_vals,out$t_pars[2])))
+				# try(updateNumericInput(session, "t_max", value = ranges$t_max))
+				ranges$beta_min <- floor(min(c(gene_beta_vals,out$beta_pars[1])))
+				# try(updateNumericInput(session, "beta_min", value = ranges$beta_min))
+				ranges$beta_max <- ceiling(max(c(gene_beta_vals,out$beta_pars[2])))
+				# try(updateNumericInput(session, "beta_max", value = ranges$beta_max))
 				
 			}, silent = TRUE)
 		}
 		
 	})
 	
-	## in case of derivative modeling, when one functional form is changed also the 
+	## in case of derivative modeling, when one functional form is changed also 
 	## others must be updated
 
 	## on change of k1
@@ -990,10 +1008,10 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 	## observe_parameters_change_by_user (end) #########
 	##############################################
 	
-	## confidence intervals
+	## confidence intervals (only for derivative, non steady state, data-driven mode)
 	
 	output$confint_box <- renderUI({
-		if( input$data_selection != 'User defined' & !experiment$steady_state ) {
+		if( input$data_selection != 'User defined' & !experiment$steady_state & inspect$mod_method == 'der' ) {
 			actionButton("conf_int_button", "Conf. Int.")
 		}
 	})
@@ -1124,11 +1142,11 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				value = ranges$k1_h_min, width='200px')
 	})
 
-	observe({
-		ids <- contentsrea()
-		if( !is.null(ids) & !is.null(input$min_h_k1) )
-			ranges$k1_h_min <- input$min_h_k1 
-		})
+	# observe({
+	# 	ids <- contentsrea()
+	# 	if( !is.null(ids) & !is.null(input$min_h_k1) )
+	# 		ranges$k1_h_min <- input$min_h_k1 
+	# 	})
 	
 	output$max_h_vals_k1 <- renderUI({
 		ids <- contentsrea()
@@ -1137,91 +1155,94 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				value = ranges$k1_h_max, width='200px')
 	})
 
-	observe({
-		ids <- contentsrea()
-		if( !is.null(ids) & !is.null(input$max_h_k1) )
-			ranges$k1_h_max <- input$max_h_k1 
-		})
+	# observe({
+	# 	ids <- contentsrea()
+	# 	if( !is.null(ids) & !is.null(input$max_h_k1) )
+	# 		ranges$k1_h_max <- input$max_h_k1 
+	# 	})
 	
 	output$ui_k1 <- renderUI({
 		
 		ids <- contentsrea()		
-		if( !is.null(ids) & !is.null(input$k1_function) & !is.null(function_types$k1) )
+		if( !is.null(ids) & !is.null(input$k1_function) & !is.null(function_types$k1) ) {
+			
 			switch(input$k1_function,
 				"Constant" = list(
 					sliderInput("k1_h0",
 						"starting levels:",
-						min = ranges$k1_h_min,
-						max = ranges$k1_h_max,
+						min = input$min_h_k1,
+						max = input$max_h_k1,
 						value = values$k1_h0,
-						step = 0.01)
+						step = 0.001)
 				),
 				"Sigmoidal" = list(
 					sliderInput("k1_h0",
 						"starting levels:",
-						min = ranges$k1_h_min,
-						max = ranges$k1_h_max,
+						min = input$min_h_k1,
+						max = input$max_h_k1,
 						value = values$k1_h0,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k1_h1",
 						"final levels:",
-						min = ranges$k1_h_min,
-						max = ranges$k1_h_max,
+						min = input$min_h_k1,
+						max = input$max_h_k1,
 						value = values$k1_h1,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k1_t1",
 						"response time:",
 						min = ranges$t_min,
 						max = ranges$t_max,
 						value = values$k1_t1,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k1_beta",
 						"slope:",
 						min = ranges$beta_min,
 						max = ranges$beta_max,
 						value = values$k1_beta,
-						step = 0.01)
+						step = 0.001)
 				),
 				"Impulsive" = list(
 					sliderInput("k1_h0",
 						"starting levels:",
-						min = ranges$k1_h_min,
-						max = ranges$k1_h_max,
+						min = input$min_h_k1,
+						max = input$max_h_k1,
 						value = values$k1_h0,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k1_h1",
 						"intermediate levels:",
-						min = ranges$k1_h_min,
-						max = ranges$k1_h_max,
+						min = input$min_h_k1,
+						max = input$max_h_k1,
 						value = values$k1_h1,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k1_h2",
 						"end levels:",
-						min = ranges$k1_h_min,
-						max = ranges$k1_h_max,
+						min = input$min_h_k1,
+						max = input$max_h_k1,
 						value = values$k1_h2,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k1_t1",
 						"first response time:",
 						min = ranges$t_min,
 						max = ranges$t_max,
 						value = values$k1_t1,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k1_t2",
 						"second response time:",
 						min = ranges$t_min,
 						max = ranges$t_max,
 						value = values$k1_t2,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k1_beta",
 						"slope:",
 						min = ranges$beta_min,
 						max = ranges$beta_max,
 						value = values$k1_beta,
-						step = 0.01)
+						step = 0.001)
 				)
 						 
 			)
+			
+		}
 		
 	})
 
@@ -1255,11 +1276,11 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				value = ranges$k2_h_min, width='200px')
 	})
 
-	observe({
-		ids <- contentsrea()
-		if( !is.null(ids) & !is.null(input$min_h_k2) )
-			ranges$k2_h_min <- input$min_h_k2 
-		})
+	# observe({
+	# 	ids <- contentsrea()
+	# 	if( !is.null(ids) & !is.null(input$min_h_k2) )
+	# 		ranges$k2_h_min <- input$min_h_k2 
+	# 	})
 
 	output$max_h_vals_k2 <- renderUI({
 		ids <- contentsrea()
@@ -1268,11 +1289,11 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				value = ranges$k2_h_max, width='200px')
 	})
 
-	observe({
-		ids <- contentsrea()
-		if( !is.null(ids) & !is.null(input$max_h_k2) )
-				ranges$k2_h_max <- input$max_h_k2 
-		})
+	# observe({
+	# 	ids <- contentsrea()
+	# 	if( !is.null(ids) & !is.null(input$max_h_k2) )
+	# 			ranges$k2_h_max <- input$max_h_k2 
+	# 	})
 	
 	output$ui_k2 <- renderUI({
 		
@@ -1282,74 +1303,74 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				"Constant" = list(
 					sliderInput("k2_h0",
 						"starting levels:",
-						min = ranges$k2_h_min,
-						max = ranges$k2_h_max,
+						min = input$min_h_k2,
+						max = input$max_h_k2,
 						value = values$k2_h0,
-						step = 0.01)
+						step = 0.001)
 				),
 				"Sigmoidal" = list(
 					sliderInput("k2_h0",
 						"starting levels:",
-						min = ranges$k2_h_min,
-						max = ranges$k2_h_max,
+						min = input$min_h_k2,
+						max = input$max_h_k2,
 						value = values$k2_h0,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k2_h1",
 						"final levels:",
-						min = ranges$k2_h_min,
-						max = ranges$k2_h_max,
+						min = input$min_h_k2,
+						max = input$max_h_k2,
 						value = values$k2_h1,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k2_t1",
 						"response time:",
 						min = ranges$t_min,
 						max = ranges$t_max,
 						value = values$k2_t1,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k2_beta",
 						"slope:",
 						min = ranges$beta_min,
 						max = ranges$beta_max,
 						value = values$k2_beta,
-						step = 0.01)
+						step = 0.001)
 				),
 				"Impulsive" = list(
 					sliderInput("k2_h0",
 						"starting levels:",
-						min = ranges$k2_h_min,
-						max = ranges$k2_h_max,
+						min = input$min_h_k2,
+						max = input$max_h_k2,
 						value = values$k2_h0,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k2_h1",
 						"intermediate levels:",
-						min = ranges$k2_h_min,
-						max = ranges$k2_h_max,
+						min = input$min_h_k2,
+						max = input$max_h_k2,
 						value = values$k2_h1,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k2_h2",
 						"end levels:",
-						min = ranges$k2_h_min,
-						max = ranges$k2_h_max,
+						min = input$min_h_k2,
+						max = input$max_h_k2,
 						value = values$k2_h2,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k2_t1",
 						"first response time:",
 						min = ranges$t_min,
 						max = ranges$t_max,
 						value = values$k2_t1,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k2_t2",
 						"second response time:",
 						min = ranges$t_min,
 						max = ranges$t_max,
 						value = values$k2_t2,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k2_beta",
 						"slope:",
 						min = ranges$beta_min,
 						max = ranges$beta_max,
 						value = values$k2_beta,
-						step = 0.01)
+						step = 0.001)
 				)
 						 
 			)
@@ -1387,11 +1408,11 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				value = ranges$k3_h_min, width='200px')
 	})
 
-	observe({
-		ids <- contentsrea()
-		if( !is.null(ids) & !is.null(input$min_h_k3) )
-				ranges$k3_h_min <- input$min_h_k3 
-		})
+	# observe({
+	# 	ids <- contentsrea()
+	# 	if( !is.null(ids) & !is.null(input$min_h_k3) )
+	# 			ranges$k3_h_min <- input$min_h_k3 
+	# 	})
 	
 	output$max_h_vals_k3 <- renderUI({
 		ids <- contentsrea()
@@ -1400,11 +1421,11 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				value = ranges$k3_h_max, width='200px')
 	})
 
-	observe({
-		ids <- contentsrea()
-		if( !is.null(ids) & !is.null(input$max_h_k3) )
-				ranges$k3_h_max <- input$max_h_k3 
-		})
+	# observe({
+	# 	ids <- contentsrea()
+	# 	if( !is.null(ids) & !is.null(input$max_h_k3) )
+	# 			ranges$k3_h_max <- input$max_h_k3 
+	# 	})
 
 	output$ui_k3 <- renderUI({
 
@@ -1414,74 +1435,74 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				"Constant" = list(
 					sliderInput("k3_h0",
 						"starting levels:",
-						min = ranges$k3_h_min,
-						max = ranges$k3_h_max,
+						min = input$min_h_k3,
+						max = input$max_h_k3,
 						value = values$k3_h0,
-						step = 0.01)
+						step = 0.001)
 				),
 				"Sigmoidal" = list(
 					sliderInput("k3_h0",
 						"starting levels:",
-						min = ranges$k3_h_min,
-						max = ranges$k3_h_max,
+						min = input$min_h_k3,
+						max = input$max_h_k3,
 						value = values$k3_h0,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k3_h1",
 						"final levels:",
-						min = ranges$k3_h_min,
-						max = ranges$k3_h_max,
+						min = input$min_h_k3,
+						max = input$max_h_k3,
 						value = values$k3_h1,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k3_t1",
 						"response time:",
 						min = ranges$t_min,
 						max = ranges$t_max,
 						value = values$k3_t1,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k3_beta",
 						"slope:",
 						min = ranges$beta_min,
 						max = ranges$beta_max,
 						value = values$k3_beta,
-						step = 0.01)
+						step = 0.001)
 				),
 				"Impulsive" = list(
 					sliderInput("k3_h0",
 						"starting levels:",
-						min = ranges$k3_h_min,
-						max = ranges$k3_h_max,
+						min = input$min_h_k3,
+						max = input$max_h_k3,
 						value = values$k3_h0,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k3_h1",
 						"intermediate levels:",
-						min = ranges$k3_h_min,
-						max = ranges$k3_h_max,
+						min = input$min_h_k3,
+						max = input$max_h_k3,
 						value = values$k3_h1,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k3_h2",
 						"end levels:",
-						min = ranges$k3_h_min,
-						max = ranges$k3_h_max,
+						min = input$min_h_k3,
+						max = input$max_h_k3,
 						value = values$k3_h2,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k3_t1",
 						"first response time:",
 						min = ranges$t_min,
 						max = ranges$t_max,
 						value = values$k3_t1,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k3_t2",
 						"second response time:",
 						min = ranges$t_min,
 						max = ranges$t_max,
 						value = values$k3_t2,
-						step = 0.01),
+						step = 0.001),
 					sliderInput("k3_beta",
 						"slope:",
 						min = ranges$beta_min,
 						max = ranges$beta_max,
 						value = values$k3_beta,
-						step = 0.01)
+						step = 0.001)
 				)
 						 
 			)
@@ -1615,7 +1636,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			!is.null(input$k2_function) & !is.null(input$k3_function) )
 
 			suppressWarnings(try({
-
+				
 				k1_params <- switch(input$k1_function,
 						"Constant" = input$k1_h0,
 						"Sigmoidal" = c(input$k1_h0, input$k1_h1, input$k1_t1, input$k1_beta),
@@ -1653,7 +1674,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 					} else {
 						mod_method <- 'int'
 					}
-
+					
 					simdata <- RNAdynamicsAppMake(
 						data_selection = input$data_selection,
 						time_min = ranges$time_min,
@@ -1667,12 +1688,12 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 						k3_params = k3_params,
 						mod_method = mod_method
 						)
-
+				
 					modeling$simdata <- simdata
 					output$pchisq <- renderPrint({signif(isolate(modeling$simdata$scores$pchisq),3)})
 					output$aic <- renderPrint({signif(isolate(modeling$simdata$scores$aic),3)})
 					values$rate_p <- NULL
-					
+
 				}
 
 			}, silent = TRUE))
@@ -1704,10 +1725,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 
 	observeEvent(input$optimize, {
 
-		# print('optimization started')
-
-		# log_shift <- inspect$logshift
-		# lin_shift <- inspect$linshift
 		no_nascent <- experiment$no_nascent
 		tpts_exp <- experiment$tpts
 		alpha_exp <- if( input$data_selection == 'Experimental data' ) 
@@ -1746,7 +1763,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 											"Impulsive" = list(type='impulse',fun=newPointer(impulseModel),
 																				 params=c(input$k3_h0, input$k3_h1, input$k3_h2, input$k3_t1, input$k3_t2, input$k3_beta),df=6)
 		)
-
+		
 		params <- list(alpha=k1_rate, gamma=k2_rate, beta=k3_rate)
 		gene_model <- optimParamsMatureRNA(params, tpts_exp, alpha_exp, alpha_var, mature_exp
 		 	, mature_var, preMRNA_exp, preMRNA_var, maxit=input$nIter
@@ -1770,70 +1787,70 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			values$k1_beta = round(mean(c(ranges$beta_min, ranges$beta_max)))
 		}
 		if( input$k1_function == "Sigmoidal" ) {
-			values$k1_h0 = round(gene_model[["alpha"]][["params"]][1],2)
-			values$k1_h1 = round(gene_model[["alpha"]][["params"]][2],2)
-			values$k1_h2 = round(gene_model[["alpha"]][["params"]][2],2)
-			values$k1_t1 = round(gene_model[["alpha"]][["params"]][3],2)
-			values$k1_t2 = round(gene_model[["alpha"]][["params"]][3],2)
-			values$k1_beta = round(gene_model[["alpha"]][["params"]][4],2)
+			values$k1_h0 = round(gene_model[["alpha"]][["params"]][1],6)
+			values$k1_h1 = round(gene_model[["alpha"]][["params"]][2],6)
+			values$k1_h2 = round(gene_model[["alpha"]][["params"]][2],6)
+			values$k1_t1 = round(gene_model[["alpha"]][["params"]][2],6)
+			values$k1_t2 = round(gene_model[["alpha"]][["params"]][2],6)
+			values$k1_beta = round(gene_model[["alpha"]][["params"]][4],6)
 		}
 		if( input$k1_function == "Impulsive" ) {
-			values$k1_h0 = round(gene_model[["alpha"]][["params"]][1],2)
-			values$k1_h1 = round(gene_model[["alpha"]][["params"]][2],2)
-			values$k1_h2 = round(gene_model[["alpha"]][["params"]][3],2)
-			values$k1_t1 = round(gene_model[["alpha"]][["params"]][4],2)
-			values$k1_t2 = round(gene_model[["alpha"]][["params"]][5],2)
-			values$k1_beta = round(gene_model[["alpha"]][["params"]][6],2)
+			values$k1_h0 = round(gene_model[["alpha"]][["params"]][1],6)
+			values$k1_h1 = round(gene_model[["alpha"]][["params"]][2],6)
+			values$k1_h2 = round(gene_model[["alpha"]][["params"]][3],6)
+			values$k1_t1 = round(gene_model[["alpha"]][["params"]][4],6)
+			values$k1_t2 = round(gene_model[["alpha"]][["params"]][5],6)
+			values$k1_beta = round(gene_model[["alpha"]][["params"]][6],6)
 		}
 		
 		if( input$k2_function == "Constant" ) {
-			values$k2_h0 = round(gene_model[["gamma"]][["params"]][1],2)
-			values$k2_h1 = round(gene_model[["gamma"]][["params"]][1],2)
-			values$k2_h2 = round(gene_model[["gamma"]][["params"]][1],2)
+			values$k2_h0 = round(gene_model[["gamma"]][["params"]][1],6)
+			values$k2_h1 = round(gene_model[["gamma"]][["params"]][1],6)
+			values$k2_h2 = round(gene_model[["gamma"]][["params"]][1],6)
 			values$k2_t1 = round(mean(c(ranges$t_min, ranges$t_max)))
 			values$k2_t2 = round(mean(c(ranges$t_min, ranges$t_max)))
 			values$k2_beta = round(mean(c(ranges$beta_min, ranges$beta_max)))
 		}
 		if( input$k2_function == "Sigmoidal" ) {
-			values$k2_h0 = round(gene_model[["gamma"]][["params"]][1],2)
-			values$k2_h1 = round(gene_model[["gamma"]][["params"]][2],2)
-			values$k2_h2 = round(gene_model[["gamma"]][["params"]][2],2)
-			values$k2_t1 = round(gene_model[["gamma"]][["params"]][3],2)
-			values$k2_t2 = round(gene_model[["gamma"]][["params"]][3],2)
-			values$k2_beta = round(gene_model[["gamma"]][["params"]][4],2)
+			values$k2_h0 = round(gene_model[["gamma"]][["params"]][1],6)
+			values$k2_h1 = round(gene_model[["gamma"]][["params"]][2],6)
+			values$k2_h2 = round(gene_model[["gamma"]][["params"]][2],6)
+			values$k2_t1 = round(gene_model[["gamma"]][["params"]][2],6)
+			values$k2_t2 = round(gene_model[["gamma"]][["params"]][2],6)
+			values$k2_beta = round(gene_model[["gamma"]][["params"]][4],6)
 		}
 		if( input$k2_function == "Impulsive" ) {
-			values$k2_h0 = round(gene_model[["gamma"]][["params"]][1],2)
-			values$k2_h1 = round(gene_model[["gamma"]][["params"]][2],2)
-			values$k2_h2 = round(gene_model[["gamma"]][["params"]][3],2)
-			values$k2_t1 = round(gene_model[["gamma"]][["params"]][4],2)
-			values$k2_t2 = round(gene_model[["gamma"]][["params"]][5],2)
-			values$k2_beta = round(gene_model[["gamma"]][["params"]][6],2)
+			values$k2_h0 = round(gene_model[["gamma"]][["params"]][1],6)
+			values$k2_h1 = round(gene_model[["gamma"]][["params"]][2],6)
+			values$k2_h2 = round(gene_model[["gamma"]][["params"]][3],6)
+			values$k2_t1 = round(gene_model[["gamma"]][["params"]][4],6)
+			values$k2_t2 = round(gene_model[["gamma"]][["params"]][5],6)
+			values$k2_beta = round(gene_model[["gamma"]][["params"]][6],6)
 		}
 		
 		if( input$k3_function == "Constant" ) {
-			values$k3_h0 = round(gene_model[["beta"]][["params"]][1],2)
-			values$k3_h1 = round(gene_model[["beta"]][["params"]][1],2)
-			values$k3_h2 = round(gene_model[["beta"]][["params"]][1],2)
+			values$k3_h0 = round(gene_model[["beta"]][["params"]][1],6)
+			values$k3_h1 = round(gene_model[["beta"]][["params"]][1],6)
+			values$k3_h2 = round(gene_model[["beta"]][["params"]][1],6)
 			values$k3_t1 = round(mean(c(ranges$t_min, ranges$t_max)))
 			values$k3_t2 = round(mean(c(ranges$t_min, ranges$t_max)))
 			values$k3_beta = round(mean(c(ranges$beta_min, ranges$beta_max)))
 		}
 		if( input$k3_function == "Sigmoidal" ) {
-			values$k3_h0 = round(gene_model[["beta"]][["params"]][1],2)
-			values$k3_h1 = round(gene_model[["beta"]][["params"]][2],2)
-			values$k3_h2 = round(gene_model[["beta"]][["params"]][2],2)
-			values$k3_t1 = round(gene_model[["beta"]][["params"]][3],2)
-			values$k3_t2 = round(gene_model[["beta"]][["params"]][3],2)
-			values$k3_beta = round(gene_model[["beta"]][["params"]][4],2)
+			values$k3_h0 = round(gene_model[["beta"]][["params"]][1],6)
+			values$k3_h1 = round(gene_model[["beta"]][["params"]][2],6)
+			values$k3_h2 = round(gene_model[["beta"]][["params"]][2],6)
+			values$k3_t1 = round(gene_model[["beta"]][["params"]][2],6)
+			values$k3_t2 = round(gene_model[["beta"]][["params"]][2],6)
+			values$k3_beta = round(gene_model[["beta"]][["params"]][4],6)
 		}
 		if( input$k3_function == "Impulsive" ) {
-			values$k3_h0 = round(gene_model[["beta"]][["params"]][1],2)
-			values$k3_h1 = round(gene_model[["beta"]][["params"]][2],2)
-			values$k3_h2 = round(gene_model[["beta"]][["params"]][3],2)
-			values$k3_t1 = round(gene_model[["beta"]][["params"]][4],2)
-			values$k3_t2 = round(gene_model[["beta"]][["params"]][5],2)
-			values$k3_beta = round(gene_model[["beta"]][["params"]][6],2)
+			values$k3_h0 = round(gene_model[["beta"]][["params"]][1],6)
+			values$k3_h1 = round(gene_model[["beta"]][["params"]][2],6)
+			values$k3_h2 = round(gene_model[["beta"]][["params"]][3],6)
+			values$k3_t1 = round(gene_model[["beta"]][["params"]][4],6)
+			values$k3_t2 = round(gene_model[["beta"]][["params"]][5],6)
+			values$k3_beta = round(gene_model[["beta"]][["params"]][6],6)
 		}
 		
 		## update the ranges
@@ -1879,8 +1896,6 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			ranges$beta_max <- max(beta_pars)
 		}
 		
-		# print('optimization finished')
-
 		})
 	
 }

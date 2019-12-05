@@ -82,7 +82,7 @@ setMethod('calculateRatePvals', 'INSPEcT', function(object
 	# in case of Nascent mode or Non-Functional (both Nascent and No-Nascent)
 	# perform the estimation of variability using the confidence intervals
 	{
-
+		
 		synthesis_left <- viewConfidenceIntervals(object,"synthesis_left")
 		synthesis_center <- viewModelRates(object,"synthesis")
 		synthesis_right <- viewConfidenceIntervals(object,"synthesis_right")
@@ -145,8 +145,8 @@ setMethod('calculateRatePvals', 'INSPEcT', function(object
 		}
 	}
 	object@ratePvals <- rate_pvals
-	# in case of NoNascent update the modeled rates after the update of ratePvals
-	if( object@NoNascent ) object <- makeModelRates(object)
+	# only in case of NoNascent functional, update the modeled rates after the update of ratePvals
+	if( object@NoNascent & !object@NF ) object <- makeModelRates(object)
 	return(object)
 	})
 
@@ -387,8 +387,8 @@ calculate_rates_pvalues <- function(object, bTsh, cTsh, dfmax=Inf) {
 		}
  		if(modelSelection(object)$padj) {
 			ratePvals <- data.frame(apply(ratePvals, 2, p.adjust, method="BH", n=nrow(ratePvals)))
-			if(ncol(ratePvals)!=3){ratePvals <- t(ratePvals); rownames(ratePvals) <- rownames(aictest)}
-		}
+			if(ncol(ratePvals)!=3){ratePvals <- data.frame(t(ratePvals)); rownames(ratePvals) <- rownames(aictest)}
+ 		}
 		return(ratePvals)
 	}
 	if( object@params$modelSelection=='llr' ) {

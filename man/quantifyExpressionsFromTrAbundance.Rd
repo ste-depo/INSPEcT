@@ -4,8 +4,12 @@
 \alias{quantifyExpressionsFromTrAbundance}
 \title{Given introns and exons abundances (for example RPKMs) this method returns their variances evaluated thorugh plgem.}
 \usage{
-quantifyExpressionsFromTrAbundance(trAbundaces, experimentalDesign,
-  varSamplingCondition = NULL, simulatedData = FALSE)
+quantifyExpressionsFromTrAbundance(
+  trAbundaces,
+  experimentalDesign,
+  varSamplingCondition = NULL,
+  simulatedData = FALSE
+)
 }
 \arguments{
 \item{trAbundaces}{A a list with elements "exonsAbundances" and "intronsAbundances".}
