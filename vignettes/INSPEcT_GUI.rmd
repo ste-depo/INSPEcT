@@ -96,7 +96,7 @@ Parameters of the modeling can be directly modified "by hand". In fact, for each
 knitr::include_graphics("INSPEcT_GUI_figures/rates_functional_forms.png")
 ```
 
-The user can test regulative scenarios that are alternative to the one selected by *INSPEcT*, by tuning each function parameter, or by changing the functional form assigned to one or more rates. In the latter case, the new parameter settings can be defined by hand, or searched via minimization of the error over the data (\@ref(modelmin)). Each time the model is modified, its plot and minimization status are updated.
+The user can test regulative scenarios that are alternative to the one selected by *INSPEcT*, by tuning each function parameter, or by changing the functional form assigned to one or more rates. In the latter case, the new parameter settings can be defined by hand, or searched via minimization of the error over the data (\@ref(modelmin)). Noteworthy, within the derivative framework, variable functional forms are contrained to be identical among kinetic rates. Therefore, a combination of sigmoid (or impulse) and constants is allowed, while sigmoid and impulse cannot be combined. Each time the model is modified, its plot and minimization status are updated.
 
 ## Assessing rate variability via confidence intervals estimation
 

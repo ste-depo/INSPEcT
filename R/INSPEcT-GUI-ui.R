@@ -6,34 +6,37 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 	
 	# version number
 	
-	h4('Inspect your INSPEcT data'),
+	# h4('Inspect your INSPEcT data'),
 	
 	### h3("Select rates from file"),
 	
 	# plot pre-mRNA and mRNA dynamics
-	
+	tags$head(
+		tags$style(HTML("hr {border-top: 1px solid #000000;}"))
+	),	
 	fluidRow(
 		column(2,
 					 
 					 fileInput("file1", "Choose INSPEcT File", accept = ".rds", width = NULL,
 					 					buttonLabel = "Browse...", placeholder = "INSPEcT_GUI_sample_dataset.rds"),
+					 uiOutput('select_class'),
+					 uiOutput('select_condition'),
+					 selectInput("select", label = "Select gene", choices = NULL, selected = NULL),
 					 uiOutput("file_error"),
 					 uiOutput('modeling_type'),
-					 uiOutput('select_condition'),
-					 uiOutput('select_class'),
-					 selectInput("select", label = "Select gene", 
-					 						choices = NULL, selected = NULL),
-					 radioButtons('data_selection', 'Select input:',
+					 hr(),
+					 radioButtons('data_selection', 'Explore RNA dynamics using:',
 					 						 choiceValues = c('Experimental data', 'Smooth data', 'User defined'), 
 					 						 choiceNames = c('Raw experimental data', 'Smooth experimental data', 'User defined (No input)'), 
 					 						 selected = 'Experimental data'),
+					 hr(),
 					 uiOutput('modeling_box')
 		),
 		column(4,
 					 plotOutput("gene", height = "600px"),#, width="500px"),
 					 fluidRow(
-					 	column(3, .busyIndicator(text="Loading..." , wait=1000 , image='gif.gif')),
-					 	column(3, uiOutput('confint_box')),
+					 	column(2, .busyIndicator(text="Loading..." , wait=1000 , image='gif.gif')),
+					 	column(4, uiOutput('confint_box')),
 					 	column(3, list(
 					 		checkboxInput("relativexpr_checkbox", label = "Rel. Expr.", value = FALSE),
 					 		uiOutput("logtime_checkbox_ui"),
