@@ -1,8 +1,31 @@
+VERSION 1.16.1
+
+- added the slot 'version' that store the version used in each object created (IMPORTANT! objects without this slot, i.e. created before this version cannot be used anymore and must be regenerated)
+- added 2 wrap-up function to run the entire INSPEcT pipeline with a single command line
+- ratePvals modified (calculated at the time of modeling via calculateRatePvals method and stored into slot ratePvals of the class INSPEcT)
+- changes in model params accession (modeling parameters are set via modelRates and only accessed via modelingParams; model selection parameters are set via calculatePvals and only accessed via modeingParams)
+- modifications to INSPEcT-GUI (Added Fix-Y-Axis & pvals in Y-labels, Confidence intervals controlled by a button rather than the checkbox)
+- converted gene class names from a,c,b for synthesis, processing and degradation to s,p,d
+
+VERSION 1.16.0
+
+- added processingDelay methods and 2 shiny apps (ProcessingRateDelay and INSPEcT-GUI)
+- added INSPEcT-GUI vignette
+- New +Nascent modeling based on confidence intervals, new -Nascent derivative modeling, no more time transformation, new simulated data genesis, new data corruption, new HIB model selection, new graphical functions (rocCurve comparative and correlationPlot).
+- added non-functional modeling (modelRatesNF) and the method makeOscillatorySimModel
+- simulated datasets are now generated with contamination from total to nascent RNA fraction (default contamination values: b=0.3 and noise parameter=4)
+- modifications on compareSteadyNoNascent method (arguments trivialAngle, returnScores and referenceCondition added in order to define the trivial angle without extracting from the dataset, to return the scores instead of the classification and to define a reference condition instead of using the median as the reference)
+- added the comparative mode in the rocCurve method and the p=0.05 point
+
+VERSION 1.14.0
+
+- added labeled + pre-existing RNA mode when dedDuringPulse is OFF
+- limitation of complexity added
+
 VERSION 1.12.1
 - major update of INSPEcT, which now handles additional functions and analysis, such as:
 	(i)   extracting RNA dynamics from only total RNA-seq data,
-	(ii)  assessing differential regulation between steady states with an improved statistics,
-	(iii) assessing the burden of the processing rate step in the responsiveness of mature RNA.
+	(ii)  assessing differential regulation between steady states with an improved statistics (compareSteady method),
 - minor updates regard the estimation of the variance from replicates, that now uses the package "DESeq2" (when read counts are available) or "plgem" (when only expression data is available)
 
 ######## the INSPEcT datasets older than this version are NOT COMPATIBLE anymore ##############

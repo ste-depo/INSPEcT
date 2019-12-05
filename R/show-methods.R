@@ -45,6 +45,8 @@ setMethod('show', 'INSPEcT', function(object) {
 			}
 		}
 		message("Access complete rates with the method viewModelRates.")
+		# table(convergence(myc))
+		# quantile(chisqmodel(myc), probs = c(.01,.25,.5,.75,.99))
 	} else {
 		message("Only Rates first guess were computed.")
 		message("Access complete rates with the method ratesFirstGuess.")
@@ -95,9 +97,11 @@ setReplaceMethod('featureNames', signature(object='INSPEcT', value='ANY')
 	, function(object, value) {
 	featureNames(object@ratesFirstGuess) <- value
 	featureNames(object@ratesFirstGuessVar) <- value
+	featureNames(object@confidenceIntervals) <- value
 	if( nrow(object@modelRates) > 0 ) {
 		featureNames(object@modelRates) <- value
 		names(object@model@ratesSpecs) <- value
+		rownames(object@ratePvals) <- value
 	}
 	object
 	})

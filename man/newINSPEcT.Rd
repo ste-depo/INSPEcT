@@ -4,10 +4,20 @@
 \alias{newINSPEcT}
 \title{Create a new INSPEcT object}
 \usage{
-newINSPEcT(tpts, labeling_time = NULL, nascentExpressions = NULL,
-  matureExpressions, preexisting = FALSE, BPPARAM = bpparam(),
-  labeledSF = NULL, simulatedData = FALSE, degDuringPulse = FALSE,
-  Dmin = 1e-06, Dmax = 10, genesFilter = TRUE)
+newINSPEcT(
+  tpts,
+  labeling_time = NULL,
+  nascentExpressions = NULL,
+  matureExpressions,
+  preexisting = FALSE,
+  BPPARAM = bpparam(),
+  labeledSF = NULL,
+  simulatedData = FALSE,
+  degDuringPulse = FALSE,
+  Dmin = 1e-06,
+  Dmax = 10,
+  genesFilter = TRUE
+)
 }
 \arguments{
 \item{tpts}{A vector of time points, one for each sample}

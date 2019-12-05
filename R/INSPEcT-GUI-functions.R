@@ -35,11 +35,11 @@
 # 	unname(diz[gene_classes])
 # }
 # 
-# reconvert_gene_classes <- function(gene_classes) {
-# 	diz <- c('KKK'='0','VKK'='a','KKV'='b','KVK'='c',
-# 		'VKV'='ab','VVK'='ac','KVV'='bc','VVV'='abc')
-# 	unname(diz[gene_classes])
-# }
+reconvert_gene_classes <- function(gene_classes) {
+	diz <- c('KKK'='0','VKK'='a','KKV'='b','KVK'='c',
+		'VKV'='ab','VVK'='ac','KVV'='bc','VVV'='abc')
+	unname(diz[gene_classes])
+}
 
 ###########################
 ## function for ranges ####
@@ -58,7 +58,7 @@ define_parameter_ranges <- function(ids) {
 			}))
 		, probs=c(.025, .975))
 	range_k1_h_pars <- c(
-		floor(range_k1_h_pars[1]*100)/100,
+		floor(range_k1_h_pars[1]),
 		ceiling(range_k1_h_pars[2])
 	)
 	
@@ -73,7 +73,7 @@ define_parameter_ranges <- function(ids) {
 		}))
 	, probs=c(.025, .975))
 	range_k2_h_pars <- c(
-		floor(range_k2_h_pars[1]*100)/100,
+		floor(range_k2_h_pars[1]),
 		ceiling(range_k2_h_pars[2])
 	)
 	
@@ -88,7 +88,7 @@ define_parameter_ranges <- function(ids) {
 		}))
 	, probs=c(.025, .975))
 	range_k3_h_pars <- c(
-		floor(range_k3_h_pars[1]*100)/100,
+		floor(range_k3_h_pars[1]),
 		ceiling(range_k3_h_pars[2])
 	)
 	
@@ -117,8 +117,8 @@ define_parameter_ranges <- function(ids) {
 	, probs=c(.025, .975))
 	# range_t_pars <- timetransf_inv(range_t_pars, logshift, linshift)
 	range_t_pars <- c(
-		floor(range_t_pars[1]*100)/100, # (arrotonda per difetto al secondo decimale)
-		ceiling(range_t_pars[2]*100)/100
+		floor(range_t_pars[1]), # (arrotonda per difetto al secondo decimale)
+		ceiling(range_t_pars[2])
 	)
 	
 	range_beta_pars <- quantile(
@@ -145,8 +145,8 @@ define_parameter_ranges <- function(ids) {
 		}))
 	, probs=c(.025, .975))
 	range_beta_pars <- c(
-		floor(range_beta_pars[1]*100)/100,
-		ceiling(range_beta_pars[2]*100)/100
+		floor(range_beta_pars[1]),
+		ceiling(range_beta_pars[2])
 	)
 
 	return(list(
@@ -196,9 +196,9 @@ RNAdynamicsAppMake <- function(data_selection,
 	experimental_preMRNAsd <- experiment$preMRNAsd
 	experimental_synthesissd <- experiment$synthesissd
 	if( !experiment$steady_state ) {
-		experiment_tpts <- experiment$tpts	
-		simulation_time <- seq(time_min,time_max,length.out=1000)
-		simulation_time <- sort(unique(c(simulation_time, experiment_tpts)))
+		simulation_time <- experiment_tpts <- experiment$tpts	
+		# simulation_time <- seq(time_min,time_max,length.out=1000)
+		# simulation_time <- sort(unique(c(simulation_time, experiment_tpts)))
 	} else {
 		experiment_tpts <- 0
 		simulation_time <- seq(0,16,length.out=1000)
@@ -317,21 +317,21 @@ RNAdynamicsAppMakeConfInt <- function(data_selection,
 	experimental_preMRNAsd <- experiment$preMRNAsd
 	experimental_synthesissd <- experiment$synthesissd
 	if( !experiment$steady_state ) {
-		experiment_tpts <- experiment$tpts	
-		simulation_time <- seq(time_min,time_max,length.out=1000)
-		simulation_time <- sort(unique(c(simulation_time, experiment_tpts)))
+		simulation_time <- experiment_tpts <- experiment$tpts	
+		# simulation_time <- seq(time_min,time_max,length.out=1000)
+		# simulation_time <- sort(unique(c(simulation_time, experiment_tpts)))
 	} else {
 		experiment_tpts <- 0
 		simulation_time <- seq(0,16,length.out=1000)
 	}
 	
+	gene_class <- paste0(
+		switch(k1_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V"),
+		switch(k2_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V"),
+		switch(k3_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V")
+	)
+	
 	if( mod_method == 'int' ) {
-		
-		gene_class <- paste0(
-			switch(k1_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V"),
-			switch(k2_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V"),
-			switch(k3_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V")
-		)
 		
 		conf_int <- compute_ci_Integrative_Nascent(c(k1_params, k2_params, k3_params),
 																							 tpts = experiment_tpts,
@@ -348,16 +348,10 @@ RNAdynamicsAppMakeConfInt <- function(data_selection,
 		
 	} else { # mod_method == 'der'
 		
-		gene_class <- paste0(
-			switch(k1_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V"),
-			switch(k2_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V"),
-			switch(k3_function, "Constant"="K", "Sigmoidal"="V", "Impulsive"="V")
-		)
-		
 		conf_int <- compute_ci_Derivative_Nascent(c(k1_params, k2_params, k3_params),
 																							tpts = experiment_tpts,
 																							model_tpts = simulation_time,
-																							classTmp = gene_class, #reconvert_gene_classes(gene_class),
+																							classTmp = reconvert_gene_classes(gene_class),
 																							experimentalP = reference_preMRNA,
 																							experimentalM = reference_mRNA,
 																							experimentalA = reference_synthesis,
@@ -419,9 +413,9 @@ RNAdynamicsAppPlot <- function(data_selection,
 	experimental_preMRNAsd <- experiment$preMRNAsd
 	experimental_synthesissd <- experiment$synthesissd
 	if( !experiment$steady_state ) {
-		experiment_tpts <- experiment$tpts	
-		simulation_time <- seq(time_min,time_max,length.out=1000)
-		simulation_time <- sort(unique(c(simulation_time, experiment_tpts)))
+		simulation_time <- experiment_tpts <- experiment$tpts	
+		# simulation_time <- seq(time_min,time_max,length.out=1000)
+		# simulation_time <- sort(unique(c(simulation_time, experiment_tpts)))
 	} else {
 		experiment_tpts <- seq(0,16,by=4)
 		simulation_time <- seq(0,16,length.out=1000)
@@ -781,7 +775,7 @@ smoothModel <- function(tpts, experiment, nInit=10, nIter=500, seed=1234)
 	optimFailOut <- function(e) list(par=NA, value=NA, counts=NA, convergence=1, message=e)
 
 	im.parguess <- function(tpts , values, log_shift ) {
-		tpts <- timetransf(tpts, log_shift)
+		# tpts <- timetransf(tpts, log_shift)
 		ntp   <- length(tpts)
 		peaks <- which(diff(sign(diff(values)))!=0)+1
 		if( length(peaks) == 1 ) peak <- peaks
@@ -1206,11 +1200,58 @@ compute_ci_Derivative_Nascent <- function(parameters,
 	k3TC <- optTmp[grep("beta",names(optTmp))]
 	k3right <- apply(perturbedRates[grep("beta",rownames(perturbedRates)),],1,max,na.rm=TRUE)
 
-	return(list(
+	confidenceIntervals <- list(
 		k1 = cbind(left=k1left, opt=k1TC, right=k1right),
 		k2 = cbind(left=k2left, opt=k2TC, right=k2right),
 		k3 = cbind(left=k3left, opt=k3TC, right=k3right)
-	))	
+	)
+	
+	for(r in 1:3)
+	{
+		confidenceIntervals[[r]] <- t(apply(confidenceIntervals[[r]],1,function(row)
+		{
+			if((!is.finite(row[1])|row[1]==row[2])&(is.finite(row[3])&row[3]!=row[2])) row[1] <- row[2] - (row[3]-row[2])
+			if((!is.finite(row[3])|row[3]==row[2])&(is.finite(row[1])&row[1]!=row[2])) row[3] <- row[2] + (row[2]-row[1])
+			row
+		}))
+	}
+
+	k1_low <- median(abs(confidenceIntervals[[1]][,2] - confidenceIntervals[[1]][,1])/confidenceIntervals[[1]][,1],na.rm=TRUE)
+	k1_high <- median(abs(confidenceIntervals[[1]][,3] - confidenceIntervals[[1]][,1])/confidenceIntervals[[1]][,1],na.rm=TRUE)
+	
+	k2_low <- median(abs(confidenceIntervals[[2]][,2] - confidenceIntervals[[2]][,1])/confidenceIntervals[[2]][,1],na.rm=TRUE)
+	k2_high <- median(abs(confidenceIntervals[[2]][,3] - confidenceIntervals[[2]][,1])/confidenceIntervals[[2]][,1],na.rm=TRUE)
+	
+	k3_low <- median(abs(confidenceIntervals[[3]][,2] - confidenceIntervals[[3]][,1])/confidenceIntervals[[3]][,1],na.rm=TRUE)
+	k3_high <- median(abs(confidenceIntervals[[3]][,3] - confidenceIntervals[[3]][,1])/confidenceIntervals[[3]][,1],na.rm=TRUE)
+	
+	### Possible for very few genes
+	#
+	if(k1_low==0)k1_low <- mean(abs(confidenceIntervals[[1]][,2] - confidenceIntervals[[1]][,1])/confidenceIntervals[[1]][,1],na.rm=TRUE)
+	if(k1_high==0)k1_high <- mean(abs(confidenceIntervals[[1]][,3] - confidenceIntervals[[1]][,1])/confidenceIntervals[[1]][,1],na.rm=TRUE)
+	
+	if(k2_low==0)k2_low <- mean(abs(confidenceIntervals[[2]][,2] - confidenceIntervals[[2]][,1])/confidenceIntervals[[2]][,1],na.rm=TRUE)
+	if(k2_high==0)k2_high <- mean(abs(confidenceIntervals[[2]][,3] - confidenceIntervals[[2]][,1])/confidenceIntervals[[2]][,1],na.rm=TRUE)
+	
+	if(k3_low==0)k3_low <- mean(abs(confidenceIntervals[[3]][,2] - confidenceIntervals[[3]][,1])/confidenceIntervals[[3]][,1],na.rm=TRUE)
+	if(k3_high==0)k3_high <- mean(abs(confidenceIntervals[[3]][,3] - confidenceIntervals[[3]][,1])/confidenceIntervals[[3]][,1],na.rm=TRUE)
+
+	median_low <- c(k1=k1_low,k2=k2_low,k3=k3_low)
+	median_high <- c(k1=k1_high,k2=k2_high,k3=k3_high)
+
+	for(r in 1:3)
+	{
+		confidenceIntervals[[r]] <- t(apply(confidenceIntervals[[r]],1,function(row)
+		{
+			if(is.finite(row[2]))
+			{
+				if(row[1]==row[2] & row[1]==row[3]) {row[1] <- row[2]*(1-median_low[[r]]); row[3] <- row[2]*(1+median_high[[r]])}
+			}
+			row
+		}))
+	}
+
+	return(confidenceIntervals)
 	
 }
 

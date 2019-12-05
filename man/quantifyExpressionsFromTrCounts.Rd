@@ -4,9 +4,15 @@
 \alias{quantifyExpressionsFromTrCounts}
 \title{Evaluates introns and exons RPKMs, per gene, from counts data.}
 \usage{
-quantifyExpressionsFromTrCounts(allcounts, experimentalDesign, exonsWidths,
-  intronsWidths, libsize = NULL, DESeq2 = TRUE,
-  varSamplingCondition = NULL)
+quantifyExpressionsFromTrCounts(
+  allcounts,
+  experimentalDesign,
+  exonsWidths,
+  intronsWidths,
+  libsize = NULL,
+  DESeq2 = TRUE,
+  varSamplingCondition = NULL
+)
 }
 \arguments{
 \item{allcounts}{A named list containing "exonsCounts" and "intronsCounts".}

@@ -28,6 +28,23 @@ chisqtest_internal <- function(object) {
 	)))
 }
 
+#' @rdname convergence
+#'
+#' @description
+#' This method is used to retrieve the convergence of the models
+#' that have been selected to better represent the behavior of each gene.
+#' 0 is converged, 1 not converged, 10 degenerated
+#' @param object An object of class INSPEcT or INSPEcT_model
+#' @return A vector of numeric
+#' @examples
+#' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
+#' convergence(nascentInspObj10)
+setMethod('convergence', 'INSPEcT', function(object) {
+	out <- t(sapply(object@model@ratesSpecs, function(gene) sapply(gene, function(model) model$convergence)))
+	colnames(out) <- c("no-reg","s","p","d","sd","sp","pd","spd")
+	return(out)
+})
+
 #' @rdname chisqmodel
 #'
 #' @description

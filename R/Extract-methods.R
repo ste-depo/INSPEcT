@@ -124,6 +124,8 @@ setMethod('removeModel', 'INSPEcT', function(object) {
 		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
 	}
 	object@model@ratesSpecs <- list()
+	object@params <- list()
+	object@model@params <- list()
 	return(object)
 	})
 
@@ -171,11 +173,23 @@ setMethod('combine', signature(x='INSPEcT', y='INSPEcT'), function(x, y, ...) {
 	if( any(modeledObjects) && !all(modeledObjects) )
 		stop('combine: either all the object provided should be modeled or not. Model all the objects or use method "removeModel" to remove the models.')
 	if( !all(sapply(dots[-1], function(x) identical(x@model@params, dots[[1]]@model@params))) )
-		stop('combine: modeling parameters are different')
-	if( !all(sapply(dots[-1], function(x) identical(x@params, dots[[1]]@params))) )
 		stop('combine: testing parameters are different. Modify them via "calculateRatePvals"')
+	if( !all(sapply(dots[-1], function(x) identical(x@params, dots[[1]]@params))) )
+		stop('combine: modeling parameters are different')
 	if( !all(sapply(dots[-1], function(x) identical(x@tpts, dots[[1]]@tpts))) )
 		stop('combine: trying to merging objects which contains different time points')
+	if( !all(sapply(dots[-1], function(x) identical(x@labeledSF, dots[[1]]@labeledSF))) )
+		stop('combine: trying to merging objects with different labeledSF')
+	if( !all(sapply(dots[-1], function(x) identical(x@tL, dots[[1]]@tL))) )
+		stop('combine: trying to merging objects with different labeling times')
+	if( !all(sapply(dots[-1], function(x) identical(x@NoNascent, dots[[1]]@NoNascent))) )
+		stop('combine: trying to merging objects with and without nascent RNA')
+	if( !all(sapply(dots[-1], function(x) identical(x@NF, dots[[1]]@NF))) )
+		stop('combine: trying to merging objects with functional and non-functional modeling')
+	if( !all(sapply(dots[-1], function(x) identical(x@degDuringPulse, dots[[1]]@degDuringPulse))) )
+		stop('combine: trying to merging objects modeled with and without degDuringPulse')
+	if( !all(sapply(dots[-1], function(x) identical(x@version, dots[[1]]@version))) )
+		warning('combine: merging objects made with different INSPEcT versions')
 	if( any(duplicated(do.call('c', lapply(dots, featureNames)))) )
 		warning('combine: there are genes that are contained in more than one object: only one is kept')
 	# re-biuld the object
@@ -183,22 +197,18 @@ setMethod('combine', signature(x='INSPEcT', y='INSPEcT'), function(x, y, ...) {
 	newObject@model@params <- dots[[1]]@model@params
 	newObject@params <- dots[[1]]@params
 	newObject@tpts <- dots[[1]]@tpts
-	if( all(sapply(dots[-1], function(x) identical(x@labeledSF, dots[[1]]@labeledSF))) )
-		newObject@labeledSF <- dots[[1]]@labeledSF
-	else
-		newObject@labeledSF <- rep(NA, length(dots[[1]]@tpts))
-	if( all(sapply(dots[-1], function(x) identical(x@tL, dots[[1]]@tL))) )
-		newObject@tL <- dots[[1]]@tL
-	else
-		newObject@tL <- NA
+	newObject@labeledSF <- dots[[1]]@labeledSF
+	newObject@tL <- dots[[1]]@tL
 	newObject@ratesFirstGuess <- do.call('combine', lapply(dots, function(x) x@ratesFirstGuess))
+	newObject@ratesFirstGuessVar <- do.call('combine', lapply(dots, function(x) x@ratesFirstGuessVar))
+	newObject@confidenceIntervals <- do.call('combine', lapply(dots, function(x) x@confidenceIntervals))
 	if( all(modeledObjects) ) {
 		newObject@modelRates <- do.call('combine', lapply(dots, function(x) x@modelRates))
 		ratesSpecs <- do.call('c', lapply(dots, function(x) x@model@ratesSpecs))
 		newObject@model@ratesSpecs <- ratesSpecs[featureNames(newObject@modelRates)]
+		newObject@ratePvals <- do.call('rbind', lapply(dots, function(x) x@ratePvals))
 	}
 	return(newObject)
-
 	})
 
 #' Divide an INSPEcT Object into groups

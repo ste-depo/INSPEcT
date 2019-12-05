@@ -101,7 +101,7 @@ setMethod('modelRatesNF', 'INSPEcT', function(object, BPPARAM=SerialParam())
 	modelRates <- ExpressionSet(assayData=exprData
 								   , phenoData=phenoData)
 	featureNames(modelRates) <- geneNames
-
+	
 	object@modelRates <- modelRates
 	object@NF <- TRUE
 	object <- setConfidenceIntervals(object=object,confidenceIntervals=confidenceIntervals)

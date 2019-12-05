@@ -18,7 +18,3 @@ Two shiny apps are encoded into the package inspect:
 - runINSPEcTGUI: is a way to visualize and interact with the RNAdynamics at the level of 
   a single gene, either loading the data from ad INSPEcT object or from scratch.
 }
-\examples{
-# runProcessingRateDelay()
-# runINSPEcTGUI()
-}

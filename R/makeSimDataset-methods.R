@@ -119,7 +119,7 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 		apply(U_exons,1,function(r)all(r>0)) &
 		apply(U_introns,1,function(r)all(r>0))
 
-		print(paste0("makeSimDataset: ",table(genesTmp)["TRUE"]," genes suitable for the corrupted analysis."))
+		message(paste0("makeSimDataset: ",table(genesTmp)["TRUE"]," genes suitable for the corrupted analysis."))
 
 		T_exons <- T_exons[genesTmp,]
 		T_introns <- T_introns[genesTmp,]

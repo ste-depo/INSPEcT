@@ -1426,8 +1426,8 @@ RNAdynamics <- function(totRpkms, labeledRpkms, tpts, tL, simulatedData=FALSE, B
 				} else return(rep(NA, length(tpts)) )
 			}
 		))
-
-		if( ncol(TintDer)>1 ) TintDer <- t(TintDer)
+		# if( ncol(TintDer)>1 ) TintDer <- t(TintDer)
+		TintDer <- t(TintDer)
 		TintDer[, 1] <- 0 
 		TexoDer <- as.matrix(sapply(1:nrow(Texo), 
 			function(i) {
@@ -1437,7 +1437,8 @@ RNAdynamics <- function(totRpkms, labeledRpkms, tpts, tL, simulatedData=FALSE, B
 				} else return(rep(NA, length(tpts)) )
 			}
 		))
-		if( ncol(TexoDer)>1 ) TexoDer <- t(TexoDer)
+		# if( ncol(TexoDer)>1 ) TexoDer <- t(TexoDer)
+		TexoDer <- t(TexoDer)
 		TexoDer[, 1] <- 0
 	# otherwise put the derivatives to zero	
 	} else {
@@ -1509,12 +1510,13 @@ RNAdynamics <- function(totRpkms, labeledRpkms, tpts, tL, simulatedData=FALSE, B
 			betaOut <- inferKBetaFromIntegralWithPre(tpts, alphaTC, Texo, Tint, 
 				maxBeta=quantile(betaT0,na.rm=TRUE,probs=.99)*10,BPPARAM=BPPARAM
 				)
-			betaTC <- cbind(betaT0, 
-				sapply(betaOut, function(x) sapply(x, '[[', 'root'))
-				)
-			betaEstimPrec <- cbind(0,
-				sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))
-				)
+			if( nrow(Texo)==1 ) {
+				betaTC <- t(c(betaT0, sapply(betaOut, function(x) sapply(x, '[[', 'root'))))
+				betaEstimPrec <- t(c(0,sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))))
+			} else {
+				betaTC <- cbind(betaT0, sapply(betaOut, function(x) sapply(x, '[[', 'root')))
+				betaEstimPrec <- cbind(0,sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec')))
+			}
 		} else {
 			betaTC <- as.matrix(betaT0)
 			betaEstimPrec <- matrix(0, nrow=nrow(betaTC), ncol=ncol(betaTC))
@@ -1532,12 +1534,13 @@ RNAdynamics <- function(totRpkms, labeledRpkms, tpts, tL, simulatedData=FALSE, B
 			gammaOut <- inferKGammaFromIntegral(tpts, alphaTC, Tint, 
 				maxGamma=quantile(gammaT0,na.rm=TRUE,probs=.99)*10, BPPARAM=BPPARAM
 				)
-			gammaTC <- cbind(gammaT0, 
-				sapply(gammaOut, function(x) sapply(x, '[[', 'root'))
-				)
-			gammaEstimPrec <- cbind(0, 
-				sapply(gammaOut, function(x) sapply(x, '[[', 'estim.prec'))
-				)
+			if( nrow(Texo)==1 ) {
+				gammaTC <- t(c(gammaT0, sapply(gammaOut, function(x) sapply(x, '[[', 'root'))))
+				gammaEstimPrec <- t(c(0, sapply(gammaOut, function(x) sapply(x, '[[', 'estim.prec'))))
+			} else {
+				gammaTC <- cbind(gammaT0, sapply(gammaOut, function(x) sapply(x, '[[', 'root')))
+				gammaEstimPrec <- cbind(0, sapply(gammaOut, function(x) sapply(x, '[[', 'estim.prec')))
+			}
 		} else {
 			gammaTC <- as.matrix(gammaT0)
 			gammaEstimPrec <- matrix(0, nrow=nrow(gammaTC), ncol=ncol(gammaTC))
@@ -1954,7 +1957,7 @@ RNAdynamics_NoNascent <- function(totRpkms
 								, genesFilter
 								)
 {
-
+	
 	Dmin <- modellingParameters$Dmin
 	Dmax <- modellingParameters$Dmax
 
@@ -1980,19 +1983,31 @@ RNAdynamics_NoNascent <- function(totRpkms
 	rownames(k3Prior) <- eiGenes
 
 	# Constant post transcriptional rates and variable post transcriptiona ratio
-	fits <- t(mcsapply(1:nrow(mature), function(row)
-	{
-		unlist(
-			tryCatch(
-	    		optim(par = c(mature[row,1]/premature[row,1]*k3Prior[row,'k3'], k3Prior[row,'k3'])
-	    				   ,fn = secondStepError_NoNascent
-	        			   ,tpts = tpts
-	        			   ,premature = premature[row,]
-	        			   ,mature = mature[row,]
-	        			   ,matureVariance = matureVariance[row,])
-			,error=function(e)list(par = c(NaN,NaN), value = NaN, counts = NaN, convergence = NaN, message = "Optimization error."))[1:4])
-	},BPPARAM = BPPARAM))
-	
+	# (if there is only one gene, constraint for positive rates, i.e. inspectFromPCR)
+	if( nrow(mature)==1 ) {
+		row <- 1
+		fits <- optimPositive(par = c(mature[row,1]/premature[row,1]*k3Prior[row,'k3'], k3Prior[row,'k3'])
+					,fn = secondStepError_NoNascent
+					,tpts = tpts
+					,premature = premature[row,]
+					,mature = mature[row,]
+					,matureVariance = matureVariance[row,])
+		fits <- t(unlist(fits[1:4]))
+	} else {
+		fits <- t(mcsapply(1:nrow(mature), function(row)
+		{
+			unlist(
+				tryCatch(
+					optim(par = c(mature[row,1]/premature[row,1]*k3Prior[row,'k3'], k3Prior[row,'k3'])
+								,fn = secondStepError_NoNascent
+								,tpts = tpts
+								,premature = premature[row,]
+								,mature = mature[row,]
+								,matureVariance = matureVariance[row,])
+					,error=function(e)list(par = c(NaN,NaN), value = NaN, counts = NaN, convergence = NaN, message = "Optimization error."))[1:4])
+		},BPPARAM = BPPARAM))
+	}
+
 	fits[,3] <- pchisq(fits[,3], length(tpts)-3)
 	colnames(fits) <- c('k2','k3','p','counts','gradient','convergence')
 	rownames(fits) <- eiGenes
@@ -2041,12 +2056,13 @@ RNAdynamics_NoNascent <- function(totRpkms
 	betaOut <- inferKBetaFromIntegralWithPre(tpts, alphaTC, total, premature, 
 				maxBeta=quantile(betaT0,na.rm=TRUE,probs=.99)*10,BPPARAM=BPPARAM
 				)
-	betaTC <- cbind(betaT0, 
-		sapply(betaOut, function(x) sapply(x, '[[', 'root'))
-	)
-	betaEstimPrec <- cbind(0,
-		sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))
-	)
+	if( nrow(mature)==1 ) {
+		betaTC <- t(c(betaT0, sapply(betaOut, function(x) sapply(x, '[[', 'root'))))
+		betaEstimPrec <- t(c(0,sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec'))))
+	} else {
+		betaTC <- cbind(betaT0, sapply(betaOut, function(x) sapply(x, '[[', 'root')))
+		betaEstimPrec <- cbind(0,sapply(betaOut, function(x) sapply(x, '[[', 'estim.prec')))
+	}
 
 	#Evaluate gamma as constant between intervals
 
@@ -2056,13 +2072,13 @@ RNAdynamics_NoNascent <- function(totRpkms
 	gammaOut <- inferKGammaFromIntegral(tpts, alphaTC, premature, 
 		maxGamma=quantile(gammaT0,na.rm=TRUE,probs=.99)*10, BPPARAM=BPPARAM
 		)
-	gammaTC <- cbind(gammaT0, 
-		sapply(gammaOut, function(x) sapply(x, '[[', 'root'))
-		)
-	gammaEstimPrec <- cbind(0, 
-		sapply(gammaOut, function(x) sapply(x, '[[', 'estim.prec'))
-		)
-
+	if( nrow(mature)==1 ) {
+		gammaTC <- t(c(gammaT0, sapply(gammaOut, function(x) sapply(x, '[[', 'root'))))
+		gammaEstimPrec <- t(c(0, sapply(gammaOut, function(x) sapply(x, '[[', 'estim.prec'))))
+	} else {
+		gammaTC <- cbind(gammaT0, sapply(gammaOut, function(x) sapply(x, '[[', 'root')))
+		gammaEstimPrec <- cbind(0, sapply(gammaOut, function(x) sapply(x, '[[', 'estim.prec')))
+	}
 	# ## impute NA values
 	alphaTC <- do.call('rbind',bplapply(1:nrow(alphaTC), 
 		function(i) impute_na_tc(tpts, alphaTC[i,]), BPPARAM=bpparam()))

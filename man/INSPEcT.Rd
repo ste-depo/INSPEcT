@@ -3,7 +3,6 @@
 \docType{package}
 \name{INSPEcT}
 \alias{INSPEcT}
-\alias{INSPEcT-package}
 \title{INSPEcT package}
 \description{
 INSPEcT (INference of Synthesis, Processing and dEgradation rates from Transcriptomic data),

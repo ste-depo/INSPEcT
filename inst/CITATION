@@ -17,3 +17,23 @@ citEntry(entry = "article",
             "INSPEcT: a Computational Tool to Infer mRNA Synthesis, Processing and Degradation Dynamics from RNA- and 4sU-seq Time Course Experiments.",
              "Bioinformatics" ) 
    )
+
+citEntry(entry = "article",
+   title = "Genome-wide dynamics of RNA synthesis, processing and degradation without RNA metabolic labeling.",
+   author = personList(
+      as.person("Mattia Furlan"),
+      as.person("Eugenia Galeota"),
+      as.person("Nunzio Del Gaudio"),
+      as.person("Erik Dassi"),
+      as.person("Michele Caselle"),
+      person("Stefano", "de Pretis"),
+      as.person("Mattia Pelizzola")
+      ),
+      year = 2019,
+      journal = "bioRxiv",
+      doi = "https://doi.org/10.1101/520155",
+      textVersion = 
+      paste("Mattia Furlan et al. (2019):", 
+            "Genome-wide dynamics of RNA synthesis, processing and degradation without RNA metabolic labeling.",
+             "bioRxiv" ) 
+   )
