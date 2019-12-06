@@ -43,9 +43,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				values$loaded_file_error_message <- 'The loaded file is obsolete and cannot work with the current version of INSPEcT'
 				return(new(Class = 'INSPEcT'))
 				
-			} else {
-			
-				# (the loaded object is of class INSPEcT
+			} else { # the loaded object is of class INSPEcT
 				
 				## store inspect global values
 				experiment$tpts <- tpts(ids)
@@ -188,11 +186,22 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 			!(is.null(input$select_condition) & experiment$steady_state ) 
 			) {
 			
-			## define the modeling strategy
+			# in case of time course experiment, proceed only when the gene and the 
+			# regulation class conincide
+			proceed <- FALSE
+			if( experiment$steady_state ) {
+				proceed <- TRUE	
+			} else {
+				gene_class <- strsplit( input$select_class , ' ')[[1]][1]
+				if( experiment$steady_state | geneClass(ids)[input$select] == gene_class ) {
+					proceed <- TRUE	
+				}
+			}
 			
-			gene_class <- strsplit( input$select_class , ' ')[[1]][1]
-			if( geneClass(ids)[input$select] == gene_class ) {
+			if( proceed ) {
 
+				## define the modeling strategy
+				
 				if( inspect$mod_method == 'int' ) {
 					modeling_type <- 'K123'
 					model_names <- c('alpha','gamma','beta')
@@ -1031,13 +1040,17 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 	## rate pvalues 
 	
 	output$modeling_type <- renderUI({
-		if( !is.null(contentsrea()) & input$data_selection != 'User defined' & !experiment$steady_state ) {
-			if( inspect$mod_method == 'int' ) {
-				p(paste('Loaded INSPEcT object with',nGenes(contentsrea()),'genes modeled with the integrative framework'))
+		if( !is.null(contentsrea()) & input$data_selection != 'User defined' ) {
+			if( experiment$steady_state ) {
+				p(paste('Loaded a steady-state INSPEcT object with',nGenes(contentsrea()),'genes and',nTpts(contentsrea()),'conditions'))
 			} else {
-				p(paste('Loaded INSPEcT object with',nGenes(contentsrea()),'genes modeled with the derivative framework'))
+				if( inspect$mod_method == 'int' ) {
+					p(paste('Loaded INSPEcT object with',nGenes(contentsrea()),'genes modeled with the integrative framework'))
+				} else {
+					p(paste('Loaded INSPEcT object with',nGenes(contentsrea()),'genes modeled with the derivative framework'))
+				}
 			}
-		}
+		} 
 	})
 	
 	output$select_condition <- renderUI({
@@ -1695,20 +1708,22 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 
 	output$gene <- renderPlot({
 		suppressWarnings(try({
-			ylims <- RNAdynamicsAppPlot(
-				data_selection = input$data_selection,
-				show_logtime = input$logtime_checkbox,
-				show_relexpr = input$relativexpr_checkbox,
-				logshift = inspect$logshift,
-				linshift = inspect$linshift,
-				time_min = ranges$time_min,
-				time_max = ranges$time_max,
-				experiment = experiment,
-				simdata = modeling$simdata,
-				ylims = if(input$fixyaxis_checkbox) isolate(ranges$ylims) else NULL,
-				rate_p = values$rate_p
-			)
-			ranges$ylims <- ylims
+			if( !is.null(modeling$simdata) ) {
+				ylims <- RNAdynamicsAppPlot(
+					data_selection = input$data_selection,
+					show_logtime = input$logtime_checkbox,
+					show_relexpr = input$relativexpr_checkbox,
+					logshift = inspect$logshift,
+					linshift = inspect$linshift,
+					time_min = ranges$time_min,
+					time_max = ranges$time_max,
+					experiment = experiment,
+					simdata = modeling$simdata,
+					ylims = if(input$fixyaxis_checkbox) isolate(ranges$ylims) else NULL,
+					rate_p = values$rate_p
+				)
+				ranges$ylims <- ylims
+			}
 		}, silent = TRUE))
 	})
 	

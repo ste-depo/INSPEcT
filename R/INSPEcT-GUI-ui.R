@@ -6,14 +6,10 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 	
 	# version number
 	
-	# h4('Inspect your INSPEcT data'),
-	
-	### h3("Select rates from file"),
-	
-	# plot pre-mRNA and mRNA dynamics
 	tags$head(
 		tags$style(HTML("hr {border-top: 1px solid #000000;}"))
 	),	
+	h4('INSPEcT-GUI'),
 	fluidRow(
 		column(2,
 					 
@@ -35,7 +31,7 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 		column(4,
 					 plotOutput("gene", height = "600px"),#, width="500px"),
 					 fluidRow(
-					 	column(2, .busyIndicator(text="Loading..." , wait=1000 , image='gif.gif')),
+					 	column(2, .busyIndicator(text="Loading..." , wait=0 , image='gif.gif')),
 					 	column(4, uiOutput('confint_box')),
 					 	column(3, list(
 					 		checkboxInput("relativexpr_checkbox", label = "Rel. Expr.", value = FALSE),
