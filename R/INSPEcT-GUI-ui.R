@@ -19,11 +19,11 @@ INSPEcTGUIshinyAppUI <- fluidPage(
 					 
 					 fileInput("file1", "Choose INSPEcT File", accept = ".rds", width = NULL,
 					 					buttonLabel = "Browse...", placeholder = "INSPEcT_GUI_sample_dataset.rds"),
+					 uiOutput("file_error"),
+					 uiOutput('modeling_type'),
 					 uiOutput('select_class'),
 					 uiOutput('select_condition'),
 					 selectInput("select", label = "Select gene", choices = NULL, selected = NULL),
-					 uiOutput("file_error"),
-					 uiOutput('modeling_type'),
 					 hr(),
 					 radioButtons('data_selection', 'Explore RNA dynamics using:',
 					 						 choiceValues = c('Experimental data', 'Smooth data', 'User defined'), 
