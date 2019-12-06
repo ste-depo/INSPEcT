@@ -787,222 +787,204 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 	## observe_parameters_change_by_user #########
 	###########################################
 	
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k1_h0) & !is.null(isolate(values$k1_h0)))
-	# 		{
-	# 			if(input$k1_h0 != isolate(values$k1_h0)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k1_h0 <- input$k1_h0
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k1_h1) & !is.null(isolate(values$k1_h1)))
-	# 		{
-	# 			if(input$k1_h1 != isolate(values$k1_h1)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k1_h1 <- input$k1_h1
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k1_h2) & !is.null(isolate(values$k1_h2)))
-	# 		{
-	# 			if(input$k1_h2 != isolate(values$k1_h2)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k1_h2 <- input$k1_h2
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k1_t1) & !is.null(isolate(values$k1_t1)))
-	# 		{
-	# 			if(input$k1_t1 != isolate(values$k1_t1)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k1_t1 <- input$k1_t1
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k1_t2) & !is.null(isolate(values$k1_t2)))
-	# 		{
-	# 			if(input$k1_t2 != isolate(values$k1_t2)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k1_t2 <- input$k1_t2
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k1_beta) & !is.null(isolate(values$k1_beta)))
-	# 		{
-	# 			if(input$k1_beta != isolate(values$k1_beta)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k1_beta <- input$k1_beta
-	# 			}
-	# 		}
-	# 	}
-	# })	
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k2_h0) & !is.null(isolate(values$k2_h0)))
-	# 		{
-	# 			if(input$k2_h0 != isolate(values$k2_h0)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k2_h0 <- input$k2_h0
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k2_h1) & !is.null(isolate(values$k2_h1)))
-	# 		{
-	# 			if(input$k2_h1 != isolate(values$k2_h1)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k2_h1 <- input$k2_h1
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k2_h2) & !is.null(isolate(values$k2_h2)))
-	# 		{
-	# 			if(input$k2_h2 != isolate(values$k2_h2)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k2_h2 <- input$k2_h2
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k2_t1) & !is.null(isolate(values$k2_t1)))
-	# 		{
-	# 			if(input$k2_t1 != isolate(values$k2_t1)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k2_t1 <- input$k2_t1
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k2_t2) & !is.null(isolate(values$k2_t2)))
-	# 		{
-	# 			if(input$k2_t2 != isolate(values$k2_t2)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k2_t2 <- input$k2_t2
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k2_beta) & !is.null(isolate(values$k2_beta)))
-	# 		{
-	# 			if(input$k2_beta != isolate(values$k2_beta)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k2_beta <- input$k2_beta
-	# 			}
-	# 		}
-	# 	}
-	# })	
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k3_h0) & !is.null(isolate(values$k3_h0)))
-	# 		{
-	# 			if(input$k3_h0 != isolate(values$k3_h0)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k3_h0 <- input$k3_h0
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k3_h1) & !is.null(isolate(values$k3_h1)))
-	# 		{
-	# 			if(input$k3_h1 != isolate(values$k3_h1)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k3_h1 <- input$k3_h1
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k3_h2) & !is.null(isolate(values$k3_h2)))
-	# 		{
-	# 			if(input$k3_h2 != isolate(values$k3_h2)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k3_h2 <- input$k3_h2
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k3_t1) & !is.null(isolate(values$k3_t1)))
-	# 		{
-	# 			if(input$k3_t1 != isolate(values$k3_t1)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k3_t1 <- input$k3_t1
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k3_t2) & !is.null(isolate(values$k3_t2)))
-	# 		{
-	# 			if(input$k3_t2 != isolate(values$k3_t2)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k3_t2 <- input$k3_t2
-	# 			}
-	# 		}
-	# 	}
-	# })
-	# 
-	# observe({
-	# 	if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
-	# 		if(!is.null(input$k3_beta) & !is.null(isolate(values$k3_beta)))
-	# 		{
-	# 			if(input$k3_beta != isolate(values$k3_beta)) {
-	# 				output$convergence <- renderPrint({"not converged"})
-	# 				values$k3_beta <- input$k3_beta
-	# 			}
-	# 		}
-	# 	}
-	# })	
-
+	observeEvent(input$k1_h0, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k1_h0) & !is.null(isolate(values$k1_h0))) {
+				if(input$k1_h0 != isolate(values$k1_h0)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k1_h0 <- input$k1_h0
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k1_h1, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k1_h1) & !is.null(isolate(values$k1_h1))) {
+				if(input$k1_h1 != isolate(values$k1_h1)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k1_h1 <- input$k1_h1
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k1_h2, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k1_h2) & !is.null(isolate(values$k1_h2))) {
+				if(input$k1_h2 != isolate(values$k1_h2)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k1_h2 <- input$k1_h2
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k1_t1, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k1_t1) & !is.null(isolate(values$k1_t1))) {
+				if(input$k1_t1 != isolate(values$k1_t1)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k1_t1 <- input$k1_t1
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k1_t2, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k1_t2) & !is.null(isolate(values$k1_t2))) {
+				if(input$k1_t2 != isolate(values$k1_t2)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k1_t2 <- input$k1_t2
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k1_beta, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k1_beta) & !is.null(isolate(values$k1_beta))) {
+				if(input$k1_beta != isolate(values$k1_beta)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k1_beta <- input$k1_beta
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k2_h0, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k2_h0) & !is.null(isolate(values$k2_h0))) {
+				if(input$k2_h0 != isolate(values$k2_h0)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k2_h0 <- input$k2_h0
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k2_h1, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k2_h1) & !is.null(isolate(values$k2_h1))) {
+				if(input$k2_h1 != isolate(values$k2_h1)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k2_h1 <- input$k2_h1
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k2_h2, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k2_h2) & !is.null(isolate(values$k2_h2))) {
+				if(input$k2_h2 != isolate(values$k2_h2)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k2_h2 <- input$k2_h2
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k2_t1, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k2_t1) & !is.null(isolate(values$k2_t1))) {
+				if(input$k2_t1 != isolate(values$k2_t1)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k2_t1 <- input$k2_t1
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k2_t2, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k2_t2) & !is.null(isolate(values$k2_t2))) {
+				if(input$k2_t2 != isolate(values$k2_t2)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k2_t2 <- input$k2_t2
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k2_beta, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k2_beta) & !is.null(isolate(values$k2_beta))) {
+				if(input$k2_beta != isolate(values$k2_beta)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k2_beta <- input$k2_beta
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k3_h0, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k3_h0) & !is.null(isolate(values$k3_h0))) {
+				if(input$k3_h0 != isolate(values$k3_h0)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k3_h0 <- input$k3_h0
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k3_h1, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k3_h1) & !is.null(isolate(values$k3_h1))) {
+				if(input$k3_h1 != isolate(values$k3_h1)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k3_h1 <- input$k3_h1
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k3_h2, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k3_h2) & !is.null(isolate(values$k3_h2))) {
+				if(input$k3_h2 != isolate(values$k3_h2)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k3_h2 <- input$k3_h2
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k3_t1, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k3_t1) & !is.null(isolate(values$k3_t1))) {
+				if(input$k3_t1 != isolate(values$k3_t1)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k3_t1 <- input$k3_t1
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k3_t2, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k3_t2) & !is.null(isolate(values$k3_t2))) {
+				if(input$k3_t2 != isolate(values$k3_t2)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k3_t2 <- input$k3_t2
+				}
+			}
+		}
+	})
+	
+	observeEvent(input$k3_beta, {
+		if( !is.null(inspect$mod_method) & !is.null(input$data_selection) ) {
+			if(!is.null(input$k3_beta) & !is.null(isolate(values$k3_beta))) {
+				if(input$k3_beta != isolate(values$k3_beta)) {
+					output$convergence <- renderPrint({"not converged"})
+					values$k3_beta <- input$k3_beta
+				}
+			}
+		}
+	})
+	
 	##############################################
 	## observe_parameters_change_by_user (end) #########
 	##############################################
