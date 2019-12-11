@@ -144,6 +144,10 @@ When synthesis and degradation rates are modulated in the same direction, they a
 knitr::include_graphics("INSPEcT_GUI_figures/case_study_4.png")
 ```
 
+# Video tutorial
+
+<iframe width="768" height="432" src="https://multimedia.iit.it/asset-bank/servlet/file?contentDispositionFilename=mut5960893213920264239.mp4&signature=48626e694a7236777a4d712f584b3275484e524933465a625675674b6a67462f65426e645a33325461767a554d4b4d47796c385a77504c495978776f4661624268376d59354c47476a4d69444e2f322b6d51676d6531684656376a537041593148625458556d4e756f794d3d&contentDisposition=inline&contentIdentifier=ca2/O5yfWQgDGNswRGid90v0SWiP7e6S.mp4&contentStoreIdentifier=4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
 #About this document
 
 ```{r session}

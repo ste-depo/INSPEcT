@@ -61,7 +61,12 @@ setMethod('compareSteadyNoNascent', 'INSPEcT', function(inspectIds,
 		standardCurveFit <- trivialAngle		
 	}
 
+	perc <- function(x) round(length(which(x))/length(x)*100)
+	perc_premature <- perc(premature<=expressionThreshold)
+	if(perc_premature>0) message(paste0(perc_premature, '% of premature expressions below expressionThreshold set to NA'))
 	premature[premature<=expressionThreshold] <- NA
+	perc_mature <- perc(mature<=expressionThreshold)
+	if(perc_mature>0) message(paste0(perc_mature, '% of mature expressions below expressionThreshold set to NA'))
 	mature[mature<=expressionThreshold] <- NA
 
 	if( is.null(referenceCondition) ) {
