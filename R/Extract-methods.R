@@ -59,6 +59,7 @@ setMethod('[', 'INSPEcT', function(x, i, j) {
 		if( length(x@model@ratesSpecs) > 0 ) {
 			stop('Remove the model before subsetting time points. (See "?removeModel")')
 		} else {
+			if( is.character(j) ) j <- x@tpts %in% j
 			if( is.logical(j) ) j <- which(j)
 			if( ncol(x@ratesFirstGuess)>0 ) {
 				x@tpts <- x@tpts[j]
