@@ -98,7 +98,7 @@ setReplaceMethod('featureNames', signature(object='INSPEcT', value='ANY')
 	featureNames(object@ratesFirstGuess) <- value
 	featureNames(object@ratesFirstGuessVar) <- value
 	if( nrow(object@modelRates) > 0 ) {
-		featureNames(object@confidenceIntervals) <- valu
+		featureNames(object@confidenceIntervals) <- value
 		featureNames(object@modelRates) <- value
 		names(object@model@ratesSpecs) <- value
 		rownames(object@ratePvals) <- value
