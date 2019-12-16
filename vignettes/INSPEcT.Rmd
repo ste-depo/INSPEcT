@@ -385,6 +385,7 @@ The method *makeSimModel* samples from an *INSPEcT* object the absolute values o
 
 ```{r generateSimModel,eval=TRUE,message=FALSE,warnings=FALSE}
 simRates<-makeSimModel(nascentInspObj, 1000, seed=1)
+table(geneClass(simRates))
 ```
 
 *makeSimModel* produces an object of class *INSPEcT_model*, to be analyzed it must be transformed in an *INSPEcT* object using the *makeSimDataset* method. It takes as arguments the number of replicates required and the time points at which the data should be virtually collected. Regarding the latter point, the new time-course must be designed as a sampling of the original experimental time window (same initial and final conditions). The object created by this method can be modelled via *modelRates* as any other object of class *INSPEcT*, and in this case the results could be compared with the ground truth and the performance of the procedure with given number of replicates and time points can be estimated. In order to avoid long computation time, the next two chunks of code have been previously evaluated and will be not computed within this vignette.
