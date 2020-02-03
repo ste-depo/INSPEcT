@@ -56,28 +56,14 @@ define_parameter_ranges <- function(ids) {
 						 "impulse" = rate$params[1:3]
 						 )
 			}))
-		, probs=c(.025, .975))
+		#, probs=c(.025, .975))
+		, probs=c(0, 1))
 	range_k1_h_pars <- c(
 		floor(range_k1_h_pars[1]),
 		ceiling(range_k1_h_pars[2])
 	)
 	
 	range_k2_h_pars <- quantile(
-		unlist(lapply(ids@model@ratesSpecs, function(gene) {
-			rate <- gene[[1]][[ 2 ]]
-			switch(rate$type,
-						 "constant" = rate$params[1],
-						 "sigmoid" = rate$params[1:2],
-						 "impulse" = rate$params[1:3]
-			)
-		}))
-	, probs=c(.025, .975))
-	range_k2_h_pars <- c(
-		floor(range_k2_h_pars[1]),
-		ceiling(range_k2_h_pars[2])
-	)
-	
-	range_k3_h_pars <- quantile(
 		unlist(lapply(ids@model@ratesSpecs, function(gene) {
 			rate <- gene[[1]][[ 3 ]]
 			switch(rate$type,
@@ -86,7 +72,24 @@ define_parameter_ranges <- function(ids) {
 						 "impulse" = rate$params[1:3]
 			)
 		}))
-	, probs=c(.025, .975))
+	# , probs=c(.025, .975))
+	, probs=c(0, 1))
+	range_k2_h_pars <- c(
+		floor(range_k2_h_pars[1]),
+		ceiling(range_k2_h_pars[2])
+	)
+	
+	range_k3_h_pars <- quantile(
+		unlist(lapply(ids@model@ratesSpecs, function(gene) {
+			rate <- gene[[1]][[ 2 ]]
+			switch(rate$type,
+						 "constant" = rate$params[1],
+						 "sigmoid" = rate$params[1:2],
+						 "impulse" = rate$params[1:3]
+			)
+		}))
+	# , probs=c(.025, .975))
+	, probs=c(0, 1))
 	range_k3_h_pars <- c(
 		floor(range_k3_h_pars[1]),
 		ceiling(range_k3_h_pars[2])
@@ -114,7 +117,8 @@ define_parameter_ranges <- function(ids) {
 			)
 			c(k1_t, k2_t, k3_t)
 		}))
-	, probs=c(.025, .975))
+	# , probs=c(.025, .975))
+	, probs=c(0, 1))
 	# range_t_pars <- timetransf_inv(range_t_pars, logshift, linshift)
 	range_t_pars <- c(
 		floor(range_t_pars[1]), # (arrotonda per difetto al secondo decimale)
@@ -143,7 +147,8 @@ define_parameter_ranges <- function(ids) {
 			)
 			c(k1_t, k2_t, k3_t)
 		}))
-	, probs=c(.025, .975))
+	# , probs=c(.025, .975))
+	, probs=c(0, 1))
 	range_beta_pars <- c(
 		floor(range_beta_pars[1]),
 		ceiling(range_beta_pars[2])
@@ -196,9 +201,11 @@ RNAdynamicsAppMake <- function(data_selection,
 	experimental_preMRNAsd <- experiment$preMRNAsd
 	experimental_synthesissd <- experiment$synthesissd
 	if( !experiment$steady_state ) {
-		simulation_time <- experiment_tpts <- experiment$tpts	
-		# simulation_time <- seq(time_min,time_max,length.out=1000)
-		# simulation_time <- sort(unique(c(simulation_time, experiment_tpts)))
+		simulation_time <- experiment_tpts <- experiment$tpts
+		if( data_selection == 'User defined' ) {
+			simulation_time <- seq(min(simulation_time),max(simulation_time),length.out=1000)
+			# simulation_time <- sort(unique(c(simulation_time, experiment_tpts)))
+		}
 	} else {
 		experiment_tpts <- 0
 		simulation_time <- seq(0,16,length.out=1000)
@@ -414,8 +421,10 @@ RNAdynamicsAppPlot <- function(data_selection,
 	experimental_synthesissd <- experiment$synthesissd
 	if( !experiment$steady_state ) {
 		simulation_time <- experiment_tpts <- experiment$tpts	
-		# simulation_time <- seq(time_min,time_max,length.out=1000)
-		# simulation_time <- sort(unique(c(simulation_time, experiment_tpts)))
+		if( data_selection == 'User defined' ) {
+			simulation_time <- seq(min(simulation_time),max(simulation_time),length.out=1000)
+			# simulation_time <- sort(unique(c(simulation_time, experiment_tpts)))
+		}
 	} else {
 		experiment_tpts <- seq(0,16,by=4)
 		simulation_time <- seq(0,16,length.out=1000)
