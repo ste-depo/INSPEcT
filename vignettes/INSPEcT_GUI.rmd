@@ -118,7 +118,7 @@ As a consequence of this, steady state premature RNA levels are independent from
 
 ## Modulation of processing rate
 
-As mentioned above, steady state mature RNA levels are independent from processing rates. Nonetheless, a perturbation in the processing dynamics leads to a transient variation of mature RNA levels. Conversely, it produces a lasting effect on premature RNA levels. (Set rates to: synthesis = constant\{10\}; processing = sigmoidal\{5,20,8,5\}; degradation = constant\{2\})
+As mentioned above, steady state mature RNA levels are independent from processing rates. Nonetheless, a perturbation in the processing dynamics leads to a transient variation of mature RNA levels. Conversely, it produces a lasting effect on premature RNA levels. (Set rates to: synthesis = constant\{10\}; processing = sigmoidal\{5,20,8,1\}; degradation = constant\{2\})
 
 ```{r fig7,eval=TRUE,echo=FALSE, out.width="100%", fig.cap="Case study 2: modulation of processing rate.", fig.align="center"}
 knitr::include_graphics("INSPEcT_GUI_figures/case_study_2.png")
@@ -128,7 +128,7 @@ Noteworthy, a reduction in the rate of degradation reduces the amplitude of matu
 
 ## Modulation of the synthesis rate
 
-A modulation in the synthesis rate determines a similar modulation for premature and mature RNAs (in terms of fold change compared to the untreated condition). (Set rates to: synthesis = sigmoidal\{10,20,8,5\}; processing = constant\{20\}; degradation = constant\{2\})
+A modulation in the synthesis rate determines a similar modulation for premature and mature RNAs (in terms of fold change compared to the untreated condition). (Set rates to: synthesis = sigmoidal\{10,20,8,1\}; processing = constant\{20\}; degradation = constant\{2\})
 
 ```{r fig8,eval=TRUE,echo=FALSE, out.width="100%", fig.cap="Case study 3: modulation of synthesis rate.", fig.align="center"}
 knitr::include_graphics("INSPEcT_GUI_figures/case_study_3.png")
@@ -138,7 +138,7 @@ Noteworthy, the time-lag between the modulation of synthesis and the response of
 
 ## Concomitant modulation of synthesis and degradation rates
 
-When synthesis and degradation rates are modulated in the same direction, they apply an opposite effect on mature RNA levels, leaving trace of the transcriptional regulation only on premature RNA levels (a similar response has been observed in yeast, during heat shock responses). (Set rates to: synthesis = sigmoidal\{10,20,8,5\}; processing = constant\{20\}; degradation = sigmoidal\{0.25,0.5,8,5\}). Rather, the opposite modulation of synthesis and degradation reinforces the modulation of mature RNA. (Set degradation = sigmoidal\{0.5,0.25,8,5\})
+When synthesis and degradation rates are modulated in the same direction, they apply an opposite effect on mature RNA levels, leaving trace of the transcriptional regulation only on premature RNA levels (a similar response has been observed in yeast, during heat shock responses). (Set rates to: synthesis = sigmoidal\{10,20,8,1\}; processing = constant\{20\}; degradation = sigmoidal\{0.25,0.5,8,1\}). Rather, the opposite modulation of synthesis and degradation reinforces the modulation of mature RNA. (Set degradation = sigmoidal\{0.5,0.25,8,1\})
 
 ```{r fig9,eval=TRUE,echo=FALSE, out.width="100%", fig.cap="Case study 4: concomitant modulation of synthesis and degradation rates.", fig.align="center"}
 knitr::include_graphics("INSPEcT_GUI_figures/case_study_4.png")
