@@ -69,8 +69,6 @@ quantifyExpressionsFromTrCounts <- function(allcounts
 	if( ncol(exonsCounts) != ncol(intronsCounts) )
 		stop('quantifyExpressionsFromTrCounts: the elements "exonsCounts" and "intronsCounts" of "allcounts" must be matrices with the same numebr of columns.')
 	# experimentalDesign
-	if(all(table(experimentalDesign)==1))
-		stop("quantifyExpressionsFromTrCounts: at least one condition with replicates is required.")
 	if(length(experimentalDesign)!=ncol(exonsCounts))
 		stop('quantifyExpressionsFromTrCounts: each counts column must be accounted in the experimentalDesign')
 	# exonsWidths
@@ -109,6 +107,16 @@ quantifyExpressionsFromTrCounts <- function(allcounts
 	### ESTIMATE EXPRESSION AND VARIANCE #######
 	############################################
 
+	if(all(table(experimentalDesign)==1)) {
+		warnings("quantifyExpressionsFromTrCounts: at least one condition with replicates is required for further analysis.")
+		return(list(exonsExpressions = counts2expressions(exonsCounts,exonsWidths,libsize)
+								, intronsExpressions = counts2expressions(intronsCounts,intronsWidths,libsize)
+								, exonsVariance = matrix(1, nrow = nrow(exonsCounts), ncol = ncol(exonsCounts), 
+																				 dimnames = list(rownames(exonsCounts), colnames(exonsCounts)))
+								, intronsVariance = matrix(1, nrow = nrow(intronsCounts), ncol = ncol(intronsCounts),
+																					 dimnames = list(rownames(intronsCounts), colnames(intronsCounts)))
+		))
+	}
 
 	############## with DESeq2 #################
 	if(DESeq2)

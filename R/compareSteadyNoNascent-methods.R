@@ -35,7 +35,7 @@
 #' table(regGenes)
 setMethod('compareSteadyNoNascent', 'INSPEcT', function(inspectIds,
 	expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NULL, 
-	returnNormScores=FALSE, referenceCondition=NULL)
+	returnNormScores=FALSE, referenceCondition=NULL, plot=FALSE)
 {
 	if( !.hasSlot(inspectIds, 'version') ) {
 		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
@@ -59,6 +59,20 @@ setMethod('compareSteadyNoNascent', 'INSPEcT', function(inspectIds,
 		message(paste0("Trivial angle: ",standardCurveFit))
 	} else {
 		standardCurveFit <- trivialAngle		
+	}
+	
+	if( plot ) {
+		## palette for 2D density plots (similar to heat colors)
+		denscols <- c("#000099", "#00FEFF", "#45FE4F","#FCFF00", "#FF9400", "#FF3100")
+		denspalette <- colorRampPalette(c("#000099", "#00FEFF", "#45FE4F","#FCFF00", "#FF9400", "#FF3100"))
+		plot(log2(prematureMedian), log2(matureMedian), pch='.', xlab = 'log2 premature expression', ylab = 'log2 mature expression',
+				 col = densCols(log2(prematureMedian), log2(matureMedian), colramp = denspalette))
+		coef <- tan(standardCurveFit*pi/180)
+		intercept <- median(log2(matureMedian), na.rm=TRUE) - coef * median(log2(prematureMedian), na.rm=TRUE)
+		delta_intercept <- log2FCThreshold/cos(standardCurveFit*pi/180)
+		abline(intercept, coef); abline(intercept - delta_intercept, coef, lty=2); abline(intercept + delta_intercept, coef, lty=2)
+		abline(0,1,col=2)
+		legend('topleft', legend = c(paste0("Trivial angle: ",standardCurveFit), 'log2 FC threshold', '', 'k2 = k3 limit'), text.col=c(1,1,NA,2), bty='n', lty=c(1,2,NA,1), col=c(1,1,NA,2))
 	}
 
 	perc <- function(x) round(length(which(x))/length(x)*100)

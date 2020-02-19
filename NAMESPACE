@@ -10,16 +10,18 @@ importFrom("GenomicRanges","reduce","seqnames","start","end","strand","width","f
 importFrom("GenomeInfoDb","seqlengths","seqlevels","seqlevels<-")
 importFrom("graphics", "abline", "axis", "image", "layout", "legend","matplot", "matlines", "mtext", "par", "points", "smoothScatter", "plot", "segments", "text", "title")
 importFrom("grDevices", "colorRampPalette", "dev.off", "pdf")
-importFrom("IRanges", "IRanges", "psetdiff")
+importFrom("IRanges", "IRanges", "psetdiff", "Views")
 importFrom("rootSolve", "multiroot")
 importFrom("Rsamtools", "ScanBamParam")
 importFrom("S4Vectors","subjectHits","queryHits","subjectLength","elementNROWS")
 importFrom("stats", "approx", "density", "dist", "ecdf", "hclust", "lm","na.omit", "optim", "optimize", "pchisq", "pnorm", "predict", "quantile", "rnorm", "runif", "splinefun", "uniroot", "p.adjust", "pt")
 importFrom("utils", "capture.output", "read.csv", "read.table", "write.table", "head", "tail")
 importFrom("KernSmooth", "bkde2D")
+importFrom("rtracklayer", "import")
 
 export("newINSPEcT", "runINSPEcTGUI", "compareSteadyNoNascent", "inspectFromBAM", "inspectFromPCR",
-    "quantifyExpressionsFromBAMs", "quantifyExpressionsFromTrCounts", "quantifyExpressionsFromTrAbundance")
+    "quantifyExpressionsFromBAMs", "quantifyExpressionsFromBWs", "quantifyExpressionsFromTrCounts", 
+    "quantifyExpressionsFromTrAbundance")
 exportMethods( "[", "AIC", "calculateDelta", "calculateRatePvals", "calculateTau", "chisqmodel", "chisqtest", "combine",
     "compareSteady", "computeConfidenceIntervals", "convergence", "correlationPlot", "degradation", "dim", "featureNames", 
     "featureNames<-", "geneClass", "inHeatmap", "labeledSF", "logLik", "makeModelRates", "makeOscillatorySimModel", 
