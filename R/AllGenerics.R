@@ -110,11 +110,6 @@ setGeneric('inHeatmap', function(object, type='pre-model'
 #' Generate an object of class INSPEcT_diffsteady from an object of class INSPEcT
 setGeneric('compareSteady', function(inspectIds, BPPARAM=bpparam()) 
 	standardGeneric('compareSteady'))
-#' Compare mature RNA steady state data from an object of class INSPEcT
-setGeneric('compareSteadyNoNascent', function(inspectIds,
-	expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NULL, 
-	returnNormScores=FALSE, referenceCondition=NULL) 
-	standardGeneric('compareSteadyNoNascent'))
 #' Classify genes as delayed by the processing using the delta and tau metrics
 setGeneric('processingDelay', function(inspectIds, tauThreshold=1.2,deltaThreshold=1.0, silent=TRUE) 
 	standardGeneric('processingDelay'))
@@ -138,4 +133,44 @@ setGeneric('synthesis', function(object) standardGeneric('synthesis'))
 setGeneric('processing', function(object) standardGeneric('processing'))
 #' @rdname INSPEcT_diffsteady-class
 setGeneric('degradation', function(object) standardGeneric('degradation'))
+
+###############################################
+# generics for class INSPEcT_steadyNoNascent ####
+###############################################
+
+#' Get premature RNA expressions from an object of class INSPEcT_diffsteady
+setGeneric('premature', function(object) 
+	standardGeneric('premature'))
+#' Get mature RNA expressions from an object of class INSPEcT_diffsteady
+setGeneric('mature', function(object) 
+	standardGeneric('mature'))
+
+#' Calculate post-transcriptional ratio from an object of class INSPEcT_diffsteady
+setGeneric('PTratio', function(object, infToNA=TRUE) 
+	standardGeneric('PTratio'))
+
+#' Get premature RNA expressions variances from an object of class INSPEcT_diffsteady
+setGeneric('prematureVar', function(object) 
+	standardGeneric('prematureVar'))
+#' Get mature RNA expressions variances from an object of class INSPEcT_diffsteady
+setGeneric('matureVar', function(object) 
+	standardGeneric('matureVar'))
+
+#' Identify post-transcriptionally regulated genes from an object of class INSPEcT_diffsteady
+setGeneric('compareSteadyNoNascent', function(inspectIds,
+														 expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NaN, 
+														 returnNormScores=FALSE, referenceCondition=NULL, plot=FALSE) 
+	standardGeneric('compareSteadyNoNascent'))
+
+#' Calculate the post-transcriptional ratio from an object of class INSPEcT_diffsteady
+setGeneric('PTreg', function(object) 
+	standardGeneric('PTreg'))
+
+#' Plot the premature/mature trend from an object of class INSPEcT_diffsteady
+setGeneric('plotPMtrend', function(inspectIds) 
+	standardGeneric('plotPMtrend'))
+
+#' Plot the premature/mature expression of a gene and the global trend from an object of class INSPEcT_diffsteady
+setGeneric('plotPMgene', function(object, gene_id, samples_colors=1) 
+	standardGeneric('plotPMgene'))
 

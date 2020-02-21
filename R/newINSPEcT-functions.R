@@ -368,33 +368,18 @@ newINSPEcT <- function(tpts
 												   , BPPARAM = BPPARAM
 												   , modellingParameters = list(Dmin = Dmin, Dmax = Dmax)
 												   , genesFilter = genesFilter)
+			return(createInspectObject(out, NoNascent=TRUE))
 		} else {
-			na_matrix <- matrix(NaN, nrow(rpkms_total_exons), ncol(rpkms_total_exons))
-			out <- list(
-				tpts = tpts
-				, concentrations = list(
-					total = rpkms_total_exons
-					, total_var = rpkms_total_exons_variances
-					, preMRNA = rpkms_total_introns
-					, preMRNA_var = rpkms_total_introns_variances
-					, labeled_total = na_matrix
-					, labeled_total_var = na_matrix
-					, labeled_preMRNA = na_matrix
-					, labeled_preMRNA_var = na_matrix
-					)
-				, rates = list(
-					alpha = na_matrix 
-					, alpha_var = na_matrix 
-					, beta = na_matrix 
-					, gamma = na_matrix 
-					)
-				, ratesEstimPrec = na_matrix
-				, ratesFirstGuessP = na_matrix[,1]
-				, geneNames = eiGenes
-				)
+			####### generate the INSPEcT_steadyNoNascent-class #########
+			object <- new('INSPEcT_steadyNoNascent')
+			object@sampleNames <- tpts
+			object@geneNames <- rownames(rpkms_total_introns)
+			object@premature <- rpkms_total_introns
+			object@prematureVar <- rpkms_total_introns_variances
+			object@mature <- rpkms_total_exons - rpkms_total_introns
+			object@matureVar <- rpkms_total_exons_variances + rpkms_total_introns_variances
+			return(object)
 		}
-		## return the results in the form of an INSPEcT object.
-		return(createInspectObject(out, NoNascent=TRUE))			
 	} 
 
 	###### Simulated data mode (do not provide nascent introns to the compute of RNA dynamics): 
