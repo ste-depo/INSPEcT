@@ -7,7 +7,7 @@
 #' @param experimentalDesign A numerical which reports the desing of the experiment in terms of time points and replicates.
 #' Time points must be ordered according to the sequence of files submitted for the analysis, these labels characterize
 #' different files as replicates of a given condition.
-#' @readLength A numerical that indicates the read length of the RNA-seq experiment. Used to normalize the coverage. By default, 50.
+#' @param readLength A numerical that indicates the read length of the RNA-seq experiment. Used to normalize the coverage. By default, 50.
 #' @param by A character, either "gene" or "tx", indicating if expressions and counts should be summarized at the levels of 
 #' genes or transcripts. "gene" by default.
 #' In case "tx" is selected, we suggest to set argument "allowMultiOverlap" to TRUE, otherwise the reads mapping to overlapping

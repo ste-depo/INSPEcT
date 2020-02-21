@@ -19,7 +19,7 @@ importFrom("utils", "capture.output", "read.csv", "read.table", "write.table", "
 importFrom("KernSmooth", "bkde2D")
 importFrom("rtracklayer", "import")
 
-export("newINSPEcT", "runINSPEcTGUI", "compareSteadyNoNascent", "inspectFromBAM", "inspectFromPCR",
+export("newINSPEcT", "runINSPEcTGUI", "inspectFromBAM", "inspectFromPCR",
     "quantifyExpressionsFromBAMs", "quantifyExpressionsFromBWs", "quantifyExpressionsFromTrCounts", 
     "quantifyExpressionsFromTrAbundance")
 exportMethods( "[", "AIC", "calculateDelta", "calculateRatePvals", "calculateTau", "chisqmodel", "chisqtest", "combine",
@@ -28,5 +28,6 @@ exportMethods( "[", "AIC", "calculateDelta", "calculateRatePvals", "calculateTau
     "makeSimDataset", "makeSimModel", "modelingParams", "modelRates", "modelRatesNF", "modelSelection", 
     "nGenes", "nTpts", "plotGene", "plotMA", "processing", "processingDelay", "ratePvals", 
     "ratesFirstGuess","ratesFirstGuessVar", "removeModel", "rocCurve", "rocThresholds", "show", "split", "synthesis", 
-    "tpts", "viewConfidenceIntervals", "viewModelRates")
-exportClasses("INSPEcT", "INSPEcT_model", "INSPEcT_diffsteady")
+    "tpts", "viewConfidenceIntervals", "viewModelRates", "premature", "mature", "PTratio", "PTreg", "plotPMtrend", "plotPMgene",
+    "compareSteadyNoNascent")
+exportClasses("INSPEcT", "INSPEcT_model", "INSPEcT_diffsteady", "INSPEcT_steadyNoNascent")
