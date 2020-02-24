@@ -65,9 +65,9 @@ setMethod('matureVar', 'INSPEcT_steadyNoNascent', function(object)
 #' @param inspectIds An object of class INSPEcT_steadyNoNascent
 #' @param expressionThreshold A parameter which sets how many log2 fold changes of distance from the median behaviour are imputable to noise.
 #' @param log2FCThreshold A parameter which sets the log2 fold change distance from the median behaviour that is imputable to noise.
-#' @param trivialAngle A numeric between 0 and 90 to define the standard behavior, if NULL (default) it is computed internally from the data.
+#' @param trivialAngle A numeric between 0 and 90 to define the standard behavior, if NaN (default) it is computed internally from the data.
 #' @param returnNormScores A logical, if TRUE returned the deviations from the standard behavior normalized by the sd.
-#' @param referenceCondition The label of the condition to use as reference, if NULL (default) the medians are used.
+#' @param referenceCondition The label of the condition to use as reference, if NaN (default) the medians are used.
 #' @examples
 #' data('allcounts', package='INSPEcT')
 #' data('featureWidths', package='INSPEcT')
@@ -95,7 +95,7 @@ setMethod('matureVar', 'INSPEcT_steadyNoNascent', function(object)
 #' table(regGenes)
 setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectIds,
 																																	 expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NaN, 
-																																	 returnNormScores=FALSE, referenceCondition=NaN, plot=FALSE)
+																																	 returnNormScores=FALSE, referenceCondition=NaN)
 {
 	# if( !.hasSlot(inspectIds, 'version') ) {
 	# 	stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
@@ -186,7 +186,7 @@ setMethod('PTreg', 'INSPEcT_steadyNoNascent', function(object)
 #' linear in the log-log scale and generally points to an increase in the
 #' ratio between premature and mature RNA at increased levels of 
 #' expression
-#' @param object An object of class INSPEcT_steadyNoNascent
+#' @param inspectIds An object of class INSPEcT_steadyNoNascent
 setMethod('plotPMtrend', 'INSPEcT_steadyNoNascent', function(inspectIds) 
 {
 	premature <- premature(inspectIds)
@@ -260,6 +260,7 @@ setMethod('plotPMgene', 'INSPEcT_steadyNoNascent', function(object, gene_id, sam
 })
 
 #' @rdname INSPEcT_steadyNoNascent-class
+#' @param x An object of class INSPEcT_steadyNoNascent
 #' @param i A numeric, a vector of logicals indicating the rows to be extracted
 #' @param j A numeric, a vector of logicals indicating the columns to be extracted
 setMethod('[', 'INSPEcT_steadyNoNascent', function(x, i, j) {

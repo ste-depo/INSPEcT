@@ -1139,7 +1139,6 @@ NULL
 #' \item "main" - A character, the title of the plot, by default the name of the visualized rate.
 #' }
 #' @seealso \url{http://en.wikipedia.org/wiki/MA_plot}
-#' @rdname INSPEcT_diffsteady-class
 #' @examples
 #' if( Sys.info()["sysname"] != "Windows" ) {
 #'   data('allcounts', package='INSPEcT')

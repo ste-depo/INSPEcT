@@ -12,6 +12,8 @@
 \S4method{show}{INSPEcT_steadyNoNascent}(object)
 }
 \arguments{
+\item{x}{An object of class INSPEcT_steadyNoNascent}
+
 \item{i}{A numeric, a vector of logicals indicating the rows to be extracted}
 
 \item{j}{A numeric, a vector of logicals indicating the columns to be extracted}

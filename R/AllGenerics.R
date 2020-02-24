@@ -159,7 +159,7 @@ setGeneric('matureVar', function(object)
 #' Identify post-transcriptionally regulated genes from an object of class INSPEcT_diffsteady
 setGeneric('compareSteadyNoNascent', function(inspectIds,
 														 expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NaN, 
-														 returnNormScores=FALSE, referenceCondition=NULL, plot=FALSE) 
+														 returnNormScores=FALSE, referenceCondition=NULL) 
 	standardGeneric('compareSteadyNoNascent'))
 
 #' Calculate the post-transcriptional ratio from an object of class INSPEcT_diffsteady

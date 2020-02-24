@@ -572,13 +572,13 @@ This analysis is performed by the method *compareSteadyNoNascent* which takes as
 We noticed that the ratio $P$ over $M$ decreases along with the expression following a power law, which can be easily fitted in the log-log space by a linear model. This power law is calculated in the first step of the *compareSteadyNoNascent* analysis. Following that, genes that deviates from this trend across conditions are identified as differentially post-transcriptionally regulated.
 
 ```{r steadyStateTotal1, message=FALSE, warnings=FALSE, eval=TRUE}
-
 conditions <- letters[1:11]
 matureInspObj <- newINSPEcT(tpts=conditions
                            ,matureExpressions=matExp_DESeq2)
-regGenes<-compareSteadyNoNascent(inspectIds=matureInspObj
+matureInspObj<-compareSteadyNoNascent(inspectIds=matureInspObj
                   ,expressionThreshold=0.25
                   ,log2FCThreshold=.5)
+regGenes <- PTreg(matureInspObj)
 regGenes[1:6,1:5]
 table(regGenes, useNA='always')
 ```
