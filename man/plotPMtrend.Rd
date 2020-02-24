@@ -10,7 +10,7 @@ plotPMtrend(inspectIds)
 \S4method{plotPMtrend}{INSPEcT_steadyNoNascent}(inspectIds)
 }
 \arguments{
-\item{object}{An object of class INSPEcT_steadyNoNascent}
+\item{inspectIds}{An object of class INSPEcT_steadyNoNascent}
 }
 \description{
 Plot the null model estimated for the specific dataset. The null model

@@ -11,8 +11,7 @@ compareSteadyNoNascent(
   log2FCThreshold = 2,
   trivialAngle = NaN,
   returnNormScores = FALSE,
-  referenceCondition = NULL,
-  plot = FALSE
+  referenceCondition = NULL
 )
 
 \S4method{compareSteadyNoNascent}{INSPEcT_steadyNoNascent}(
@@ -21,8 +20,7 @@ compareSteadyNoNascent(
   log2FCThreshold = 2,
   trivialAngle = NaN,
   returnNormScores = FALSE,
-  referenceCondition = NaN,
-  plot = FALSE
+  referenceCondition = NaN
 )
 }
 \arguments{
@@ -32,11 +30,11 @@ compareSteadyNoNascent(
 
 \item{log2FCThreshold}{A parameter which sets the log2 fold change distance from the median behaviour that is imputable to noise.}
 
-\item{trivialAngle}{A numeric between 0 and 90 to define the standard behavior, if NULL (default) it is computed internally from the data.}
+\item{trivialAngle}{A numeric between 0 and 90 to define the standard behavior, if NaN (default) it is computed internally from the data.}
 
 \item{returnNormScores}{A logical, if TRUE returned the deviations from the standard behavior normalized by the sd.}
 
-\item{referenceCondition}{The label of the condition to use as reference, if NULL (default) the medians are used.}
+\item{referenceCondition}{The label of the condition to use as reference, if NaN (default) the medians are used.}
 }
 \description{
 This function compare exons and introns expression level matrices, from two up to an arbitrary number of samples, in order
