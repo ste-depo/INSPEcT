@@ -1,7 +1,7 @@
 Package: INSPEcT
 Type: Package
 Title: Modeling RNA synthesis, processing and degradation with RNA-seq data
-Version: 1.17.12
+Version: 1.17.13
 Date: 2019-11-25
 Author: Stefano de Pretis
 Maintainer: Stefano de Pretis <ste.depo@gmail.com>, 
@@ -11,7 +11,7 @@ Description: INSPEcT (INference of Synthesis, Processing and
 	in time-course experiments or steady-state conditions, with
 	or without the support of nascent RNA data.
 License: GPL-2
-Depends: R (>= 3.5), methods, Biobase, BiocParallel
+Depends: R (>= 3.6), methods, Biobase, BiocParallel
 Imports: pROC, deSolve, rootSolve, KernSmooth, gdata,
         GenomicFeatures, GenomicRanges, IRanges, BiocGenerics,
         GenomicAlignments, Rsamtools, S4Vectors, GenomeInfoDb,

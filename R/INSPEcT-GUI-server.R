@@ -1602,6 +1602,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 					rate_p = values$rate_p
 				)
 			}, silent = TRUE))
+			output_pars(modeling, inspect, experiment, input, ranges)
 			dev.off()  # turn the device off
 		}
 	)
@@ -1613,7 +1614,11 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 		},
 		# content is a function with argument file. content writes the plot to the device
 		content = function(file) {
-			write.table(modeling$simdata$sim, file=file, row.names = FALSE, quote = FALSE, sep = '\t')
+			parameters_report <- modeling_report(modeling, inspect, experiment, input, ranges)
+			writeLines(paste('#', parameters_report), file)
+			modeling_data <- modeling$simdata$sim
+			colnames(modeling_data)[2:6] <- paste(colnames(modeling_data)[2:6], 'model', sep='_')
+			suppressWarnings(write.table(modeling_data, file=file, row.names = FALSE, quote = FALSE, sep = '\t', append = TRUE, col.names = TRUE))
 		}
 	)
 	
