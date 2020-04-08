@@ -29,6 +29,118 @@
 
 ##########################
 
+getK1params <- function(input)
+	switch(input$k1_function,
+				 "Constant" = paste0("starting levels=",input$k1_h0),
+				 "Sigmoidal" = c(paste0("starting levels=",input$k1_h0,"; final levels=",input$k1_h1),
+				 								paste0("first response time=",input$k1_t1,"; slope=",input$k1_beta)),
+				 "Impulsive" = c(paste0("starting levels=",input$k1_h0,"; intermediate levels=",input$k1_h1),
+				 								paste0("final levels=",input$k1_h2,"; first response time=",input$k1_t1),
+				 								paste0("second response time=",input$k1_t2,"; slope:",input$k1_beta))
+	)
+
+getK2params <- function(input)
+	switch(input$k2_function,
+				 "Constant" = paste0("starting levels=",input$k2_h0),
+				 "Sigmoidal" = c(paste0("starting levels=",input$k2_h0,"; final levels=",input$k2_h1),
+				 								paste0("first response time=",input$k2_t1,"; slope=",input$k2_beta)),
+				 "Impulsive" = c(paste0("starting levels=",input$k2_h0,"; intermediate levels=",input$k2_h1),
+				 								paste0("final levels=",input$k2_h2,"; first response time=",input$k2_t1),
+				 								paste0("second response time=",input$k2_t2,"; slope:",input$k2_beta))
+	)
+
+getK3params <- function(input)
+	switch(input$k3_function,
+				 "Constant" = paste0("starting levels=",input$k3_h0),
+				 "Sigmoidal" = c(paste0("starting levels=",input$k3_h0,"; final levels=",input$k3_h1),
+				 								paste0("first response time=",input$k3_t1,"; slope=",input$k3_beta)),
+				 "Impulsive" = c(paste0("starting levels=",input$k3_h0,"; intermediate levels=",input$k3_h1),
+				 								paste0("final levels=",input$k3_h2,"; first response time=",input$k3_t1),
+				 								paste0("second response time=",input$k3_t2,"; slope:",input$k3_beta))
+	)
+
+# getK2params <- function(input)
+# 	switch(input$k2_function,
+# 				 "Constant" = c("starting levels:"=input$k2_h0),
+# 				 "Sigmoidal" = c("starting levels:"=input$k2_h0, 
+# 				 								"final levels:"=input$k2_h1, 
+# 				 								"first response time:"=input$k2_t1, 
+# 				 								"slope:"=input$k2_beta),
+# 				 "Impulsive" = c("starting levels:"=input$k2_h0, 
+# 				 								"intermediate levels:"=input$k2_h1, 
+# 				 								"final levels:"=input$k2_h2, 
+# 				 								"first response time:"=input$k2_t1, 
+# 				 								"second response time:"=input$k2_t2, 
+# 				 								"slope:"=input$k2_beta)
+# 	)
+# 
+# getK3params <- function(input)
+# 	switch(input$k3_function,
+# 				 "Constant" = c("starting levels:"=input$k3_h0),
+# 				 "Sigmoidal" = c("starting levels:"=input$k3_h0, 
+# 				 								"final levels:"=input$k3_h1, 
+# 				 								"first response time:"=input$k3_t1, 
+# 				 								"slope:"=input$k3_beta),
+# 				 "Impulsive" = c("starting levels:"=input$k3_h0, 
+# 				 								"intermediate levels:"=input$k3_h1, 
+# 				 								"final levels:"=input$k3_h2, 
+# 				 								"first response time:"=input$k3_t1, 
+# 				 								"second response time:"=input$k3_t2, 
+# 				 								"slope:"=input$k3_beta)
+# 	)
+
+modeling_report <- function(modeling, inspect, experiment, input, ranges) {
+	modeling_strategy <- if( experiment$steady_state ) {
+		mode <- 0
+		'stedy-state data, integrative framework'
+	} else {
+		if( inspect$mod_method == 'int' ) {
+			mode <- 1
+			'time-course data, integrative framework'
+		} else {
+			mode <- 2
+			'time-course data, derivative framework'
+		}
+	}
+	first_rate_name <- if( mode == 1 ) 'Synthesis rate' else 'Mature RNA'
+	legend_text <- c()
+	legend_text <- c(legend_text, paste("Usage:" , input$data_selection))
+	legend_text <- c(legend_text, '')
+	legend_text <- c(legend_text, '---- Modeling parameters ----')
+	legend_text <- c(legend_text, '')
+	legend_text <- c(legend_text, paste("Modeling strategy:" , modeling_strategy))
+	legend_text <- c(legend_text, paste("Time range:" , paste('[',ranges$time_min,',',ranges$time_max,']')))
+	legend_text <- c(legend_text, '')
+	legend_text <- c(legend_text, paste(first_rate_name, "modeled with" , input$k1_function, "functional form, with parameters:"))
+	legend_text <- c(legend_text, getK1params(input))
+	legend_text <- c(legend_text, '')
+	legend_text <- c(legend_text, paste("Processing rate modeled with" , input$k2_function, "functional form, with parameters:"))
+	legend_text <- c(legend_text, getK2params(input))
+	# legend_text <- c(legend_text, paste(getK2params(input), collapse='; '))
+	legend_text <- c(legend_text, '')
+	legend_text <- c(legend_text, paste("Degradation rate modeled with" , input$k3_function, "functional form, with parameters:"))
+	legend_text <- c(legend_text, getK3params(input))
+	# legend_text <- c(legend_text, paste(getK3params(input), collapse='; '))
+	if( input$data_selection != 'User defined' ) {
+		legend_text <- c(legend_text, '')
+		legend_text <- c(legend_text, '---- Fit results ----')
+		legend_text <- c(legend_text, '')
+		legend_text <- c(legend_text, paste("goodness of fit (p-value):", as.character(signif(isolate(modeling$simdata$scores$pchisq),3))))
+		legend_text <- c(legend_text, paste("Akaike information criterion:", as.character(signif(isolate(modeling$simdata$scores$aic),3))))
+	}
+	return(legend_text)
+}
+
+output_pars <- function(modeling, inspect, experiment, input, ranges) {
+
+	legend_text <- modeling_report(modeling, inspect, experiment, input, ranges)
+	par(mfrow=c(1,1), mar=c(1,1,1,1))
+	plot.new()
+	legend('center', legend=legend_text, bty='n')
+}
+
+##########################
+
 # convert_gene_classes <- function(gene_classes) {
 # 	diz <- c('0'='KKK', 'a'='VKK', 'b'='KKV', 'c'='KVK',
 # 		'ab'='VKV', 'ac'='VVK', 'bc'='KVV', 'abc'='VVV')
