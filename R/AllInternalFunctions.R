@@ -1291,7 +1291,7 @@ errorVVV_Der_NoNascent <- function(parameters
 	return(sum(c(prematureChiSquare,matureChiSquare)))
 }
 
-inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=75, BPPARAM=bpparam()) 
+inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=75, BPPARAM=SerialParam()) 
 	####### accurate function for estimating the degradation rates
 	####### using the solution of the differential equation system under 
 	####### the condtion that degradation rate is constant between two 
@@ -1331,7 +1331,7 @@ inferKBetaFromIntegralWithPre <- function(tpts, alpha, total, preMRNA, maxBeta=7
 
 counts2expressions <- function(counts, widths, libsize) counts*(10^9/(widths[rownames(counts)]%o%libsize))
 countVar2expressions <- function(vars, widths, libsize) vars*(10^9/(widths%o%libsize))^2
-inferKGammaFromIntegral <- function(tpts, alpha, preMRNA, maxGamma=150, BPPARAM=bpparam())
+inferKGammaFromIntegral <- function(tpts, alpha, preMRNA, maxGamma=150, BPPARAM=SerialParam())
 	####### accurate function for estimating the degradation rates
 	####### using the solution of the differential equation system under 
 	####### the condtion that processing rate is constant between two 
