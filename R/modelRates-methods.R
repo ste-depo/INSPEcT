@@ -21,7 +21,7 @@
 #' @param Dmin lower bondary for degradation rates in the NoNascent mode (default 1e-06)
 #' @param Dmax upper bondary for degradation rates in the NoNascent mode (default 10)
 #' @param seed A numeric, indicatindg the seed to be set for reproducible results. If NULL it is randomly selected (default NULL)
-#' @param BPPARAM Parallelization parameters for bplapply. By default bpparam()
+#' @param BPPARAM Parallelization parameters for bplapply. By default SerialParam()
 #' @return An object of class INSPEcT with modeled rates
 #' @seealso \code{\link{viewModelRates}}, \code{\link{calculateRatePvals}}, \code{\link{geneClass}}
 #' @examples
@@ -44,7 +44,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 																						, Dmin = 1e-06
 																						, Dmax = 10
 																						, seed = NULL
-																						, BPPARAM = bpparam())
+																						, BPPARAM = SerialParam())
 {
 	if( !.hasSlot(object, 'version') ) {
 		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")

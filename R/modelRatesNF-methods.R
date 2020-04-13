@@ -5,7 +5,7 @@
 #' \code{\link{newINSPEcT}} that will be used to estimate the variability of each rate in \code{\link{ratePvals}}
 #' method.
 #' @param object An object of class INSPEcT
-#' @param BPPARAM Parallelization parameters for bplapply. By default bpparam()
+#' @param BPPARAM Parallelization parameters for bplapply. By default SerialParam()
 #' @return An object of class INSPEcT with modeled rates
 #' @examples
 #' if( Sys.info()["sysname"] != "Windows" ) {
@@ -390,7 +390,7 @@ estimate_priors <- function(
 	genesFilter=TRUE,
 	Dmin=1e-06,
 	Dmax=10,
-	BPPARAM=bpparam()
+	BPPARAM=SerialParam()
 	) 
 {
 	k3Prior <- firstStep_NoNascent(tpts = tpts
@@ -588,7 +588,7 @@ classify_rates_from_priors_4sU_v5 <- function(
 	llConfidenceThreshold=qchisq(.95,1),
 	Dmin=1e-06,
 	Dmax=10,
-	BPPARAM=bpparam()
+	BPPARAM=SerialParam()
 	) 
 {
 	mature <- total - premature
@@ -799,7 +799,7 @@ classify_rates_from_priors_v5 <- function(
 	llConfidenceThreshold=qchisq(.95,1),
 	Dmin=1e-06,
 	Dmax=10,
-	BPPARAM=bpparam()
+	BPPARAM=SerialParam()
 	) 
 {
 	mature <- total - premature

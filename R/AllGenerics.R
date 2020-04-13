@@ -28,7 +28,7 @@ setGeneric('geneClass', function(object, ...)
 setGeneric('makeModelRates', function(object, ...) 
 	standardGeneric('makeModelRates'))
 #' Compute confidence intervals
-setGeneric('computeConfidenceIntervals', function(object, BPPARAM=bpparam()) 
+setGeneric('computeConfidenceIntervals', function(object, BPPARAM=SerialParam()) 
 	standardGeneric('computeConfidenceIntervals'))
 #' Set confidence intervals
 setGeneric('setConfidenceIntervals', function(object, confidenceIntervals) 
@@ -78,7 +78,7 @@ setGeneric('ratesFirstGuessVar', function(object, feature)
 #' @description Launch the modeling process with parameters set with \code{\link{modelingParams}}
 setGeneric('modelRates', function(object, estimateRatesWith = c('der', 'int'), useSigmoidFun = TRUE, 
 																	nInit = 10, nIter = 300, Dmin = 1e-06, Dmax = 10, 
-																	seed=NULL, BPPARAM=bpparam())
+																	seed=NULL, BPPARAM=SerialParam())
 	standardGeneric('modelRates'))
 #' Launch the modeling process without imposing sigmoid/impulse functional form
 setGeneric('modelRatesNF', function(object, BPPARAM=SerialParam()) 
@@ -108,7 +108,7 @@ setGeneric('inHeatmap', function(object, type='pre-model'
 	, show_rowLabels=TRUE, clustering=TRUE, clustIdx=3:5)
 	standardGeneric('inHeatmap'))
 #' Generate an object of class INSPEcT_diffsteady from an object of class INSPEcT
-setGeneric('compareSteady', function(inspectIds, BPPARAM=bpparam()) 
+setGeneric('compareSteady', function(inspectIds, BPPARAM=SerialParam()) 
 	standardGeneric('compareSteady'))
 #' Classify genes as delayed by the processing using the delta and tau metrics
 setGeneric('processingDelay', function(inspectIds, tauThreshold=1.2,deltaThreshold=1.0, silent=TRUE) 

@@ -6,7 +6,7 @@
 #' The two INSPEcT objects must have been profiled with replicates in order to provide
 #' a statistical significance to the differences between their rates.
 #' @param inspectIds An object of calss INSPEcT with two conditions
-#' @param BPPARAM Configuration for BiocParallel parallelization. By default is set to bpparam()
+#' @param BPPARAM Configuration for BiocParallel parallelization. By default is set to SerialParam()
 #' @return An object of class INSPEcT_diffsteady which contains both the absolute 
 #' quantification of the rates as well as the comparison with the statistical significance
 #' associated for each gene and rate. (See \code{\link{INSPEcT_diffsteady-class}})
@@ -44,7 +44,7 @@
 #'   
 #'   diffrates = compareSteady(nasFullObj[,c(1,11)])
 #' }
-setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=bpparam()) 
+setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=SerialParam()) 
 {
 
 	if( length(tpts(inspectIds))!=2 ) stop('compareSteady: two conditions at the time can be compared.')
