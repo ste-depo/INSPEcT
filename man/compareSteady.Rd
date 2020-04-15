@@ -5,14 +5,14 @@
 \alias{compareSteady,INSPEcT-method}
 \title{Generate an object of class INSPEcT_diffsteady from an object of class INSPEcT}
 \usage{
-compareSteady(inspectIds, BPPARAM = bpparam())
+compareSteady(inspectIds, BPPARAM = SerialParam())
 
-\S4method{compareSteady}{INSPEcT}(inspectIds, BPPARAM = bpparam())
+\S4method{compareSteady}{INSPEcT}(inspectIds, BPPARAM = SerialParam())
 }
 \arguments{
 \item{inspectIds}{An object of calss INSPEcT with two conditions}
 
-\item{BPPARAM}{Configuration for BiocParallel parallelization. By default is set to bpparam()}
+\item{BPPARAM}{Configuration for BiocParallel parallelization. By default is set to SerialParam()}
 }
 \value{
 An object of class INSPEcT_diffsteady which contains both the absolute 
