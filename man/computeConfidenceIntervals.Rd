@@ -5,14 +5,14 @@
 \alias{computeConfidenceIntervals,INSPEcT-method}
 \title{Compute confidence intervals}
 \usage{
-computeConfidenceIntervals(object, BPPARAM = bpparam())
+computeConfidenceIntervals(object, BPPARAM = SerialParam())
 
-\S4method{computeConfidenceIntervals}{INSPEcT}(object, BPPARAM = bpparam())
+\S4method{computeConfidenceIntervals}{INSPEcT}(object, BPPARAM = SerialParam())
 }
 \arguments{
 \item{object}{An object of class INSPEcT_model}
 
-\item{BPPARAM}{Parallelization parameters for bplapply. By default bpparam()}
+\item{BPPARAM}{Parallelization parameters for bplapply. By default SerialParam()}
 }
 \value{
 An object of class INSPEcT.
