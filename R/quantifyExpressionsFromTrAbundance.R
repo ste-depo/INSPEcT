@@ -27,8 +27,6 @@ quantifyExpressionsFromTrAbundance <- function(trAbundaces
 		if( ncol(exonsAbundances) != ncol(intronsAbundances) )
 			stop('quantifyExpressionsFromTrAbundance: the elements "exonsAbundances" and "intronsAbundances" of "trAbundaces" must be matrices with the same numebr of columns.')
 		# experimentalDesign
-		if(all(table(experimentalDesign)==1))
-			stop("quantifyExpressionsFromTrAbundance: at least one condition with replicates is required.")
 		if(length(experimentalDesign)!=ncol(exonsAbundances))
 			stop('quantifyExpressionsFromTrAbundance: each counts column must be accounted in the experimentalDesign')
 		# varSamplingCondition
@@ -61,9 +59,19 @@ quantifyExpressionsFromTrAbundance <- function(trAbundaces
 		}		
 	}
 
-	expressionsExons <- exonsAbundances
+	if(all(table(experimentalDesign)==1)) {
+		warning("quantifyExpressionsFromTrAbundance: at least one condition with replicates is required for further analysis.")
+		return(list(exonsExpressions = exonsAbundances
+								, intronsExpressions = intronsAbundances
+								, exonsVariance = matrix(1, nrow = nrow(exonsAbundances), ncol = ncol(exonsAbundances), 
+																				 dimnames = list(rownames(exonsAbundances), colnames(exonsAbundances)))
+								, intronsVariance = matrix(1, nrow = nrow(intronsAbundances), ncol = ncol(intronsAbundances), 
+																					 dimnames = list(rownames(intronsAbundances), colnames(intronsAbundances)))
+								))
+	}
 	
 	message('Powerlaw fit for exons')
+	expressionsExons <- exonsAbundances
 	if( is.numeric(experimentalDesign) ) 
 		experimentalDesign= signif(experimentalDesign,9)	
 	exprData <- expressionsExons

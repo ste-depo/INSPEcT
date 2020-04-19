@@ -35,8 +35,6 @@
 #'  
 #'   rocThresholds(simRates[1:100],nascentSim2replicates)
 #' }
-
-#' @rdname rocThresholds
 setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT'), function(object, object2, xlim=c(1e-5,1), plot=TRUE)
 {
 	if( !.hasSlot(object2, 'version') ) {

@@ -150,7 +150,7 @@ setClass('INSPEcT',
 				 	NoNascent=FALSE,
 				 	NF=FALSE,
 				 	degDuringPulse=FALSE,
-				 	version='1.17.1'
+				 	version='1.17.11'
 				 )
 )
 
@@ -183,3 +183,43 @@ setClass('INSPEcT_diffsteady',
 		, modeling_res='data.frame'
 		)
 	)
+
+###### add the description of the INSPEcT_steadyNoNascent-class ##########
+
+#' An S4 class to represent steady-state analysis without nascent RNA
+#'
+#' @description
+#' INSPEcT_steadyNoNascent is a class able to store data and arguments that are necessary to 
+#' make the analysis concerning premature and mature expressions in different samples. In 
+#' particular, the ratio between mature and premature can be calculated, which reflects
+#' the ratio between the rates of processing and degradation in individaul genes 
+#' (see \code{\link{PTratio}}), and the analysis of post-transcriptionally regualted genes
+#' can be run to identify genes that in specfic samples show a trand which cannot be attributed
+#' to transcriptional regulation alone (see \code{\link{PTreg}}).
+#' @slot sampleNames Vector with the names of the samples (columns of the dataset)
+#' @slot geneNames Vector with the names of the genes (rows of the dataset)
+#' @slot premature Matrix containing the expressions of the premature RNAs (row=genes, columns=samples)
+#' @slot mature Matrix containing the expressions of the emature RNAs (row=genes, columns=samples)
+#' @slot prematureVar Matrix containing the expressions variances of the premature RNAs (row=genes, columns=samples)
+#' @slot matureVar Matrix containing the expressions variances of the emature RNAs (row=genes, columns=samples)
+#' @slot trivialAngle Numeric that indicates the angle (slope) of the linear model between mature and premature expressions
+#' @slot log2FCThreshold Numeric that describes the threshold of the variation to be considered significant
+#' @slot expressionThreshold Numeric that describes the threshold of the expression to consider the gene expressed
+#' @slot referenceCondition A sample identifier that set the reference for the post-transcriptional regulation analysis, 
+#' if NULL the median of all samples is used
+#' @slot ptreg Matrix containing the post-transcriptioanl regulation state of each gene in the different samples (row=genes, columns=samples)
+setClass('INSPEcT_steadyNoNascent', 
+				 slots=c(
+				 	sampleNames='character',
+				 	geneNames='character',
+				 	premature='matrix',
+				 	mature='matrix',
+				 	prematureVar='matrix',
+				 	matureVar='matrix',
+				 	trivialAngle='numeric',
+				 	log2FCThreshold='numeric',
+				 	expressionThreshold='numeric',
+				 	referenceCondition='numeric',
+				 	ptreg='matrix'
+				 )
+)

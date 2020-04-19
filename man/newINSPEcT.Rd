@@ -10,7 +10,7 @@ newINSPEcT(
   nascentExpressions = NULL,
   matureExpressions,
   preexisting = FALSE,
-  BPPARAM = bpparam(),
+  BPPARAM = SerialParam(),
   labeledSF = NULL,
   simulatedData = FALSE,
   degDuringPulse = FALSE,
@@ -30,7 +30,7 @@ newINSPEcT(
 
 \item{preexisting}{A logical, indicating if the mature expression refers to the pre-exising (unlabeled) population. Not implemented yet for the "degDuringPulse" mode.}
 
-\item{BPPARAM}{Configuration for BiocParallel parallelization. By default is set to bpparam()}
+\item{BPPARAM}{Configuration for BiocParallel parallelization. By default is set to SerialParam()}
 
 \item{labeledSF}{A vector storing user defined normalization scale over Nascent RNA exons and introns quantifications}
 

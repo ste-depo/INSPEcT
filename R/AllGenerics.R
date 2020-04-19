@@ -28,7 +28,7 @@ setGeneric('geneClass', function(object, ...)
 setGeneric('makeModelRates', function(object, ...) 
 	standardGeneric('makeModelRates'))
 #' Compute confidence intervals
-setGeneric('computeConfidenceIntervals', function(object, BPPARAM=bpparam()) 
+setGeneric('computeConfidenceIntervals', function(object, BPPARAM=SerialParam()) 
 	standardGeneric('computeConfidenceIntervals'))
 #' Set confidence intervals
 setGeneric('setConfidenceIntervals', function(object, confidenceIntervals) 
@@ -78,7 +78,7 @@ setGeneric('ratesFirstGuessVar', function(object, feature)
 #' @description Launch the modeling process with parameters set with \code{\link{modelingParams}}
 setGeneric('modelRates', function(object, estimateRatesWith = c('der', 'int'), useSigmoidFun = TRUE, 
 																	nInit = 10, nIter = 300, Dmin = 1e-06, Dmax = 10, 
-																	seed=NULL, BPPARAM=bpparam())
+																	seed=NULL, BPPARAM=SerialParam())
 	standardGeneric('modelRates'))
 #' Launch the modeling process without imposing sigmoid/impulse functional form
 setGeneric('modelRatesNF', function(object, BPPARAM=SerialParam()) 
@@ -108,13 +108,8 @@ setGeneric('inHeatmap', function(object, type='pre-model'
 	, show_rowLabels=TRUE, clustering=TRUE, clustIdx=3:5)
 	standardGeneric('inHeatmap'))
 #' Generate an object of class INSPEcT_diffsteady from an object of class INSPEcT
-setGeneric('compareSteady', function(inspectIds, BPPARAM=bpparam()) 
+setGeneric('compareSteady', function(inspectIds, BPPARAM=SerialParam()) 
 	standardGeneric('compareSteady'))
-#' Compare mature RNA steady state data from an object of class INSPEcT
-setGeneric('compareSteadyNoNascent', function(inspectIds,
-	expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NULL, 
-	returnNormScores=FALSE, referenceCondition=NULL) 
-	standardGeneric('compareSteadyNoNascent'))
 #' Classify genes as delayed by the processing using the delta and tau metrics
 setGeneric('processingDelay', function(inspectIds, tauThreshold=1.2,deltaThreshold=1.0, silent=TRUE) 
 	standardGeneric('processingDelay'))
@@ -138,4 +133,44 @@ setGeneric('synthesis', function(object) standardGeneric('synthesis'))
 setGeneric('processing', function(object) standardGeneric('processing'))
 #' @rdname INSPEcT_diffsteady-class
 setGeneric('degradation', function(object) standardGeneric('degradation'))
+
+###############################################
+# generics for class INSPEcT_steadyNoNascent ####
+###############################################
+
+#' Get premature RNA expressions from an object of class INSPEcT_diffsteady
+setGeneric('premature', function(object) 
+	standardGeneric('premature'))
+#' Get mature RNA expressions from an object of class INSPEcT_diffsteady
+setGeneric('mature', function(object) 
+	standardGeneric('mature'))
+
+#' Calculate post-transcriptional ratio from an object of class INSPEcT_diffsteady
+setGeneric('PTratio', function(object, infToNA=TRUE) 
+	standardGeneric('PTratio'))
+
+#' Get premature RNA expressions variances from an object of class INSPEcT_diffsteady
+setGeneric('prematureVar', function(object) 
+	standardGeneric('prematureVar'))
+#' Get mature RNA expressions variances from an object of class INSPEcT_diffsteady
+setGeneric('matureVar', function(object) 
+	standardGeneric('matureVar'))
+
+#' Identify post-transcriptionally regulated genes from an object of class INSPEcT_diffsteady
+setGeneric('compareSteadyNoNascent', function(inspectIds,
+														 expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NaN, 
+														 returnNormScores=FALSE, referenceCondition=NULL) 
+	standardGeneric('compareSteadyNoNascent'))
+
+#' Calculate the post-transcriptional ratio from an object of class INSPEcT_diffsteady
+setGeneric('PTreg', function(object) 
+	standardGeneric('PTreg'))
+
+#' Plot the premature/mature trend from an object of class INSPEcT_diffsteady
+setGeneric('plotPMtrend', function(inspectIds) 
+	standardGeneric('plotPMtrend'))
+
+#' Plot the premature/mature expression of a gene and the global trend from an object of class INSPEcT_diffsteady
+setGeneric('plotPMgene', function(object, gene_id, samples_colors=1) 
+	standardGeneric('plotPMgene'))
 

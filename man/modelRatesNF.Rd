@@ -12,7 +12,7 @@ modelRatesNF(object, BPPARAM = SerialParam())
 \arguments{
 \item{object}{An object of class INSPEcT}
 
-\item{BPPARAM}{Parallelization parameters for bplapply. By default bpparam()}
+\item{BPPARAM}{Parallelization parameters for bplapply. By default SerialParam()}
 }
 \value{
 An object of class INSPEcT with modeled rates

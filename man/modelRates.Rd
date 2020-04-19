@@ -14,7 +14,7 @@ modelRates(
   Dmin = 1e-06,
   Dmax = 10,
   seed = NULL,
-  BPPARAM = bpparam()
+  BPPARAM = SerialParam()
 )
 
 \S4method{modelRates}{INSPEcT}(
@@ -26,7 +26,7 @@ modelRates(
   Dmin = 1e-06,
   Dmax = 10,
   seed = NULL,
-  BPPARAM = bpparam()
+  BPPARAM = SerialParam()
 )
 }
 \arguments{
@@ -51,7 +51,7 @@ to fit rates and concentrations. In case not, always impulse function is used.
 
 \item{seed}{A numeric, indicatindg the seed to be set for reproducible results. If NULL it is randomly selected (default NULL)}
 
-\item{BPPARAM}{Parallelization parameters for bplapply. By default bpparam()}
+\item{BPPARAM}{Parallelization parameters for bplapply. By default SerialParam()}
 }
 \value{
 An object of class INSPEcT with modeled rates
