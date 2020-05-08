@@ -1,3 +1,6 @@
+# FIX PM gene plot to include the confidence interval in the plot
+# FIX class slot for refernece condition to include the NaN / median option
+
 #' @rdname premature
 #' 
 #' @description
@@ -154,7 +157,7 @@ setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectI
 		colnames(scores) <- inspectIds@sampleNames
 		pi_angle <- standardCurveFit * pi/180
 		threshold <- log2FCThreshold/cos(pi_angle)
-		classification <- abs(scores)>threshold
+		classification <- abs(scores)>abs(threshold)
 		inspectIds@ptreg <- classification
 	}
 	return(inspectIds)
