@@ -335,9 +335,9 @@ newINSPEcT <- function(tpts
 		} else {
 			### in any case, filter out genes which have no signal in all observations
 			ix1 <- apply(rpkms_total_exons==0, 1, all)
-			ix2 <- apply(rpkms_total_exons_variances, 1, all)
-			ix3 <- apply(rpkms_total_introns, 1, all)
-			ix4 <- apply(rpkms_total_introns_variances, 1, all)
+			ix2 <- apply(rpkms_total_exons_variances==0, 1, all)
+			ix3 <- apply(rpkms_total_introns==0, 1, all)
+			ix4 <- apply(rpkms_total_introns_variances==0, 1, all)
 			filteroutGenes <- rownames(rpkms_total_exons)[ix1 | ix2 | ix3 | ix4 ]
 			if( length(filteroutGenes)>0 ) {
 				message(paste('Filtering out', length(filteroutGenes),'gene(s) with more all zeros in their exonic or intronic quantifications..'))
@@ -1959,12 +1959,12 @@ RNAdynamics_NoNascent <- function(totRpkms
 	totalVariance <- totRpkms$exons_var
 
 	# Constant post transcriptional rates and fixed post transcriptional ratio 
-	k3Prior <- firstStep_NoNascent(tpts = tpts
+	suppressWarnings(k3Prior <- firstStep_NoNascent(tpts = tpts
 							  ,mature = mature
 							  ,premature = premature
 							  ,matureVariance = matureVariance
 							  ,Dmin = Dmin
-							  ,Dmax = Dmax)
+							  ,Dmax = Dmax))
 	rownames(k3Prior) <- eiGenes
 
 	# Constant post transcriptional rates and variable post transcriptiona ratio
@@ -1988,13 +1988,13 @@ RNAdynamics_NoNascent <- function(totRpkms
 								,tpts = tpts
 								,premature = premature[row,]
 								,mature = mature[row,]
-								,matureVariance = matureVariance[row,])
-					,error=function(e)list(par = c(NaN,NaN), value = NaN, counts = NaN, convergence = NaN, message = "Optimization error."))[1:4])
+								,matureVariance = matureVariance[row,])[c('par','value','convergence')]
+					,error=function(e)list(par = c(NaN,NaN), value = NaN, convergence = NaN)))
 		},BPPARAM = BPPARAM))
 	}
-
+	
 	fits[,3] <- pchisq(fits[,3], length(tpts)-3)
-	colnames(fits) <- c('k2','k3','p','counts','gradient','convergence')
+	colnames(fits) <- c('k2','k3','p','convergence')
 	rownames(fits) <- eiGenes
 
 	# Correction of negative priors with the median
