@@ -16,7 +16,8 @@
 #' @param degDuringPulse A logical, set to TRUE in case of a long labelling time. Also degradation of newly synthesized transcripts will be taken into account
 #' @param Dmin A numerical, it is the lower bound of the degradation rate domain for the prior optimization 
 #' @param Dmax A numerical, it is the upper bound of the degradation rate domain for the prior optimization
-#' @param genesFilter A logical, if TRUE, filters out genes which have no signal in at least 2/3 of the observations
+#' @param genesFilter A logical, if TRUE, filters out genes which have no signal in at least a given fraction (2/3 by default) of the observations
+#' @param genesFilterThreshold A number, threshold to use for genes filtering (2/3 by default)
 #' @return An object of class INSPEcT with a first estimation of the rates which can be accessed by the method \code{\link{ratesFirstGuess}}
 #' @examples
 #' data('allcounts', package='INSPEcT')
@@ -49,7 +50,8 @@ newINSPEcT <- function(tpts
 					, degDuringPulse = FALSE
 					, Dmin = 1e-6
 					, Dmax = 10
-					, genesFilter = TRUE)
+					, genesFilter = TRUE
+					, genesFilterThreshold = 2/3)
 {
 
 	##################################
@@ -318,14 +320,14 @@ newINSPEcT <- function(tpts
 		# Filter genes according to expression levels (in case the flag is active)
 		if( genesFilter )
 		{
-			### filter out genes which have no signal in at least 2/3 of the time points in each feature
+			### filter out genes which have no signal in at least genesFilterThreshold of the time points in each feature
 			ix1 <- apply(rpkms_total_exons, 1, function(x) length(which(x==0)))/ncol(rpkms_total_exons)
 			ix2 <- apply(rpkms_total_exons_variances, 1, function(x) length(which(x==0)))/ncol(rpkms_total_exons_variances)
 			ix3 <- apply(rpkms_total_introns, 1, function(x) length(which(x==0)))/ncol(rpkms_total_introns)
 			ix4 <- apply(rpkms_total_introns_variances, 1, function(x) length(which(x==0)))/ncol(rpkms_total_introns_variances)
-			filteroutGenes <- rownames(rpkms_total_exons)[ix1>2/3 | ix2>2/3 | ix3>2/3 | ix4>2/3 ]
+			filteroutGenes <- rownames(rpkms_total_exons)[ix1>genesFilterThreshold | ix2>genesFilterThreshold | ix3>genesFilterThreshold | ix4>genesFilterThreshold ]
 			if( length(filteroutGenes)>0 ) {
-				message(paste('Filtering out', length(filteroutGenes),'gene(s) with more than 2/3 of zeros in their exonic or intronic quantifications..'))
+				message(paste('Filtering out', length(filteroutGenes),'gene(s) with more than ',round(100*genesFilterThreshold),'% of zeros in their exonic or intronic quantifications..'))
 				eiGenes <- eiGenes[!eiGenes %in% filteroutGenes]
 				rpkms_total_exons <- rpkms_total_exons[eiGenes, ,drop=FALSE]
 				rpkms_total_exons_variances <- rpkms_total_exons_variances[eiGenes, ,drop=FALSE]
@@ -428,12 +430,12 @@ newINSPEcT <- function(tpts
 	{
 		# Filter genes according to expression levels (in case the flag is active)
 		if( genesFilter ) {
-			### filter out genes which have no signal in at least 2/3 of the time points in each feature
+			### filter out genes which have no signal in at least genesFilterThreshold of the time points in each feature
 			ix1 <- apply(rpkms_Nascent_exons, 1, function(x) length(which(x==0)))/ncol(rpkms_Nascent_exons)
 			ix2 <- apply(rpkms_total_exons, 1, function(x) length(which(x==0)))/ncol(rpkms_total_exons)
-			filteroutGenes <- rownames(rpkms_Nascent_exons)[ix1>2/3 | ix2>2/3]
+			filteroutGenes <- rownames(rpkms_Nascent_exons)[ix1>genesFilterThreshold | ix2>genesFilterThreshold]
 			if( length(filteroutGenes)>0 ) {
-				message(paste('Filtering out', length(filteroutGenes), 'genes with more than 2/3 of zeros in their exonic quantifications.'))
+				message(paste('Filtering out', length(filteroutGenes), 'genes with more than ',round(100*genesFilterThreshold),'% of zeros in their exonic quantifications.'))
 				rpkms_Nascent_exons <- rpkms_Nascent_exons[!rownames(rpkms_Nascent_exons) %in% filteroutGenes, ,drop=FALSE]
 				rpkms_Nascent_exons_variances <- rpkms_Nascent_exons_variances[!rownames(rpkms_Nascent_exons_variances) %in% filteroutGenes, ,drop=FALSE]
 				rpkms_total_exons <- rpkms_total_exons[!rownames(rpkms_total_exons) %in% filteroutGenes, ,drop=FALSE]
@@ -517,49 +519,49 @@ newINSPEcT <- function(tpts
 
 		# Filter genes according to expression levels (in case the flag is active), separately for exonic and intronic features
 		if( genesFilter ) {
-			### filter out genes which have no signal in at least 2/3 of the time points in exonic features
+			### filter out genes which have no signal in at least genesFilterThreshold of the time points in exonic features
 			### in that case completely remove the gene (both intronic and exonic signal).
 			ix1 <- apply(rpkms_Nascent_exons, 1, function(x) length(which(x==0)))/ncol(rpkms_Nascent_exons)
 			ix2 <- apply(rpkms_total_exons, 1, function(x) length(which(x==0)))/ncol(rpkms_total_exons)
-			filteroutGenes <- rownames(rpkms_Nascent_exons)[ix1>2/3 | ix2>2/3]
+			filteroutGenes <- rownames(rpkms_Nascent_exons)[ix1>genesFilterThreshold | ix2>genesFilterThreshold]
 			if( length(filteroutGenes)>0 ) {
-				message(paste('Filtering out', length(filteroutGenes), 'gene(s) with more than 2/3 of zeros in their exonic quantifications.'))
+				message(paste('Filtering out', length(filteroutGenes), 'gene(s) with more than ',round(100*genesFilterThreshold),'% of zeros in their exonic quantifications.'))
 				rpkms_Nascent_exons <- rpkms_Nascent_exons[!rownames(rpkms_Nascent_exons) %in% filteroutGenes, ,drop=FALSE]
 				rpkms_total_exons <- rpkms_total_exons[!rownames(rpkms_total_exons) %in% filteroutGenes, ,drop=FALSE]
 				rpkms_Nascent_introns <- rpkms_Nascent_introns[!rownames(rpkms_Nascent_introns) %in% filteroutGenes, ,drop=FALSE]
 				rpkms_total_introns <- rpkms_total_introns[!rownames(rpkms_total_introns) %in% filteroutGenes, ,drop=FALSE]
 			}
-			### filter out genes which have no signal in at least 2/3 of the time points in intronic features
+			### filter out genes which have no signal in at least genesFilterThreshold of the time points in intronic features
 			### in that case just remove the intronic signal.
 			ix3 <- apply(rpkms_Nascent_introns, 1, function(x) length(which(x==0)))/ncol(rpkms_Nascent_introns)
 			ix4 <- apply(rpkms_total_introns, 1, function(x) length(which(x==0)))/ncol(rpkms_total_introns)
-			filteroutGenes <- rownames(rpkms_Nascent_introns)[ix3>2/3 | ix4>2/3]
+			filteroutGenes <- rownames(rpkms_Nascent_introns)[ix3>genesFilterThreshold | ix4>genesFilterThreshold]
 			if( length(filteroutGenes)>0 ) {
-				message(paste('Filtering out intronic signal of', length(filteroutGenes), 'gene(s) with more than 2/3 of zero quantifications'))
+				message(paste('Filtering out intronic signal of', length(filteroutGenes), 'gene(s) with more than genesFilterThreshold of zero quantifications'))
 				message('(for those genes only synthesis and degradation will be evaluated).')
 				rpkms_Nascent_introns <- rpkms_Nascent_introns[!rownames(rpkms_Nascent_introns) %in% filteroutGenes, ,drop=FALSE]
 				rpkms_total_introns <- rpkms_total_introns[!rownames(rpkms_total_introns) %in% filteroutGenes, ,drop=FALSE]
 			}
 		} else {
-			### filter out genes which have no signal in at least 2/3 of the time points in exonic features
+			### filter out genes which have no signal in at least genesFilterThreshold of the time points in exonic features
 			### in that case completely remove the gene (both intronic and exonic signal).
 			ix1 <- apply(rpkms_Nascent_exons, 1, all)
 			ix2 <- apply(rpkms_total_exons, 1, all)
 			filteroutGenes <- rownames(rpkms_Nascent_exons)[ix1 | ix2]
 			if( length(filteroutGenes)>0 ) {
-				message(paste('Filtering out', length(filteroutGenes), 'gene(s) with more than 2/3 of zeros in their exonic quantifications.'))
+				message(paste('Filtering out', length(filteroutGenes), 'gene(s) with more than ',round(100*genesFilterThreshold),'% of zeros in their exonic quantifications.'))
 				rpkms_Nascent_exons <- rpkms_Nascent_exons[!rownames(rpkms_Nascent_exons) %in% filteroutGenes, ,drop=FALSE]
 				rpkms_total_exons <- rpkms_total_exons[!rownames(rpkms_total_exons) %in% filteroutGenes, ,drop=FALSE]
 				rpkms_Nascent_introns <- rpkms_Nascent_introns[!rownames(rpkms_Nascent_introns) %in% filteroutGenes, ,drop=FALSE]
 				rpkms_total_introns <- rpkms_total_introns[!rownames(rpkms_total_introns) %in% filteroutGenes, ,drop=FALSE]
 			}
-			### filter out genes which have no signal in at least 2/3 of the time points in intronic features
+			### filter out genes which have no signal in at least genesFilterThreshold of the time points in intronic features
 			### in that case just remove the intronic signal.
 			ix3 <- apply(rpkms_Nascent_introns, 1, all)
 			ix4 <- apply(rpkms_total_introns, 1, all)
 			filteroutGenes <- rownames(rpkms_Nascent_introns)[ix3 | ix4]
 			if( length(filteroutGenes)>0 ) {
-				message(paste('Filtering out intronic signal of', length(filteroutGenes), 'gene(s) with more than 2/3 of zero quantifications'))
+				message(paste('Filtering out intronic signal of', length(filteroutGenes), 'gene(s) with more than genesFilterThreshold of zero quantifications'))
 				message('(for those genes only synthesis and degradation will be evaluated).')
 				rpkms_Nascent_introns <- rpkms_Nascent_introns[!rownames(rpkms_Nascent_introns) %in% filteroutGenes, ,drop=FALSE]
 				rpkms_total_introns <- rpkms_total_introns[!rownames(rpkms_total_introns) %in% filteroutGenes, ,drop=FALSE]

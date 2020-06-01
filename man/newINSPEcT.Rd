@@ -16,7 +16,8 @@ newINSPEcT(
   degDuringPulse = FALSE,
   Dmin = 1e-06,
   Dmax = 10,
-  genesFilter = TRUE
+  genesFilter = TRUE,
+  genesFilterThreshold = 2/3
 )
 }
 \arguments{
@@ -42,7 +43,9 @@ newINSPEcT(
 
 \item{Dmax}{A numerical, it is the upper bound of the degradation rate domain for the prior optimization}
 
-\item{genesFilter}{A logical, if TRUE, filters out genes which have no signal in at least 2/3 of the observations}
+\item{genesFilter}{A logical, if TRUE, filters out genes which have no signal in at least a given fraction (2/3 by default) of the observations}
+
+\item{genesFilterThreshold}{A number, threshold to use for genes filtering (2/3 by default)}
 }
 \value{
 An object of class INSPEcT with a first estimation of the rates which can be accessed by the method \code{\link{ratesFirstGuess}}

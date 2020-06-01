@@ -96,9 +96,8 @@ setMethod('matureVar', 'INSPEcT_steadyNoNascent', function(object)
 #' regGenes <- PTreg(matureInspObj)
 #' head(regGenes)
 #' table(regGenes)
-setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectIds,
-																																	 expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NaN, 
-																																	 returnNormScores=FALSE, referenceCondition=NaN)
+setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectIds,expressionThreshold=0.25, log2FCThreshold=2.
+																	  , trivialAngle=NaN, returnNormScores=FALSE, referenceCondition=NaN)
 {
 	# if( !.hasSlot(inspectIds, 'version') ) {
 	# 	stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
@@ -109,6 +108,9 @@ setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectI
 	# Mature, premature and total variances
 	prematureVar <- prematureVar(inspectIds)
 	matureVar <- matureVar(inspectIds)
+
+	premature[premature==0] <- NaN
+	mature[mature==0] <- NaN
 	
 	prematureMedian <- apply(premature,1,function(r)median(r,na.rm=T))
 	matureMedian <- apply(mature,1,function(r)median(r,na.rm=T))
@@ -131,13 +133,11 @@ setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectI
 	mature[mature<=expressionThreshold] <- NA
 	
 	if( is.na(referenceCondition) ) {
-		suppressWarnings(log2maturemodel <- classificationFunction(p=premature,m=mature,
-																															 alpha=standardCurveFit))
+		suppressWarnings(log2maturemodel <- classificationFunction(p=premature,m=mature,alpha=standardCurveFit))
 	} else {
 		ref <- which(inspectIds@sampleNames==referenceCondition)
 		if( length(ref) != 1 ) stop('not existing referenceCondition')
-		suppressWarnings(log2maturemodel <- classificationFunction(p=premature,m=mature,
-																															 alpha=standardCurveFit, ref=ref))
+		suppressWarnings(log2maturemodel <- classificationFunction(p=premature,m=mature,alpha=standardCurveFit, ref=ref))
 	}
 	
 	# update the objects
