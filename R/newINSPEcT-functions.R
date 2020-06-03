@@ -18,6 +18,7 @@
 #' @param Dmax A numerical, it is the upper bound of the degradation rate domain for the prior optimization
 #' @param genesFilter A logical, if TRUE, filters out genes which have no signal in at least a given fraction (2/3 by default) of the observations
 #' @param genesFilterThreshold A number, threshold to use for genes filtering (2/3 by default)
+#' @param imputeNAs A logical, if TRUE the rates first guess which are not finite are imputed from the neighbours.
 #' @return An object of class INSPEcT with a first estimation of the rates which can be accessed by the method \code{\link{ratesFirstGuess}}
 #' @examples
 #' data('allcounts', package='INSPEcT')
@@ -51,7 +52,8 @@ newINSPEcT <- function(tpts
 					, Dmin = 1e-6
 					, Dmax = 10
 					, genesFilter = TRUE
-					, genesFilterThreshold = 2/3)
+					, genesFilterThreshold = 2/3
+					, imputeNAs = TRUE)
 {
 
 	##################################
@@ -369,7 +371,8 @@ newINSPEcT <- function(tpts
 												   , tpts = tpts
 												   , BPPARAM = BPPARAM
 												   , modellingParameters = list(Dmin = Dmin, Dmax = Dmax)
-												   , genesFilter = genesFilter)
+												   , genesFilter = genesFilter
+												   , imputeNAs = imputeNAs)
 			return(createInspectObject(out, NoNascent=TRUE))
 		} else {
 			####### generate the INSPEcT_steadyNoNascent-class #########
@@ -1942,6 +1945,7 @@ RNAdynamics_NoNascent <- function(totRpkms
 								, BPPARAM=SerialParam()
 								, modellingParameters=list(Dmin = 1e-6, Dmax = 10)
 								, genesFilter
+								, imputeNAs
 								)
 {
 	
@@ -1980,7 +1984,7 @@ RNAdynamics_NoNascent <- function(totRpkms
 					,mature = mature[row,]
 					,matureVariance = matureVariance[row,])
 		fits <- t(unlist(fits[1:4]))
-	} else {
+	} else if(imputeNAs){
 		fits <- t(mcsapply(1:nrow(mature), function(row)
 		{
 			unlist(
@@ -1993,8 +1997,21 @@ RNAdynamics_NoNascent <- function(totRpkms
 								,matureVariance = matureVariance[row,])[c('par','value','convergence')]
 					,error=function(e)list(par = c(NaN,NaN), value = NaN, convergence = NaN)))
 		},BPPARAM = BPPARAM))
+	} else {
+		fits <- t(mcsapply(1:nrow(mature), function(row)
+		{
+			unlist(
+				tryCatch(
+					optimPositive(par = c(mature[row,1]/premature[row,1]*k3Prior[row,'k3'], k3Prior[row,'k3'])
+								,fn = secondStepError_NoNascent
+								,tpts = tpts
+								,premature = premature[row,]
+								,mature = mature[row,]
+								,matureVariance = matureVariance[row,])[c('par','value','convergence')]
+					,error=function(e)list(par = c(NaN,NaN), value = NaN, convergence = NaN)))
+		},BPPARAM = BPPARAM))
 	}
-	
+
 	fits[,3] <- pchisq(fits[,3], length(tpts)-3)
 	colnames(fits) <- c('k2','k3','p','convergence')
 	rownames(fits) <- eiGenes
@@ -2034,6 +2051,21 @@ RNAdynamics_NoNascent <- function(totRpkms
 
 	alphaTC <- prematureDer + gammaTC * premature
 	alphaTC[alphaTC<0] <- NaN
+
+	if(!imputeNAs)
+	{
+		message(paste0(table(apply(alphaTC,1,function(r)any(!is.finite(r))))['TRUE']),' genes were removed because of negative syntesis rate.')
+		eiGenes <- eiGenes[which(apply(alphaTC,1,function(r)all(is.finite(r))))]
+
+		total <- total[eiGenes,]
+		premature <- premature[eiGenes,]
+		mature <- mature[eiGenes,]
+		totalVariance <- totalVariance[eiGenes,]
+		prematureVariance <- prematureVariance[eiGenes,]
+		matureVariance <- matureVariance[eiGenes,]
+
+		alphaTC <- alphaTC[eiGenes,]
+	}
 
 	#Evaluate beta as constant between intervals
 

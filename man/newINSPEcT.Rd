@@ -17,7 +17,8 @@ newINSPEcT(
   Dmin = 1e-06,
   Dmax = 10,
   genesFilter = TRUE,
-  genesFilterThreshold = 2/3
+  genesFilterThreshold = 2/3,
+  imputeNAs = TRUE
 )
 }
 \arguments{
@@ -46,6 +47,8 @@ newINSPEcT(
 \item{genesFilter}{A logical, if TRUE, filters out genes which have no signal in at least a given fraction (2/3 by default) of the observations}
 
 \item{genesFilterThreshold}{A number, threshold to use for genes filtering (2/3 by default)}
+
+\item{imputeNAs}{A logical, if TRUE the rates first guess which are not finite are imputed from the neighbours.}
 }
 \value{
 An object of class INSPEcT with a first estimation of the rates which can be accessed by the method \code{\link{ratesFirstGuess}}
