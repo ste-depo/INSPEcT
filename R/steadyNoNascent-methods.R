@@ -109,6 +109,9 @@ setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectI
 	# Mature, premature and total variances
 	prematureVar <- prematureVar(inspectIds)
 	matureVar <- matureVar(inspectIds)
+
+	premature[premature==0] <- NaN
+	mature[mature==0] <- NaN
 	
 	prematureMedian <- apply(premature,1,function(r)median(r,na.rm=T))
 	matureMedian <- apply(mature,1,function(r)median(r,na.rm=T))
@@ -136,8 +139,7 @@ setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectI
 	} else {
 		ref <- which(inspectIds@sampleNames==referenceCondition)
 		if( length(ref) != 1 ) stop('not existing referenceCondition')
-		suppressWarnings(log2maturemodel <- classificationFunction(p=premature,m=mature,
-																															 alpha=standardCurveFit, ref=ref))
+		suppressWarnings(log2maturemodel <- classificationFunction(p=premature,m=mature,alpha=standardCurveFit, ref=ref))
 	}
 	
 	# update the objects
