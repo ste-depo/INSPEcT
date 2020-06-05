@@ -98,7 +98,7 @@ setMethod('matureVar', 'INSPEcT_steadyNoNascent', function(object)
 #' table(regGenes)
 setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectIds,
 																																	 expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NaN, 
-																																	 returnNormScores=FALSE, referenceCondition=NaN)
+																																	 returnNormScores=FALSE, referenceCondition='median')
 {
 	# if( !.hasSlot(inspectIds, 'version') ) {
 	# 	stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
@@ -130,7 +130,7 @@ setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectI
 	if(perc_mature>0) message(paste0(perc_mature, '% of mature expressions below expressionThreshold set to NA'))
 	mature[mature<=expressionThreshold] <- NA
 	
-	if( is.na(referenceCondition) ) {
+	if( referenceCondition == 'median' ) {
 		suppressWarnings(log2maturemodel <- classificationFunction(p=premature,m=mature,
 																															 alpha=standardCurveFit))
 	} else {
@@ -244,7 +244,7 @@ setMethod('plotPMgene', 'INSPEcT_steadyNoNascent', function(object, gene_id, sam
 	standardCurveFit <- object@trivialAngle
 	log2FCThreshold <- object@log2FCThreshold
 	##
-	if( is.na(referenceCondition) ) {
+	if( referenceCondition == 'median' ) {
 		m_reference <- median(m, na.rm=TRUE)
 		p_reference <- median(p, na.rm=TRUE)
 	} else {
