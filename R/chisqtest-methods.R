@@ -15,9 +15,7 @@ setMethod('chisqtest', 'INSPEcT_model', function(object, ...) {
 	})
 #' @rdname chisqtest
 setMethod('chisqtest', 'INSPEcT', function(object, ...) {
-	if( !.hasSlot(object, 'version') ) {
-		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+	checkINSPEcTObjectversion(object)
 	chisqtest(object@model, ...)
 })
 
@@ -59,9 +57,7 @@ setMethod('convergence', 'INSPEcT', function(object) {
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' chisqmodel(nascentInspObj10)
 setMethod('chisqmodel', 'INSPEcT', function(object, ...) {
-	if( !.hasSlot(object, 'version') ) {
-		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+	checkINSPEcTObjectversion(object)
 	if(object@NoNascent)
 	{
 		chisqmodelfun(object@model)
@@ -127,9 +123,7 @@ setMethod('AIC', 'INSPEcT_model', function(object, ..., k=2) {
 	})
 #' @rdname AIC-INSPEcT-method
 setMethod('AIC', 'INSPEcT', function(object, ..., k=2) {
-	if( !.hasSlot(object, 'version') ) {
-		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+	checkINSPEcTObjectversion(object)
 	AIC(object@model, ..., k)
 	})
 

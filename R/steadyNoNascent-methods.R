@@ -1,3 +1,6 @@
+# FIX PM gene plot to include the confidence interval in the plot
+# FIX class slot for refernece condition to include the NaN / median option
+
 #' @rdname premature
 #' 
 #' @description
@@ -95,7 +98,7 @@ setMethod('matureVar', 'INSPEcT_steadyNoNascent', function(object)
 #' table(regGenes)
 setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectIds,
 																																	 expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NaN, 
-																																	 returnNormScores=FALSE, referenceCondition=NaN)
+																																	 returnNormScores=FALSE, referenceCondition='median')
 {
 	# if( !.hasSlot(inspectIds, 'version') ) {
 	# 	stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
@@ -106,6 +109,9 @@ setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectI
 	# Mature, premature and total variances
 	prematureVar <- prematureVar(inspectIds)
 	matureVar <- matureVar(inspectIds)
+
+	premature[premature==0] <- NaN
+	mature[mature==0] <- NaN
 	
 	prematureMedian <- apply(premature,1,function(r)median(r,na.rm=T))
 	matureMedian <- apply(mature,1,function(r)median(r,na.rm=T))
@@ -127,14 +133,13 @@ setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectI
 	if(perc_mature>0) message(paste0(perc_mature, '% of mature expressions below expressionThreshold set to NA'))
 	mature[mature<=expressionThreshold] <- NA
 	
-	if( is.na(referenceCondition) ) {
+	if( referenceCondition == 'median' ) {
 		suppressWarnings(log2maturemodel <- classificationFunction(p=premature,m=mature,
 																															 alpha=standardCurveFit))
 	} else {
 		ref <- which(inspectIds@sampleNames==referenceCondition)
 		if( length(ref) != 1 ) stop('not existing referenceCondition')
-		suppressWarnings(log2maturemodel <- classificationFunction(p=premature,m=mature,
-																															 alpha=standardCurveFit, ref=ref))
+		suppressWarnings(log2maturemodel <- classificationFunction(p=premature,m=mature,alpha=standardCurveFit, ref=ref))
 	}
 	
 	# update the objects
@@ -154,7 +159,7 @@ setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectI
 		colnames(scores) <- inspectIds@sampleNames
 		pi_angle <- standardCurveFit * pi/180
 		threshold <- log2FCThreshold/cos(pi_angle)
-		classification <- abs(scores)>threshold
+		classification <- abs(scores)>abs(threshold)
 		inspectIds@ptreg <- classification
 	}
 	return(inspectIds)
@@ -241,7 +246,7 @@ setMethod('plotPMgene', 'INSPEcT_steadyNoNascent', function(object, gene_id, sam
 	standardCurveFit <- object@trivialAngle
 	log2FCThreshold <- object@log2FCThreshold
 	##
-	if( is.na(referenceCondition) ) {
+	if( referenceCondition == 'median' ) {
 		m_reference <- median(m, na.rm=TRUE)
 		p_reference <- median(p, na.rm=TRUE)
 	} else {

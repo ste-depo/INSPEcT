@@ -21,9 +21,7 @@
 #' }
 setMethod('modelRatesNF', 'INSPEcT', function(object, BPPARAM=SerialParam())
 {
-	if( !.hasSlot(object, 'version') ) {
-		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+	checkINSPEcTObjectversion(object)
 	if( length(object@model@ratesSpecs) > 0 )
 		stop('Remove the model before running the model again. (See "?removeModel")')
 
@@ -393,19 +391,19 @@ estimate_priors <- function(
 	BPPARAM=SerialParam()
 	) 
 {
-	k3Prior <- firstStep_NoNascent(tpts = tpts
+	suppressWarnings(k3Prior <- firstStep_NoNascent(tpts = tpts
 							  ,mature = mature
 							  ,premature = premature
 							  ,matureVariance = matureVariance
 							  ,Dmin = Dmin
-							  ,Dmax = Dmax)
+							  ,Dmax = Dmax))
 	rownames(k3Prior) <- eiGenes
 
 	k1_prior_T0 <- premature[,1]^(3/4)
 	k2_prior_T0 <- premature[,1]^(-1/4)
 	k3_prior_T0 <- k1_prior_T0/mature[,1]
 
-	norm_to_k3timescale <- mean(k3Prior[,1])/mean(k3_prior_T0)
+	norm_to_k3timescale <- mean(k3Prior[,1])/mean(k3_prior_T0,na.rm=T)
 
 	k1_prior_T0 <- k1_prior_T0 * norm_to_k3timescale
 	k2_prior_T0 <- k2_prior_T0 * norm_to_k3timescale
@@ -594,7 +592,7 @@ classify_rates_from_priors_4sU_v5 <- function(
 	mature <- total - premature
 	matureVariance <- totalVariance + prematureVariance
 
-	message("Rates optimization through the minimum likelihood.")
+	message("Rates optimization through the maximum likelihood.")
 
 	N <- length(tpts)
 	gene_number <- nrow(premature)
@@ -821,7 +819,7 @@ classify_rates_from_priors_v5 <- function(
 	gammaTC <- prOut[[2]]
 	betaTC  <- prOut[[3]]
 
-	message("Rates optimization through the minimum likelihood.")
+	message("Rates optimization through the maximum likelihood.")
 
 	N <- length(tpts)
 	gene_number <- nrow(alphaTC)

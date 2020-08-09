@@ -25,8 +25,6 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' modelingParams(nascentInspObj10)
 setMethod('modelingParams', 'INSPEcT', function(object) {
-	if( !.hasSlot(object, 'version') ) {
-		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+	checkINSPEcTObjectversion(object)
 	return(object@params)
 	})

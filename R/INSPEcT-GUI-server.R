@@ -36,7 +36,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				values$loaded_file_error_message <- 'The loaded file is not of class INSPEcT'
 				return(new(Class = 'INSPEcT'))
 
-			}  else if(!(.hasSlot(ids, 'version'))) {
+			}  else if(!checkINSPEcTObjectversion(object, returnLogical=TRUE)) {
 
 				error_on_load_file()
 				values$loaded_file <- FALSE

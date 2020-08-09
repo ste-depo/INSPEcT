@@ -9,9 +9,7 @@
 
 setMethod('correlationPlot', signature(object='INSPEcT_model', object2='INSPEcT'), function(object, object2, plot=TRUE)
 {
-	if( !.hasSlot(object2, 'version') ) {
-		stop("The object2 is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+	checkINSPEcTObjectversion(object2)
 	k1_real <- log10(sapply(object@ratesSpecs,function(g){g[[1]][["alpha"]]$fun$value(0,g[[1]][["alpha"]]$par)}))
 	k2_real <- log10(sapply(object@ratesSpecs,function(g){g[[1]][["gamma"]]$fun$value(0,g[[1]][["gamma"]]$par)}))
 	k3_real <- log10(sapply(object@ratesSpecs,function(g){g[[1]][["beta"]]$fun$value(0,g[[1]][["beta"]]$par)}))
