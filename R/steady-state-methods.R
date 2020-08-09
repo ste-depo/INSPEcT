@@ -393,11 +393,18 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 			)		
 	}
 
+	## filter genes with no resolved models (probably because they were solved with a negative rate in all
+	## the models
+	allNA <- apply(is.na(log_liks),1,all)
+	if( any(allNA) ) {
+		NallNA <- length(which(allNA))
+		message(paste('Removing', NallNA, 'genes with unresolved models'))
+	}
 	eiOut <- list(
-		eiGenes=eiGenes,
-		models=models,
-		p_vals=p_vals,
-		log_liks=log_liks
+		eiGenes=eiGenes[!allNA],
+		models=lapply(models, function(x) x[!allNA,]),
+		p_vals=p_vals[!allNA,],
+		log_liks=log_liks[!allNA,]
 		)
 
 	if( length( eGenes ) > 0 ) 
@@ -610,13 +617,19 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				)			
 		}
 
+		## filter genes with no resolved models (probably because they were solved with a negative rate in all
+		## the models
+		allNA <- apply(is.na(log_liks),1,all)
+		if( any(allNA) ) {
+			NallNA <- length(which(allNA))
+			message(paste('Removing', NallNA, 'genes with unresolved models'))
+		}
 		eOut <- list(
-			eGenes=eGenes,
-			models=models,
-			p_vals=p_vals,
-			log_liks=log_liks
+			eGenes=eGenes[!allNA],
+			models=lapply(models, function(x) x[!allNA,]),
+			p_vals=p_vals[!allNA,],
+			log_liks=log_liks[!allNA,]
 			)
-
 
 	} else {
 		message('No intronless genes found.')
