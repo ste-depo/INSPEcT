@@ -1,8 +1,8 @@
 Package: INSPEcT
 Type: Package
 Title: Modeling RNA synthesis, processing and degradation with RNA-seq data
-Version: 1.17.15
-Date: 2019-11-25
+Version: 1.19.1
+Date: 2020-08-09
 Author: Stefano de Pretis
 Maintainer: Stefano de Pretis <ste.depo@gmail.com>, 
 	Mattia Furlan <Mattia.Furlan@iit.it>
