@@ -35,8 +35,6 @@ setMethod('makeSimDataset', 'INSPEcT_model', function(object
 													, tL = 1/6
 													, noise_sd = 4.0)
 {
-	if(tpts[[1]]!=object@params$tpts[[1]]){stop("makeSimDataset: new and old tpts starts must coincide.")}
-	if(tpts[[length(tpts)]]!=object@params$tpts[[length(object@params$tpts)]]){stop("makeSimDataset: new and old tpts ends must coincide.")}
 	if(!is.null(b)|!is.null(tL))
 	{
 		if(!is.numeric(b)|!is.numeric(tL)){stop("makeSimDataset: b and tL must be numeric.")}

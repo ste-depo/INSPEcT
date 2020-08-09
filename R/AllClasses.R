@@ -219,7 +219,7 @@ setClass('INSPEcT_steadyNoNascent',
 				 	trivialAngle='numeric',
 				 	log2FCThreshold='numeric',
 				 	expressionThreshold='numeric',
-				 	referenceCondition='numeric',
+				 	referenceCondition='character',
 				 	ptreg='matrix'
 				 )
 )
