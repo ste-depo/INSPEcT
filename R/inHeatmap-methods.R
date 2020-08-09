@@ -32,9 +32,7 @@ setMethod('inHeatmap', 'INSPEcT', function(object, type='pre-model'
 	, plot_matureRNA=FALSE, absoluteExpression=TRUE
 	, show_rowLabels=TRUE, clustering=TRUE, clustIdx=3:5) 
 {
-	if( !.hasSlot(object, 'version') ) {
-		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+	checkINSPEcTObjectversion(object)
 	if( !is.character(type) )
 		stop('inHeatmap: type must be character')
 	if( !type %in% c('model', 'pre-model') )

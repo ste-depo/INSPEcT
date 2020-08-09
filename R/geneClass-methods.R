@@ -19,9 +19,7 @@
 #' geneClass(nascentInspObj10)
 setMethod('geneClass', 'INSPEcT', function(object, ...)
 {
-	if( !.hasSlot(object, 'version') ) {
-		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+	checkINSPEcTObjectversion(object)
 	if( !is.numeric(tpts(object)) ) {
 		stop("Run 'compareSteady' method on this object to evaluate differential rates.")
 	}

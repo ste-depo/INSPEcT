@@ -46,9 +46,7 @@ setMethod('modelRates', 'INSPEcT', function(object
 																						, seed = NULL
 																						, BPPARAM = SerialParam())
 {
-	if( !.hasSlot(object, 'version') ) {
-		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+	checkINSPEcTObjectversion(object)
 	if( length(object@model@ratesSpecs) > 0 )
 		stop('Remove the model before running the model again. (See "?removeModel")')
 	estimateRatesWith <- estimateRatesWith[1]

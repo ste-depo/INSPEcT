@@ -150,7 +150,7 @@ setClass('INSPEcT',
 				 	NoNascent=FALSE,
 				 	NF=FALSE,
 				 	degDuringPulse=FALSE,
-				 	version='1.17.11'
+				 	version=as.character(packageVersion('INSPEcT'))
 				 )
 )
 

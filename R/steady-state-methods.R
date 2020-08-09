@@ -497,7 +497,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 					, error=function(e) c(mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], NA, NA, NA, e[1]))
 				,BPPARAM=BPPARAM))
 			outK_V[apply(outK_V[,1:3]<0,1,any),] <- NaN
-
+			
 			message('Evaluating model sd [4/4]...')
 			outV_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
 				tryCatch(

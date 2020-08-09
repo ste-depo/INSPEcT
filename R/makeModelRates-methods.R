@@ -45,9 +45,7 @@ setMethod('makeModelRates', 'INSPEcT_model', function(object, ...) {
 #' viewModelRates(nascentInspObj10, 'degradation')
 
 setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
-	if( !.hasSlot(object, 'version') ) {
-		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+	checkINSPEcTObjectversion(object)
 	
 	## get ratesSpec field
 	ratesSpecs <- object@model@ratesSpecs
