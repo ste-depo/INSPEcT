@@ -1,3 +1,21 @@
+checkINSPEcTObjectversion <- function(object, returnLogical=FALSE) {
+	# objects from 1.17.11 has the slot, therefore this contol detect as obsoletes objects from 1.17.10
+	# In case there will be the need to check for a specific version, use somthing as follows:
+	# > ver <- package_version(object@version)
+	# > if (ver < "1.18") stop()
+	# > OR if (ver$major < 2) stop()
+	# > OR if (ver$major < 1 & ver$minor < 18) stop()
+	if( !.hasSlot(object, 'version') ) {
+		if( returnLogical ) {
+			return(FALSE)
+		} else {
+			stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
+		}
+	} else {
+		if( returnLogical ) return(TRUE)
+	}
+}
+
 #######################################
 # generation of the simulated dataset ###
 ########################################
