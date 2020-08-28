@@ -4,7 +4,9 @@
 \alias{featureWidths}
 \title{Contains two variables: "exWdths" and "intWdths" containing the lenght of the exons and introns, 
 respectively, relative to the genes in "allcounts"}
-\format{numeric vector of length 500}
+\format{
+numeric vector of length 500
+}
 \description{
 Contains two variables: "exWdths" and "intWdths" containing the lenght of the exons and introns, 
 respectively, relative to the genes in "allcounts"

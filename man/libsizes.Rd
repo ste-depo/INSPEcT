@@ -4,7 +4,9 @@
 \alias{libsizes}
 \title{Contains two variables: "nascentLS" and "totalLS" containing the sequencing depth of nascent and total libraries 
 respectively, relative to the experiments in "allcounts"}
-\format{numeric vector of length 33}
+\format{
+numeric vector of length 33
+}
 \description{
 Contains two variables: "nascentLS" and "totalLS" containing the sequencing depth of nascent and total libraries 
 respectively, relative to the experiments in "allcounts"

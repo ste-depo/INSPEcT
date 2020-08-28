@@ -4,7 +4,9 @@
 \alias{allcounts}
 \title{A list containing mature and nascent counts for exons and introns, three replicates and 11 time points: 
 0,1/6,1/3,1/2,1,1.5,2,4,8,12,16 hours.}
-\format{A list of 4 matrices 500 x 33}
+\format{
+A list of 4 matrices 500 x 33
+}
 \description{
 A list containing mature and nascent counts for exons and introns, three replicates and 11 time points: 
 0,1/6,1/3,1/2,1,1.5,2,4,8,12,16 hours.

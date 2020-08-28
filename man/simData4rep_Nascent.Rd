@@ -3,7 +3,9 @@
 \name{simData4rep_Nascent}
 \alias{simData4rep_Nascent}
 \title{An INSPEcT object with 1000 simulated rates and concentration and their modeled rates}
-\format{An INSPEcT object}
+\format{
+An INSPEcT object
+}
 \description{
 A dataset containing the rates and concentrations obtained from the dataset
 simRates; 3 replicates and time points corresponding to: 0,1/6,1/3,1/2,1,1.25,1.5,2,3,4,6,8,10,12,16 hours.

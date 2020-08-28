@@ -40,7 +40,7 @@ identified using the tag "NH" in the bam/sam file.}
 \item{allowMultiOverlap}{A logical, indicating if a read is allowed to be assigned to more than one feature, FALSE by default}
 
 \item{prioritizeExons}{A logical, indicating whether reads assigned to exon shold not be accounted for intron counts.
-If set to FALSE, reads with shared overlap between an exon and the following intron will be assigned to the intron. This could improve
+If set to FALSE, reads with shared overlap between an exon and the following intron will be assigned also to introns. This could improve
 intronic quantification in experimental settings (including polyA library preparation) or compact genomes were intronic reads are 
 sampled at a very low rate compared to exonic reads. By default, TRUE.}
 

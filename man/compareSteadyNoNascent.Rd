@@ -11,7 +11,7 @@ compareSteadyNoNascent(
   log2FCThreshold = 2,
   trivialAngle = NaN,
   returnNormScores = FALSE,
-  referenceCondition = NULL
+  referenceCondition = "median"
 )
 
 \S4method{compareSteadyNoNascent}{INSPEcT_steadyNoNascent}(
@@ -20,7 +20,7 @@ compareSteadyNoNascent(
   log2FCThreshold = 2,
   trivialAngle = NaN,
   returnNormScores = FALSE,
-  referenceCondition = NaN
+  referenceCondition = "median"
 )
 }
 \arguments{
