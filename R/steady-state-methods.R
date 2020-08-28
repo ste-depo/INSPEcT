@@ -148,7 +148,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outKKK[apply(outKKK[,1:3]<0,1,any),] <- NaN
+		outKKK[apply(outKKK[,1:3,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model s [2/8]...')
 		outVKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -159,7 +159,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outVKK[apply(outVKK[,1:4]<0,1,any),] <- NaN
+		outVKK[apply(outVKK[,1:4,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model p [3/8]...')
 		outKVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -170,7 +170,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outKVK[apply(outKVK[,1:4]<0,1,any),] <- NaN
+		outKVK[apply(outKVK[,1:4,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model d [4/8]...')
 		outKKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -181,7 +181,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outKKV[apply(outKKV[,1:4]<0,1,any),] <- NaN
+		outKKV[apply(outKKV[,1:4,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model sp [5/8]...')
 		outVVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -192,7 +192,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outVVK[apply(outVVK[,1:5]<0,1,any),] <- NaN
+		outVVK[apply(outVVK[,1:5,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model sd [6/8]...')
 		outVKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -203,7 +203,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outVKV[apply(outVKV[,1:5]<0,1,any),] <- NaN
+		outVKV[apply(outVKV[,1:5,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model pd [7/8]...')
 		outKVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -214,7 +214,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outKVV[apply(outKVV[,1:5]<0,1,any),] <- NaN
+		outKVV[apply(outKVV[,1:5,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model spd [8/8]...')
 		outVVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -225,7 +225,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, par6=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outVVV[apply(outVVV[,1:6]<0,1,any),] <- NaN
+		outVVV[apply(outVVV[,1:6,drop=FALSE]<0,1,any),] <- NaN
 
 	} else { ## ddp
 
@@ -265,7 +265,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outKKK[apply(outKKK[,1:3]<0,1,any),] <- NaN
+		outKKK[apply(outKKK[,1:3,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model s [2/8]...')
 		outVKK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -276,7 +276,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outVKK[apply(outVKK[,1:4]<0,1,any),] <- NaN
+		outVKK[apply(outVKK[,1:4,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model p [3/8]...')
 		outKVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -287,7 +287,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outKVK[apply(outKVK[,1:4]<0,1,any),] <- NaN
+		outKVK[apply(outKVK[,1:4,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model d [4/8]...')
 		outKKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -298,7 +298,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outKKV[apply(outKKV[,1:4]<0,1,any),] <- NaN
+		outKKV[apply(outKKV[,1:4,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model sp [5/8]...')
 		outVVK <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -309,7 +309,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outVVK[apply(outVVK[,1:5]<0,1,any),] <- NaN
+		outVVK[apply(outVVK[,1:5,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model sd [6/8]...')
 		outVKV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -320,7 +320,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outVKV[apply(outVKV[,1:5]<0,1,any),] <- NaN
+		outVKV[apply(outVKV[,1:5,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model pd [7/8]...')
 		outKVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -331,7 +331,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outKVV[apply(outKVV[,1:5]<0,1,any),] <- NaN
+		outKVV[apply(outKVV[,1:5,drop=FALSE]<0,1,any),] <- NaN
 
 		message('Evaluating model spd [8/8]...')
 		outVVV <- do.call('rbind', bplapply(seq_along(eiGenes), function(i)
@@ -342,7 +342,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, par6=NaN, value=NaN, 
 				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
-		outVVV[apply(outVVV[,1:6]<0,1,any),] <- NaN
+		outVVV[apply(outVVV[,1:6,drop=FALSE]<0,1,any),] <- NaN
 
 	}
 
