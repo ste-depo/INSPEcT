@@ -100,19 +100,19 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 	# wt_rates[wt_rates==0] <- sh_rates[wt_rates==0]
 	# sh_rates[sh_rates==0] <- wt_rates[sh_rates==0]
 
-	wt_rates[wt_rates[,1]==0|is.na(wt_rates[,1]),1] <- min(wt_rates[wt_rates[,1]!=0 & !is.na(wt_rates[,1]),1])
-	wt_rates[wt_rates[,2]==0|is.na(wt_rates[,2]),2] <- min(wt_rates[wt_rates[,2]!=0 & !is.na(wt_rates[,2]),2])
-	wt_rates[wt_rates[,3]==0|is.na(wt_rates[,3]),3] <- min(wt_rates[wt_rates[,3]!=0 & !is.na(wt_rates[,3]),3])
-	wt_rates[wt_rates[,1]==Inf,1] <- max(wt_rates[wt_rates[,1]!=Inf,1])
-	wt_rates[wt_rates[,2]==Inf,2] <- max(wt_rates[wt_rates[,2]!=Inf,2])
-	wt_rates[wt_rates[,3]==Inf,3] <- max(wt_rates[wt_rates[,3]!=Inf,3])
+	suppressWarnings(wt_rates[wt_rates[,1]==0|is.na(wt_rates[,1]),1] <- min(wt_rates[wt_rates[,1]!=0 & !is.na(wt_rates[,1]),1]))
+	suppressWarnings(wt_rates[wt_rates[,2]==0|is.na(wt_rates[,2]),2] <- min(wt_rates[wt_rates[,2]!=0 & !is.na(wt_rates[,2]),2]))
+  suppressWarnings(wt_rates[wt_rates[,3]==0|is.na(wt_rates[,3]),3] <- min(wt_rates[wt_rates[,3]!=0 & !is.na(wt_rates[,3]),3]))
+  suppressWarnings(wt_rates[wt_rates[,1]==Inf,1] <- max(wt_rates[wt_rates[,1]!=Inf,1]))
+  suppressWarnings(wt_rates[wt_rates[,2]==Inf,2] <- max(wt_rates[wt_rates[,2]!=Inf,2]))
+  suppressWarnings(wt_rates[wt_rates[,3]==Inf,3] <- max(wt_rates[wt_rates[,3]!=Inf,3]))
 
-	sh_rates[sh_rates[,1]==0|is.na(sh_rates[,1]),1] <- min(sh_rates[sh_rates[,1]!=0 & !is.na(sh_rates[,1]),1])
-	sh_rates[sh_rates[,2]==0|is.na(sh_rates[,2]),2] <- min(sh_rates[sh_rates[,2]!=0 & !is.na(sh_rates[,2]),2])
-	sh_rates[sh_rates[,3]==0|is.na(sh_rates[,3]),3] <- min(sh_rates[sh_rates[,3]!=0 & !is.na(sh_rates[,3]),3])
-	sh_rates[sh_rates[,1]==Inf,1] <- max(sh_rates[sh_rates[,1]!=Inf,1])
-	sh_rates[sh_rates[,2]==Inf,2] <- max(sh_rates[sh_rates[,2]!=Inf,2])
-	sh_rates[sh_rates[,3]==Inf,3] <- max(sh_rates[sh_rates[,3]!=Inf,3])
+  suppressWarnings(sh_rates[sh_rates[,1]==0|is.na(sh_rates[,1]),1] <- min(sh_rates[sh_rates[,1]!=0 & !is.na(sh_rates[,1]),1]))
+  suppressWarnings(sh_rates[sh_rates[,2]==0|is.na(sh_rates[,2]),2] <- min(sh_rates[sh_rates[,2]!=0 & !is.na(sh_rates[,2]),2]))
+  suppressWarnings(sh_rates[sh_rates[,3]==0|is.na(sh_rates[,3]),3] <- min(sh_rates[sh_rates[,3]!=0 & !is.na(sh_rates[,3]),3]))
+  suppressWarnings(sh_rates[sh_rates[,1]==Inf,1] <- max(sh_rates[sh_rates[,1]!=Inf,1]))
+  suppressWarnings(sh_rates[sh_rates[,2]==Inf,2] <- max(sh_rates[sh_rates[,2]!=Inf,2]))
+  suppressWarnings(sh_rates[sh_rates[,3]==Inf,3] <- max(sh_rates[sh_rates[,3]!=Inf,3]))
 
 	mean_rates <- apply(array(cbind(wt_rates[,1:3], sh_rates[,1:3]), dim=c(nrow(wt_rates), 3,2)), 1:2, mean, na.rm=TRUE)
 
@@ -145,7 +145,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 			tryCatch(
 				unlist(optim(mean_rates[i,], errorKKK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-				, error=function(e) rep(NaN, 7))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outKKK[apply(outKKK[,1:3]<0,1,any),] <- NaN
 
@@ -155,7 +156,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], mean_rates[i,3] ), 
 					errorVKK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],  
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-				, error=function(e) rep(NaN, 8))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outVKK[apply(outVKK[,1:4]<0,1,any),] <- NaN
 
@@ -165,7 +167,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
 					errorKVK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-				, error=function(e) rep(NaN, 8))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outKVK[apply(outKVK[,1:4]<0,1,any),] <- NaN
 
@@ -175,7 +178,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( mean_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
 					errorKKV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-				, error=function(e) rep(NaN, 8))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outKKV[apply(outKKV[,1:4]<0,1,any),] <- NaN
 
@@ -185,7 +189,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
 					errorVVK_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-				, error=function(e) rep(NaN, 9))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outVVK[apply(outVVK[,1:5]<0,1,any),] <- NaN
 
@@ -195,7 +200,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
 					errorVKV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-				, error=function(e) rep(NaN, 9))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outVKV[apply(outVKV[,1:5]<0,1,any),] <- NaN
 
@@ -205,7 +211,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
 					errorKVV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-				, error=function(e) rep(NaN, 9))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outKVV[apply(outKVV[,1:5]<0,1,any),] <- NaN
 
@@ -215,7 +222,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
 					errorVVV_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-				, error=function(e) rep(NaN, 10))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, par6=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outVVV[apply(outVVV[,1:6]<0,1,any),] <- NaN
 
@@ -254,7 +262,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 			tryCatch(
 				unlist(optim(mean_rates[i,], errorKKK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader,
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
-				, error=function(e) rep(NaN, 7))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outKKK[apply(outKKK[,1:3]<0,1,any),] <- NaN
 
@@ -264,7 +273,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], mean_rates[i,3] ), 
 					errorVKK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
-				, error=function(e) rep(NaN, 8))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outVKK[apply(outVKK[,1:4]<0,1,any),] <- NaN
 
@@ -274,7 +284,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
 					errorKVK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
-				, error=function(e) rep(NaN, 8))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outKVK[apply(outKVK[,1:4]<0,1,any),] <- NaN
 
@@ -284,7 +295,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( mean_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
 					errorKKV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
-				, error=function(e) rep(NaN, 8))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outKKV[apply(outKKV[,1:4]<0,1,any),] <- NaN
 
@@ -294,7 +306,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], mean_rates[i,3] ), 
 					errorVVK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
-				, error=function(e) rep(NaN, 9))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outVVK[apply(outVVK[,1:5]<0,1,any),] <- NaN
 
@@ -304,7 +317,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
 					errorVKV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
-				, error=function(e) rep(NaN, 9))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outVKV[apply(outVKV[,1:5]<0,1,any),] <- NaN
 
@@ -314,7 +328,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
 					errorKVV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
-				, error=function(e) rep(NaN, 9))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outKVV[apply(outKVV[,1:5]<0,1,any),] <- NaN
 
@@ -324,7 +339,8 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], wt_rates[i,3], sh_rates[i,3] ), 
 					errorVVV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
 					sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
-				, error=function(e) rep(NaN, 10))
+				, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, par5=NaN, par6=NaN, value=NaN, 
+				                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 			,BPPARAM=BPPARAM))
 		outVVV[apply(outVVV[,1:6]<0,1,any),] <- NaN
 
@@ -410,7 +426,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 	if( length( eGenes ) > 0 ) 
 	{
 		message(paste('Comparative analysis of the',length(eGenes),'without intronic signals.'))
-
+	  
 		wt_matT <- ratesFirstGuess(inspectIds,'total')[eGenes,1]
 		wt_matTvar <- ratesFirstGuessVar(inspectIds,'total')[eGenes,1]
 
@@ -438,15 +454,15 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 		# sh_rates[sh_rates[,1]==0,1] <- median(sh_rates[,1])
 		# sh_rates[sh_rates[,2]==0,2] <- median(sh_rates[,2])
 
-		wt_rates[wt_rates[,1]==0|is.na(wt_rates[,1]),1] <- min(wt_rates[wt_rates[,1]!=0 & !is.na(wt_rates[,1]),1])
-		wt_rates[wt_rates[,2]==0|is.na(wt_rates[,2]),2] <- min(wt_rates[wt_rates[,2]!=0 & !is.na(wt_rates[,2]),2])
-		wt_rates[wt_rates[,1]==Inf,1] <- max(wt_rates[wt_rates[,1]!=Inf,1])
-		wt_rates[wt_rates[,2]==Inf,2] <- max(wt_rates[wt_rates[,2]!=Inf,2])
+		suppressWarnings(wt_rates[wt_rates[,1]==0|is.na(wt_rates[,1]),1] <- min(wt_rates[wt_rates[,1]!=0 & !is.na(wt_rates[,1]),1]))
+		suppressWarnings(wt_rates[wt_rates[,2]==0|is.na(wt_rates[,2]),2] <- min(wt_rates[wt_rates[,2]!=0 & !is.na(wt_rates[,2]),2]))
+		suppressWarnings(wt_rates[wt_rates[,1]==Inf,1] <- max(wt_rates[wt_rates[,1]!=Inf,1]))
+		suppressWarnings(wt_rates[wt_rates[,2]==Inf,2] <- max(wt_rates[wt_rates[,2]!=Inf,2]))
 
-		sh_rates[sh_rates[,1]==0|is.na(sh_rates[,1]),1] <- min(sh_rates[sh_rates[,1]!=0 & !is.na(sh_rates[,1]),1])
-		sh_rates[sh_rates[,2]==0|is.na(sh_rates[,2]),2] <- min(sh_rates[sh_rates[,2]!=0 & !is.na(sh_rates[,2]),2])
-		sh_rates[sh_rates[,1]==Inf,1] <- max(sh_rates[sh_rates[,1]!=Inf,1])
-		sh_rates[sh_rates[,2]==Inf,2] <- max(sh_rates[sh_rates[,2]!=Inf,2])
+		suppressWarnings(sh_rates[sh_rates[,1]==0|is.na(sh_rates[,1]),1] <- min(sh_rates[sh_rates[,1]!=0 & !is.na(sh_rates[,1]),1]))
+		suppressWarnings(sh_rates[sh_rates[,2]==0|is.na(sh_rates[,2]),2] <- min(sh_rates[sh_rates[,2]!=0 & !is.na(sh_rates[,2]),2]))
+		suppressWarnings(sh_rates[sh_rates[,1]==Inf,1] <- max(sh_rates[sh_rates[,1]!=Inf,1]))
+		suppressWarnings(sh_rates[sh_rates[,2]==Inf,2] <- max(sh_rates[sh_rates[,2]!=Inf,2]))
 
 		mean_rates <- apply(array(cbind(wt_rates[,1:2], sh_rates[,1:2]), dim=c(nrow(wt_rates),2,2)), 1:2, mean, na.rm=TRUE)
 
@@ -481,9 +497,10 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 				tryCatch(
 					unlist(optim(mean_rates[i,], errorK_K_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],
 						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-					, error=function(e) c(mean_rates[i,], NA, NA, NA, e[1]))
+					, error=function(e) c(par1=NaN, par2=NaN, value=NaN, 
+					                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 				,BPPARAM=BPPARAM))
-			outK_K[apply(outK_K[,1:2]<0,1,any),] <- NaN
+			outK_K[apply(outK_K[,1:2,drop=FALSE]<0,1,any),] <- NaN
 
 			message('Evaluating model s [2/4]...')
 			outV_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
@@ -491,9 +508,10 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2] ), 
 						errorV_K_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,],  
 						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-					, error=function(e) c(wt_rates[i,1], sh_rates[i,1], mean_rates[i,2], NA, NA, NA, e[1]))
+					, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, value=NaN, 
+					                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 				,BPPARAM=BPPARAM))
-			outV_K[apply(outV_K[,1:3]<0,1,any),] <- NaN
+			outV_K[apply(outV_K[,1:3,drop=FALSE]<0,1,any),] <- NaN
 
 			message('Evaluating model d [3/4]...')
 			outK_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
@@ -501,9 +519,10 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 					unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
 						errorK_V_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
 						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-					, error=function(e) c(mean_rates[i,1], wt_rates[i,2], sh_rates[i,2], NA, NA, NA, e[1]))
+					, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, value=NaN, 
+					                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 				,BPPARAM=BPPARAM))
-			outK_V[apply(outK_V[,1:3]<0,1,any),] <- NaN
+			outK_V[apply(outK_V[,1:3,drop=FALSE]<0,1,any),] <- NaN
 			
 			message('Evaluating model sd [4/4]...')
 			outV_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
@@ -511,9 +530,10 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
 						errorV_V_ddpFALSE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], 
 						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,])[1:4])
-					, error=function(e) c(wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2], NA, NA, NA, e[1]))
+					, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
+					                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 				,BPPARAM=BPPARAM))
-			outV_V[apply(outV_V[,1:4]<0,1,any),] <- NaN
+			outV_V[apply(outV_V[,1:4,drop=FALSE]<0,1,any),] <- NaN
 
 		} else { ## ddp
 
@@ -540,14 +560,16 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 			sh_datavar[sh_datavar==0] <- min(sh_datavar[sh_datavar!=0])
 
 			# model!
-
+			
 			message('Evaluating model no-reg [1/4]...')
 			outK_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
 				tryCatch(
 					unlist(optim(mean_rates[i,], errorKK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader,
 						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
-					, error=function(e) rep(NaN, 6))
+					, error=function(e) c(par1=NaN, par2=NaN, value=NaN, 
+					                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 				,BPPARAM=BPPARAM))
+			outK_K[apply(outK_K[,1:2,drop=FALSE]<0,1,any),] <- NaN
 
 			message('Evaluating model s [2/4]...')
 			outV_K <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
@@ -555,8 +577,10 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], mean_rates[i,2] ), 
 						errorVK_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
 						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
-					, error=function(e) rep(NaN, 7))
+					, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, value=NaN, 
+					                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 				,BPPARAM=BPPARAM))
+			outV_K[apply(outV_K[,1:3,drop=FALSE]<0,1,any),] <- NaN
 
 			message('Evaluating model d [3/4]...')
 			outK_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
@@ -564,8 +588,10 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 					unlist(optim( c( mean_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
 						errorKV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
 						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
-					, error=function(e) rep(NaN, 7))
+					, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, value=NaN, 
+					                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 				,BPPARAM=BPPARAM))
+			outK_V[apply(outK_V[,1:3,drop=FALSE]<0,1,any),] <- NaN
 
 			message('Evaluating model sd [4/4]...')
 			outV_V <- do.call('rbind', bplapply(seq_along(eGenes), function(i)
@@ -573,8 +599,10 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 					unlist(optim( c( wt_rates[i,1], sh_rates[i,1], wt_rates[i,2], sh_rates[i,2] ), 
 						errorVV_ddpTRUE, wt_data=wt_data[i,], wt_datavar=wt_datavar[i,], wt_datader=datader, 
 						sh_data=sh_data[i,], sh_datavar=sh_datavar[i,], sh_datader=datader, tL=tL)[1:4])
-					, error=function(e) rep(NaN, 8))
+					, error=function(e) c(par1=NaN, par2=NaN, par3=NaN, par4=NaN, value=NaN, 
+					                      counts.function=NaN, counts.gradient=NaN, convergence=NaN))
 				,BPPARAM=BPPARAM))
+			outV_V[apply(outV_V[,1:4,drop=FALSE]<0,1,any),] <- NaN
 
 		}
 
@@ -584,7 +612,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 			'K_V'=outK_V,
 			'V_V'=outV_V
 			)
-
+		
 		p_vals <- cbind(
 			K_K=pchisq(models[['K_K']][,'value'], 2),
 			V_K=pchisq(models[['V_K']][,'value'], 1),
@@ -624,13 +652,18 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 			NallNA <- length(which(allNA))
 			message(paste('Removing', NallNA, 'genes with unresolved models'))
 		}
-		eOut <- list(
-			eGenes=eGenes[!allNA],
-			models=lapply(models, function(x) x[!allNA,]),
-			p_vals=p_vals[!allNA,],
-			log_liks=log_liks[!allNA,]
-			)
-
+		if( all(allNA) ) {
+		  eOut <- NULL
+		  eGenes <- NULL
+		} else {
+  		eOut <- list(
+  		  eGenes=eGenes[!allNA],
+  		  models=lapply(models, function(x) x[!allNA,]),
+  		  p_vals=p_vals[!allNA,],
+  		  log_liks=log_liks[!allNA,]
+  		)
+		}
+		
 	} else {
 		message('No intronless genes found.')
 		eOut <- NULL
@@ -699,107 +732,6 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 			)
 		}))
 	
-	# ei_p_vals <- p_vals <- ie_model_steady_states_out$p_vals
-
-	# synthesis_tests <- cbind(
-	# 	logLikRatioTest( log_liks[,1], log_liks[,2], 1 ),
-	# 	logLikRatioTest( log_liks[,3], log_liks[,5], 1 ),
-	# 	logLikRatioTest( log_liks[,4], log_liks[,6], 1 ),
-	# 	logLikRatioTest( log_liks[,7], log_liks[,8], 1 )
-	# 	)
-
-	# synthesis_mask <- cbind(
-	# 	p_vals[,1] <= cTsh | p_vals[,2] <= cTsh,
-	# 	p_vals[,3] <= cTsh | p_vals[,5] <= cTsh,
-	# 	p_vals[,4] <= cTsh | p_vals[,6] <= cTsh,
-	# 	p_vals[,7] <= cTsh | p_vals[,8] <= cTsh
-	# 	)
-
-	# processing_tests <- cbind(
-	# 	logLikRatioTest( log_liks[,1], log_liks[,3], 1 ),
-	# 	logLikRatioTest( log_liks[,2], log_liks[,5], 1 ),
-	# 	logLikRatioTest( log_liks[,4], log_liks[,7], 1 ),
-	# 	logLikRatioTest( log_liks[,6], log_liks[,8], 1 )
-	# 	)
-
-	# processing_mask <- cbind(
-	# 	p_vals[,1] <= cTsh | p_vals[,3] <= cTsh,
-	# 	p_vals[,2] <= cTsh | p_vals[,5] <= cTsh,
-	# 	p_vals[,4] <= cTsh | p_vals[,7] <= cTsh,
-	# 	p_vals[,6] <= cTsh | p_vals[,8] <= cTsh
-	# 	)
-
-	# degradation_tests <- cbind(
-	# 	logLikRatioTest( log_liks[,1], log_liks[,4], 1 ),
-	# 	logLikRatioTest( log_liks[,2], log_liks[,6], 1 ),
-	# 	logLikRatioTest( log_liks[,3], log_liks[,7], 1 ),
-	# 	logLikRatioTest( log_liks[,5], log_liks[,8], 1 )
-	# 	)
-
-	# degradation_mask <- cbind(
-	# 	p_vals[,1] <= cTsh | p_vals[,4] <= cTsh,
-	# 	p_vals[,2] <= cTsh | p_vals[,6] <= cTsh,
-	# 	p_vals[,3] <= cTsh | p_vals[,7] <= cTsh,
-	# 	p_vals[,5] <= cTsh | p_vals[,8] <= cTsh
-	# 	)
-
-	# rates_pvals <- cbind(
-	# 	k1=brown_method_mask(synthesis_tests, synthesis_mask),
-	# 	k2=brown_method_mask(processing_tests, processing_mask),
-	# 	k3=brown_method_mask(degradation_tests, degradation_mask)
-	# 	)
-	# rates_pvals[is.na(rates_pvals)] <- 1
-
-	# gene_class <- apply( rates_pvals , 1 , function(x) {vec <- x <= bTsh; paste(ifelse(vec, 'V', 'K'), collapse='')} )
-
-	# diz <- c('KKK'=1, 'VKK'=2, 'KVK'=3, 'KKV'=4, 'VVK'=5, 'VKV'=6, 'KVV'=7, 'VVV'=8) 
-	# numeric_gene_class <- diz[gene_class]
-	# p_vals_geneclass <- p_vals[cbind(seq_along(eiGenes),numeric_gene_class)]
-
-	# rates_c <- t(sapply( seq_along(gene_class) , function(i) {
-
-	# 	switch(
-	# 		gene_class[i],
-	# 		'KKK'=models[['KKK']][i, c(1,2,3)],
-	# 		'VKK'=models[['VKK']][i, c(1,3,4)],
-	# 		'KVK'=models[['KVK']][i, c(1,2,4)],
-	# 		'KKV'=models[['KKV']][i, c(1,2,3)],
-	# 		'VVK'=models[['VVK']][i, c(1,3,5)],
-	# 		'VKV'=models[['VKV']][i, c(1,3,4)],
-	# 		'KVV'=models[['KVV']][i, c(1,2,4)],
-	# 		'VVV'=models[['VVV']][i, c(1,3,5)]
-	# 		)
-
-	# 	}))
-
-	# if( ddp ) {
-	# 	concentrations_c <- t(apply(rates_c, 1, sys4suModel_ddpTRUE, datader=c(0,0), tL=tL))[,1:2]	
-	# } else {
-	# 	concentrations_c <- t(apply(rates_c, 1, sys4suModel_ddpFALSE))[,1:2]
-	# }
-	
-	# rates_t <- t(sapply( seq_along(gene_class) , function(i) {
-
-	# 	switch(
-	# 		gene_class[i],
-	# 		'KKK'=models[['KKK']][i, c(1,2,3)],
-	# 		'VKK'=models[['VKK']][i, c(2,3,4)],
-	# 		'KVK'=models[['KVK']][i, c(1,3,4)],
-	# 		'KKV'=models[['KKV']][i, c(1,2,4)],
-	# 		'VVK'=models[['VVK']][i, c(2,4,5)],
-	# 		'VKV'=models[['VKV']][i, c(2,3,5)],
-	# 		'KVV'=models[['KVV']][i, c(1,3,5)],
-	# 		'VVV'=models[['VVV']][i, c(2,4,6)]
-	# 		)
-
-	# 	}))
-
-	# if( ddp ) {
-	# 	concentrations_t <- t(apply(rates_t, 1, sys4suModel_ddpTRUE, datader=c(0,0), tL=tL))[,1:2]
-	# } else {
-	# 	concentrations_t <- t(apply(rates_t, 1, sys4suModel_ddpFALSE))[,1:2]
-	# }
-
 	rates_c <- models[['VVV']][, c(1,3,5)]
 	rates_t <- models[['VVV']][, c(2,4,6)]
 
@@ -824,6 +756,7 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 	if( !is.null(e_model_steady_states_out) )
 	{
 
+	  eGenes <- e_model_steady_states_out$eGenes
 		models <- e_model_steady_states_out$models
 		log_liks <- e_model_steady_states_out$log_liks
 
@@ -851,76 +784,6 @@ setMethod('compareSteady', signature('INSPEcT'), function(inspectIds, BPPARAM=Se
 					)
 				)
 			}))
-
-		# e_pvals <- p_vals <- e_model_steady_states_out$p_vals
-		
-		# synthesis_tests <- cbind(
-		# 	logLikRatioTest( log_liks[,1], log_liks[,2], 1 ),
-		# 	logLikRatioTest( log_liks[,3], log_liks[,4], 1 )
-		# 	)
-
-		# synthesis_mask <- cbind(
-		# 	p_vals[,1] <= cTsh | p_vals[,2] <= cTsh,
-		# 	p_vals[,3] <= cTsh | p_vals[,4] <= cTsh
-		# 	)
-
-		# degradation_tests <- cbind(
-		# 	logLikRatioTest( log_liks[,1], log_liks[,3], 1 ),
-		# 	logLikRatioTest( log_liks[,2], log_liks[,4], 1 )
-		# 	)
-
-		# degradation_mask <- cbind(
-		# 	p_vals[,1] <= cTsh | p_vals[,3] <= cTsh,
-		# 	p_vals[,2] <= cTsh | p_vals[,4] <= cTsh
-		# 	)
-
-		# rates_pvals <- cbind(
-		# 	k1=brown_method_mask(synthesis_tests, synthesis_mask),
-		# 	k3=brown_method_mask(degradation_tests, degradation_mask)
-		# 	)
-		# rates_pvals[is.na(rates_pvals)] <- 1
-
-		# gene_class <- apply( rates_pvals, 1, function(x) {vec <- x <= bTsh[1:2]; paste(ifelse(vec, 'V', 'K'), collapse='_')} )
-
-		# diz <- c('K_K'=1, 'V_K'=2, 'K_V'=3, 'V_V'=4) 
-		# numeric_gene_class <- diz[gene_class]
-		# p_vals_geneclass <- p_vals[cbind(seq_along(eGenes),numeric_gene_class)]
-
-		# rates_c <- t(sapply( seq_along(gene_class) , function(i) {
-
-		# 	switch(
-		# 		gene_class[i],
-		# 		'K_K'=models[['K_K']][i, c(1,2)],
-		# 		'V_K'=models[['V_K']][i, c(1,3)],
-		# 		'K_V'=models[['K_V']][i, c(1,2)],
-		# 		'V_V'=models[['V_V']][i, c(1,3)]
-		# 		)
-
-		# 	}))
-
-		# if( ddp ) {
-		# 	concentrations_c <- t(apply(rates_c, 1, simplesys4suModel_ddpTRUE, datader=c(0), tL=tL))[,1]
-		# } else {
-		# 	concentrations_c <- t(apply(rates_c, 1, sys4suSimpleModel_ddpFALSE))[,1]
-		# }
-
-		# rates_t <- t(sapply( seq_along(gene_class) , function(i) {
-
-		# 	switch(
-		# 		gene_class[i],
-		# 		'K_K'=models[['K_K']][i, c(1,2)],
-		# 		'V_K'=models[['V_K']][i, c(2,3)],
-		# 		'K_V'=models[['K_V']][i, c(1,3)],
-		# 		'V_V'=models[['V_V']][i, c(2,4)]
-		# 		)
-
-		# 	}))
-
-		# if( ddp ) {
-		# 	concentrations_t <- t(apply(rates_t, 1, simplesys4suModel_ddpTRUE, datader=c(0), tL=tL))[,1]
-		# } else {
-		# 	concentrations_t <- t(apply(rates_t, 1, sys4suSimpleModel_ddpFALSE))[,1]
-		# }
 
 		rates_c <- models[['V_V']][, c(1,3)]
 		rates_t <- models[['V_V']][, c(2,4)]
