@@ -7,9 +7,7 @@
 #' nascentInspObj10 <- readRDS(system.file(package='INSPEcT', 'nascentInspObj10.rds'))
 #' ratePvals(nascentInspObj10)
 setMethod('ratePvals', 'INSPEcT', function(object) {
-	if( !.hasSlot(object, 'version') ) {
-		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+  checkINSPEcTObjectversion(object)
 	if( !is.numeric(tpts(object)) ) {
 		stop("Run 'compareSteady' method on this object to evaluate differential rate ")
 	}
@@ -47,9 +45,7 @@ setMethod('calculateRatePvals', 'INSPEcT', function(object
 																										, limitModelComplexity = FALSE) 
 	{
 	
-	if( !.hasSlot(object, 'version') ) {
-		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+  checkINSPEcTObjectversion(object)
 	# if( nrow(object@modelRates) == 0 )
 	# 	stop('ratePvals: run modelRates or modelRatesNF before.')
 	modelSelection <- modelSelection[1]

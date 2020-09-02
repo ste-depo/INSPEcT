@@ -100,9 +100,7 @@ setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectI
 																																	 expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NaN, 
 																																	 returnNormScores=FALSE, referenceCondition='median')
 {
-	# if( !.hasSlot(inspectIds, 'version') ) {
-	# 	stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	# }
+  checkINSPEcTObjectversion(inspectIds)
 	# Mature, premature and total rpkms
 	premature <- premature(inspectIds)
 	mature <- mature(inspectIds)

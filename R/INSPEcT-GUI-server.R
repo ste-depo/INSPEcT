@@ -36,7 +36,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				values$loaded_file_error_message <- 'The loaded file is not of class INSPEcT'
 				return(new(Class = 'INSPEcT'))
 
-			}  else if(!checkINSPEcTObjectversion(object, returnLogical=TRUE)) {
+			}  else if(!checkINSPEcTObjectversion(ids, returnLogical=TRUE)) {
 
 				error_on_load_file()
 				values$loaded_file <- FALSE
@@ -44,7 +44,7 @@ INSPEcTGUIshinyAppServer <- function(input, output, session) {
 				return(new(Class = 'INSPEcT'))
 				
 			} else { # the loaded object is of class INSPEcT
-				
+			  
 				## store inspect global values
 				experiment$tpts <- tpts(ids)
 				experiment$no_nascent <- ids@NoNascent

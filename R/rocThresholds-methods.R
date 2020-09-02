@@ -37,9 +37,7 @@
 #' }
 setMethod('rocThresholds', signature(object='INSPEcT_model', object2='INSPEcT'), function(object, object2, xlim=c(1e-5,1), plot=TRUE)
 {
-	if( !.hasSlot(object2, 'version') ) {
-		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+  checkINSPEcTObjectversion(object2)
 	# reduce the set of genes to the one present in the modeled object
 	if( length(object@ratesSpecs) !=  length(featureNames(object2)) )
 		object <- object[as.numeric(featureNames(object2))]

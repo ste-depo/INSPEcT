@@ -7,9 +7,8 @@
 #' @return An object of class ExpressionSet containing the confidence intervals.
 
 setMethod(f='setConfidenceIntervals', 'INSPEcT', definition=function(object, confidenceIntervals) {
-	if( !.hasSlot(object, 'version') ) {
-		stop("This object is OBSOLETE and cannot work with the current version of INSPEcT.")
-	}
+
+  checkINSPEcTObjectversion(object)
 	
 	tpts <- tpts(object)
 
