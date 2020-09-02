@@ -98,7 +98,8 @@ setGeneric('viewModelRates', function(object, feature)
 setGeneric('viewConfidenceIntervals', function(object, feature) 
 	standardGeneric('viewConfidenceIntervals'))
 #' Plot the pre-modeled and modeled profiles for one gene
-setGeneric('plotGene', function(object, ix, fix.yaxis=FALSE, priors=TRUE, constantModel=FALSE) 
+setGeneric('plotGene', function(object, ix, relative_expression=FALSE, 
+                                fix.yaxis=FALSE, priors=TRUE, constantModel=FALSE) 
 	standardGeneric('plotGene'))
 #' Heatmap that represent the fold changes of all the five features
 setGeneric('inHeatmap', function(object, type='pre-model'

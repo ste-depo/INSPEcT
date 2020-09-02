@@ -612,7 +612,17 @@ RNAdynamicsAppPlot <- function(data_selection,
 	)
 }
 
-plotSingleRNADynamic <- function( dyn_name, tag, simtimeplot, simprofile, ci_left, ci_right, plot_exp, exptimeplot, ref_exp, sec_exp, ssd_exp, show_relexpr = FALSE, ylim, rate_p = NULL ) {
+deltaylim <- function( yrange ) {
+  deltarange <- yrange[2] * .05
+  ylim <- yrange + c(-deltarange, deltarange)
+}
+
+plotSingleRNADynamic <- function( dyn_name, tag, simtimeplot, simprofile, 
+                                  ci_left, ci_right, plot_exp, exptimeplot, 
+                                  ref_exp, sec_exp, ssd_exp, show_relexpr = FALSE, 
+                                  ylim, rate_p = NULL, command_line = FALSE, 
+                                  col = 1, prior = NULL, constant = NULL) 
+{
 	
 	if( !is.null(rate_p) ) {
 		p_name <- paste0('(p=',signif(rate_p,2),')')
@@ -622,10 +632,14 @@ plotSingleRNADynamic <- function( dyn_name, tag, simtimeplot, simprofile, ci_lef
 	if( tag != '' ) {
 		dyn_name <- gsub("^","paste('", gsub("$",")", gsub("\\)", "'),')'", gsub("\\(", "(', bold('", paste(dyn_name, paste0('(', tag, ')'))))))
 	}
-	deltaylim <- function( yrange ) {
-		deltarange <- yrange[2] * .05
-		ylim <- yrange + c(-deltarange, deltarange)
-	}
+  if( is.null(prior) ) {
+    prior <- rep(NA, length(simtimeplot))
+    plot_prior <- FALSE
+  } else plot_prior <- TRUE
+  if( is.null(constant) ) {
+    constant <- rep(NA, length(simtimeplot))
+    plot_constant <- FALSE
+  } else plot_constant <- TRUE
 
 	if( plot_exp ) {
 		sec_exp_plus_ssd <- sec_exp + ssd_exp
@@ -636,9 +650,13 @@ plotSingleRNADynamic <- function( dyn_name, tag, simtimeplot, simprofile, ci_lef
 	
 	if(show_relexpr) {
 		refexpression <- simprofile[1]
+		if( is.na(refexpression) )
+		  if( plot_exp ) refexpression <- ref_exp[1] else refexpression <- prior[1]
 		simprofile <- simprofile/refexpression
 		ci_left <- ci_left/refexpression
 		ci_right <- ci_right/refexpression
+		prior <- prior/refexpression
+		constant <- constant/refexpression
 		if( plot_exp ) {
 			sec_exp <- sec_exp/refexpression
 			ref_exp <- ref_exp/refexpression
@@ -655,27 +673,44 @@ plotSingleRNADynamic <- function( dyn_name, tag, simtimeplot, simprofile, ci_lef
 												sec_exp_plus_ssd, 
 												ref_exp_plus_ssd, 
 												sec_exp_minus_ssd, 
-												ref_exp_minus_ssd), na.rm=TRUE)
+												ref_exp_minus_ssd,
+												prior), na.rm=TRUE)
 			ylim <- deltaylim(yrange)
 		} else {
-			ylim <- deltaylim( range(c(simprofile, ci_left, ci_right), na.rm=TRUE) )
+			ylim <- deltaylim( range(c(simprofile, ci_left, ci_right, prior), na.rm=TRUE) )
 		}
+	}
+	if( command_line ) {
+	  lwd <- 3; cex.lab <- 1; cex.axis <- 1
+	} else {
+	  lwd <- 2; cex.lab <- 1.7; cex.axis <- 1.3
 	}
 	plot(simtimeplot, simprofile, 
 			 xaxs='i', yaxs='i', xaxt = 'n', ylab='',
-			 type='l', xlab='', lwd=2, cex.lab = 1.7, cex.axis=1.3,  
+			 type='l', xlab='', lwd = lwd,
+			 cex.lab = cex.lab, cex.axis=cex.axis,  
 			 xlim = range(simtimeplot) 
 			 + diff(range(simtimeplot)) * c(-.05, .05),
-			 ylim = ylim
+			 ylim = ylim, col = col
 	)
-	mtext(parse(text=dyn_name), 2, 4)
-	mtext(p_name, 2, 3)
-	matlines(simtimeplot, cbind(ci_left, ci_right), lty=2, col=1)	
+	if( !command_line ) {
+	  mtext(parse(text=dyn_name), 2, 4)
+	  mtext(p_name, 2, 3)
+	}
+	ci_matrix <- cbind(ci_left, ci_right)
+	if( !all(is.na(ci_matrix)) ) matlines(simtimeplot, ci_matrix, lty=2, col=col)	
 	if( plot_exp ) {
-		points( exptimeplot, sec_exp, pch=1, col='grey')
-		points( exptimeplot, ref_exp, pch=19)
+	  if( !all(is.na(sec_exp)) ) points( exptimeplot, sec_exp, pch=1, col='grey')
+	  if( command_line ) pch <- 21 else pch <- 19
+		points( exptimeplot, ref_exp, pch = pch, col=col)
 		segments( exptimeplot , ref_exp_minus_ssd 
-							, exptimeplot , ref_exp_plus_ssd )
+							, exptimeplot , ref_exp_plus_ssd , col = col)
+	}
+	if( plot_prior ) {
+	  lines(simtimeplot, prior, col=col)
+	}
+	if( plot_constant ) {
+	  lines(simtimeplot, constant, col=col, lty=3, lwd=3)
 	}
 	# return ylim upon request
 	ylim <- ylim

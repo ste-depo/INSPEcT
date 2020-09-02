@@ -154,102 +154,90 @@ setMethod('modelRates', 'INSPEcT', function(object
 		# object <- makeModelRates(object) # called from calculateRatePvals
 		return(object)
 
-	}else{
+	}else{ # Nascent
+	  
 		if( object@degDuringPulse ) stop('modelRates: degDuringPulse mode not implemented yet.')
 
 		if( !is.null(seed) && !is.numeric(seed) )
 			stop('Seed argument must be either NULL or numeric.')
 
-	# Split between genes with and without intronic signal
+	  # Split between genes with and without intronic signal
 		eiGenes <- rownames(concentrations$preMRNA)[is.finite(concentrations$preMRNA[,1])]
-		eGenes <- NULL # rownames(concentrations$preMRNA[!is.finite(concentrations$preMRNA[,1]),])
-
-		if(!is.null(eiGenes))
-		{
-			eiConcentrations <- lapply(concentrations,function(o){o[eiGenes,,drop=FALSE]})
-			eiRates <- lapply(rates,function(o){o[eiGenes,,drop=FALSE]})
-
-			if(object@params$estimateRatesWith=="der")
-			{
-				eiRatesSpecs <- .inspect.engine_Derivative_Nascent(tpts=tpts
-															     , concentrations=eiConcentrations
-															     , rates=eiRates
-															     , BPPARAM=BPPARAM
-															     , na.rm=TRUE
-															     , verbose=TRUE
-															     # , testOnSmooth=testOnSmooth
-															     , seed=seed
-															     , nInit=nInit
-															     , nIter=nIter
-															     , computeDerivatives=TRUE
-															     , useSigmoidFun=useSigmoidFun
-															     , initialPenalityRelevance=initialPenalityRelevance
-															     , derivativePenalityRelevance=derivativePenalityRelevance
-															     , llConfidenceThreshold=llConfidenceThreshold)
-			}else if(object@params$estimateRatesWith=="int"){
-				message("Integrative modeling")
-				eiRatesSpecs <- .inspect.engine_Integrative_Nascent(tpts=tpts
-																  , concentrations=eiConcentrations
-																  , rates=eiRates
-																  , BPPARAM=BPPARAM
-																  , na.rm=TRUE
-																  , verbose=TRUE
-																  # , testOnSmooth=testOnSmooth
-																  , seed=seed
-																  , nInit=nInit
-																  , nIter=nIter
-																  , computeDerivatives=TRUE
-																  , useSigmoidFun=useSigmoidFun
-																  , initialPenalityRelevance=initialPenalityRelevance
-																  , derivativePenalityRelevance=derivativePenalityRelevance
-																  , llConfidenceThreshold=llConfidenceThreshold)
-			}else{stop('modelRates: the user must set the variable "estimateRatesWith" either equal to "int" or equal to "der" (default).')}
-
-			eiconfidenceIntervals <- eiRatesSpecs$confidenceIntervals
-			eiRatesSpecs <- eiRatesSpecs$ratesSpecs
-
-			eiGenes <- names(eiRatesSpecs)
-		#	names(eiRatesSpecs) <- eiGenes
-		}
-
-		if(!is.null(eGenes))
-		{
-			message("Modeling for genes without introns to setup")
-			# 			eConcentrations <- lapply(concentrations,function(o){o[eGenes,]})
-			# 			eRates <- lapply(rates,function(o){o[eGenes,]})
-			# 
-			# 			eRatesSpecs <- .inspect.engine_Derivative_Nascent_Simple(tpts=tpts
-			# 																   , concentrations=eConcentrations
-			# 																   , rates=eRates
-			# 																   , BPPARAM=BPPARAM
-			# 																   , na.rm=TRUE
-			# 																   , verbose=verbose
-			# 																   , testOnSmooth=testOnSmooth
-			# 																   , seed=seed
-			# 																   , nInit=nInit
-			# 																   , nIter=nIter
-			# 																   , computeDerivatives=computeDerivatives
-			# 																   , useSigmoidFun=useSigmoidFun)
-			# 			names(eRatesSpecs) <- eGenes
-			eRatesSpecs <- NULL
-			econfidenceIntervals <- NULL
-		}
+		eGenes <- rownames(concentrations$preMRNA[!is.finite(concentrations$preMRNA[,1]),])
 		
-		if(!is.null(eiGenes)&!is.null(eGenes)){
-			ratesSpecs <- c(eiRatesSpecs,eRatesSpecs)
-		}else if(!is.null(eiGenes)){
-			ratesSpecs <- eiRatesSpecs
-		}else if(!is.null(eGenes)){
-			ratesSpecs <- eRatesSpecs
-		}else{stop("No genes suitable for the analysis! ")}
+		if(object@params$estimateRatesWith=="der")
+		{
+		  
+		  # change NA of eGenes (i.e. premature, prematureVar, k2) to the corresponding QSS values:
+		  # k2 = QSSfactor ; premature = k1/k2 = k1/QSSfactor ; prematureVar = 1 (arbitrary)
+		  # Not valid for 'int' modeling because it cannot handle ode stepsize with high value of k2
+		  # The validity on 'der' was checked on the 500 genes provided with the package, retaining
+		  # the intronic signal of only the first 10 genes: all the genes modeled had p(k2)=1
+		  rates$gamma[eGenes,] <- 1e9
+		  concentrations$preMRNA[eGenes,] <- rates$alpha[eGenes,] / rates$gamma[eGenes,]
+		  concentrations$preMRNA_var[eGenes,] <- 1
+		  concentrations$mature[eGenes,] <- concentrations$total[eGenes,]
+		  concentrations$mature_var[eGenes,] <- concentrations$total_var[eGenes,]
+		  
+			ratesSpecs <- .inspect.engine_Derivative_Nascent(tpts=tpts
+														     , concentrations=concentrations
+														     , rates=rates
+														     , BPPARAM=BPPARAM
+														     , na.rm=TRUE
+														     , verbose=TRUE
+														     # , testOnSmooth=testOnSmooth
+														     , seed=seed
+														     , nInit=nInit
+														     , nIter=nIter
+														     , computeDerivatives=TRUE
+														     , useSigmoidFun=useSigmoidFun
+														     , initialPenalityRelevance=initialPenalityRelevance
+														     , derivativePenalityRelevance=derivativePenalityRelevance
+														     , llConfidenceThreshold=llConfidenceThreshold)
+			
+			confidenceIntervals <- ratesSpecs$confidenceIntervals
+			ratesSpecs <- ratesSpecs$ratesSpecs
+			# set to NA conf int relative to k2 of eGenes (uncomment)
+			for( i in which(names(ratesSpecs) %in% eGenes) ) {
+			  tmp <- confidenceIntervals[[i]]$k2
+			  tmp[1:nrow(tmp), 1:ncol(tmp)] <- NA
+			  confidenceIntervals[[i]]$k2 <- tmp
+			}
+			
+		}else if(object@params$estimateRatesWith=="int"){
+			message("Integrative modeling")
+		  
+		  ## remove eGenes and prompt a message
+		  if( !is.null(eGenes) ) {
+		    message(paste('Removing', length(eGenes), 'genes without intronic signal (integrative modeling not implemented for those genes).'))
+		    message('Use estimateRatesWith="der" if you want to preserve them.')
+		    filterIN <- setdiff(rownames(concentrations$total), eGenes)
+		    concentrations <- lapply(concentrations, function(x) x[filterIN,])
+		    rates <- lapply(rates, function(x) x[filterIN,])
+		  }
+		  
+			suppressWarnings(ratesSpecs <- .inspect.engine_Integrative_Nascent(tpts=tpts
+															  , concentrations=concentrations
+															  , rates=rates
+															  , BPPARAM=BPPARAM
+															  , na.rm=TRUE
+															  , verbose=TRUE
+															  # , testOnSmooth=testOnSmooth
+															  , seed=seed
+															  , nInit=nInit
+															  , nIter=nIter
+															  , computeDerivatives=TRUE
+															  , useSigmoidFun=useSigmoidFun
+															  , initialPenalityRelevance=initialPenalityRelevance
+															  , derivativePenalityRelevance=derivativePenalityRelevance
+															  , llConfidenceThreshold=llConfidenceThreshold))
+			
+			confidenceIntervals <- ratesSpecs$confidenceIntervals
+			ratesSpecs <- ratesSpecs$ratesSpecs
+			
+		}else{stop('modelRates: the user must set the variable "estimateRatesWith" either equal to "int" or equal to "der" (default).')}
 
-		if(!is.null(eiGenes)&!is.null(eGenes)){
-			confidenceIntervals <- c(eiconfidenceIntervals,econfidenceIntervals)
-		}else if(!is.null(eiGenes)){
-			confidenceIntervals <- eiconfidenceIntervals
-		}else if(!is.null(eGenes)){
-			confidenceIntervals <- econfidenceIntervals
-		}else{stop("No genes suitable for the analysis! ")}
+		if( is.null(names(ratesSpecs)) ) stop("No genes suitable for the analysis! ")
 		
 		## update and return the object
 		object@NF <- FALSE

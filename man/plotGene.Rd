@@ -5,16 +5,34 @@
 \alias{plotGene,INSPEcT-method}
 \title{Plot the pre-modeled and modeled profiles for one gene}
 \usage{
-plotGene(object, ix, fix.yaxis = FALSE, priors = TRUE, constantModel = FALSE)
+plotGene(
+  object,
+  ix,
+  relative_expression = FALSE,
+  fix.yaxis = FALSE,
+  priors = TRUE,
+  constantModel = FALSE
+)
 
-\S4method{plotGene}{INSPEcT}(object, ix, fix.yaxis = FALSE, priors = TRUE, constantModel = FALSE)
+\S4method{plotGene}{INSPEcT}(
+  object,
+  ix,
+  relative_expression = FALSE,
+  fix.yaxis = FALSE,
+  priors = TRUE,
+  constantModel = FALSE
+)
 }
 \arguments{
 \item{object}{An object of class INSPEcT}
 
 \item{ix}{Eiher a rowname or a row number to select one single gene}
 
-\item{fix.yaxis}{A logical, indicating whether the limits for y-axis of degradation and processing rates should be fixed
+\item{relative_expression}{A logical, indicating whether expressions are rates 
+should be plotted relative to their initial value (Default=FALSE).}
+
+\item{fix.yaxis}{A logical, indicating whether the limits for y-axis of 
+degradation and processing rates should be fixed
 relative to their distributions}
 
 \item{priors}{A logical, if true the priors of the rates are plotted}

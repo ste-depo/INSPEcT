@@ -49,11 +49,7 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 	
 	## get ratesSpec field
 	ratesSpecs <- object@model@ratesSpecs
-
-	# I split the genes in eiGenes and eGenes according to the message saved after the modeling
 	allGenes <- names(ratesSpecs)
-	eGenes <- allGenes[sapply(ratesSpecs,"[[","abc")["message",]=="eGene"]
-	eiGenes <- setdiff(allGenes,eGenes)
 
 	tpts <- object@tpts	
 
@@ -73,52 +69,40 @@ setMethod(f='makeModelRates', 'INSPEcT', definition=function(object, ...) {
 	
 	if(object@params$estimateRatesWith=="der")
 	{
-		eiModelRates <- lapply(eiGenes, function(i)
+		eiModelRates <- lapply(allGenes, function(i)
 		{
 			tryCatch(.makeModel_Derivative(tpts = tpts, hyp = ratesSpecs[[i]][[1]], geneBestModel = bestModels[i])
 		   ,error=function(e) .makeEmptyModel(tpts))
 		})
-		names(eiModelRates) <- eiGenes
-
-		if(length(eGenes)>0)
-		{
-			message("makeModelRates: simple still to be implemented!")
-			# eModelRates <- lapply(eGenes, function(i)
-			# {
-			# 	tryCatch(.makeModel_Derivative_Simple(tpts = tpts, hyp = ratesSpecs[[i]][[1]], geneBestModel = bestModels[i])
-			#    ,error=function(e) .makeEmptyModel(tpts))
-			# })				
-			# names(eModelRates) <- eGenes
-			# eiModelRates <- c(eiModelRates,eModelRates)
-		}
+		names(eiModelRates) <- allGenes
 	}else{
-		eiModelRates <- lapply(eiGenes, function(i)
+		eiModelRates <- lapply(allGenes, function(i)
 		{
 			tryCatch(.makeModel(tpts = tpts, hyp = ratesSpecs[[i]][[1]], nascent=FALSE)
 		   ,error=function(e) .makeEmptyModel(tpts))
 		})
-		names(eiModelRates) <- eiGenes
-
-		if(length(eGenes)>0)
-		{
-			message("makeModelRates: simple still to be implemented!")
-			# eModelRates <- lapply(eGenes, function(i)
-			# {
-			# 	tryCatch(.makeModel(tpts = tpts, hyp = ratesSpecs[[i]][[1]], nascent = FALSE)
-			#    ,error=function(e) .makeEmptyModel(tpts))
-			# })
-		
-			# names(eModelRates) <- eGenes
-			# eiModelRates <- c(eiModelRates,eModelRates)
-		}
+		names(eiModelRates) <- allGenes
 	}
 	modelRates <- eiModelRates
 	## make an objec of ExpressionSet class
-	exprData <- cbind(t(sapply(modelRates, function(x) x$total))
-					, t(sapply(modelRates, function(x) x$preMRNA))
-					, t(sapply(modelRates, function(x) x$alpha))
-					, t(sapply(modelRates, function(x) x$beta))
-					, t(sapply(modelRates, function(x) x$gamma)))
+	total <- t(sapply(modelRates, function(x) x$total))
+	preMRNA <- t(sapply(modelRates, function(x) x$preMRNA))
+	alpha <- t(sapply(modelRates, function(x) x$alpha))
+	beta <- t(sapply(modelRates, function(x) x$beta))
+	gamma <- t(sapply(modelRates, function(x) x$gamma))
+	## put eGenes preMRNA and gamma (k2) values to NAs
+	firstGuess_preMRNA <- ratesFirstGuess(object, 'preMRNA')
+	eGenes <- rownames(firstGuess_preMRNA[!is.finite(firstGuess_preMRNA[,1]),])
+	if( !is.null(eGenes) ) {
+	  preMRNA[eGenes,] <- NA
+	  gamma[eGenes,] <- NA
+	}
+	## finalize ExpressionSet
+	exprData <- cbind(total
+					, preMRNA
+					, alpha
+					, beta
+					, gamma)
 	nTpts <- length(tpts)
 	pData <- data.frame(
 		feature=c(

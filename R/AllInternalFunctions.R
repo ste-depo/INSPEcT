@@ -2582,7 +2582,7 @@ k_score_fun <- function(k, rate_conf_int)
 														, value = NaN
 														, counts.function = NaN
 														, counts.gradient = NaN
-														, convergence = e)
+														, convergence = e$message)
 			)
 		)
 	}, BPPARAM=BPPARAM)
@@ -2628,7 +2628,7 @@ k_score_fun <- function(k, rate_conf_int)
 															, value = NaN
 															, counts.function = NaN
 															, counts.gradient = NaN
-															, convergence = e)
+															, convergence = e$message)
 				)
 			)
 			
@@ -2681,7 +2681,7 @@ k_score_fun <- function(k, rate_conf_int)
 														, value = NaN
 														, counts.function = NaN
 														, counts.gradient = NaN
-														, convergence = e)
+														, convergence = e$message)
 			)
 		)
 		
@@ -2695,7 +2695,7 @@ k_score_fun <- function(k, rate_conf_int)
 	}, BPPARAM=BPPARAM)
 	
 	names(VVV) <- eiGenes
-
+	
 	### Confidence intervals
 	message("Confidence intervals.")
 	confidenceIntervals <- bplapply(eiGenes,function(g)

@@ -123,6 +123,7 @@ setMethod('removeModel', 'INSPEcT', function(object) {
 	object@model@ratesSpecs <- list()
 	object@params <- list()
 	object@model@params <- list()
+	object@modelRates <- ExpressionSet()
 	return(object)
 	})
 

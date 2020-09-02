@@ -540,7 +540,7 @@ newINSPEcT <- function(tpts
 			ix4 <- apply(rpkms_total_introns, 1, function(x) length(which(x==0)))/ncol(rpkms_total_introns)
 			filteroutGenes <- rownames(rpkms_Nascent_introns)[ix3>genesFilterThreshold | ix4>genesFilterThreshold]
 			if( length(filteroutGenes)>0 ) {
-				message(paste('Filtering out intronic signal of', length(filteroutGenes), 'gene(s) with more than genesFilterThreshold of zero quantifications'))
+				message(paste('Filtering out intronic signal of', length(filteroutGenes), 'gene(s) with more than', paste0(round(genesFilterThreshold,2)*100,'%'), 'of zero quantifications'))
 				message('(for those genes only synthesis and degradation will be evaluated).')
 				rpkms_Nascent_introns <- rpkms_Nascent_introns[!rownames(rpkms_Nascent_introns) %in% filteroutGenes, ,drop=FALSE]
 				rpkms_total_introns <- rpkms_total_introns[!rownames(rpkms_total_introns) %in% filteroutGenes, ,drop=FALSE]
