@@ -21,6 +21,22 @@ citEntry(entry = "article",
 citEntry(entry = "article",
    title = "Genome-wide dynamics of RNA synthesis, processing and degradation without RNA metabolic labeling.",
    author = personList(
+      person("Stefano", "de Pretis"),
+      as.person("Mattia Furlan"),
+      as.person("Mattia Pelizzola")
+      ),
+      year = 2020,
+      journal = "Frontiers in Genetics",
+      doi = "http://doi.org/10.3389/fgene.2020.00759",
+      textVersion = 
+      paste("Stefano de Pretis et al. (2020):", 
+            "INSPEcT-GUI Reveals the Impact of the Kinetic Rates of RNA Synthesis, Processing, and Degradation, on Premature and Mature RNA Species.",
+             "Frontiers in Genetics" ) 
+   )
+
+citEntry(entry = "article",
+   title = "Genome-wide dynamics of RNA synthesis, processing and degradation without RNA metabolic labeling.",
+   author = personList(
       as.person("Mattia Furlan"),
       as.person("Eugenia Galeota"),
       as.person("Nunzio Del Gaudio"),
@@ -29,11 +45,11 @@ citEntry(entry = "article",
       person("Stefano", "de Pretis"),
       as.person("Mattia Pelizzola")
       ),
-      year = 2019,
-      journal = "bioRxiv",
-      doi = "https://doi.org/10.1101/520155",
+      year = 2020,
+      journal = "Genome Research",
+      doi = "http://doi.org/10.1101/gr.260984.120",
       textVersion = 
-      paste("Mattia Furlan et al. (2019):", 
+      paste("Mattia Furlan et al. (2020):", 
             "Genome-wide dynamics of RNA synthesis, processing and degradation without RNA metabolic labeling.",
-             "bioRxiv" ) 
+             "Genome Research" ) 
    )
