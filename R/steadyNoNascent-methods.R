@@ -100,7 +100,6 @@ setMethod('compareSteadyNoNascent', 'INSPEcT_steadyNoNascent', function(inspectI
 																																	 expressionThreshold=0.25, log2FCThreshold=2., trivialAngle=NaN, 
 																																	 returnNormScores=FALSE, referenceCondition='median')
 {
-  checkINSPEcTObjectversion(inspectIds)
 	# Mature, premature and total rpkms
 	premature <- premature(inspectIds)
 	mature <- mature(inspectIds)
