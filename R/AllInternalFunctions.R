@@ -6392,27 +6392,21 @@ fromSigmoidToImpulse <- function(sigmoidsParameters,tpts,nIter)
 	{
 		rate_conf_int <- confidenceIntervals[[g]][["k1"]]
 		k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
-		if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
-		k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
-		return(k_scores_out$par)
+		tryCatch(optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)$par, error=function(e) NaN)
 	}))
 	
 	fitResults_processing <- unlist(lapply(eiGenes,function(g)
 	{
 		rate_conf_int <- confidenceIntervals[[g]][["k2"]]
 		k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
-		if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
-		k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
-		return(k_scores_out$par)
+		tryCatch(optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)$par, error=function(e) NaN)
 	}))
 	
 	fitResults_degradation <- unlist(lapply(eiGenes,function(g)
 	{
 		rate_conf_int <- confidenceIntervals[[g]][["k3"]]
 		k_start <- mean(rate_conf_int[,2],na.rm=TRUE)
-		if(!is.finite(k_start)) NaN #return(list(par=NaN, value=NaN))
-		k_scores_out <- optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)
-		return(k_scores_out$par)
+		tryCatch(optim(k_start, k_score_fun, method='BFGS', rate_conf_int=rate_conf_int)$par, error=function(e) NaN)
 	}))
 	
 	names(fitResults_synthesis) <- 
